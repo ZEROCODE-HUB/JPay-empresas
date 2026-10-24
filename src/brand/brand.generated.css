@@ -1,0 +1,58 @@
+/* ARCHIVO GENERADO por scripts/brand-sync.mjs desde src/brand/brand.json. No editar a mano. */
+
+:root {
+  --brand-primary-50: #EBF7F3;
+  --brand-primary-100: #D7F0E8;
+  --brand-primary-200: #AFE1CF;
+  --brand-primary-300: #83D2B8;
+  --brand-primary-400: #55C2A0;
+  --brand-primary-500: #02B388;
+  --brand-primary-600: #019672;
+  --brand-primary-700: #01795B;
+  --brand-primary-800: #016048;
+  --brand-primary-900: #004B37;
+
+  --brand-secondary-50: #E8E8F6;
+  --brand-secondary-100: #D2D3EF;
+  --brand-secondary-200: #A5A7DE;
+  --brand-secondary-300: #787ACE;
+  --brand-secondary-400: #4C4EBC;
+  --brand-secondary-500: #1E22AA;
+  --brand-secondary-600: #171B8F;
+  --brand-secondary-700: #111372;
+  --brand-secondary-800: #0B0D5B;
+  --brand-secondary-900: #070847;
+
+  --brand-highlight-50: #FFF4E9;
+  --brand-highlight-100: #FFE8D5;
+  --brand-highlight-200: #FFD1A9;
+  --brand-highlight-300: #FFBB7C;
+  --brand-highlight-400: #FFA54D;
+  --brand-highlight-500: #FF8D00;
+  --brand-highlight-600: #D77600;
+  --brand-highlight-700: #AE5E00;
+  --brand-highlight-800: #8C4B00;
+  --brand-highlight-900: #6F3A00;
+
+  --brand-neutral-50: #E7E9EA;
+  --brand-neutral-100: #CED4D5;
+  --brand-neutral-200: #B5BEC0;
+  --brand-neutral-300: #9EA9AB;
+  --brand-neutral-400: #859396;
+  --brand-neutral-500: #6D7E81;
+  --brand-neutral-600: #53686D;
+  --brand-neutral-700: #3B5257;
+  --brand-neutral-800: #213C43;
+  --brand-neutral-900: #07272D;
+
+  --brand-navigation: #07272D;
+  --brand-primary-ink: #01795B;
+  --brand-surface: #F3F9F5;
+  --brand-on-primary: #07272D;
+  --brand-on-secondary: #FFFFFF;
+  --brand-on-highlight: #07272D;
+
+  --brand-font-body: "Inter", system-ui, sans-serif;
+  --brand-font-display: "Satoshi", system-ui, sans-serif;
+  --brand-font-display-weight: 500;
+}

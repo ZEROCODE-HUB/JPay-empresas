@@ -1,0 +1,90 @@
+{
+  "$comment": "Única fuente de verdad de la marca. Ver BRANDING.md. Después de editar este archivo corré `npm run brand:sync` (también corre solo antes de dev/build). Identidad visual tomada del Manual de identidad y lineamientos gráficos de JPay.",
+  "name": "JPay",
+  "shortName": "JPay",
+  "tagline": "Plataforma de pagos digitales",
+  "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
+  "regulatoryNote": "Operamos bajo normativa BCRA.",
+  "company": {
+    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por la razón social y el CUIT reales de JPay.",
+    "legalName": "JPay Servicios Digitales S.A.",
+    "shortName": "JPay",
+    "cuit": "30-00000000-0",
+    "country": "Argentina"
+  },
+  "contact": {
+    "$comment": "DATOS FICTICIOS de ejemplo (dominio .example, reservado): reemplazar por los emails reales.",
+    "support": "soporte@jpay.example",
+    "general": "contacto@jpay.example",
+    "admin": "admin@jpay.example",
+    "claims": "reclamos@jpay.example",
+    "onboarding": "altas@jpay.example",
+    "privacy": "privacidad@jpay.example"
+  },
+  "web": {
+    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por los dominios reales (web, links de pago, API).",
+    "domain": "jpay.example",
+    "website": "https://jpay.example",
+    "payLinksBase": "https://pay.jpay.example",
+    "apiBase": "https://api.jpay.example"
+  },
+  "email": {
+    "fromName": "JPay",
+    "fromAddress": "altas@jpay.example"
+  },
+  "fonts": {
+    "$comment": "Manual págs. 28-31: Satoshi (títulos, Medium) e Inter (cuerpo y UI).",
+    "display": "Satoshi",
+    "displayWeight": 500,
+    "body": "Inter",
+    "stylesheets": [
+      "https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap",
+      "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+    ]
+  },
+  "colors": {
+    "$comment": "Manual págs. 35-37 (paleta y matices). primary = Jade, secondary = Lapislázuli, highlight = Ámbar, neutral = Black Jade (textos, bordes, grises), navigation = Black Jade (menú lateral), surface = Pearl Jade (fondo de pantallas). Los pasos 50-500 son los 'Matices' oficiales (10%…100%); 600-900 se derivan. Sobre Jade y Ámbar el texto va en Black Jade (contraste AA; manual pág. 42). primaryInk = tono del principal para texto sobre fondo claro (Jade 500 da 2,7:1; el 700 da 5,4:1).",
+    "primary": {
+      "50": "#EBF7F3",
+      "100": "#D7F0E8",
+      "200": "#AFE1CF",
+      "300": "#83D2B8",
+      "400": "#55C2A0",
+      "500": "#02B388"
+    },
+    "secondary": {
+      "50": "#E8E8F6",
+      "100": "#D2D3EF",
+      "200": "#A5A7DE",
+      "300": "#787ACE",
+      "400": "#4C4EBC",
+      "500": "#1E22AA"
+    },
+    "highlight": {
+      "50": "#FFF4E9",
+      "100": "#FFE8D5",
+      "200": "#FFD1A9",
+      "300": "#FFBB7C",
+      "400": "#FFA54D",
+      "500": "#FF8D00"
+    },
+    "neutral": {
+      "50": "#E7E9EA",
+      "100": "#CED4D5",
+      "200": "#B5BEC0",
+      "300": "#9EA9AB",
+      "400": "#859396",
+      "500": "#6D7E81",
+      "600": "#53686D",
+      "700": "#3B5257",
+      "800": "#213C43",
+      "900": "#07272D"
+    },
+    "primaryInk": "700",
+    "navigation": "#07272D",
+    "surface": "#F3F9F5",
+    "onPrimary": "#07272D",
+    "onSecondary": "#FFFFFF",
+    "onHighlight": "#07272D"
+  }
+}

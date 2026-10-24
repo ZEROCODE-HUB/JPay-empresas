@@ -1,0 +1,17 @@
+name: Marca
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  brand-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # No necesita instalar dependencias: los scripts solo usan Node.
+      - name: Verificar que la marca solo vive en src/brand/
+        run: npm run brand:check
