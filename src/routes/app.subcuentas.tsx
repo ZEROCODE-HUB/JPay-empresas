@@ -1,17 +1,18 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, type ReactNode } from "react";
 import {
   Plus, ArrowDownLeft, ArrowUpRight, Eye, Pencil, Trash2, Search,
   ArrowLeftRight, Lock, Download, Filter, X, Pause, Play,
-  Building2, ChevronUp, PieChart,
+  Building2, ChevronUp, PieChart, Copy, MoreHorizontal, History, SlidersHorizontal,
 } from "lucide-react";
 import { PageHeader, Card, BtnPrimary, BtnOutline, Badge, Input, Label } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { FormDialog } from "@/components/form-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { requireSupabase, toDataError, isPermissionError } from "@/lib/supabase";
+import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -48,7 +49,7 @@ const mapSubs = (rows: any[]): Sub[] =>
     n: r.nombre,
     apellido: r.apellido ?? "",
     email: r.email ?? "",
-    cbu: r.cbu,
+    cbu: r.cbu ?? "",
     tipo: r.tipo,
     e: r.estado,
     disp: Number(r.saldo_disponible ?? 0),
@@ -65,6 +66,35 @@ const mapSubs = (rows: any[]): Sub[] =>
 const fmt = (n: number) => "$ " + n.toLocaleString("es-AR");
 const fmtMov = (n: number) => (n >= 0 ? "+" : "") + "$ " + Math.abs(n).toLocaleString("es-AR");
 
+// `limite` es texto libre: puede venir "50000", "50.000,00" o vacio.
+const fmtLimite = (lim: string) => {
+  const t = (lim ?? "").trim();
+  if (!t) return "Sin límite";
+  const n = Number(t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t);
+  if (Number.isNaN(n)) return t;
+  return n > 0 ? fmt(n) : "Sin límite";
+};
+
+// Recaudacion es la subcuenta funcional (pool) del sistema; el resto se asigna
+// a personas o areas.
+const esPool = (s: Sub) => s.tipo === "Recaudacion";
+const TIPO_LABEL: Record<Sub["tipo"], string> = {
+  Operativa: "Operativa",
+  Recaudacion: "Recaudación",
+  Garantias: "Garantías",
+  Sueldos: "Sueldos",
+};
+
+const copiarCvu = async (cvu: string) => {
+  if (!cvu) { toast.error("La subcuenta no tiene CVU asignado"); return; }
+  try {
+    await navigator.clipboard.writeText(cvu);
+    toast.success("CVU copiado");
+  } catch {
+    toast.error("No se pudo copiar el CVU");
+  }
+};
+
 const TITULO_MOV: Record<string, string> = {
   deposito: "Depósito",
   transferencia: "Transferencia",
@@ -72,10 +102,16 @@ const TITULO_MOV: Record<string, string> = {
   retiro: "Retiro",
   pago_pct: "Pago QR",
   tarjeta: "Cobro con tarjeta",
+  liquidacion_lote: "Liquidación de lote",
+  acreditacion_lote: "Acreditación de lote",
+  adelanto: "Adelanto",
+  ajuste_manual: "Ajuste de saldo",
 };
 
 function Page() {
+  const navigate = useNavigate();
   const [subs, setSubs] = useState<Sub[]>([]);
+  const [menuId, setMenuId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [clienteLegajo, setClienteLegajo] = useState<string | null>(null);
 
@@ -105,8 +141,8 @@ function Page() {
     if (!mail) return null;
     const { data: cli } = await s.from("clientes").select("legajo").eq("correo", mail).maybeSingle();
     setClienteLegajo(cli?.legajo ?? null);
-    const { data: rows } = await s.from("subcuentas").select("*").eq("cliente_legajo", cli?.legajo ?? "");
-    setSubs(mapSubs(rows ?? []));
+    const { data: rows } = await s.from("subaccounts").select(`*, ${SALDOS_EMBED}`).eq("cliente_legajo", cli?.legajo ?? "");
+    setSubs(mapSubs((rows ?? []).map(conSaldos)));
     return cli;
   };
 
@@ -119,7 +155,7 @@ function Page() {
 
   const filtradas = useMemo(
     () => subs.filter((s) =>
-      (q === "" || s.n.toLowerCase().includes(q.toLowerCase()) || s.cbu.includes(q)) &&
+      (q === "" || s.n.toLowerCase().includes(q.toLowerCase()) || s.cbu.includes(q.trim())) &&
       (tipo === "Todos" || s.tipo === tipo) &&
       (estado === "Todos" || s.e === estado)
     ),
@@ -146,27 +182,49 @@ function Page() {
     setNuevoOpen(true);
   };
 
+  // Fondeo rapido: abre la transferencia interna con esta subcuenta como
+  // destino y la Recaudacion (pool) como origen si existe. Si la subcuenta es
+  // la Recaudacion, se invierte: sale desde el pool.
+  const abrirFondeo = (s: Sub) => {
+    const pool = subs.find((x) => esPool(x) && x.id !== s.id);
+    if (esPool(s)) {
+      setTransfDesde(s.id ?? "");
+      setTransfHacia("");
+    } else {
+      setTransfDesde(pool?.id ?? "");
+      setTransfHacia(s.id ?? "");
+    }
+    setTransfMonto("");
+    setTransfConcepto("");
+    setDetailSub(null);
+    setTransfOpen(true);
+  };
+
+  const verHistorial = (s: Sub) => {
+    navigate({ to: "/app/historial", search: { subcuenta: s.n } });
+  };
+
   const onSubmitSub = async () => {
     const s = requireSupabase();
     if (!clienteLegajo) { toast.error("No se pudo identificar la cuenta"); return; }
     try {
       if (editSub && editSub.id) {
-        const { error } = await s.from("subcuentas").update({
+        const { error } = await s.from("subaccounts").update({
           nombre: form.n,
           apellido: form.apellido,
           email: form.email,
           tipo: form.tipo,
           responsable: form.resp,
           limite: form.lim || null,
-          saldo_disponible: Number(form.saldo || 0),
         }).eq("id", editSub.id);
         if (error) throw error;
         toast.success("Subcuenta actualizada");
       } else {
-        // CBU de 22 dígitos: 8 de entidad + 14 de cuenta (como los reales).
+        // CVU de 22 dígitos: 8 de entidad + 14 de cuenta (como los reales).
         // Antes daba 19 dígitos y el banco lo rechazaba como origen.
         const cbu = "00000031" + Math.floor(10000000000000 + Math.random() * 89999999999999);
-        const { error } = await s.from("subcuentas").insert({
+        // El saldo nace en 0 (trigger en subaccounts); el cliente no puede fijarlo.
+        const { error } = await s.from("subaccounts").insert({
           cliente_legajo: clienteLegajo,
           nombre: form.n,
           apellido: form.apellido,
@@ -176,9 +234,6 @@ function Page() {
           limite: form.lim || null,
           cbu,
           estado: form.activar ? "Activa" : "Pausada",
-          saldo_disponible: Number(form.saldo || 0),
-          saldo_retenido: 0,
-          saldo_conciliado: 0,
           ingresos: "",
           egresos: "",
           retiros_habilitados: true,
@@ -198,7 +253,7 @@ function Page() {
     if (!confirmarBorrar?.id) return;
     const s = requireSupabase();
     try {
-      await s.from("subcuentas").delete().eq("id", confirmarBorrar.id);
+      await s.from("subaccounts").delete().eq("id", confirmarBorrar.id);
       setSubs((prev) => prev.filter((x) => x.id !== confirmarBorrar.id));
       toast.success("Subcuenta eliminada");
     } catch {
@@ -211,7 +266,7 @@ function Page() {
   const cambiarEstado = async (id: string, estado: "Activa" | "Pausada") => {
     const s = requireSupabase();
     try {
-      await s.from("subcuentas").update({ estado }).eq("id", id);
+      await s.from("subaccounts").update({ estado }).eq("id", id);
       setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, e: estado } : x)));
       if (detailSub?.id === id) setDetailSub((d) => (d ? { ...d, e: estado } : d));
       toast.success(estado === "Activa" ? "Subcuenta reactivada" : "Subcuenta pausada");
@@ -261,7 +316,7 @@ function Page() {
     <>
       <PageHeader
         title="Subcuentas"
-        description="Una cuenta madre, multiples CBU. Gestiona fondos, responsables, limites."
+        description="Una cuenta madre, múltiples CVU. Gestiona fondos, responsables y límites."
         action={
           <div className="flex gap-2">
             <BtnOutline onClick={() => setTransfOpen(true)}><ArrowLeftRight size={14} /> Transferir entre subcuentas</BtnOutline>
@@ -315,7 +370,7 @@ function Page() {
         <div className="flex flex-wrap gap-2">
           <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o CBU..." className="pl-9" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre o CVU..." className="pl-9" />
           </div>
           <select value={tipo} onChange={(e) => setTipo(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm">
             <option>Todos</option><option>Operativa</option><option>Recaudacion</option><option>Garantias</option><option>Sueldos</option>
@@ -334,42 +389,75 @@ function Page() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-[11px] uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
-                  <th className="text-left px-4 py-2.5">Nombre</th>
-                  <th className="text-left px-4 py-2.5">Apellido</th>
-                  <th className="text-left px-4 py-2.5">Email</th>
+                  <th className="text-left px-4 py-2.5">Tipo</th>
+                  <th className="text-left px-4 py-2.5">Nombre / Identificador</th>
+                  <th className="text-left px-4 py-2.5">CVU</th>
+                  <th className="text-right px-4 py-2.5">Saldo</th>
+                  <th className="text-right px-4 py-2.5">Límite diario</th>
                   <th className="text-left px-4 py-2.5">Estado</th>
                   <th className="text-right px-4 py-2.5">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {paginated.map((s) => (
-                  <tr key={s.id ?? s.n} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="px-4 py-3 font-semibold">{s.n}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.apellido}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">{s.email}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={s.e === "Activa" ? "success" : "warn"}>{s.e}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-1 justify-end">
-                        <button onClick={() => setDetailSub(s)} className="h-8 w-8 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition" title="Ver detalle"><Eye size={14} /></button>
-                        <button onClick={() => abrirEditar(s)} className="h-8 w-8 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition" title="Editar"><Pencil size={14} /></button>
-                        <button
-                          onClick={() => cambiarEstado(s.id!, s.e === "Activa" ? "Pausada" : "Activa")}
-                          className={`h-8 w-8 inline-flex items-center justify-center rounded-md border bg-card transition ${
-                            s.e === "Activa" ? "hover:bg-amber-50 hover:text-amber-600" : "hover:bg-emerald-50 hover:text-emerald-600"
-                          }`}
-                          title={s.e === "Activa" ? "Desactivar subcuenta" : "Activar subcuenta"}
-                        >
-                          {s.e === "Activa" ? <Pause size={14} /> : <Play size={14} />}
-                        </button>
-                        <button onClick={() => setConfirmarBorrar(s)} className="h-8 w-8 inline-flex items-center justify-center rounded-md border bg-card hover:bg-danger-50 hover:text-danger-600 transition" title="Borrar"><Trash2 size={14} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {paginated.map((s) => {
+                  const titular = [s.n, s.apellido].filter(Boolean).join(" ");
+                  return (
+                    <tr key={s.id ?? s.n} className="border-b last:border-0 hover:bg-muted/30">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex flex-col items-start gap-0.5">
+                          <Badge tone={esPool(s) ? "warn" : "neutral"}>{esPool(s) ? "Pool" : "Individual"}</Badge>
+                          <span className="text-[11px] text-muted-foreground">{TIPO_LABEL[s.tipo] ?? s.tipo}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 min-w-[160px]">
+                        <div className="font-semibold">{titular || "Sin nombre"}</div>
+                        {s.email && <div className="text-xs text-muted-foreground truncate max-w-[220px]">{s.email}</div>}
+                        {!s.email && esPool(s) && <div className="text-xs text-muted-foreground">Subcuenta del sistema</div>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {s.cbu ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs" title={s.cbu}>{s.cbu}</span>
+                            <button onClick={() => copiarCvu(s.cbu)} className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition" title="Copiar CVU"><Copy size={12} /></button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Sin CVU</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="font-display tabular-nums font-semibold">{fmt(s.disp)}</div>
+                        {s.ret > 0 && <div className="text-[11px] text-muted-foreground tabular-nums">Retenido {fmt(s.ret)}</div>}
+                      </td>
+                      <td className={`px-4 py-3 text-right whitespace-nowrap tabular-nums ${s.lim ? "" : "text-muted-foreground"}`}>{fmtLimite(s.lim)}</td>
+                      <td className="px-4 py-3">
+                        <Badge tone={s.e === "Activa" ? "success" : "warn"}>{s.e}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <RowMenu
+                          open={menuId === s.id}
+                          onToggle={() => setMenuId((cur) => (cur === s.id ? null : s.id ?? null))}
+                          onClose={() => setMenuId(null)}
+                          items={[
+                            { icon: <Eye size={14} />, label: "Ver detalle", onClick: () => setDetailSub(s) },
+                            { icon: <ArrowLeftRight size={14} />, label: esPool(s) ? "Transferir desde el pool" : "Fondear / transferir", onClick: () => abrirFondeo(s) },
+                            { icon: <Copy size={14} />, label: "Copiar CVU", onClick: () => copiarCvu(s.cbu) },
+                            { icon: <History size={14} />, label: "Ver historial", onClick: () => verHistorial(s) },
+                            { icon: <SlidersHorizontal size={14} />, label: "Configurar límites y responsable", onClick: () => abrirEditar(s) },
+                            { icon: <Pencil size={14} />, label: "Editar datos", onClick: () => abrirEditar(s) },
+                            {
+                              icon: s.e === "Activa" ? <Pause size={14} /> : <Play size={14} />,
+                              label: s.e === "Activa" ? "Pausar subcuenta" : "Reactivar subcuenta",
+                              onClick: () => cambiarEstado(s.id!, s.e === "Activa" ? "Pausada" : "Activa"),
+                            },
+                            { icon: <Trash2 size={14} />, label: "Eliminar", danger: true, onClick: () => setConfirmarBorrar(s) },
+                          ]}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
                 {paginated.length === 0 && (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-sm text-muted-foreground">No hay subcuentas para mostrar.</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-muted-foreground">No hay subcuentas para mostrar.</td></tr>
                 )}
               </tbody>
             </table>
@@ -384,13 +472,21 @@ function Page() {
         </Card>
       )}
 
-      {detailSub && <SubDetailModal sub={detailSub} onClose={() => setDetailSub(null)} onCambiarEstado={cambiarEstado} />}
+      {detailSub && (
+        <SubDetailModal
+          sub={detailSub}
+          onClose={() => setDetailSub(null)}
+          onCambiarEstado={cambiarEstado}
+          onFondear={() => abrirFondeo(detailSub)}
+          onVerHistorial={() => verHistorial(detailSub)}
+        />
+      )}
 
       <FormDialog
         open={nuevoOpen}
         onClose={() => { setNuevoOpen(false); setEditSub(null); }}
         title={editSub ? "Editar subcuenta" : "Nueva subcuenta"}
-        description={editSub ? "Modifica los datos de la subcuenta." : "Genera un CBU adicional asociado a tu cuenta madre."}
+        description={editSub ? "Modifica los datos, el responsable y el límite diario de la subcuenta." : "Genera un CVU adicional asociado a tu cuenta madre."}
         submitLabel={editSub ? "Guardar cambios" : "Crear subcuenta"}
         onSubmit={onSubmitSub}
       >
@@ -408,8 +504,7 @@ function Page() {
           <div><Label>Responsable</Label><Input value={form.resp} onChange={(e) => setForm((p) => ({ ...p, resp: e.target.value }))} placeholder="Usuario o area" /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <div><Label>Limite diario (ARS)</Label><Input value={form.lim} onChange={(e) => setForm((p) => ({ ...p, lim: e.target.value }))} placeholder="0,00" /></div>
-          <div><Label>Saldo inicial</Label><Input value={form.saldo} onChange={(e) => setForm((p) => ({ ...p, saldo: e.target.value }))} placeholder="$ 0,00" /></div>
+          <div><Label>Límite diario de egreso (ARS)</Label><Input value={form.lim} onChange={(e) => setForm((p) => ({ ...p, lim: e.target.value }))} placeholder="Vacío = sin límite" /></div>
         </div>
         <label className="flex items-center gap-2 text-xs">
           <input type="checkbox" checked={form.activar} onChange={(e) => setForm((p) => ({ ...p, activar: e.target.checked }))} /> Activar inmediatamente al crear
@@ -445,7 +540,7 @@ function Page() {
       <ConfirmDialog
         open={confirmarBorrar !== null}
         title="¿Eliminar subcuenta?"
-        description={`Se quitara la subcuenta ${confirmarBorrar?.n} (${confirmarBorrar?.cbu}). Esta accion no se puede deshacer.`}
+        description={`Se quitara la subcuenta ${confirmarBorrar?.n} (CVU ${confirmarBorrar?.cbu || "sin asignar"}). Esta accion no se puede deshacer.`}
         onClose={() => setConfirmarBorrar(null)}
         onConfirm={onBorrar}
       />
@@ -453,14 +548,70 @@ function Page() {
   );
 }
 
-function SubDetailModal({ sub, onClose, onCambiarEstado }: {
+type RowMenuItem = { icon: ReactNode; label: string; onClick: () => void; danger?: boolean };
+
+function RowMenu({ open, onToggle, onClose, items }: {
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  items: RowMenuItem[];
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
+  return (
+    <div ref={ref} className="relative inline-block text-left">
+      <button
+        onClick={onToggle}
+        className="h-8 w-8 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition"
+        title="Acciones"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        <MoreHorizontal size={14} />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 z-30 mt-1 w-60 rounded-md border bg-card shadow-lg py-1">
+          {items.map((it) => (
+            <button
+              key={it.label}
+              role="menuitem"
+              onClick={() => { onClose(); it.onClick(); }}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition ${
+                it.danger ? "text-danger-600 hover:bg-danger-50" : "hover:bg-muted"
+              }`}
+            >
+              {it.icon}
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubDetailModal({ sub, onClose, onCambiarEstado, onFondear, onVerHistorial }: {
   sub: Sub;
   onClose: () => void;
   onCambiarEstado: (id: string, estado: "Activa" | "Pausada") => void;
+  onFondear: () => void;
+  onVerHistorial: () => void;
 }) {
   const [editEmail, setEditEmail] = useState(false);
   const [emailVal, setEmailVal] = useState(sub.email);
-  const [moveOpen, setMoveOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterTipo, setFilterTipo] = useState<"todos" | "ingreso" | "egreso">("todos");
   const [filterSearch, setFilterSearch] = useState("");
@@ -471,10 +622,16 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
     (async () => {
       try {
         const s = requireSupabase();
+        // `subcuenta_id` identifica la subcuenta propia que intervino; `cvu` es
+        // la contraparte. Se usan ambos para no perder movimientos viejos
+        // (anteriores a subcuenta_id) ni las transferencias internas.
+        const filtro = sub.cbu
+          ? `subcuenta_id.eq.${sub.id},cvu.eq.${sub.cbu}`
+          : `subcuenta_id.eq.${sub.id}`;
         const { data } = await s
-          .from("movimientos")
+          .from("transactions")
           .select("tipo, monto_operacion, comision, cvu, id_txn, fecha")
-          .eq("cvu", sub.cbu)
+          .or(filtro)
           .order("fecha", { ascending: false })
           .limit(200);
         setMoves(
@@ -498,7 +655,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
         setLoadingMoves(false);
       }
     })();
-  }, [sub.cbu]);
+  }, [sub.id, sub.cbu]);
 
   const allMoves = moves;
   const filtMoves = allMoves.filter((m) => {
@@ -520,7 +677,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
     const nombre = (sub.n || sub.cbu || "subcuenta").replace(/\s+/g, "_");
     if (formato === "excel") {
       const ws = XLSX.utils.json_to_sheet([
-        { Subcuenta: sub.n, CBU: sub.cbu, Estado: sub.e, Tipo: sub.tipo, Email: sub.email },
+        { Subcuenta: sub.n, CVU: sub.cbu, Estado: sub.e, Tipo: sub.tipo, Email: sub.email },
         {},
         ...allMoves.map((m) => ({
           Fecha: m.fecha,
@@ -528,7 +685,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
           Tipo: m.tipo === "ingreso" ? "Ingreso" : "Egreso",
           Concepto: m.titulo,
           TXID: m.txid,
-          CBU: m.cbu,
+          "CVU contraparte": m.cbu,
           Monto: m.monto,
         })),
       ]);
@@ -546,7 +703,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
       doc.setTextColor(20, 20, 20);
       doc.setFontSize(10);
       doc.text(`Subcuenta: ${sub.n || sub.cbu}`, 14, 32);
-      doc.text(`Estado: ${sub.e} · CBU: ${sub.cbu}`, 14, 38);
+      doc.text(`Estado: ${sub.e} · CVU: ${sub.cbu}`, 14, 38);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (doc as any).autoTable({
         startY: 44,
@@ -632,7 +789,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
           <section>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold">Informacion financiera</h3>
-              <button onClick={() => setMoveOpen(true)} className="h-7 w-7 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition text-muted-foreground hover:text-foreground" title="Mover fondos"><Building2 size={13} /></button>
+              <button onClick={onFondear} className="h-7 w-7 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition text-muted-foreground hover:text-foreground" title="Mover fondos"><Building2 size={13} /></button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="bg-muted/30 rounded-lg p-3">
@@ -650,13 +807,18 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
               <div className="bg-muted/30 rounded-lg p-3">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Limite diario</div>
                 <div className={`font-display tabular-nums text-base font-semibold mt-1 ${sub.lim ? "" : "text-muted-foreground"}`}>
-                  {sub.lim ? fmt(Number(sub.lim)) : "—"}
+                  {fmtLimite(sub.lim)}
                 </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3 sm:col-span-4">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">CBU</span>
-                  <span className="font-mono text-xs font-semibold truncate">{sub.cbu}</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">CVU</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono text-xs font-semibold truncate">{sub.cbu || "Sin CVU"}</span>
+                    {sub.cbu && (
+                      <button onClick={() => copiarCvu(sub.cbu)} className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition" title="Copiar CVU"><Copy size={12} /></button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -666,6 +828,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="text-sm font-semibold">Historial de movimientos</h3>
               <div className="flex gap-2">
+                <BtnOutline className="h-8 px-3 text-[11px]" onClick={onVerHistorial}><History size={12} /> HISTORIAL COMPLETO</BtnOutline>
                 <BtnOutline className="h-8 px-3 text-[11px]" onClick={() => downloadReporte("excel")}><Download size={12} /> EXCEL</BtnOutline>
                 <BtnOutline className="h-8 px-3 text-[11px]" onClick={() => downloadReporte("pdf")}><Download size={12} /> PDF</BtnOutline>
                 <BtnOutline className="h-8 px-3 text-[11px]" onClick={() => setFilterOpen(!filterOpen)}><Filter size={12} /> FILTRAR{filterOpen && <ChevronUp size={11} className="ml-1" />}</BtnOutline>
@@ -677,7 +840,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
                   <div>
                     <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Buscar</label>
-                    <Input value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="TXID, CBU o entidad..." className="h-9 text-sm w-full" />
+                    <Input value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} placeholder="TXID, CVU o entidad..." className="h-9 text-sm w-full" />
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Tipo</label>
@@ -716,7 +879,7 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
                         </span>
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-                        <span>CBU/CVU: {m.cbu}</span>
+                        <span>CVU contraparte: {m.cbu}</span>
                         <span>{m.entidad}</span>
                         <span>{m.fecha} · {m.hora}</span>
                       </div>
@@ -728,29 +891,6 @@ function SubDetailModal({ sub, onClose, onCambiarEstado }: {
           </section>
         </div>
 
-        {moveOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40" onClick={() => setMoveOpen(false)} />
-            <div className="relative bg-card rounded-lg max-w-md w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold">Mover fondos</h3>
-                <button onClick={() => setMoveOpen(false)} className="text-muted-foreground hover:text-foreground"><X size={16} /></button>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <Label>Direccion</Label>
-                  <select className="w-full h-10 px-3 rounded-md border bg-card text-sm mt-1">
-                    <option>Cuenta madre → {sub.n}</option>
-                    <option>{sub.n} → Cuenta madre</option>
-                  </select>
-                </div>
-                <div><Label>Monto (ARS)</Label><Input placeholder="0,00" className="mt-1" /></div>
-                <div><Label>Concepto</Label><Input placeholder="Fondeo, barrido, etc." className="mt-1" /></div>
-                <BtnPrimary className="w-full mt-2" onClick={() => { setMoveOpen(false); toast.success("Movimiento interno realizado (demo)"); }}>Transferir</BtnPrimary>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

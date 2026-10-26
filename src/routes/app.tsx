@@ -5,7 +5,6 @@ import {
   ArrowLeftRight,
   Wallet,
   Link2,
-  QrCode,
   Receipt,
   Upload,
   History,
@@ -42,14 +41,6 @@ const nav: NavItem[] = [
       { to: "/app/link-pago/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/app/link-pago/productos", label: "Productos", icon: Package },
       { to: "/app/link-pago/e-commerce", label: "E-commerce", icon: ShoppingCart },
-    ],
-  },
-  {
-    label: "Cobros con QR",
-    icon: QrCode,
-    items: [
-      { to: "/app/qr/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/app/qr/puntos-de-venta", label: "Puntos de Venta", icon: Store },
     ],
   },
   { to: "/app/servicios", label: "Pago de servicios", icon: Receipt },

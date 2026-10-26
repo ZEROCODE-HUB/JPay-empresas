@@ -90,7 +90,7 @@ function Dashboard() {
 
       const [{ data: movs, error }, { data: estados }] = await Promise.all([
         s
-          .from("movimientos")
+          .from("transactions")
           .select("monto_operacion, estado_id, fecha")
           .eq("legajo", legajo)
           .eq("tipo", "cobro_pct")

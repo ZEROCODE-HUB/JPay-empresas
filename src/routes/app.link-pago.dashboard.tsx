@@ -77,7 +77,7 @@ function Dashboard() {
         end.setHours(23, 59, 59, 999);
 
         const { data: m } = await s
-          .from("movimientos")
+          .from("transactions")
           .select("monto_operacion, fecha, estado_id, id_txn")
           .eq("legajo", lg)
           .eq("tipo", "tarjeta")

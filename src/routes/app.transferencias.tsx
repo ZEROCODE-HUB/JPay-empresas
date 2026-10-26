@@ -14,6 +14,14 @@ import { compartirComprobante } from "@/lib/comprobante-imagen";
 import { type DatosComprobante } from "@/lib/comprobante";
 import { executeTransfer } from "@/lib/transfer-orchestrator";
 import { createBdcClient, canTransferBdc, type BdcAccount } from "@/lib/bdc";
+import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import {
+  ResumenCotizacion,
+  TransferProcessingOverlay,
+  TransferReceiptModal,
+  useCotizacion,
+  type PasoTransferencia,
+} from "@/components/transfer-ui";
 import {
   type Draft as Draft,
   type Scheduled as Scheduled,
@@ -34,7 +42,9 @@ import {
   createTemplate,
   updateTemplate,
   deleteTemplate,
-  registerBdcTransfer,
+  reserveBdcTransfer,
+  confirmBdcTransfer,
+  cancelBdcTransfer,
 } from "@/lib/transfer-store";
 
 export const Route = createFileRoute("/app/transferencias")({ component: Page });
@@ -209,6 +219,8 @@ function Page() {
   const [saveDestOpen, setSaveDestOpen] = useState(false);
   const [destValidation, setDestValidation] = useState<import("@/lib/recipient-validation").RecipientValidationResult | null>(null);
   const [transferSuccess, setTransferSuccess] = useState<TransferSuccess | null>(null);
+  /** Paso en curso del envio: muestra el overlay que bloquea la pantalla. */
+  const [procesando, setProcesando] = useState<{ paso: PasoTransferencia; monto: number } | null>(null);
   const [prefilledDestinatario, setPrefilledDestinatario] = useState<CoelsaResult | undefined>(undefined);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   /** Scheduled que se esta editando en la pestana "Programar" (null = nueva). */
@@ -251,17 +263,18 @@ function Page() {
       setClienteNombre(String(cli.nombre ?? ""));
 
       const { data: subs } = await sb
-        .from("subcuentas")
-        .select("id, nombre, cbu, saldo_disponible, tipo")
+        .from("subaccounts")
+        .select(`id, nombre, cbu, tipo, ${SALDOS_EMBED}`)
         .eq("cliente_legajo", cli.legajo)
         .order("nombre", { ascending: true });
-      setSubcuentas(subs ?? []);
-      setTotalDisponible((subs ?? []).reduce((s, x) => s + (Number(x.saldo_disponible) || 0), 0));
+      const lista = (subs ?? []).map(conSaldos);
+      setSubcuentas(lista);
+      setTotalDisponible(lista.reduce((s, x) => s + (Number(x.saldo_disponible) || 0), 0));
 
       const now = new Date();
       const primerDiaMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const { data: movs } = await sb
-        .from("movimientos")
+        .from("transactions")
         .select("monto_operacion, tipo")
         .eq("legajo", cli.legajo)
         .gte("fecha", primerDiaMes)
@@ -484,14 +497,44 @@ function Page() {
         };
 
         const originId = `TRF${Date.now()}`; // BDC exige <=22 chars y solo [a-zA-Z0-9]
-        await bdc.autenticar();
-        const envio = await bdc.transferir({
+
+        // 1) Reservar ANTES de enviar: si no alcanza (monto + comisión + IVA) falla
+        //    acá y el banco nunca recibe el pedido.
+        setProcesando({ paso: "reserva", monto: payload.monto });
+        const reserva = await reserveBdcTransfer({
+          subcuentaOrigen: payload.subcuentaOrigen,
           originId,
-          desde,
-          hasta,
-          importe: payload.monto,
-          descripcion: payload.concepto || `Transferencia ${brand.name}`,
+          destinatarioCbu: payload.destinatarioCbu,
+          destinatarioNombre: payload.destinatarioNombre,
+          destinatarioCuit: payload.destinatarioCuit,
+          destinatarioBanco: payload.destinatario?.banco ?? null,
+          monto: payload.monto,
+          concepto: payload.concepto || null,
         });
+        const comision = Number(reserva.comision);
+        const impuesto = Number(reserva.impuesto);
+
+        // 2) Enviar. Si el pedido falla se pregunta al banco antes de liberar la
+        //    reserva: un timeout puede haber ejecutado igual la transferencia.
+        let envioMensaje: string | undefined;
+        setProcesando({ paso: "envio", monto: payload.monto });
+        try {
+          await bdc.autenticar();
+          const envio = await bdc.transferir({
+            originId,
+            desde,
+            hasta,
+            importe: payload.monto,
+            descripcion: payload.concepto || `Transferencia ${brand.name}`,
+          });
+          envioMensaje = envio.message;
+        } catch (e) {
+          const existe = await bdc.consultarTransferencia(originId).then((r) => Boolean(r?.data), () => false);
+          if (!existe) {
+            await cancelBdcTransfer(originId, toDataError(e).message).catch(() => {});
+            throw e;
+          }
+        }
 
         let estado = "";
         try {
@@ -501,39 +544,15 @@ function Page() {
           // la consulta de estado es informativa: no frená la operación
         }
 
-        // The bank already accepted the operation: it must be recorded in `movimientos`,
-        // `movimientos`, igual que el flujo interno (RPC 1010). Si esto falla
-        // NO se revierte el envío (el dinero ya se movió); se avisa para que
-        // same as the internal flow. The RPC is idempotent by TXID.
-        // El comprobante se arma con lo que devuelve el registro. La comisión y el
-        // IVA los calcula la RPC según el CVU de origen; si la operación ya estaba
-        // registrada (reintento) no vienen, y ahí se muestran como "—".
-        let comision: number | undefined;
-        let impuesto: number | undefined;
+        // 3) Contabilizar: retenido -> banco + comisión + IVA. Idempotente por TXID.
+        //    Si falla, el dinero ya salió y queda reservado (retenido): se avisa
+        //    para confirmarlo desde backoffice, nunca se libera.
+        setProcesando({ paso: "confirmacion", monto: payload.monto });
         try {
-          const registro = await registerBdcTransfer({
-            subcuentaOrigen: payload.subcuentaOrigen,
-            originId,
-            destinatarioCbu: payload.destinatarioCbu,
-            destinatarioNombre: payload.destinatarioNombre,
-            destinatarioCuit: payload.destinatarioCuit,
-            destinatarioBanco: payload.destinatario?.banco ?? null,
-            monto: payload.monto,
-            concepto: payload.concepto || null,
-            estadoBdc: estado || null,
-          });
-          if (registro.comision != null) {
-            comision = Number(registro.comision);
-            impuesto = Number(registro.impuesto ?? 0);
-          }
-          if (registro.saldo_insuficiente) {
-            toast.info(
-              "La transferencia salió bien, pero la subcuenta de origen no tenía saldo suficiente para reflejarla internamente.",
-            );
-          }
+          await confirmBdcTransfer(originId, estado || null);
         } catch (e) {
           toast.error(
-            `Transferencia enviada al banco, pero no se pudo registrar en el historial: ${toDataError(e).message}`,
+            `Transferencia enviada al banco, pero no se pudo contabilizar: ${toDataError(e).message}. Los fondos quedan retenidos; avisá a soporte con el TXID ${originId}.`,
           );
         }
 
@@ -543,7 +562,7 @@ function Page() {
         setTransferSuccess({
           txid: originId,
           estado,
-          mensaje: envio.message ?? "Transferencia creada con exito",
+          mensaje: envioMensaje ?? "Transferencia creada con exito",
           monto: payload.monto,
           concepto: payload.concepto,
           origenNombre: origenDe(payload.subcuentaOrigen)?.nombre,
@@ -575,6 +594,7 @@ function Page() {
       }
 
       // Flujo desacoplado: validación → ejecución → movimiento
+      setProcesando({ paso: "envio", monto: payload.monto });
       const result = await executeTransfer({
         subcuentaOrigenId: payload.subcuentaOrigen,
         destinatarioIdentifier: payload.destinatarioCbu,
@@ -618,6 +638,8 @@ function Page() {
       } else {
         toast.error(err.message || "No se pudo enviar la transferencia");
       }
+    } finally {
+      setProcesando(null);
     }
   };
 
@@ -923,105 +945,75 @@ function Page() {
         </div>
       </FormDialog>
 
-      <FormDialog
-        open={saveDestOpen}
-        onClose={() => { setSaveDestOpen(false); setTransferSuccess(null); }}
-        title={transferSuccess ? "Transferencia enviada correctamente" : "¿Deseas guardar este destinatario como frecuente?"}
-        description={
-          transferSuccess
-            ? `¿Deseas agendar a ${destAlias} como destinatario frecuente?`
-            : `Podes agendar a ${destAlias} en tu lista de destinatarios frecuentes para reutilizarlo.`
-        }
-        submitLabel="Si, guardar destinatario"
-        onSubmit={async () => {
-          try {
-            if (destValidation?.titular) {
-              await createFrequentRecipient({
-                identifier: destValidation.identifier,
-                nombre: destValidation.titular.nombre,
-                alias: destValidation.titular.alias,
-                cbu: destValidation.titular.cbu,
-                cuit: destValidation.titular.cuit,
-                banco: destValidation.titular.banco,
-              });
-              const lista = await listFrequentRecipients();
-              setFrecuentes(lista);
-              toast.success("Destinatario agregado a frecuentes");
-            } else {
-              toast.info("No hay datos del destinatario para agendar");
+      {procesando && <TransferProcessingOverlay paso={procesando.paso} monto={procesando.monto} />}
+
+      {saveDestOpen && transferSuccess && transferSuccess.monto != null && (() => {
+        const titular = destValidation?.titular;
+        const cerrar = () => {
+          setSaveDestOpen(false);
+          setTransferSuccess(null);
+          setDestValidation(null);
+        };
+        const comprobante = comprobanteDe(transferSuccess, titular, clienteNombre, clienteCuit);
+        return (
+          <TransferReceiptModal
+            recibo={{
+              monto: transferSuccess.monto,
+              fecha: transferSuccess.fecha ?? new Date().toISOString(),
+              txid: transferSuccess.txid,
+              estado: transferSuccess.estado || undefined,
+              concepto: transferSuccess.concepto,
+              comision: transferSuccess.comision,
+              impuesto: transferSuccess.impuesto,
+              origen: {
+                nombre: clienteNombre,
+                cuit: clienteCuit,
+                subcuenta: transferSuccess.origenNombre,
+                cvu: transferSuccess.origenCbu,
+              },
+              destino: {
+                nombre: titular?.nombre ?? destAlias,
+                cuit: titular?.cuit,
+                banco: [titular?.banco, titular?.bancoCodigo ? `(${titular.bancoCodigo})` : ""].filter(Boolean).join(" ") || undefined,
+                cvu: titular?.cbu ?? transferSuccess.destino,
+                alias: titular?.alias || undefined,
+              },
+            }}
+            onClose={cerrar}
+            onDescargar={() => {
+              if (comprobante) descargarComprobantePdf(comprobante);
+            }}
+            onCompartir={async () => {
+              if (!comprobante) return;
+              const r = await compartirComprobante(comprobante);
+              if (r === "compartido") toast.success("Comprobante compartido");
+              else if (r === "descargado") toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
+              else if (r === "error") toast.error("No se pudo compartir el comprobante");
+            }}
+            onGuardarDestinatario={
+              titular && !frecuentes.some((f) => f.cbu === titular.cbu)
+                ? async () => {
+                    try {
+                      await createFrequentRecipient({
+                        identifier: destValidation!.identifier,
+                        nombre: titular.nombre,
+                        alias: titular.alias,
+                        cbu: titular.cbu,
+                        cuit: titular.cuit,
+                        banco: titular.banco,
+                      });
+                      setFrecuentes(await listFrequentRecipients());
+                      toast.success("Destinatario agregado a frecuentes");
+                    } catch (e) {
+                      toast.error(toDataError(e).message);
+                      throw e;
+                    }
+                  }
+                : undefined
             }
-          } catch (e) {
-            toast.error(toDataError(e).message);
-          } finally {
-            setSaveDestOpen(false);
-            setTransferSuccess(null);
-            setDestValidation(null);
-          }
-        }}
-      >
-        {transferSuccess && (
-          <div className="mb-3 rounded-md border border-emerald-300/70 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-            <div className="font-semibold">{transferSuccess.mensaje ?? "Transferencia enviada correctamente"}</div>
-            <div className="mt-1 font-mono break-all">TXID: {transferSuccess.txid}</div>
-            {transferSuccess.estado && <div className="mt-1">Estado: {transferSuccess.estado}</div>}
-          </div>
-        )}
-
-        {transferSuccess && (
-          <div className="mb-3 border rounded-md divide-y">
-            {(
-              [
-                ["Fecha", transferSuccess.fecha ? new Date(transferSuccess.fecha).toLocaleString("es-AR") : "—"],
-                [
-                  "Origen",
-                  [transferSuccess.origenNombre, transferSuccess.origenCbu].filter(Boolean).join(" — ") || "—",
-                ],
-                ["Destino", transferSuccess.destino || destValidation?.titular?.cbu || "—"],
-                ["Monto", transferSuccess.monto != null ? fmt(transferSuccess.monto) : "—"],
-                ["Concepto", transferSuccess.concepto || "—"],
-                ["Comisión", transferSuccess.comision != null ? fmt(transferSuccess.comision) : "—"],
-                ["IVA", transferSuccess.impuesto != null ? fmt(transferSuccess.impuesto) : "—"],
-              ] as [string, string][]
-            ).map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-3 py-2 px-3 text-sm">
-                <span className="text-muted-foreground shrink-0">{k}</span>
-                <span className="font-mono tabular-nums font-semibold text-right break-all">{v}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {destValidation?.titular && <DestinatarioValidadoCard d={destValidation.titular} />}
-
-        {(() => {
-          const c = comprobanteDe(transferSuccess, destValidation?.titular, clienteNombre, clienteCuit);
-          if (!c) return null;
-          return (
-            <div className="flex flex-wrap gap-2 mt-3">
-              <BtnOutline type="button" onClick={() => descargarComprobantePdf(c)} className="flex-1">
-                <Download size={14} /> Descargar comprobante
-              </BtnOutline>
-              <BtnOutline
-                type="button"
-                className="flex-1"
-                onClick={async () => {
-                  const r = await compartirComprobante(c);
-                  if (r === "compartido") toast.success("Comprobante compartido");
-                  else if (r === "descargado")
-                    toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
-                  else if (r === "error") toast.error("No se pudo compartir el comprobante");
-                }}
-              >
-                <Share2 size={14} /> Compartir comprobante
-              </BtnOutline>
-            </div>
-          );
-        })()}
-
-        <div className="text-xs text-muted-foreground mt-3">
-          Los destinatarios ya no se guardan automaticamente. Solo se agendan si confirmas aqui.
-        </div>
-      </FormDialog>
+          />
+        );
+      })()}
 
       <ConfirmDialog
         open={confirmarEliminacion !== null}
@@ -1400,9 +1392,13 @@ function Unica({
   };
 
   const subcuentaSeleccionada = subcuentas.find((s) => s.id === subcuentaOrigen);
+  const montoNumero = Number(monto) || 0;
+  const disponibleOrigen = Number(subcuentaSeleccionada?.saldo_disponible ?? 0);
+  // Validacion en tiempo real: monto + comision + IVA contra el disponible del origen.
+  const cot = useCotizacion(subcuentaOrigen, montoNumero, selectedDestinatario?.cbu ?? null, disponibleOrigen);
 
   if (confirm) {
-    const montoNum = Number(monto) || 0;
+    const montoNum = montoNumero;
     return (
       <div className="space-y-4">
         <div className="text-sm text-muted-foreground">Revisa los datos antes de confirmar.</div>
@@ -1421,6 +1417,9 @@ function Unica({
             ],
             ["Tipo de cuenta", selectedDestinatario?.tipoCuenta || "—"],
             ["Monto", fmt(montoNum)],
+            ["Comisión", cot.cotizacion ? fmt(cot.cotizacion.comision) : "—"],
+            ["IVA", cot.cotizacion ? fmt(cot.cotizacion.impuesto) : "—"],
+            ["Total a debitar", cot.cotizacion ? fmt(cot.cotizacion.total) : fmt(montoNum)],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between py-2.5 px-3 text-sm">
               <span className="text-muted-foreground">{k}</span>
@@ -1428,6 +1427,11 @@ function Unica({
             </div>
           ))}
         </div>
+        {cot.insuficiente && (
+          <div className="rounded-md border border-danger-300 bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-700" role="alert">
+            Saldo insuficiente: te faltan {fmt(cot.faltante)}. Volvé y ajustá el monto o el origen.
+          </div>
+        )}
         {OTP_ENABLED && (
           <div className="flex items-center gap-2 text-xs text-muted-foreground p-3 bg-muted rounded">
             <ShieldCheck size={14} /> Se solicitara 2FA al confirmar.
@@ -1435,10 +1439,11 @@ function Unica({
         )}
         <div className="flex gap-2">
           <BtnOutline onClick={() => setConfirm(false)} className="flex-1">Volver</BtnOutline>
-          <BtnPrimary type="button" onClick={async () => {
+          <BtnPrimary type="button" disabled={cot.insuficiente || cot.cargando} onClick={async () => {
             if (!subcuentaOrigen) { toast.error("Selecciona una subcuenta de origen"); return; }
             if (!selectedDestinatario) { toast.error("Falta destinatario validado"); return; }
             if (!montoNum || montoNum <= 0) { toast.error("Ingresa un monto válido mayor a 0"); return; }
+            if (cot.insuficiente) { toast.error("Saldo insuficiente en la subcuenta de origen"); return; }
             const payload: TransferPayload = {
               subcuentaOrigen,
               destinatarioCbu: selectedDestinatario.cbu,
@@ -1467,6 +1472,7 @@ function Unica({
         if (!(await handleSearch())) return;
       }
       if (!monto || Number(monto) <= 0) { toast.error("Ingresa un monto valido"); return; }
+      if (cot.insuficiente) { toast.error("Saldo insuficiente en la subcuenta de origen"); return; }
       setConfirm(true);
     }}>
       <div>
@@ -1527,6 +1533,8 @@ function Unica({
             onChange={(e) => setMonto(e.target.value)}
             min="0"
             step="0.01"
+            aria-invalid={cot.insuficiente}
+            className={cot.insuficiente ? "!border-danger-400 !text-danger-700 focus:!ring-danger-100" : undefined}
           />
         </div>
         <div>
@@ -1534,6 +1542,16 @@ function Unica({
           <div className="h-10 px-3 rounded-md border bg-muted flex items-center text-sm text-muted-foreground">
             ARS — Pesos Argentinos
           </div>
+        </div>
+        <div className="sm:col-span-2 -mt-1">
+          <ResumenCotizacion
+            monto={montoNumero}
+            disponible={disponibleOrigen}
+            cotizacion={cot.cotizacion}
+            cargando={cot.cargando}
+            insuficiente={cot.insuficiente}
+            faltante={cot.faltante}
+          />
         </div>
         <div>
           <Label>Concepto</Label>
@@ -1558,7 +1576,7 @@ function Unica({
         <BtnOutline type="button" className="flex-1 min-w-[130px]" onClick={() => { void saveAsDraft(); }}>
           <Save size={14} /> Guardar borrador
         </BtnOutline>
-        <BtnPrimary type="submit" className="flex-1 min-w-[130px]">Continuar</BtnPrimary>
+        <BtnPrimary type="submit" className="flex-1 min-w-[130px]" disabled={cot.insuficiente}>Continuar</BtnPrimary>
       </div>
     </form>
 

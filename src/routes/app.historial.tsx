@@ -4,7 +4,7 @@ import { brand } from "@/brand/brand";
 import { useState, useEffect, useCallback } from "react";
 import {
   Download, Filter, FileText, ArrowDownLeft, ArrowUpRight,
-  ChevronRight, Wallet, X, Eye, FileSpreadsheet, Share2,
+  ChevronRight, ChevronDown, Wallet, X, Eye, FileSpreadsheet, Share2,
 } from "lucide-react";
 import { PageHeader, Card, Input, BtnOutline, BtnPrimary, Badge } from "@/components/portal-shell";
 import { toast } from "sonner";
@@ -17,7 +17,13 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
-export const Route = createFileRoute("/app/historial")({ component: Page });
+// `?subcuenta=<nombre>` llega desde Subcuentas ("Ver historial") y preselecciona el filtro.
+export const Route = createFileRoute("/app/historial")({
+  validateSearch: (search: Record<string, unknown>): { subcuenta?: string } => ({
+    subcuenta: typeof search.subcuenta === "string" && search.subcuenta ? search.subcuenta : undefined,
+  }),
+  component: Page,
+});
 
 const formatARS = (n: number) =>
   `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -96,22 +102,28 @@ function prettyTipo(tipo: string): string {
     transferencia: "Egresos",
     retiro: "Egresos",
     comision: "Comisiones",
+    // Operaciones internas registradas por el ledger.
+    liquidacion_lote: "Liquidación de lote",
+    acreditacion_lote: "Acreditación de lote",
+    adelanto: "Adelanto",
+    ajuste_manual: "Ajuste de saldo",
   };
   return map[tipo] ?? (tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1) : "Movimiento");
 }
 
+// APROBADO = la operacion se completo (lo usa el banco y nuestras RPC), asi que
+// tambien cuenta como acreditado.
+function estadoVisible(nombreOCodigo: string | null | undefined): Mov["estado"] {
+  const e = (nombreOCodigo ?? "Pendiente").toLowerCase();
+  if (e.includes("acredit") || e.includes("aprob")) return "Acreditado";
+  if (e.includes("rechaz")) return "Rechazado";
+  return "Pendiente";
+}
+
 function mapMov(r: MovRow): Mov {
-  const tipo = /cobro|deposito|ingreso/.test(r.tipo) ? "ingreso" : "egreso";
+  const tipo = /cobro|deposito|ingreso|liquidacion|acreditacion|adelanto/.test(r.tipo) ? "ingreso" : "egreso";
   const categoria = prettyTipo(r.tipo);
-  const nombreEstado = (r.estado_nombre ?? r.estado_codigo ?? "Pendiente").toLowerCase();
-  // APROBADO = la operacion se completo (lo usa el banco y nuestras RPC), asi que
-  // tambien cuenta como acreditado: antes quedaba como "Pendiente".
-  const estado: Mov["estado"] =
-    nombreEstado.includes("acredit") || nombreEstado.includes("aprob")
-      ? "Acreditado"
-      : nombreEstado.includes("rechaz")
-        ? "Rechazado"
-        : "Pendiente";
+  const estado = estadoVisible(r.estado_nombre ?? r.estado_codigo);
   return {
     txid: r.id_txn,
     tipo,
@@ -177,16 +189,79 @@ function comprobanteDeMov(m: Mov, cliente: { nombre: string; cuit: string; cbu: 
   };
 }
 
-const CATEGORIAS: Array<{ k: string; l: string }> = [
-  { k: "Todas", l: "Todas" },
-  { k: "Ingresos", l: "Ingresos" },
-  { k: "Egresos", l: "Egresos" },
-  { k: "Transferencias", l: "Transferencias" },
-  { k: "Comisiones", l: "Comisiones" },
-  { k: "Cobros con Tarjeta", l: "Cobros con Tarjeta" },
-  { k: "Pagos con QR", l: "Pagos con QR" },
-  { k: "Cobros con QR", l: "Cobros con QR" },
+// ---------------------------------------------------------------------------
+// Movimientos por linea (vista v_transaction_lines): cada operacion trae una
+// fila por concepto (ingreso/egreso, comision, impuesto, interes) con el mismo
+// TXID. Sale del ledger, asi que filtros y paginacion corren en la base.
+// ---------------------------------------------------------------------------
+type TipoLinea = "ingreso" | "egreso" | "comision" | "impuesto" | "interes" | "reverso";
+
+type Linea = {
+  lineId: string;
+  transactionId: string;
+  idTxn: string;
+  legajo: string;
+  tipoOperacion: string;
+  tipoLinea: TipoLinea;
+  monto: number;
+  fecha: string;
+  lineNo: number;
+  cvu: string | null;
+  email: string | null;
+  nombre: string | null;
+  nombreDestino: string | null;
+  cuit: string | null;
+  estado: Mov["estado"];
+};
+
+const LINEA_COLS =
+  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre";
+
+const TIPOS_LINEA: Array<{ k: TipoLinea | "Todos"; l: string }> = [
+  { k: "Todos", l: "Todos" },
+  { k: "ingreso", l: "Ingreso" },
+  { k: "egreso", l: "Egreso" },
+  { k: "comision", l: "Comisión" },
+  { k: "impuesto", l: "Impuesto" },
+  { k: "interes", l: "Interés" },
+  { k: "reverso", l: "Reverso" },
 ];
+const TIPO_LINEA_LABEL = new Map(TIPOS_LINEA.map((t) => [t.k, t.l]));
+const TIPO_LINEA_STYLE: Record<TipoLinea, string> = {
+  ingreso: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  egreso: "bg-danger-50 text-danger-700 border-danger-200",
+  comision: "bg-amber-50 text-amber-700 border-amber-200",
+  impuesto: "bg-violet-50 text-violet-700 border-violet-200",
+  interes: "bg-sky-50 text-sky-700 border-sky-200",
+  reverso: "bg-slate-100 text-slate-700 border-slate-300",
+};
+
+/** Operacion de negocio (transactions.tipo) que origino las lineas. */
+const OPERACIONES: Array<{ k: string; l: string; tipos: string[] | null }> = [
+  { k: "Todas", l: "Todas", tipos: null },
+  { k: "Transferencias", l: "Transferencias", tipos: ["transferencia"] },
+  { k: "Depositos", l: "Depósitos", tipos: ["deposito"] },
+  { k: "Retiros", l: "Retiros", tipos: ["retiro"] },
+  { k: "Cobros con Tarjeta", l: "Cobros con Tarjeta", tipos: ["cobro_link", "tarjeta"] },
+  { k: "Cobros con QR", l: "Cobros con QR", tipos: ["cobro_pct"] },
+  { k: "Pagos con QR", l: "Pagos con QR", tipos: ["pago_pct"] },
+  { k: "Liquidaciones", l: "Liquidación de lote", tipos: ["liquidacion_lote"] },
+  { k: "Acreditaciones", l: "Acreditación de lote", tipos: ["acreditacion_lote"] },
+  { k: "Adelantos", l: "Adelantos", tipos: ["adelanto"] },
+  { k: "Ajustes", l: "Ajustes de saldo", tipos: ["ajuste_manual"] },
+];
+
+const formatMonto = (n: number) => `${n >= 0 ? "+" : "-"} ${formatARS(Math.abs(n))}`;
+const formatFechaLinea = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
+
+// Operacion completa (para detalle y comprobante).
+const COLS_OPERACION =
+  "id_txn, tipo, cvu, monto_operacion, comision, impuesto, fecha, legajo, destinatario_nombre, destinatario_cuit, destinatario_banco, subcuenta_id, subcuentas:subaccounts(cbu), estados_movimiento(codigo, nombre)";
 
 function Page() {
   const [vista, setVista] = useState<"principal" | "sub">("principal");
@@ -196,7 +271,11 @@ function Page() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
   const [categoria, setCategoria] = useState("Todas");
-  const [subFiltro, setSubFiltro] = useState("Todas");
+  const [tipoLinea, setTipoLinea] = useState<TipoLinea | "Todos">("Todos");
+  const [agrupar, setAgrupar] = useState(true);
+  const [abiertos, setAbiertos] = useState<Set<string>>(new Set());
+  const { subcuenta: subcuentaInicial } = Route.useSearch();
+  const [subFiltro, setSubFiltro] = useState(subcuentaInicial ?? "Todas");
   const [buscarCbu, setBuscarCbu] = useState("");
   const [buscarCuit, setBuscarCuit] = useState("");
   const [buscarTxid, setBuscarTxid] = useState("");
@@ -205,8 +284,8 @@ function Page() {
   const pageSize = 25;
   const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
 
-  const [movimientos, setMovimientos] = useState<Mov[]>([]);
-  const [subcuentas, setSubcuentas] = useState<{ nombre: string; cbu: string | null }[]>([]);
+  const [lineas, setLineas] = useState<Linea[]>([]);
+  const [subcuentas, setSubcuentas] = useState<{ id: string; nombre: string; cbu: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [sinSubcuentas, setSinSubcuentas] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -214,18 +293,6 @@ function Page() {
   const [clienteCuit, setClienteCuit] = useState("");
   /** CBU/CVU de la cuenta del cliente (para el comprobante). */
   const [clienteCbu, setClienteCbu] = useState("");
-
-  const categoriaToTipos = (cat: string): string[] | null => {
-    if (cat === "Todas") return null;
-    if (cat === "Ingresos") return ["deposito"];
-    if (cat === "Egresos") return ["transferencia", "retiro"];
-    if (cat === "Transferencias") return ["transferencia"];
-    if (cat === "Comisiones") return ["comision"];
-    if (cat === "Cobros con Tarjeta") return ["cobro_link", "tarjeta"];
-    if (cat === "Cobros con QR") return ["cobro_pct"];
-    if (cat === "Pagos con QR") return ["pago_pct"];
-    return null;
-  };
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -241,7 +308,7 @@ function Page() {
       setClienteNombre(String(cli?.nombre ?? ""));
       setClienteCuit(String(cli?.cuit ?? "") || String(cli?.cuit_cuil ?? ""));
       if (!legajo) {
-        setMovimientos([]);
+        setLineas([]);
         setSubcuentas([]);
         setSinSubcuentas(true);
         setTotalCount(0);
@@ -249,11 +316,11 @@ function Page() {
       }
 
       const { data: subs } = await sb
-        .from("subcuentas")
-        .select("nombre, cbu")
+        .from("subaccounts")
+        .select("id, nombre, cbu")
         .eq("cliente_legajo", legajo)
         .order("nombre", { ascending: true });
-      const lista = (subs ?? []).map((s: any) => ({ nombre: s.nombre || "Sin nombre", cbu: s.cbu ?? null }));
+      const lista = (subs ?? []).map((s: any) => ({ id: s.id as string, nombre: s.nombre || "Sin nombre", cbu: s.cbu ?? null }));
       setSubcuentas(lista);
       setSinSubcuentas(lista.length === 0);
       // CBU para el comprobante: si el cliente tiene una sola cuenta (o todas con
@@ -263,107 +330,178 @@ function Page() {
       setClienteCbu(cbues.length === 1 ? String(cbues[0]) : "");
       if (lista.length > 0 && !sub) setSub(lista[0].nombre);
 
-      const hasFilters = !!(desde || hasta || categoria !== "Todas" || subFiltro !== "Todas");
-      const countMode = hasFilters ? "exact" as const : "estimated" as const;
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
+      const like = (v: string) => `%${v.trim().replace(/[%_,()]/g, "\\$&")}%`;
 
-      // `subcuenta_id` / `subcuentas(cbu)` llegan con la migracion 1020. Si todavia
-      // no corrio, se reintenta SIN esas columnas para no romper el historial.
-      const COLS_CON_CVU =
-        "id_txn, tipo, cvu, monto_operacion, comision, impuesto, fecha, legajo, destinatario_nombre, destinatario_cuit, destinatario_banco, subcuenta_id, subcuentas(cbu), estados_movimiento(codigo, nombre)";
-      const COLS_BASE =
-        "id_txn, tipo, cvu, monto_operacion, comision, impuesto, fecha, legajo, destinatario_nombre, destinatario_cuit, destinatario_banco, estados_movimiento(codigo, nombre)";
+      let q: any = sb
+        .from("v_transaction_lines")
+        .select(LINEA_COLS, { count: "exact" })
+        .eq("legajo", legajo);
 
-      const construirQuery = (cols: string) => {
-        let q: any = sb
-          .from("movimientos")
-          .select(cols, { count: countMode })
-          .eq("legajo", legajo)
-          .order("fecha", { ascending: false })
-          .range(from, to);
+      if (desde) q = q.gte("fecha", new Date(desde + "T00:00:00").toISOString());
+      if (hasta) q = q.lte("fecha", new Date(hasta + "T23:59:59").toISOString());
 
-        if (desde) q = q.gte("fecha", new Date(desde + "T00:00:00").toISOString());
-        if (hasta) q = q.lte("fecha", new Date(hasta + "T23:59:59").toISOString());
+      const tipos = OPERACIONES.find((o) => o.k === categoria)?.tipos ?? null;
+      if (tipos) q = tipos.length === 1 ? q.eq("tipo_operacion", tipos[0]) : q.in("tipo_operacion", tipos);
+      if (tipoLinea !== "Todos") q = q.eq("tipo_linea", tipoLinea);
 
-        const tipos = categoriaToTipos(categoria);
-        if (tipos) q = tipos.length === 1 ? q.eq("tipo", tipos[0]) : q.in("tipo", tipos);
+      if (subFiltro !== "Todas") {
+        const match = lista.find((s) => s.nombre === subFiltro);
+        if (match) q = q.eq("subaccount_id", match.id);
+      }
 
-        if (subFiltro !== "Todas") {
-          const match = lista.find((s) => s.nombre === subFiltro);
-          if (match?.cbu) q = q.eq("cvu", match.cbu);
-        }
+      if (buscarCbu.trim()) q = q.or(`cvu.ilike.${like(buscarCbu)},cvu_propio.ilike.${like(buscarCbu)}`);
+      if (buscarTxid.trim()) q = q.ilike("id_txn", like(buscarTxid));
+      if (buscarTitular.trim()) q = q.ilike("nombre_destino", like(buscarTitular));
+      const cuitDigitos = buscarCuit.replace(/\D/g, "");
+      if (cuitDigitos) q = q.ilike("cuit", like(cuitDigitos));
 
-        if (buscarCbu) q = q.ilike("cvu", `%${buscarCbu}%`);
-        if (buscarTxid) q = q.ilike("id_txn", `%${buscarTxid}%`);
-        if (buscarTitular) q = q.ilike("legajo", `%${buscarTitular}%`);
-        if (buscarCuit) q = q.ilike("legajo", `%${buscarCuit}%`);
-        return q;
-      };
-
-      let respuesta = await construirQuery(COLS_CON_CVU);
-      if (respuesta.error) respuesta = await construirQuery(COLS_BASE);
-
-      const { data: movs, count, error } = respuesta;
+      // Mas reciente primero; dentro de una operacion, en el orden de sus lineas.
+      const { data, count, error } = await q
+        .order("fecha", { ascending: false })
+        .order("id_txn", { ascending: true })
+        .order("line_no", { ascending: true })
+        .range(from, to);
       if (error) throw error;
-      const filas: MovRow[] = (movs ?? []).map((m: any) => ({
-        id_txn: m.id_txn,
-        tipo: m.tipo,
-        cvu: m.cvu,
-        monto_operacion: m.monto_operacion,
-        comision: m.comision,
-        impuesto: m.impuesto,
-        fecha: m.fecha,
-        legajo: m.legajo,
-        estado_codigo: m.estados_movimiento?.codigo,
-        estado_nombre: m.estados_movimiento?.nombre,
-        destinatario_nombre: m.destinatario_nombre,
-        destinatario_cuit: m.destinatario_cuit,
-        destinatario_banco: m.destinatario_banco,
-        // La subcuenta propia (con su CBU): sin esto el comprobante no puede
-        // mostrar el CVU de origen (venia del select pero se perdia aca).
-        subcuenta_id: m.subcuenta_id,
-        subcuentas: m.subcuentas,
-      }));
-      setMovimientos(filas.map(mapMov));
-      setTotalCount(count ?? filas.length);
+
+      setLineas(
+        (data ?? []).map((r: any): Linea => ({
+          lineId: r.line_id,
+          transactionId: r.transaction_id,
+          idTxn: r.id_txn,
+          legajo: r.legajo,
+          tipoOperacion: r.tipo_operacion,
+          tipoLinea: r.tipo_linea,
+          monto: Number(r.monto) || 0,
+          fecha: r.fecha,
+          lineNo: r.line_no,
+          cvu: r.cvu,
+          email: r.email,
+          nombre: r.nombre,
+          nombreDestino: r.nombre_destino,
+          cuit: r.cuit,
+          estado: estadoVisible(r.estado_nombre ?? r.estado_codigo),
+        })),
+      );
+      setTotalCount(count ?? 0);
     } catch (e) {
       toast.error("No se pudieron cargar los movimientos");
-      setMovimientos([]);
+      setLineas([]);
       setTotalCount(0);
     } finally {
       setLoading(false);
     }
-  }, [page, desde, hasta, categoria, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular, sub]);
+  }, [page, desde, hasta, categoria, tipoLinea, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular, sub]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
-  // Compatibilidad: filtered/paginated ahora reflejan paginación server-side
-  const filtered = movimientos;
-  const paginated = movimientos;
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  useEffect(() => { setPage(1); }, [desde, hasta, categoria, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular]);
+  useEffect(() => { setPage(1); }, [desde, hasta, categoria, tipoLinea, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular]);
 
-  const totalIngresos = filtered.filter((r) => r.tipo === "ingreso").reduce((s, r) => s + r.monto, 0);
-  const totalEgresos = filtered.filter((r) => r.tipo === "egreso").reduce((s, r) => s + r.monto, 0);
-  const totalPendientes = filtered.filter((r) => r.estado === "Pendiente" || r.estado === "Rechazado").length;
+  // Agrupacion por TXID dentro de la pagina: la primera linea de cada operacion
+  // encabeza el grupo y el resto (comision, impuesto, ...) se despliega.
+  const filas = (() => {
+    const cantidad = new Map<string, number>();
+    for (const l of lineas) cantidad.set(l.idTxn, (cantidad.get(l.idTxn) ?? 0) + 1);
+    const vistos = new Set<string>();
+    const out: Array<Linea & { esCabeza: boolean; hijas: number }> = [];
+    for (const l of lineas) {
+      const esCabeza = !vistos.has(l.idTxn);
+      vistos.add(l.idTxn);
+      if (!agrupar) out.push({ ...l, esCabeza: false, hijas: 0 });
+      else if (esCabeza) out.push({ ...l, esCabeza: true, hijas: (cantidad.get(l.idTxn) ?? 1) - 1 });
+      else if (abiertos.has(l.idTxn)) out.push({ ...l, esCabeza: false, hijas: 0 });
+    }
+    return out;
+  })();
+
+  const toggleGrupo = (idTxn: string) =>
+    setAbiertos((prev) => {
+      const next = new Set(prev);
+      if (next.has(idTxn)) next.delete(idTxn);
+      else next.add(idTxn);
+      return next;
+    });
+
+  // Totales de la pagina: el signo ya viene de la base.
+  const totalIngresos = lineas.filter((l) => l.monto > 0).reduce((s, l) => s + l.monto, 0);
+  const totalEgresos = lineas.filter((l) => l.monto < 0).reduce((s, l) => s - l.monto, 0);
+  const txPendientes = new Set(lineas.filter((l) => l.estado === "Pendiente").map((l) => l.idTxn));
+  const txRechazadas = new Set(lineas.filter((l) => l.estado === "Rechazado").map((l) => l.idTxn));
+  const totalPendientes = txPendientes.size + txRechazadas.size;
+
+  /** Operacion completa de una linea (detalle y comprobante). */
+  const cargarOperacion = async (l: Linea): Promise<Mov | null> => {
+    try {
+      const sb = requireSupabase();
+      const { data: m, error } = await sb.from("transactions").select(COLS_OPERACION).eq("id", l.transactionId).maybeSingle();
+      if (error || !m) throw error ?? new Error("no encontrada");
+      const r = m as any;
+      return mapMov({
+        id_txn: r.id_txn,
+        tipo: r.tipo,
+        cvu: r.cvu,
+        monto_operacion: r.monto_operacion,
+        comision: r.comision,
+        impuesto: r.impuesto,
+        fecha: r.fecha,
+        legajo: r.legajo,
+        estado_codigo: r.estados_movimiento?.codigo,
+        estado_nombre: r.estados_movimiento?.nombre,
+        destinatario_nombre: r.destinatario_nombre,
+        destinatario_cuit: r.destinatario_cuit,
+        destinatario_banco: r.destinatario_banco,
+        subcuenta_id: r.subcuenta_id,
+        subcuentas: r.subcuentas,
+      });
+    } catch {
+      toast.error("No se pudo cargar la operación");
+      return null;
+    }
+  };
+
+  const verDetalle = async (l: Linea) => {
+    const m = await cargarOperacion(l);
+    if (m) setDetalle(m);
+  };
+
+  const descargarComprobante = async (l: Linea) => {
+    const m = await cargarOperacion(l);
+    if (!m) return;
+    descargarComprobantePdf(comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+    toast.success("Comprobante descargado");
+  };
+
+  const compartir = async (l: Linea) => {
+    const m = await cargarOperacion(l);
+    if (!m) return;
+    const res = await compartirComprobante(comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+    if (res === "compartido") toast.success("Comprobante compartido");
+    else if (res === "descargado") toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
+    else if (res === "error") toast.error("No se pudo compartir el comprobante");
+  };
 
   function limpiarFiltros() {
-    setDesde(""); setHasta(""); setCategoria("Todas"); setSubFiltro("Todas");
+    setDesde(""); setHasta(""); setCategoria("Todas"); setTipoLinea("Todos"); setSubFiltro("Todas");
     setBuscarCbu(""); setBuscarCuit(""); setBuscarTxid(""); setBuscarTitular("");
   }
 
   const exportExcel = () => {
-    const body = filtered.map((r) => ({
-      TXID: r.txid,
-      Fecha: r.fecha,
-      Tipo: r.tipo === "ingreso" ? "Ingreso" : "Egreso",
-      Categoria: r.categoria,
-      Titular: r.titular,
-      CBU_CVU: r.cbuCvu,
-      Monto: r.monto,
-      Estado: r.estado,
+    const body = lineas.map((l) => ({
+      Legajo: l.legajo,
+      TXID: l.idTxn,
+      Tipo: TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea,
+      Operacion: prettyTipo(l.tipoOperacion),
+      CVU: l.cvu ?? "",
+      Email: l.email ?? "",
+      Nombre: l.nombre ?? "",
+      Nombre_destino: l.nombreDestino ?? "",
+      CUIT: l.cuit ?? "",
+      Monto: l.monto,
+      Fecha: formatFechaLinea(l.fecha),
+      Estado: l.estado,
     }));
     const ws = XLSX.utils.json_to_sheet([
       { Resumen: "Ingresos", Valor: formatARS(totalIngresos) },
@@ -402,9 +540,10 @@ function Page() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (doc as any).autoTable({
       startY: 52,
-      head: [["TXID", "Fecha", "Tipo", "Categoria", "Titular", "Monto", "Estado"]],
-      body: filtered.map((r) => [
-        r.txid, r.fecha, r.tipo === "ingreso" ? "Ingreso" : "Egreso", r.categoria, r.titular, r.monto.toFixed(2), r.estado,
+      head: [["TXID", "Fecha", "Tipo", "Operacion", "Nombre destino", "CUIT", "Monto", "Estado"]],
+      body: lineas.map((l) => [
+        l.idTxn, formatFechaLinea(l.fecha), TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea, prettyTipo(l.tipoOperacion),
+        l.nombreDestino ?? "-", l.cuit ?? "-", l.monto.toFixed(2), l.estado,
       ]),
       styles: { fontSize: 7 },
     });
@@ -467,12 +606,12 @@ function Page() {
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Ingresos del periodo</div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">{formatARS(totalIngresos)}</div>
-          <div className="text-xs text-muted-foreground mt-1">{filtered.filter((r) => r.tipo === "ingreso").length} movimientos</div>
+          <div className="text-xs text-muted-foreground mt-1">{lineas.filter((l) => l.monto > 0).length} líneas</div>
         </Card>
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Egresos del periodo</div>
           <div className="text-xl md:text-2xl font-bold text-foreground">{formatARS(totalEgresos)}</div>
-          <div className="text-xs text-muted-foreground mt-1">{filtered.filter((r) => r.tipo === "egreso").length} movimientos</div>
+          <div className="text-xs text-muted-foreground mt-1">{lineas.filter((l) => l.monto < 0).length} líneas (incluye comisiones e impuestos)</div>
         </Card>
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Neto</div>
@@ -483,7 +622,7 @@ function Page() {
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Pendientes / Rechazados</div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-foreground">{totalPendientes}</div>
-          <div className="text-xs text-muted-foreground mt-1">{filtered.filter((r) => r.estado === "Pendiente").length} pendientes, {filtered.filter((r) => r.estado === "Rechazado").length} rechazados</div>
+          <div className="text-xs text-muted-foreground mt-1">{txPendientes.size} pendientes, {txRechazadas.size} rechazadas</div>
         </Card>
       </div>
 
@@ -499,9 +638,15 @@ function Page() {
             <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} min={desde || undefined} />
           </div>
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Tipo de operacion</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Tipo de movimiento</label>
+            <select value={tipoLinea} onChange={(e) => setTipoLinea(e.target.value as TipoLinea | "Todos")} className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[150px]">
+              {TIPOS_LINEA.map(({ k, l }) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </div>
+          <div className="min-w-0">
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Operación</label>
             <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[170px]">
-              {CATEGORIAS.map(({ k, l }) => <option key={k} value={k}>{l}</option>)}
+              {OPERACIONES.map(({ k, l }) => <option key={k} value={k}>{l}</option>)}
             </select>
           </div>
           <div className="min-w-0">
@@ -533,15 +678,19 @@ function Page() {
               <Input placeholder="Buscar por TXID..." value={buscarTxid} onChange={(e) => setBuscarTxid(e.target.value)} />
             </div>
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">Nombre del titular</label>
-              <Input placeholder="Buscar por titular..." value={buscarTitular} onChange={(e) => setBuscarTitular(e.target.value)} />
+              <label className="block text-xs text-muted-foreground mb-1">Nombre destino</label>
+              <Input placeholder="Buscar por nombre destino..." value={buscarTitular} onChange={(e) => setBuscarTitular(e.target.value)} />
             </div>
           </div>
         </div>
 
         <div className="flex justify-between items-center border-t pt-4">
-          <div className="text-xs text-muted-foreground">
-            {loading ? "Cargando..." : `${totalCount} movimientos`}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span>{loading ? "Cargando..." : `${totalCount} líneas`}</span>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
+              Agrupar desglose por TXID
+            </label>
           </div>
           <div className="flex gap-2">
             <BtnOutline className="h-8 px-4 text-xs" onClick={limpiarFiltros}>
@@ -563,111 +712,108 @@ function Page() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-xs uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
-                <th className="text-left px-5 py-3 font-semibold">Movimiento</th>
-                <th className="text-left px-5 py-3 font-semibold">TXID</th>
-                <th className="text-left px-5 py-3 font-semibold">CBU / CVU</th>
-                <th className="text-left px-5 py-3 font-semibold">Titular</th>
-                <th className="text-left px-5 py-3 font-semibold">CUIT</th>
-                <th className="text-left px-5 py-3 font-semibold">Fecha</th>
-                <th className="text-right px-5 py-3 font-semibold">Comisión</th>
-                <th className="text-right px-5 py-3 font-semibold">IVA</th>
-                <th className="text-right px-5 py-3 font-semibold">Monto debitado</th>
-                <th className="px-5 py-3 font-semibold"></th>
+                <th className="text-left px-4 py-3 font-semibold">Legajo</th>
+                <th className="text-left px-4 py-3 font-semibold">ID transacción</th>
+                <th className="text-left px-4 py-3 font-semibold">Tipo</th>
+                <th className="text-left px-4 py-3 font-semibold">CVU</th>
+                <th className="text-left px-4 py-3 font-semibold">Email</th>
+                <th className="text-left px-4 py-3 font-semibold">Nombre</th>
+                <th className="text-left px-4 py-3 font-semibold">Nombre destino</th>
+                <th className="text-left px-4 py-3 font-semibold">CUIT</th>
+                <th className="text-right px-4 py-3 font-semibold">Monto</th>
+                <th className="text-left px-4 py-3 font-semibold">Fecha</th>
+                <th className="text-left px-4 py-3 font-semibold">Estado</th>
+                <th className="px-4 py-3 font-semibold text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {!loading && filtered.length === 0 && (
+              {!loading && filas.length === 0 && (
                 <tr>
-                  <td colSpan={10} className="text-center py-12 text-sm text-muted-foreground">
+                  <td colSpan={12} className="text-center py-12 text-sm text-muted-foreground">
                     Sin datos registrados.
                   </td>
                 </tr>
               )}
               {loading && (
                 <tr>
-                  <td colSpan={10} className="text-center py-12 text-sm text-muted-foreground">Cargando movimientos...</td>
+                  <td colSpan={12} className="text-center py-12 text-sm text-muted-foreground">Cargando movimientos...</td>
                 </tr>
               )}
-              {paginated.map((r, i) => (
-                <tr key={i} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3 min-w-0 max-w-[220px]">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        r.tipo === "ingreso" ? "bg-emerald-50 text-emerald-600" : "bg-danger-50 text-danger-600"
-                      }`}>
-                        {r.tipo === "ingreso" ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+              {!loading && filas.map((l) => {
+                const hija = agrupar && !l.esCabeza;
+                return (
+                  <tr key={`${l.lineId}:${l.lineNo}`} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${hija ? "bg-muted/20" : ""}`}>
+                    <td className="px-4 py-3 text-xs font-mono tabular-nums whitespace-nowrap">{l.legajo}</td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        onClick={() => setBuscarTxid(l.idTxn)}
+                        className="text-xs font-mono text-muted-foreground hover:text-foreground hover:underline underline-offset-2 text-left"
+                        title="Ver todas las líneas de esta operación"
+                      >
+                        {l.idTxn}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        {l.esCabeza && l.hijas > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleGrupo(l.idTxn)}
+                            className="h-5 w-5 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground"
+                            title={abiertos.has(l.idTxn) ? "Ocultar desglose" : `Ver desglose (${l.hijas})`}
+                          >
+                            {abiertos.has(l.idTxn) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </button>
+                        ) : (
+                          <span className={hija ? "w-5 h-5 ml-2 border-l-2 border-muted" : "w-5"} />
+                        )}
+                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${TIPO_LINEA_STYLE[l.tipoLinea]}`}>
+                          {TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea}
+                        </span>
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm truncate">
-                          {r.tipo === "ingreso" ? "Recibiste dinero" : "Enviaste dinero"}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate mt-0.5">{r.medio} · {r.categoria}</div>
+                      <div className="text-[11px] text-muted-foreground mt-0.5 ml-6">{prettyTipo(l.tipoOperacion)}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">{l.cvu || "-"}</td>
+                    <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[200px]">{l.email || "-"}</td>
+                    <td className="px-4 py-3 text-sm truncate max-w-[180px]">{l.nombre || "-"}</td>
+                    <td className="px-4 py-3 text-sm font-medium truncate max-w-[200px]">{l.nombreDestino || "-"}</td>
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{l.cuit || "-"}</td>
+                    <td className={`px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${l.monto >= 0 ? "text-emerald-700" : "text-danger-700"}`}>
+                      {formatMonto(l.monto)}
+                    </td>
+                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">{formatFechaLinea(l.fecha)}</td>
+                    <td className="px-4 py-3">
+                      <Badge tone={l.estado === "Acreditado" ? "success" : l.estado === "Pendiente" ? "warn" : "danger"}>{l.estado}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex gap-1.5 justify-end">
+                        <button
+                          title="Ver detalle de la operación"
+                          onClick={() => void verDetalle(l)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                        >
+                          <Eye size={14} />
+                        </button>
+                        <button
+                          title="Descargar comprobante"
+                          onClick={() => void descargarComprobante(l)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                        >
+                          <FileText size={14} />
+                        </button>
+                        <button
+                          title="Compartir comprobante"
+                          onClick={() => void compartir(l)}
+                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                        >
+                          <Share2 size={14} />
+                        </button>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="text-xs font-mono text-muted-foreground">{r.txid}</div>
-                  </td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground max-w-[140px] truncate">{r.cbuCvu}</td>
-                  <td className="px-5 py-4 text-sm font-medium truncate max-w-[160px]">{r.titular}</td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">{r.cuit}</td>
-                  <td className="px-5 py-4 text-xs text-muted-foreground whitespace-nowrap">{r.fecha}</td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">
-                    {(r.categoria === "Transferencias" || r.categoria === "Egresos") ? formatARS(r.comision || 0) : "—"}
-                  </td>
-                  <td className="px-5 py-4 text-xs font-mono text-muted-foreground">
-                    {(r.categoria === "Transferencias" || r.categoria === "Egresos") ? formatARS(r.impuesto || 0) : "—"}
-                  </td>
-                  <td className={`px-5 py-4 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${r.tipo === "ingreso" ? "text-emerald-700" : ""}`}>
-                    {r.tipo === "ingreso"
-                      ? "+ " + formatARS(r.monto)
-                      : (r.categoria === "Transferencias" || r.categoria === "Egresos")
-                        ? "- " + formatARS((r.monto || 0) + (r.comision || 0) + (r.impuesto || 0))
-                        : "- " + formatARS(r.monto || 0)}
-                  </td>
-                  <td className="px-5 py-4 text-right">
-                    <div className="flex gap-1.5 justify-end">
-                      <button
-                        title="Ver detalle"
-                        onClick={() => setDetalle(r)}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                      >
-                        <Eye size={14} />
-                      </button>
-                      <button
-                        title="Descargar comprobante"
-                        onClick={() => {
-                          descargarComprobantePdf(comprobanteDeMov(r, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
-                          toast.success("Comprobante descargado");
-                        }}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                      >
-                        <FileText size={14} />
-                      </button>
-                      <button
-                        title="Compartir comprobante"
-                        onClick={async () => {
-                          const res = await compartirComprobante(comprobanteDeMov(r, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
-                          if (res === "compartido") toast.success("Comprobante compartido");
-                          else if (res === "descargado")
-                            toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
-                          else if (res === "error") toast.error("No se pudo compartir el comprobante");
-                        }}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                      >
-                        <Share2 size={14} />
-                      </button>
-                      <button
-                        title="Ver mas"
-                        onClick={() => setDetalle(r)}
-                        className="h-9 w-9 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                      >
-                        <ChevronRight size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

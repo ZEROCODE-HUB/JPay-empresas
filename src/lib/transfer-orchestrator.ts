@@ -67,7 +67,9 @@ export async function executeTransfer(
     p_concepto: req.concepto ?? null,
   });
   if (error) throw error;
-  const txn = data as { ok: boolean; id_txn: string; comision: number; impuesto: number; total_debitado: number };
+  const txn = data as { ok: boolean; id_txn: string; comision: number; impuesto: number; total_debitado: number; motivo?: string };
+  // Rechazada por bloqueo, saldo o controles: queda registrada sin mover dinero.
+  if (txn.ok === false) return { ok: false, validation, error: txn.motivo ?? "La transferencia fue rechazada" };
   return { ok: true, validation, txn };
 }
 

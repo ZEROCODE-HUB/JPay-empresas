@@ -10,6 +10,7 @@ import { executeTransfer } from "@/lib/transfer-orchestrator";
 import { type FrequentRecipient, listFrequentRecipients, createFrequentRecipient, deleteFrequentRecipient } from "@/lib/transfer-store";
 import { detectIdentifierKind } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
+import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 
 export const Route = createFileRoute("/app/destinatarios")({ component: Page });
 
@@ -95,12 +96,13 @@ function Page() {
         .maybeSingle();
       if (!cli?.legajo) return;
       const { data: subs } = await sb
-        .from("subcuentas")
-        .select("id, nombre, cbu, saldo_disponible")
+        .from("subaccounts")
+        .select(`id, nombre, cbu, ${SALDOS_EMBED}`)
         .eq("cliente_legajo", cli.legajo)
         .order("nombre", { ascending: true });
-      setSubcuentas(subs ?? []);
-      if (subs && subs.length > 0) setSubcuentaOrigen(subs[0].id);
+      const lista = (subs ?? []).map(conSaldos);
+      setSubcuentas(lista);
+      if (lista.length > 0) setSubcuentaOrigen(lista[0].id);
     } catch {
       // silently fail
     }

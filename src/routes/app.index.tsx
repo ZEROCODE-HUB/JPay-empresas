@@ -12,6 +12,7 @@ import {
 import { PageHeader, Card, BtnOutline } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
+import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -88,16 +89,16 @@ function Dashboard() {
         if (!cli) return;
         setCbuLabel(cli.alias ? `CVU ${cli.alias}` : cli.cbu ? `CBU ${cli.cbu}` : "");
         const { data: m } = await s
-          .from("movimientos")
+          .from("transactions")
           .select("tipo, monto_operacion, fecha")
           .eq("legajo", cli.legajo)
           .gte("fecha", range.start.toISOString())
           .lte("fecha", range.end.toISOString());
         if (cancelled) return;
         setMovs(m ?? []);
-        const { data: subs } = await s.from("subcuentas").select("saldo_disponible, saldo_retenido").eq("cliente_legajo", cli.legajo);
+        const { data: subs } = await s.from("subaccounts").select(SALDOS_EMBED).eq("cliente_legajo", cli.legajo);
         if (cancelled) return;
-        const saldo = (subs ?? []).reduce(
+        const saldo = (subs ?? []).map(conSaldos).reduce(
           (a: number, x: any) => a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0),
           0
         );

@@ -550,28 +550,27 @@ export async function updateTemplate(
 }
 
 // ============================================================================
-// Transferencia unica ejecutada por BDC -> movimientos
+// Transferencia unica por BDC (ledger): reservar -> enviar -> confirmar/cancelar
 // ============================================================================
 
-export type BdcTransferRecord = {
+export type BdcReserva = {
   ok: boolean;
   id_txn: string;
-  ya_registrada?: boolean;
-  saldo_insuficiente?: boolean;
-  /** Comisión + IVA cobrados (los calcula la RPC según el CVU de origen). */
-  comision?: number;
-  impuesto?: number;
-  total_debitado?: number;
-  estado_bdc?: string;
+  ya_registrada: boolean;
+  ledger_status: "reserved" | "posted" | "reversed" | "unposted";
+  monto: number;
+  /** Comisión + IVA (los calcula la base según el CVU de origen). */
+  comision: number;
+  impuesto: number;
+  total: number;
 };
 
 /**
- * Deja constancia en `movimientos` de una transferencia que ya acepto el banco.
- *
- * Idempotente por TXID: reintentar con el mismo originId no duplica el
- * movimiento ni vuelve a debitar.
+ * Paso 1, ANTES de pedirle la transferencia al banco: reserva monto + comisión
+ * + IVA (disponible -> retenido). Falla con "Saldo insuficiente" si no alcanza,
+ * así nunca se envía plata que la subcuenta no tiene. Idempotente por TXID.
  */
-export async function registerBdcTransfer(input: {
+export async function reserveBdcTransfer(input: {
   subcuentaOrigen: string;
   originId: string;
   destinatarioCbu: string;
@@ -580,20 +579,106 @@ export async function registerBdcTransfer(input: {
   destinatarioBanco?: string | null;
   monto: number;
   concepto?: string | null;
-  estadoBdc?: string | null;
-}): Promise<BdcTransferRecord> {
+}): Promise<BdcReserva> {
   const sb = requireSupabase();
-  const { data, error } = await sb.rpc("registrar_transferencia_bdc_detallada", {
+  const { data, error } = await sb.rpc("reservar_transferencia_bdc", {
     p_subcuenta_origen: input.subcuentaOrigen,
     p_origin_id: input.originId,
     p_destinatario_cbu: input.destinatarioCbu,
     p_monto: input.monto,
     p_concepto: input.concepto ?? null,
-    p_estado_bdc: input.estadoBdc ?? null,
     p_destinatario_nombre: input.destinatarioNombre ?? null,
     p_destinatario_cuit: input.destinatarioCuit ?? null,
     p_destinatario_banco: input.destinatarioBanco ?? null,
   });
   if (error) fail(error);
-  return data as BdcTransferRecord;
+  const r = data as BdcReserva & { motivo?: string };
+  // Rechazo de negocio (bloqueo, saldo o controles): la base la registra como
+  // RECHAZADA y devuelve el motivo; nunca se envía al banco.
+  if (r.ok === false) throw new Error(r.motivo || "La transferencia fue rechazada");
+  return r;
+}
+
+/** Paso 2: el banco aceptó la transferencia -> se contabiliza (idempotente). */
+export async function confirmBdcTransfer(originId: string, estadoBdc?: string | null): Promise<void> {
+  const sb = requireSupabase();
+  const { error } = await sb.rpc("confirmar_transferencia_bdc", {
+    p_origin_id: originId,
+    p_estado_bdc: estadoBdc ?? null,
+  });
+  if (error) fail(error);
+}
+
+/** El banco nunca recibió la transferencia -> se libera la reserva. */
+export async function cancelBdcTransfer(originId: string, motivo?: string): Promise<void> {
+  const sb = requireSupabase();
+  const { error } = await sb.rpc("cancelar_transferencia_bdc", {
+    p_origin_id: originId,
+    p_motivo: motivo ?? null,
+  });
+  if (error) fail(error);
+}
+// ============================================================================
+// Cotizacion (solo lectura): comision + IVA + total y si alcanza el disponible.
+// La calcula la base con la misma regla que cobra al enviar.
+// ============================================================================
+
+/** Comisión configurada en backoffice ("Carga de comisiones") que se aplica. */
+export type ComisionConfig = {
+  modalidad: "Porcentaje" | "Fijo";
+  porcentaje: number | null;
+  montoFijo: number | null;
+  /** % de IVA sobre la comisión, el cargado para esa comisión. */
+  porcentajeImpuesto: number;
+  /** Si es la del CVU de origen o la de toda la cuenta (respaldo). */
+  alcance: "cvu" | "cuenta";
+};
+
+export type Cotizacion = {
+  monto: number;
+  comision: number;
+  impuesto: number;
+  total: number;
+  disponible: number;
+  alcanza: boolean;
+  faltante: number;
+  /** Transferencia a otro CVU propio: no cobra comisión ni IVA. */
+  interna: boolean;
+  /** null = el cliente no tiene comisión de Retiro configurada. */
+  config: ComisionConfig | null;
+};
+
+export async function cotizarTransferencia(input: {
+  subcuentaOrigen: string;
+  monto: number;
+  destino?: string | null;
+}): Promise<Cotizacion> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.rpc("cotizar_transferencia", {
+    p_subcuenta_origen: input.subcuentaOrigen,
+    p_monto: input.monto,
+    p_destino: input.destino ?? null,
+  });
+  if (error) fail(error);
+  const r = data as Record<string, unknown>;
+  const c = r.config as Record<string, unknown> | null | undefined;
+  return {
+    monto: Number(r.monto),
+    comision: Number(r.comision),
+    impuesto: Number(r.impuesto),
+    total: Number(r.total),
+    disponible: Number(r.disponible),
+    alcanza: Boolean(r.alcanza),
+    faltante: Number(r.faltante),
+    interna: Boolean(r.interna),
+    config: c
+      ? {
+          modalidad: c.modalidad === "Fijo" ? "Fijo" : "Porcentaje",
+          porcentaje: c.porcentaje == null ? null : Number(c.porcentaje),
+          montoFijo: c.monto_fijo == null ? null : Number(c.monto_fijo),
+          porcentajeImpuesto: Number(c.porcentaje_impuesto ?? 21),
+          alcance: c.alcance === "cvu" ? "cvu" : "cuenta",
+        }
+      : null,
+  };
 }
