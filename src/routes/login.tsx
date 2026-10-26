@@ -3,9 +3,9 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
 import { useOnboarding, type TipoCuenta } from "@/lib/onboarding-store";
-import { AuthShell, Field, PasswordField, PrimaryButton, SuccessCard, validatePassword } from "@/components/onboarding";
+import { AuthShell, DemoVerifyBox, Field, PasswordField, PrimaryButton, SuccessCard, validatePassword } from "@/components/onboarding";
 import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
-import { registerClient, resendVerification } from "@/lib/api/onboarding";
+import { readDemoVerifyUrl, registerClient, resendVerification } from "@/lib/api/onboarding";
 import { brand, pageTitle, mailto } from "@/brand/brand";
 
 export const Route = createFileRoute("/login")({
@@ -29,6 +29,7 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
+  const [demoUrl, setDemoUrl] = useState<string | null>(null);
 
   const reenviarVerificacion = async () => {
     const destino = (pendingEmail ?? email).trim();
@@ -38,8 +39,13 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
     }
     setResendLoading(true);
     try {
-      await resendVerification(destino);
-      setResendMsg(`Te enviamos el mail de verificación a ${destino}. Revisá tu bandeja y la carpeta de spam.`);
+      const res = await resendVerification(destino);
+      if (res.demo_token) {
+        setDemoUrl(readDemoVerifyUrl(destino));
+        setResendMsg(null);
+      } else {
+        setResendMsg(`Te enviamos el mail de verificación a ${destino}. Revisá tu bandeja y la carpeta de spam.`);
+      }
     } catch (e) {
       setResendMsg(e instanceof Error ? getAuthErrorMessage(e.message) : "No se pudo reenviar el correo.");
     } finally {
@@ -60,6 +66,7 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
               Si no lo recibís, revisá spam o reenviá el correo. Si tenés algún problema,{" "}
               <a href={mailto(brand.contact.support)} className="underline underline-offset-2 hover:text-primary-ink">¿Necesitas ayuda? Soporte</a>.
             </p>
+            {demoUrl && <DemoVerifyBox url={demoUrl} />}
             {resendMsg && <p className="mt-3 text-xs text-green-600">{resendMsg}</p>}
           </>
         }
@@ -67,7 +74,7 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
         <PrimaryButton onClick={reenviarVerificacion} disabled={resendLoading}>
           {resendLoading ? "Reenviando…" : "Reenviar correo de verificación"}
         </PrimaryButton>
-        <button type="button" onClick={() => { setPendingEmail(null); setResendMsg(null); }} className="mt-2 w-full text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver al inicio de sesión</button>
+        <button type="button" onClick={() => { setPendingEmail(null); setResendMsg(null); setDemoUrl(null); }} className="mt-2 w-full text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver al inicio de sesión</button>
       </SuccessCard>
     );
   }
@@ -86,6 +93,7 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
             const raw = authErr?.message ?? "";
             if (/email not confirmed/i.test(raw)) {
               setPendingEmail(email.trim());
+              setDemoUrl(readDemoVerifyUrl(email.trim()));
               return;
             }
             setError(getAuthErrorMessage(raw || "No se pudo iniciar sesión"));

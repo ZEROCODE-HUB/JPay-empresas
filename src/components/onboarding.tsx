@@ -476,6 +476,26 @@ export function EmptyRow({
 
 /* ============ SuccessCard ============ */
 
+/* ============ DemoVerifyBox ============ */
+
+/** Modo demo (sin Resend): muestra en pantalla el link de verificación que iría por correo. */
+export function DemoVerifyBox({ url }: { url: string }) {
+  return (
+    <div className="mt-4 rounded-md border border-highlight-300 bg-highlight-50 p-4 text-left">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-black-800">Modo demo</p>
+      <p className="mt-1 text-xs text-black-500">
+        El envío de correos todavía no está configurado. Validá tu cuenta desde acá:
+      </p>
+      <a
+        href={url}
+        className="mt-3 inline-flex h-10 w-full items-center justify-center rounded-sm bg-primary-500 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-400"
+      >
+        Validar mi correo
+      </a>
+    </div>
+  );
+}
+
 export function SuccessCard({
   title,
   body,

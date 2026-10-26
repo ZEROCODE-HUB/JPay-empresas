@@ -1,8 +1,8 @@
 ﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AuthShell, PrimaryButton, SecondaryButton, SuccessCard } from "@/components/onboarding";
+import { AuthShell, DemoVerifyBox, PrimaryButton, SecondaryButton, SuccessCard } from "@/components/onboarding";
 import { useOnboarding } from "@/lib/onboarding-store";
-import { resendVerification } from "@/lib/api/onboarding";
+import { readDemoVerifyUrl, resendVerification } from "@/lib/api/onboarding";
 import { getAuthErrorMessage } from "@/lib/supabase";
 import { pageTitle } from "@/brand/brand";
 
@@ -22,6 +22,7 @@ function RegistroExito() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [demoUrl, setDemoUrl] = useState<string | null>(() => readDemoVerifyUrl(registro.email));
 
   const reenviar = async () => {
     if (!registro.email) return;
@@ -29,8 +30,9 @@ function RegistroExito() {
     setMsg(null);
     setError(null);
     try {
-      await resendVerification(registro.email);
-      setMsg("Reenviamos el correo. Revisá tu bandeja.");
+      const res = await resendVerification(registro.email);
+      if (res.demo_token) setDemoUrl(readDemoVerifyUrl(registro.email));
+      else setMsg("Reenviamos el correo. Revisá tu bandeja.");
     } catch (e) {
       setError(getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo reenviar el correo"));
     } finally {
@@ -64,6 +66,7 @@ function RegistroExito() {
               </Link>
               .
             </p>
+            {demoUrl && <DemoVerifyBox url={demoUrl} />}
             {msg && <p className="mt-3 text-xs text-green-600">{msg}</p>}
             {error && <p className="mt-3 text-xs text-danger-600">{error}</p>}
           </>

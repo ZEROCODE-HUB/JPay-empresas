@@ -76,21 +76,23 @@ async function handleSend(sb: any, email: string) {
   });
   if (insErr) return json({ error: insErr.message }, 500);
 
+  let sent = true;
   try {
-    await sendOtpEmail(normalizedEmail, codigo);
+    sent = await sendOtpEmail(normalizedEmail, codigo);
   } catch (e: any) {
     // No revertir el insert para permitir reintento de verificación si el mail falló por rate limit de Resend;
     // pero informar error
     return json({ error: e?.message ?? "No se pudo enviar el correo" }, 500);
   }
 
-  return json({ ok: true, expires_at: expiresAt });
+  return json({ ok: true, expires_at: expiresAt, ...(sent ? {} : { demo_codigo: codigo }) });
 }
 
-async function sendOtpEmail(email: string, codigo: string) {
+// Devuelve false si no hay RESEND_API_KEY (modo demo): el código se muestra en pantalla.
+async function sendOtpEmail(email: string, codigo: string): Promise<boolean> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const from = Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
-  if (!apiKey) throw new Error("Falta RESEND_API_KEY en el servidor");
+  if (!apiKey) return false;
   const primary = brand.colors.primary["500"];
   const cardBg = "#ffffff";
 
@@ -156,6 +158,7 @@ async function sendOtpEmail(email: string, codigo: string) {
     const t = await res.text();
     throw new Error("No se pudo enviar el correo: " + t);
   }
+  return true;
 }
 
 function json(payload: unknown, status = 200) {

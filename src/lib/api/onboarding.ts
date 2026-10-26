@@ -11,6 +11,32 @@ export type OnboardingPayload = {
 
 export type OnboardingResult = { ok: boolean; legajo: string; email: string };
 
+/**
+ * Modo demo: sin Resend configurado, las edges de verificación no envían correo y devuelven
+ * `demo_token`. El portal lo guarda por email para mostrar el link de verificación en pantalla.
+ */
+export type VerificationResult = { ok: boolean; email: string; demo_token?: string };
+
+const DEMO_TOKEN_KEY = "demo_verify_token";
+
+export function rememberDemoToken(email: string, token: string | undefined) {
+  if (typeof window === "undefined" || !token) return;
+  try {
+    sessionStorage.setItem(DEMO_TOKEN_KEY, JSON.stringify({ email, token }));
+  } catch { /* ignore */ }
+}
+
+export function readDemoVerifyUrl(email: string | null | undefined): string | null {
+  if (typeof window === "undefined" || !email) return null;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(DEMO_TOKEN_KEY) ?? "null") as { email: string; token: string } | null;
+    if (!saved || saved.email !== email) return null;
+    return `${window.location.origin}/verificar-correo?token=${encodeURIComponent(saved.token)}`;
+  } catch {
+    return null;
+  }
+}
+
 export type RegisterPayload = {
   email: string;
   password: string;
@@ -20,7 +46,7 @@ export type RegisterPayload = {
   tipoCuenta: "fisica" | "juridica";
 };
 
-export async function registerClient(payload: RegisterPayload): Promise<{ ok: boolean; email: string }> {
+export async function registerClient(payload: RegisterPayload): Promise<VerificationResult> {
   const supabase = requireSupabase();
   const { data, error } = await supabase.functions.invoke("registrar-cliente", { body: payload });
   if (error) {
@@ -44,7 +70,9 @@ export async function registerClient(payload: RegisterPayload): Promise<{ ok: bo
   }
   // La edge puede devolver { error } con 200? (no, pero por si acaso)
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
-  return data as { ok: boolean; email: string };
+  const result = data as VerificationResult;
+  rememberDemoToken(payload.email, result.demo_token);
+  return result;
 }
 
 export async function verifyEmail(token: string): Promise<{ ok: boolean }> {
@@ -65,7 +93,7 @@ export async function verifyEmail(token: string): Promise<{ ok: boolean }> {
   return data as { ok: boolean };
 }
 
-export async function resendVerification(email: string): Promise<{ ok: boolean; email: string }> {
+export async function resendVerification(email: string): Promise<VerificationResult> {
   const supabase = requireSupabase();
   const { data, error } = await supabase.functions.invoke("reenviar-verificacion", { body: { email } });
   if (error) {
@@ -80,7 +108,9 @@ export async function resendVerification(email: string): Promise<{ ok: boolean; 
     throw new Error(msg);
   }
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
-  return data as { ok: boolean; email: string };
+  const result = data as VerificationResult;
+  rememberDemoToken(email, result.demo_token);
+  return result;
 }
 
 export async function submitOnboarding(

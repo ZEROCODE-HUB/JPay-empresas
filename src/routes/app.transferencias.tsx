@@ -396,7 +396,12 @@ function Page() {
       const { data, error } = await sb.functions.invoke("enviar-otp-transferencia", { body: {} });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      toast.success("Código enviado a tu correo");
+      if (data?.demo_codigo) {
+        // Modo demo (sin Resend configurado): el código no se envía por correo.
+        toast.info(`Modo demo: tu código es ${data.demo_codigo}`, { duration: 60_000 });
+      } else {
+        toast.success("Código enviado a tu correo");
+      }
       return true;
     } catch (e) {
       const msg = (await extraerMensajeEdgeFunction(e)) || toDataError(e).message;

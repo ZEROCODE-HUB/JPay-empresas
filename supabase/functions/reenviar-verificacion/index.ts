@@ -44,24 +44,26 @@ Deno.serve(async (req) => {
   if (tErr) return json({ error: tErr.message }, 400);
 
   try {
-    await sendVerificationEmail(email, nombre, token);
-    return json({ ok: true, email });
+    const sent = await sendVerificationEmail(email, nombre, token);
+    return json({ ok: true, email, ...(sent ? {} : { demo_token: token }) });
   } catch (e: any) {
     return json({ error: e?.message ?? "No se pudo enviar el correo" }, 400);
   }
 });
 
-async function sendVerificationEmail(email: string, nombre: string, token: string) {
+// Devuelve false si no hay RESEND_API_KEY (modo demo): el correo no se envía y el portal
+// muestra el link de verificación en pantalla.
+async function sendVerificationEmail(email: string, nombre: string, token: string): Promise<boolean> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const appUrl = Deno.env.get("APP_URL") || "http://localhost:5173";
   const from = Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
-  if (!apiKey) throw new Error("Falta RESEND_API_KEY");
+  if (!apiKey) return false;
 
   const link = `${appUrl}/verificar-correo?token=${token}`;
   const primary = brand.colors.primary["500"];
   const onPrimary = brand.colors.onPrimary;
   // Links de texto: tono oscuro de la escala para cumplir contraste sobre blanco.
-  const link = brand.colors.primary["700"];
+  const linkColor = brand.colors.primary["700"];
   const cardBg = "#ffffff";
   const html = `
   <!doctype html>
@@ -84,7 +86,7 @@ async function sendVerificationEmail(email: string, nombre: string, token: strin
               <tr>
                 <td style="padding:12px 32px 24px;">
                   <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
-                    Muchas gracias por registrarte en <a href="${appUrl}" style="color:${link};font-weight:600;text-decoration:none;">${brand.name}</a>.
+                    Muchas gracias por registrarte en <a href="${appUrl}" style="color:${linkColor};font-weight:600;text-decoration:none;">${brand.name}</a>.
                   </p>
                   <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
                     Para poder ingresar a la plataforma primero debes validar tu correo electrónico. Para realizarlo haz click en el botón debajo.
@@ -97,7 +99,7 @@ async function sendVerificationEmail(email: string, nombre: string, token: strin
                     </tr>
                   </table>
                   <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#6b7280;">
-                    Si tienes una duda o inconveniente puedes contactarnos en <a href="mailto:${brand.contact.support}" style="color:${link};text-decoration:none;">${brand.contact.support}</a>
+                    Si tienes una duda o inconveniente puedes contactarnos en <a href="mailto:${brand.contact.support}" style="color:${linkColor};text-decoration:none;">${brand.contact.support}</a>
                   </p>
                   <p style="margin:8px 0 0;font-size:14px;line-height:1.6;color:#6b7280;">¡Muchas gracias!</p>
                 </td>
@@ -129,6 +131,7 @@ async function sendVerificationEmail(email: string, nombre: string, token: strin
     const t = await res.text();
     throw new Error("No se pudo enviar el correo: " + t);
   }
+  return true;
 }
 
 function json(payload: unknown, status = 200) {
