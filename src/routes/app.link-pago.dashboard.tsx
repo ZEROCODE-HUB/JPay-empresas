@@ -14,7 +14,6 @@ import {
 } from "recharts";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
-import { formatARS } from "@/data/links-pago";
 import { formatMoney } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -162,14 +161,14 @@ function Dashboard() {
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { Metrica: "Total aprobado", Valor: formatARS(metrics.totalApproved) },
+      { Metrica: "Total aprobado", Valor: formatMoney(metrics.totalApproved) },
       { Metrica: "Transacciones totales", Valor: metrics.totalTx },
       { Metrica: "Pendientes", Valor: metrics.pending },
       { Metrica: "Rechazadas", Valor: metrics.rejected },
       { Metrica: "Reembolsos", Valor: metrics.refunds },
       { Metrica: "Tasa de conversion", Valor: metrics.conversionRate + "%" },
-      { Metrica: "Ticket promedio", Valor: formatARS(metrics.avgTicket) },
-      ...linkData.map((d) => ({ Metrica: "Monto " + d.name, Valor: formatARS(d.amount) })),
+      { Metrica: "Ticket promedio", Valor: formatMoney(metrics.avgTicket) },
+      ...linkData.map((d) => ({ Metrica: "Monto " + d.name, Valor: formatMoney(d.amount) })),
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dashboard");

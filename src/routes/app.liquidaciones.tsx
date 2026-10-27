@@ -32,7 +32,6 @@ import {
 } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
-import { formatARS } from "@/data/cobros-masivos";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -873,13 +872,13 @@ function exportPdfDia(
       r.bandera,
       r.estado,
       String(r.cantidadOperaciones),
-      formatARS(r.importeBruto),
-      formatARS(r.tasaPropiaMonto),
-      formatARS(r.tasaPaywayMonto),
-      formatARS(r.comisionCierreLoteMonto),
-      formatARS(r.impuestos),
-      formatARS(r.contracargoMonto),
-      formatARS(r.importeNeto),
+      formatMoney(r.importeBruto),
+      formatMoney(r.tasaPropiaMonto),
+      formatMoney(r.tasaPaywayMonto),
+      formatMoney(r.comisionCierreLoteMonto),
+      formatMoney(r.impuestos),
+      formatMoney(r.contracargoMonto),
+      formatMoney(r.importeNeto),
     ]),
     styles: { fontSize: 7, cellPadding: 1.5 },
     headStyles: { fillColor: [33, 37, 41] },
@@ -1391,20 +1390,20 @@ function Liquidaciones() {
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { Metrica: "Falta cobrar (por cobrar)", Valor: formatARS(faltaCobrar) },
-      { Metrica: `Por acreditar (${brand.name} te debe)`, Valor: formatARS(porAcreditar) },
-      { Metrica: "Disponible para adelanto", Valor: formatARS(disponible) },
+      { Metrica: "Falta cobrar (por cobrar)", Valor: formatMoney(faltaCobrar) },
+      { Metrica: `Por acreditar (${brand.name} te debe)`, Valor: formatMoney(porAcreditar) },
+      { Metrica: "Disponible para adelanto", Valor: formatMoney(disponible) },
       {},
       ...dias.map((d) => ({
         Metrica: `Acredita ${formatDate(d.date)}`,
-        Valor: formatARS(d.monto),
+        Valor: formatMoney(d.monto),
         Cantidad: d.cantidad,
       })),
       {},
       ...tickets.map((t) => ({
         Ticket: t.id,
         Fecha: t.fecha,
-        "Monto solicitado": formatARS(t.montoSolicitado),
+        "Monto solicitado": formatMoney(t.montoSolicitado),
         "Fecha acreditación": formatDate(t.fechaAcreditacion),
         Estado: ESTADO_TICKET_LABEL[t.estado],
       })),
@@ -1431,9 +1430,9 @@ function Liquidaciones() {
       startY: 30,
       head: [["Concepto", "Monto"]],
       body: [
-        ["Falta cobrar", formatARS(faltaCobrar)],
-        ["Por acreditar", formatARS(porAcreditar)],
-        ["Disponible adelanto", formatARS(disponible)],
+        ["Falta cobrar", formatMoney(faltaCobrar)],
+        ["Por acreditar", formatMoney(porAcreditar)],
+        ["Disponible adelanto", formatMoney(disponible)],
       ],
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1441,7 +1440,7 @@ function Liquidaciones() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       startY: (doc as any).lastAutoTable.finalY + 8,
       head: [["Fecha acredita", "Monto", "Ops"]],
-      body: dias.map((d) => [formatDate(d.date), formatARS(d.monto), String(d.cantidad)]),
+      body: dias.map((d) => [formatDate(d.date), formatMoney(d.monto), String(d.cantidad)]),
       styles: { fontSize: 8 },
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1452,7 +1451,7 @@ function Liquidaciones() {
       body: tickets.map((t) => [
         t.id,
         t.fecha,
-        formatARS(t.montoSolicitado),
+        formatMoney(t.montoSolicitado),
         formatDate(t.fechaAcreditacion),
         ESTADO_TICKET_LABEL[t.estado],
       ]),

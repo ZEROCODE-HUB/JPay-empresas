@@ -23,7 +23,6 @@ import {
   computeNoCobradas,
   computeEvolucion,
   computeLotesRecientes,
-  formatARS,
   medioPagoLabels,
   type PeriodFilter,
   type LoteEstado,
@@ -135,20 +134,20 @@ function Dashboard() {
       { Metrica: "En proceso", Valor: kpi.enProceso },
       { Metrica: "Finalizados", Valor: kpi.finalizados },
       { Metrica: "Con error", Valor: kpi.conError },
-      { Metrica: "Monto total", Valor: formatARS(kpi.montoTotal) },
-      { Metrica: "Monto cobrado", Valor: formatARS(kpi.montoCobrado) },
-      { Metrica: "Monto pendiente", Valor: formatARS(kpi.montoPendiente) },
+      { Metrica: "Monto total", Valor: formatMoney(kpi.montoTotal) },
+      { Metrica: "Monto cobrado", Valor: formatMoney(kpi.montoCobrado) },
+      { Metrica: "Monto pendiente", Valor: formatMoney(kpi.montoPendiente) },
       ...porMedio.map((m) => ({
         Metrica: `Monto ${medioPagoLabels[m.medio as keyof typeof medioPagoLabels] || m.medio}`,
-        Valor: formatARS(m.monto),
+        Valor: formatMoney(m.monto),
       })),
       ...porVencimiento.map((v) => ({
         Metrica: v.label,
-        Valor: `${v.cantidad} ops - ${formatARS(v.monto)}`,
+        Valor: `${v.cantidad} ops - ${formatMoney(v.monto)}`,
       })),
       {
         Metrica: "Operaciones no cobradas",
-        Valor: `${noCobradas.porcentajeNoCobrado}% - ${formatARS(noCobradas.montoNoCobrado)}`,
+        Valor: `${noCobradas.porcentajeNoCobrado}% - ${formatMoney(noCobradas.montoNoCobrado)}`,
       },
     ]);
     const wb = XLSX.utils.book_new();
@@ -165,9 +164,9 @@ function Dashboard() {
       ["En proceso", String(kpi.enProceso)],
       ["Finalizados", String(kpi.finalizados)],
       ["Con error", String(kpi.conError)],
-      ["Monto total", formatARS(kpi.montoTotal)],
-      ["Monto cobrado", formatARS(kpi.montoCobrado)],
-      ["Monto pendiente", formatARS(kpi.montoPendiente)],
+      ["Monto total", formatMoney(kpi.montoTotal)],
+      ["Monto cobrado", formatMoney(kpi.montoCobrado)],
+      ["Monto pendiente", formatMoney(kpi.montoPendiente)],
       [
         "Tasa de cobranza",
         kpi.montoTotal > 0 ? `${Math.round((kpi.montoCobrado / kpi.montoTotal) * 100)}%` : "0%",

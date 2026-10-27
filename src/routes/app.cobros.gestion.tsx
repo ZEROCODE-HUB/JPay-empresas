@@ -23,7 +23,6 @@ import {
   getLotesGestionDB,
   getLoteByIdDB,
   getRegistrosByLoteIdDB,
-  formatARS,
   estadoCatalogo,
   medioPagoLabels,
   iniciarLoteDB,
@@ -241,7 +240,7 @@ function GestionLotes() {
     const total = lotes.reduce((s, l) => s + l.montoTotal, 0);
     const cobrado = lotes.reduce((s, l) => s + l.montoCobrado, 0);
     doc.text(
-      `Monto total: ${formatARS(total)} | Cobrado: ${formatARS(cobrado)} | Tasa: ${total > 0 ? Math.round((cobrado / total) * 100) : 0}%`,
+      `Monto total: ${formatMoney(total)} | Cobrado: ${formatMoney(cobrado)} | Tasa: ${total > 0 ? Math.round((cobrado / total) * 100) : 0}%`,
       14,
       30,
     );
@@ -249,8 +248,8 @@ function GestionLotes() {
       l.nombre,
       ESTADO_LABEL[l.estado],
       `${l.progreso}%`,
-      formatARS(l.montoTotal),
-      formatARS(l.montoCobrado),
+      formatMoney(l.montoTotal),
+      formatMoney(l.montoCobrado),
     ]);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (doc as any).autoTable({

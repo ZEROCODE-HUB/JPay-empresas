@@ -36,10 +36,6 @@ export const Route = createFileRoute("/app/historial")({
   component: Page,
 });
 
-/** Solo para las exportaciones (Excel/PDF), que conservan su formato. */
-const formatARS = (n: number) =>
-  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 type Mov = {
   txid: string;
   tipo: "ingreso" | "egreso";
@@ -564,9 +560,9 @@ function Page() {
       Estado: l.estado,
     }));
     const ws = XLSX.utils.json_to_sheet([
-      { Resumen: "Ingresos", Valor: formatARS(totalIngresos) },
-      { Resumen: "Egresos", Valor: formatARS(totalEgresos) },
-      { Resumen: "Neto", Valor: formatARS(totalIngresos - totalEgresos) },
+      { Resumen: "Ingresos", Valor: formatMoney(totalIngresos) },
+      { Resumen: "Egresos", Valor: formatMoney(totalEgresos) },
+      { Resumen: "Neto", Valor: formatMoney(totalIngresos - totalEgresos) },
       { Resumen: "Pendientes/Rechazados", Valor: String(totalPendientes) },
       {},
       ...body,
@@ -597,9 +593,9 @@ function Page() {
       head: [["Ingresos", "Egresos", "Neto", "Pendientes/Rechazados"]],
       body: [
         [
-          formatARS(totalIngresos),
-          formatARS(totalEgresos),
-          formatARS(totalIngresos - totalEgresos),
+          formatMoney(totalIngresos),
+          formatMoney(totalEgresos),
+          formatMoney(totalIngresos - totalEgresos),
           String(totalPendientes),
         ],
       ],

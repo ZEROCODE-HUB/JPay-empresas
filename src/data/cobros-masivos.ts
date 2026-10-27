@@ -97,14 +97,6 @@ function generateId(prefix: string): string {
 }
 
 // ===== Formateo =====
-export function formatARS(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    minimumFractionDigits: 2,
-  }).format(n);
-}
-
 // toResolvableLinkPagoUrl se re-exporta desde @/lib/pay-url arriba.
 // Mantener imports existentes en otros archivos sin cambios.
 

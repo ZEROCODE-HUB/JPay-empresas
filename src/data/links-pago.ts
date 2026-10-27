@@ -44,11 +44,3 @@ export const paymentMethods: PaymentMethod[] = [
   { id: "cabal-deb", label: "Cabal Débito", category: "debit", enabled: true },
   { id: "maestro", label: "Maestro", category: "debit", enabled: true },
 ];
-
-export function formatARS(n: number) {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    minimumFractionDigits: 0,
-  }).format(n);
-}

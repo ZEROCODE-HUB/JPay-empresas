@@ -28,10 +28,6 @@ export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 
-/** Solo para las exportaciones (Excel/PDF), que conservan su formato. */
-const formatARS = (n: number) =>
-  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 type PeriodKey = "today" | "15d" | "30d" | "60d" | "90d" | "day" | "range";
 
 const QUICK: Array<{ k: PeriodKey; l: string; days: number }> = [
@@ -192,12 +188,12 @@ function Dashboard() {
     }));
     if (fmt === "xlsx") {
       const ws = XLSX.utils.json_to_sheet([
-        { Resumen: "Saldo total", Valor: formatARS(kpis.saldo) },
-        { Resumen: "Depósitos", Valor: formatARS(kpis.depositos) },
-        { Resumen: "Retiros", Valor: formatARS(kpis.retiros) },
-        { Resumen: "Cobros Link de Pago", Valor: formatARS(kpis.cobrosLink) },
-        { Resumen: "Cobros QR", Valor: formatARS(kpis.cobrosQR) },
-        { Resumen: "Pagos QR", Valor: formatARS(kpis.pagosQR) },
+        { Resumen: "Saldo total", Valor: formatMoney(kpis.saldo) },
+        { Resumen: "Depósitos", Valor: formatMoney(kpis.depositos) },
+        { Resumen: "Retiros", Valor: formatMoney(kpis.retiros) },
+        { Resumen: "Cobros Link de Pago", Valor: formatMoney(kpis.cobrosLink) },
+        { Resumen: "Cobros QR", Valor: formatMoney(kpis.cobrosQR) },
+        { Resumen: "Pagos QR", Valor: formatMoney(kpis.pagosQR) },
         { Resumen: "Cuentas", Valor: String(kpis.cuentas) },
         {},
         ...rows,
@@ -222,12 +218,12 @@ function Dashboard() {
         startY: 32,
         head: [["KPI", "Valor"]],
         body: [
-          ["Saldo total", formatARS(kpis.saldo)],
-          ["Depósitos", formatARS(kpis.depositos)],
-          ["Retiros", formatARS(kpis.retiros)],
-          ["Cobros Link de Pago", formatARS(kpis.cobrosLink)],
-          ["Cobros QR", formatARS(kpis.cobrosQR)],
-          ["Pagos QR", formatARS(kpis.pagosQR)],
+          ["Saldo total", formatMoney(kpis.saldo)],
+          ["Depósitos", formatMoney(kpis.depositos)],
+          ["Retiros", formatMoney(kpis.retiros)],
+          ["Cobros Link de Pago", formatMoney(kpis.cobrosLink)],
+          ["Cobros QR", formatMoney(kpis.cobrosQR)],
+          ["Pagos QR", formatMoney(kpis.pagosQR)],
           ["Cuentas", String(kpis.cuentas)],
         ],
       });
