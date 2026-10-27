@@ -1,7 +1,7 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Download,
   FileText,
@@ -18,7 +18,8 @@ import {
 import { PageHeader, Card, Input, BtnOutline, BtnPrimary, Badge } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand-logo";
-import { requireSupabase } from "@/lib/supabase";
+import { getOperacion, type LineaMovimientoRow } from "@/lib/api/movimientos";
+import { useHistorial } from "@/hooks/useMovimientos";
 import { descargarComprobantePdf } from "@/lib/comprobante-pdf";
 import { compartirComprobante } from "@/lib/comprobante-imagen";
 import type { DatosComprobante } from "@/lib/comprobante";
@@ -218,9 +219,6 @@ type Linea = {
   estado: Mov["estado"];
 };
 
-const LINEA_COLS =
-  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre";
-
 const TIPOS_LINEA: Array<{ k: TipoLinea | "Todos"; l: string }> = [
   { k: "Todos", l: "Todos" },
   { k: "ingreso", l: "Ingreso" },
@@ -262,9 +260,23 @@ const formatFechaLinea = (iso: string) => {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 };
 
-// Operacion completa (para detalle y comprobante).
-const COLS_OPERACION =
-  "id_txn, tipo, cvu, monto_operacion, comision, impuesto, fecha, legajo, destinatario_nombre, destinatario_cuit, destinatario_banco, subcuenta_id, subcuentas:subaccounts(cbu), estados_movimiento(codigo, nombre)";
+const aLinea = (r: LineaMovimientoRow): Linea => ({
+  lineId: r.line_id as string,
+  transactionId: r.transaction_id as string,
+  idTxn: r.id_txn as string,
+  legajo: r.legajo as string,
+  tipoOperacion: r.tipo_operacion as string,
+  tipoLinea: r.tipo_linea as TipoLinea,
+  monto: Number(r.monto) || 0,
+  fecha: r.fecha as string,
+  lineNo: r.line_no as number,
+  cvu: r.cvu,
+  email: r.email,
+  nombre: r.nombre,
+  nombreDestino: r.nombre_destino,
+  cuit: r.cuit,
+  estado: estadoVisible(r.estado_nombre ?? r.estado_codigo),
+});
 
 function Page() {
   const [vista, setVista] = useState<"principal" | "sub">("principal");
@@ -287,141 +299,41 @@ function Page() {
   const pageSize = 25;
   const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
 
-  const [lineas, setLineas] = useState<Linea[]>([]);
-  const [subcuentas, setSubcuentas] = useState<
-    { id: string; nombre: string; cbu: string | null }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
-  const [sinSubcuentas, setSinSubcuentas] = useState(false);
-  const [totalCount, setTotalCount] = useState(0);
-  const [clienteNombre, setClienteNombre] = useState("");
-  const [clienteCuit, setClienteCuit] = useState("");
-  /** CBU/CVU de la cuenta del cliente (para el comprobante). */
-  const [clienteCbu, setClienteCbu] = useState("");
-
-  const cargar = useCallback(async () => {
-    setLoading(true);
-    try {
-      const sb = requireSupabase();
-      const {
-        data: { user },
-      } = await sb.auth.getUser();
-      const { data: cli } = await sb
-        .from("clientes")
-        .select("legajo, tipo_persona, nombre, cuit, cuit_cuil, correo")
-        .eq("correo", user?.email ?? "")
-        .maybeSingle();
-      const legajo = cli?.legajo;
-      setClienteNombre(String(cli?.nombre ?? ""));
-      setClienteCuit(String(cli?.cuit ?? "") || String(cli?.cuit_cuil ?? ""));
-      if (!legajo) {
-        setLineas([]);
-        setSubcuentas([]);
-        setSinSubcuentas(true);
-        setTotalCount(0);
-        return;
-      }
-
-      const { data: subs } = await sb
-        .from("subaccounts")
-        .select("id, nombre, cbu")
-        .eq("cliente_legajo", legajo)
-        .order("nombre", { ascending: true });
-      const lista = (subs ?? []).map((s: any) => ({
-        id: s.id as string,
-        nombre: s.nombre || "Sin nombre",
-        cbu: s.cbu ?? null,
-      }));
-      setSubcuentas(lista);
-      setSinSubcuentas(lista.length === 0);
-      // CBU para el comprobante: si el cliente tiene una sola cuenta (o todas con
-      // el mismo CVU, como en el sandbox) se usa esa; si tiene varias distintas no
-      // se puede saber cual se uso, asi que queda vacio (el movimiento no la guarda).
-      const cbues = [...new Set(lista.map((s) => s.cbu).filter(Boolean))];
-      setClienteCbu(cbues.length === 1 ? String(cbues[0]) : "");
-      if (lista.length > 0 && !sub) setSub(lista[0].nombre);
-
-      const from = (page - 1) * pageSize;
-      const to = from + pageSize - 1;
-      const like = (v: string) => `%${v.trim().replace(/[%_,()]/g, "\\$&")}%`;
-
-      let q: any = sb
-        .from("v_transaction_lines")
-        .select(LINEA_COLS, { count: "exact" })
-        .eq("legajo", legajo);
-
-      if (desde) q = q.gte("fecha", new Date(desde + "T00:00:00").toISOString());
-      if (hasta) q = q.lte("fecha", new Date(hasta + "T23:59:59").toISOString());
-
-      const tipos = OPERACIONES.find((o) => o.k === categoria)?.tipos ?? null;
-      if (tipos)
-        q = tipos.length === 1 ? q.eq("tipo_operacion", tipos[0]) : q.in("tipo_operacion", tipos);
-      if (tipoLinea !== "Todos") q = q.eq("tipo_linea", tipoLinea);
-
-      if (subFiltro !== "Todas") {
-        const match = lista.find((s) => s.nombre === subFiltro);
-        if (match) q = q.eq("subaccount_id", match.id);
-      }
-
-      if (buscarCbu.trim())
-        q = q.or(`cvu.ilike.${like(buscarCbu)},cvu_propio.ilike.${like(buscarCbu)}`);
-      if (buscarTxid.trim()) q = q.ilike("id_txn", like(buscarTxid));
-      if (buscarTitular.trim()) q = q.ilike("nombre_destino", like(buscarTitular));
-      const cuitDigitos = buscarCuit.replace(/\D/g, "");
-      if (cuitDigitos) q = q.ilike("cuit", like(cuitDigitos));
-
-      // Mas reciente primero; dentro de una operacion, en el orden de sus lineas.
-      const { data, count, error } = await q
-        .order("fecha", { ascending: false })
-        .order("id_txn", { ascending: true })
-        .order("line_no", { ascending: true })
-        .range(from, to);
-      if (error) throw error;
-
-      setLineas(
-        (data ?? []).map((r: any): Linea => ({
-          lineId: r.line_id,
-          transactionId: r.transaction_id,
-          idTxn: r.id_txn,
-          legajo: r.legajo,
-          tipoOperacion: r.tipo_operacion,
-          tipoLinea: r.tipo_linea,
-          monto: Number(r.monto) || 0,
-          fecha: r.fecha,
-          lineNo: r.line_no,
-          cvu: r.cvu,
-          email: r.email,
-          nombre: r.nombre,
-          nombreDestino: r.nombre_destino,
-          cuit: r.cuit,
-          estado: estadoVisible(r.estado_nombre ?? r.estado_codigo),
-        })),
-      );
-      setTotalCount(count ?? 0);
-    } catch (e) {
-      toast.error("No se pudieron cargar los movimientos");
-      setLineas([]);
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
-  }, [
+  const historial = useHistorial({
     page,
+    pageSize,
     desde,
     hasta,
-    categoria,
-    tipoLinea,
-    subFiltro,
-    buscarCbu,
-    buscarCuit,
-    buscarTxid,
-    buscarTitular,
-    sub,
-  ]);
+    tipos: OPERACIONES.find((o) => o.k === categoria)?.tipos ?? null,
+    tipoLinea: tipoLinea !== "Todos" ? tipoLinea : null,
+    subcuenta: subFiltro,
+    cbu: buscarCbu,
+    cuit: buscarCuit,
+    txid: buscarTxid,
+    titular: buscarTitular,
+  });
+  const loading = historial.loading;
+  const cli = historial.data?.cliente;
+  const clienteNombre = String(cli?.nombre ?? "");
+  const clienteCuit = String(cli?.cuit ?? "") || String(cli?.cuit_cuil ?? "");
+  const subcuentas = historial.data?.subcuentas ?? [];
+  const sinSubcuentas = !!historial.data && (!cli?.legajo || subcuentas.length === 0);
+  // CBU para el comprobante: si el cliente tiene una sola cuenta (o todas con
+  // el mismo CVU, como en el sandbox) se usa esa; si tiene varias distintas no
+  // se puede saber cual se uso, asi que queda vacio (el movimiento no la guarda).
+  const cbues = [...new Set(subcuentas.map((s) => s.cbu).filter(Boolean))];
+  const clienteCbu = cbues.length === 1 ? String(cbues[0]) : "";
+  const lineas: Linea[] = historial.isError ? [] : (historial.data?.lineas ?? []).map(aLinea);
+  const totalCount = historial.isError ? 0 : (historial.data?.total ?? 0);
+
+  const primeraSubcuenta = subcuentas[0]?.nombre;
+  useEffect(() => {
+    if (primeraSubcuenta && !sub) setSub(primeraSubcuenta);
+  }, [primeraSubcuenta, sub]);
 
   useEffect(() => {
-    cargar();
-  }, [cargar]);
+    if (historial.isError) toast.error("No se pudieron cargar los movimientos");
+  }, [historial.isError, historial.errorUpdatedAt]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -475,14 +387,7 @@ function Page() {
   /** Operacion completa de una linea (detalle y comprobante). */
   const cargarOperacion = async (l: Linea): Promise<Mov | null> => {
     try {
-      const sb = requireSupabase();
-      const { data: m, error } = await sb
-        .from("transactions")
-        .select(COLS_OPERACION)
-        .eq("id", l.transactionId)
-        .maybeSingle();
-      if (error || !m) throw error ?? new Error("no encontrada");
-      const r = m as any;
+      const r = await getOperacion(l.transactionId);
       return mapMov({
         id_txn: r.id_txn,
         tipo: r.tipo,

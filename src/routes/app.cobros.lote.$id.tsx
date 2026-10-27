@@ -27,7 +27,7 @@ import {
   getLegajoUsuario,
   type Lote,
   type RegistroDeLote,
-} from "@/data/cobros-masivos";
+} from "@/lib/api/cobros-masivos";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
 import { formatMoney } from "@/shared/format";
 import * as XLSX from "xlsx";

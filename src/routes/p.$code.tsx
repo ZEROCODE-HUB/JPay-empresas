@@ -13,7 +13,8 @@ import { Card, BtnPrimary, Input, Label } from "@/components/portal-shell";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand } from "@/brand/brand";
 import { toast } from "sonner";
-import { requireSupabase } from "@/lib/supabase";
+import type { CheckoutBandera, CheckoutLink } from "@/lib/api/checkout";
+import { useCheckoutLink } from "@/hooks/useCheckout";
 import { paymentProcessor } from "@/lib/payment-processor";
 import {
   isDevWithTestCard,
@@ -26,21 +27,7 @@ import { formatDateTime, formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/p/$code")({ component: Checkout });
 
-type LinkData = {
-  id: string;
-  url: string;
-  estado: string;
-  referencia: string | null;
-  notas: string | null;
-  expira_en: string | null;
-  pagos_parciales: boolean;
-  metodos_pago: string[];
-  cliente_legajo: string;
-  monto: number;
-  detalle: Array<{ producto_nombre: string; cantidad: number; precio_unitario: number }>;
-  comercio_id: string | null;
-  comercio_nombre: string | null;
-};
+type LinkData = CheckoutLink;
 
 const LOTE_CATEGORY_TO_METHODS: Record<string, string[]> = {
   TARJETA_CREDITO: ["visa-cred", "mc-cred", "amex", "cabal-cred", "naranja", "diners"],
@@ -145,10 +132,13 @@ function isCardMethod(id: string) {
 
 function Checkout() {
   const { code } = Route.useParams();
-  const [status, setStatus] = useState<
-    "loading" | "ready" | "notfound" | "inactive" | "expired" | "success" | "error"
-  >("loading");
-  const [data, setData] = useState<LinkData | null>(null);
+  const linkQuery = useCheckoutLink(code);
+  const resultado = linkQuery.data;
+  const [pagado, setPagado] = useState(false);
+  const status: "loading" | "ready" | "notfound" | "inactive" | "expired" | "success" | "error" =
+    pagado ? "success" : linkQuery.isError ? "error" : !resultado ? "loading" : resultado.estado;
+  const data: LinkData | null =
+    resultado && resultado.estado !== "notfound" ? resultado.link : null;
   const [method, setMethod] = useState<string>("");
   const [montoPagar, setMontoPagar] = useState<string>("");
   const [titular, setTitular] = useState("");
@@ -179,86 +169,35 @@ function Checkout() {
     /** true cuando el cobro fue simulado (no se llamo a la pasarela). */
     simulado?: boolean;
   } | null>(null);
-  const [comercioBanderas, setComercioBanderas] = useState<string[]>([]);
   /**
    * Filas de `comercio_banderas` con su UUID. El backend resuelve el metodo
    * a partir del id de bandera, no del texto visible, asi que hace falta
    * poder mapear "visa-cred" -> fila concreta del comercio del link.
    */
-  const [banderasRows, setBanderasRows] = useState<Array<{ id: string; bandera: string }>>([]);
+  const banderasRows = useMemo<CheckoutBandera[]>(
+    () => (resultado?.estado === "ready" ? (resultado.banderas ?? []) : []),
+    [resultado],
+  );
+  const comercioBanderas = useMemo(
+    () => banderasRows.map((b) => b.bandera.toLowerCase().replace(/\s+/g, "_")),
+    [banderasRows],
+  );
 
+  // Al resolver el link se preselecciona el primer metodo y el monto total.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const s = requireSupabase();
-        console.log("[Checkout] code:", code);
-        const { data: r, error: rpcErr } = await s.rpc("obtener_link_pago", { p_codigo: code });
-        console.log("[Checkout] rpc result:", r, "error:", rpcErr);
-        if (cancelled) return;
-        if (!r) {
-          setStatus("notfound");
-          return;
-        }
-        const d = r as LinkData;
-
-        const { data: linkRow } = await s
-          .from("cliente_links_pago")
-          .select("comercio_id, comercio_nombre")
-          .eq("id", d.id)
-          .maybeSingle();
-
-        if (linkRow) {
-          d.comercio_id = linkRow.comercio_id;
-          d.comercio_nombre = linkRow.comercio_nombre;
-        }
-
-        if (d.estado === "Inactivo") {
-          setData(d);
-          setStatus("inactive");
-          return;
-        }
-        if (d.expira_en && new Date(d.expira_en).getTime() < Date.now()) {
-          setData(d);
-          setStatus("expired");
-          return;
-        }
-        await s.rpc("incrementar_vistas_link", { p_link_id: d.id });
-        setData(d);
-
-        if (d.comercio_id) {
-          const { data: bandas } = await s
-            .from("comercio_banderas")
-            .select("id, bandera")
-            .eq("comercio_id", d.comercio_id)
-            .eq("estado", "Activo");
-          console.log("[Checkout] bandas:", bandas);
-          setBanderasRows((bandas ?? []) as Array<{ id: string; bandera: string }>);
-          const flags = (bandas ?? []).map((b: { bandera: string }) =>
-            b.bandera.toLowerCase().replace(/\s+/g, "_"),
-          );
-          console.log("[Checkout] flags:", flags);
-          setComercioBanderas(flags);
-          if (flags.length > 0) {
-            setMethod(getMethodIdFromBandera(flags[0]));
-          } else {
-            const expanded = expandMethods(d.metodos_pago);
-            setMethod((expanded[0] ?? d.metodos_pago?.[0] ?? "").trim());
-          }
-        } else {
-          const expanded = expandMethods(d.metodos_pago);
-          setMethod((expanded[0] ?? d.metodos_pago?.[0] ?? "").trim());
-        }
-        setMontoPagar(total(d).toFixed(2));
-        setStatus("ready");
-      } catch {
-        if (!cancelled) setStatus("error");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [code]);
+    if (resultado?.estado !== "ready") return;
+    const d = resultado.link;
+    if (resultado.banderas) console.log("[Checkout] flags:", comercioBanderas);
+    if (comercioBanderas.length > 0) {
+      setMethod(getMethodIdFromBandera(comercioBanderas[0]));
+    } else {
+      const expanded = expandMethods(d.metodos_pago);
+      setMethod((expanded[0] ?? d.metodos_pago?.[0] ?? "").trim());
+    }
+    setMontoPagar(total(d).toFixed(2));
+    // Solo al llegar un resultado nuevo de la consulta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultado]);
 
   const total = (d: LinkData) => {
     if (d.detalle?.length) {
@@ -444,8 +383,9 @@ function Checkout() {
         metodo: metodosDisponibles.find((m) => m.id === method)?.label ?? method,
         pagoEn: new Date(),
       });
-      setStatus("success");
-    } catch (e: any) {
+      setPagado(true);
+    } catch (e) {
+      const err = e as { name?: string; message?: string } | null;
       // Los datos de la tarjeta no se conservan: si el usuario reintenta, vuelve
       // a tipearlos. Es una decision de PCI, no de conveniencia.
       if (isCardMethod(method)) {
@@ -453,11 +393,11 @@ function Checkout() {
         setCvv("");
         setVenc("");
       }
-      if (e?.name === "PaymentPendingError") {
-        toast.info(e.message);
+      if (err?.name === "PaymentPendingError") {
+        toast.info(err.message);
         return;
       }
-      toast.error(e?.message || "No se pudo procesar el pago");
+      toast.error(err?.message || "No se pudo procesar el pago");
     } finally {
       setProcessing(false);
     }
@@ -508,9 +448,9 @@ function Checkout() {
         pagoEn: new Date(),
         simulado: true,
       });
-      setStatus("success");
-    } catch (e: any) {
-      toast.error(e?.message || "No se pudo simular el pago");
+      setPagado(true);
+    } catch (e) {
+      toast.error((e as { message?: string } | null)?.message || "No se pudo simular el pago");
     } finally {
       setProcessing(false);
     }

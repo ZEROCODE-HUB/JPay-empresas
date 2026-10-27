@@ -11,8 +11,9 @@ import {
   WizardNav,
 } from "@/components/onboarding";
 import { PROVINCIAS, useOnboarding, type FileRef } from "@/lib/onboarding-store";
-import { submitOnboarding, fileToB64 } from "@/lib/api/onboarding";
-import { getSignedDocUrls, requireSupabase } from "@/lib/supabase";
+import { submitOnboarding, fileToB64, getTipoPersonaPorCorreo } from "@/lib/api/onboarding";
+import { getUsuarioActual } from "@/lib/api/auth";
+import { usePrefillKyc } from "@/hooks/useOnboarding";
 import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/onboarding/kyc")({
@@ -40,7 +41,6 @@ function KycWizard() {
     servicio: null,
     selfie: null,
   });
-  const [loadingDocs, setLoadingDocs] = useState(true);
   const [addr, setAddr] = useState({
     direccion: kyc.direccion ?? "",
     direccion2: kyc.direccion2 ?? "",
@@ -53,79 +53,54 @@ function KycWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Prefill: si ya envió onboarding, cargar documentos existentes y dirección
+  const { data: prefill, isLoading: loadingDocs } = usePrefillKyc();
   useEffect(() => {
-    (async () => {
-      try {
-        const sb = requireSupabase();
-        const { data: u } = await sb.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) {
-          setLoadingDocs(false);
-          return;
-        }
-        const { data: cli } = await sb
-          .from("clientes")
-          .select("legajo, direccion, direccion2, ciudad, provincia, cp")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) {
-          setLoadingDocs(false);
-          return;
-        }
-        // Prefill dirección desde DB si existe
-        if ((cli as any).direccion)
-          setAddr((a) => ({
-            ...a,
-            direccion: (cli as any).direccion ?? a.direccion,
-            direccion2: (cli as any).direccion2 ?? a.direccion2,
-            ciudad: (cli as any).ciudad ?? a.ciudad,
-            provincia: (cli as any).provincia ?? a.provincia,
-            cp: (cli as any).cp ?? a.cp,
-          }));
-        const { data: docs } = await sb
-          .from("documentos")
-          .select("tipo, url, label")
-          .eq("cliente_legajo", (cli as any).legajo);
-        if (!docs || docs.length === 0) {
-          setLoadingDocs(false);
-          return;
-        }
-        const urls = await getSignedDocUrls(docs.map((d: any) => d.url));
-        const tipoMap: Record<string, keyof typeof files> = {
-          id_frente: "dniFrente",
-          id_dorso: "dniDorso",
-          servicio: "servicio",
-          selfie: "selfie",
+    if (!prefill?.cliente) return;
+    const cli = prefill.cliente;
+    // Prefill dirección desde DB si existe
+    if (cli.direccion)
+      setAddr((a) => ({
+        ...a,
+        direccion: cli.direccion ?? a.direccion,
+        direccion2: cli.direccion2 ?? a.direccion2,
+        ciudad: cli.ciudad ?? a.ciudad,
+        provincia: cli.provincia ?? a.provincia,
+        cp: cli.cp ?? a.cp,
+      }));
+    const docs = prefill.documentos;
+    if (docs.length === 0) return;
+    const tipoMap: Record<string, keyof typeof files> = {
+      id_frente: "dniFrente",
+      id_dorso: "dniDorso",
+      servicio: "servicio",
+      selfie: "selfie",
+    };
+    const next: typeof files = {
+      dniFrente: null,
+      dniDorso: null,
+      servicio: null,
+      selfie: null,
+    };
+    try {
+      for (const d of docs) {
+        const key = tipoMap[d.tipo];
+        if (!key) continue;
+        // FileUpload espera {name, url}; sin file significa ya cargado
+        next[key] = {
+          name: d.label || (d.url as string).split("/").pop() || d.tipo,
+          url: d.signedUrl ?? undefined,
         };
-        const next: typeof files = {
-          dniFrente: null,
-          dniDorso: null,
-          servicio: null,
-          selfie: null,
-        };
-        for (const d of docs as any[]) {
-          const key = tipoMap[d.tipo];
-          if (!key) continue;
-          const signed = urls[d.url];
-          // FileUpload espera {name, url}; sin file significa ya cargado
-          next[key] = {
-            name: d.label || d.url.split("/").pop() || d.tipo,
-            url: signed ?? undefined,
-          } as FileRef;
-        }
-        setFiles((prev) => ({
-          dniFrente: next.dniFrente ?? prev.dniFrente,
-          dniDorso: next.dniDorso ?? prev.dniDorso,
-          servicio: next.servicio ?? prev.servicio,
-          selfie: next.selfie ?? prev.selfie,
-        }));
-      } catch {
-        /* ignore */
-      } finally {
-        setLoadingDocs(false);
       }
-    })();
-  }, []);
+    } catch {
+      return;
+    }
+    setFiles((prev) => ({
+      dniFrente: next.dniFrente ?? prev.dniFrente,
+      dniDorso: next.dniDorso ?? prev.dniDorso,
+      servicio: next.servicio ?? prev.servicio,
+      selfie: next.selfie ?? prev.selfie,
+    }));
+  }, [prefill]);
 
   const canNext =
     (step === 0 && files.dniFrente && files.dniDorso) ||
@@ -150,22 +125,15 @@ function KycWizard() {
     // Fallback si el store perdió datos (ej: login directo sin pasar por registro)
     if (!registro.email || !tipoCuenta) {
       try {
-        const { requireSupabase } = await import("@/lib/supabase");
-        const sb = requireSupabase();
-        const { data: u } = await sb.auth.getUser();
-        const mail = u.user?.email ?? "";
+        const user = await getUsuarioActual();
+        const mail = user?.email ?? "";
         if (mail && !registro.email) registro = { ...registro, email: mail };
         if (!tipoCuenta) {
-          const metaTipo = (u.user?.user_metadata as any)?.tipoCuenta as string | undefined;
-          if (metaTipo === "juridica" || metaTipo === "fisica") tipoCuenta = metaTipo as any;
+          const metaTipo = (user?.user_metadata as { tipoCuenta?: string } | undefined)?.tipoCuenta;
+          if (metaTipo === "juridica" || metaTipo === "fisica") tipoCuenta = metaTipo;
           else {
-            const { data: cli } = await sb
-              .from("clientes")
-              .select("tipo_persona")
-              .eq("correo", mail)
-              .maybeSingle();
-            if ((cli as any)?.tipo_persona)
-              tipoCuenta = (cli as any).tipo_persona === "juridica" ? "juridica" : "fisica";
+            const tipoPersona = await getTipoPersonaPorCorreo(mail);
+            if (tipoPersona) tipoCuenta = tipoPersona === "juridica" ? "juridica" : "fisica";
           }
         }
       } catch {
@@ -178,7 +146,7 @@ function KycWizard() {
       ciudad: addr.ciudad,
       provincia: addr.provincia,
       cp: addr.cp,
-      fechaNacimiento: (registro as any).fechaNac ?? null,
+      fechaNacimiento: registro.fechaNac ?? null,
     };
     let cuit: string;
     if (tipoCuenta === "juridica") {

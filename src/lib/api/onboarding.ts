@@ -1,4 +1,7 @@
-import { requireSupabase } from "@/lib/supabase";
+import { getSignedDocUrls, requireSupabase } from "@/lib/supabase";
+import type { Tables } from "@/lib/database.types";
+import { getEmailUsuarioActual } from "./auth";
+import { DataAccessError } from "./errors";
 
 export type OnboardingPayload = {
   email: string;
@@ -163,4 +166,158 @@ export function fileToB64(file: File): Promise<{ name: string; type: string; dat
     reader.onerror = () => reject(reader.error);
     reader.readAsDataURL(file);
   });
+}
+
+// ============================================================================
+// Lecturas del cliente para el flujo de onboarding / login
+// ============================================================================
+
+type Cliente = Tables<"clientes">;
+
+export type ClienteDatosPersonales = Pick<
+  Cliente,
+  "genero" | "cuit_cuil" | "ocupacion" | "origen_fondos" | "es_pep"
+>;
+export type ClienteDatosEmpresa = Pick<
+  Cliente,
+  "cuit" | "fecha_inscripcion" | "tipo_sociedad" | "nombre_legal" | "nombre_fantasia"
+>;
+export type ClienteDireccion = Pick<
+  Cliente,
+  "legajo" | "direccion" | "direccion2" | "ciudad" | "provincia" | "cp"
+>;
+export type ClienteOnboarding = Pick<Cliente, "legajo" | "estado" | "onboarding_completo">;
+export type DocumentoKyc = Pick<Tables<"documentos">, "tipo" | "url" | "label"> & {
+  signedUrl: string | null | undefined;
+};
+
+export async function getClienteDatosPersonales(
+  email: string,
+): Promise<ClienteDatosPersonales | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("clientes")
+    .select("genero, cuit_cuil, ocupacion, origen_fondos, es_pep")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  return data;
+}
+
+export async function getClienteDatosEmpresa(email: string): Promise<ClienteDatosEmpresa | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("clientes")
+    .select("cuit, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  return data;
+}
+
+export async function getEstadoClientePorCorreo(email: string): Promise<string | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("clientes")
+    .select("estado")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  return data?.estado ?? null;
+}
+
+export async function getTipoPersonaPorCorreo(email: string): Promise<string | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("clientes")
+    .select("tipo_persona")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  return data?.tipo_persona ?? null;
+}
+
+export async function getClienteOnboardingPorCorreo(
+  email: string,
+): Promise<ClienteOnboarding | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("clientes")
+    .select("legajo, estado, onboarding_completo")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  return data;
+}
+
+/**
+ * true si el cliente ya tiene alguna validación o documento cargado.
+ * Un error en cualquiera de las dos consultas cuenta como "sin registro" (comportamiento previo).
+ */
+export async function tieneValidacionODocumento(legajo: string): Promise<boolean> {
+  const sb = requireSupabase();
+  const { data: val } = await sb
+    .from("validaciones")
+    .select("id")
+    .eq("cliente_legajo", legajo)
+    .limit(1)
+    .maybeSingle();
+  const { data: doc } = await sb
+    .from("documentos")
+    .select("id")
+    .eq("cliente_legajo", legajo)
+    .limit(1)
+    .maybeSingle();
+  return !!val || !!doc;
+}
+
+export type EstadoOnboarding = { estado: string | null; hasDocs: boolean | null };
+
+/** Estado del alta del usuario actual para la pantalla "en proceso". */
+export async function getEstadoOnboarding(): Promise<EstadoOnboarding> {
+  const email = await getEmailUsuarioActual();
+  if (!email) return { estado: null, hasDocs: null };
+  const sb = requireSupabase();
+  const { data: cli, error } = await sb
+    .from("clientes")
+    .select("estado, onboarding_completo, legajo, tipo_persona")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  let hasDocs: boolean | null = null;
+  if (cli?.legajo) {
+    try {
+      hasDocs = await tieneValidacionODocumento(cli.legajo);
+    } catch {
+      hasDocs = false;
+    }
+  }
+  return { estado: cli?.estado || null, hasDocs };
+}
+
+export type PrefillKyc = { cliente: ClienteDireccion | null; documentos: DocumentoKyc[] };
+
+/** Dirección y documentos ya cargados del usuario actual (con URLs firmadas). */
+export async function getPrefillKyc(): Promise<PrefillKyc> {
+  const email = await getEmailUsuarioActual();
+  if (!email) return { cliente: null, documentos: [] };
+  const sb = requireSupabase();
+  const { data: cli, error } = await sb
+    .from("clientes")
+    .select("legajo, direccion, direccion2, ciudad, provincia, cp")
+    .eq("correo", email)
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  if (!cli) return { cliente: null, documentos: [] };
+  // Un error al leer documentos no impide precargar la dirección (comportamiento previo).
+  const { data: docs } = await sb
+    .from("documentos")
+    .select("tipo, url, label")
+    .eq("cliente_legajo", cli.legajo);
+  if (!docs || docs.length === 0) return { cliente: cli, documentos: [] };
+  const urls = await getSignedDocUrls(docs.map((d) => d.url as string));
+  return {
+    cliente: cli,
+    documentos: docs.map((d) => ({ ...d, signedUrl: urls[d.url as string] })),
+  };
 }

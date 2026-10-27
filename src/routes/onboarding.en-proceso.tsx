@@ -1,7 +1,6 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { AuthShell, PrimaryButton, SecondaryButton, SuccessCard } from "@/components/onboarding";
-import { requireSupabase } from "@/lib/supabase";
+import { useEstadoOnboarding } from "@/hooks/useOnboarding";
 import { ESTADO_LABEL, normalizarEstado, siguientePasoOnboarding } from "@/lib/cliente-estados";
 import { brand, pageTitle, mailto } from "@/brand/brand";
 
@@ -14,54 +13,9 @@ export const Route = createFileRoute("/onboarding/en-proceso")({
 
 function EnProceso() {
   const nav = useNavigate();
-  const [estado, setEstado] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [hasDocs, setHasDocs] = useState<boolean | null>(null);
-  const [, setTipoPersona] = useState<string | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) {
-          setLoading(false);
-          return;
-        }
-        const { data: cli } = await s
-          .from("clientes")
-          .select("estado, onboarding_completo, legajo, tipo_persona")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (cli?.estado) setEstado(cli.estado as string);
-        if ((cli as any)?.tipo_persona) setTipoPersona((cli as any).tipo_persona as string);
-        if (cli && (cli as any).legajo) {
-          try {
-            const { data: val } = await s
-              .from("validaciones")
-              .select("id")
-              .eq("cliente_legajo", (cli as any).legajo)
-              .limit(1)
-              .maybeSingle();
-            const { data: doc } = await s
-              .from("documentos")
-              .select("id")
-              .eq("cliente_legajo", (cli as any).legajo)
-              .limit(1)
-              .maybeSingle();
-            setHasDocs(!!val || !!doc);
-          } catch {
-            setHasDocs(false);
-          }
-        }
-      } catch {
-        // noop
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+  const { data, isLoading: loading } = useEstadoOnboarding();
+  const estado = data?.estado ?? null;
+  const hasDocs = data?.hasDocs ?? null;
 
   const norm = estado ? normalizarEstado(estado) : null;
   const label = norm ? ESTADO_LABEL[norm] : "En proceso";

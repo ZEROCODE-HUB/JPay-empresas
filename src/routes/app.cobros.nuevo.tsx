@@ -11,7 +11,7 @@ import {
   type MedioPago,
   type Lote,
   type RegistroDeLote,
-} from "@/data/cobros-masivos";
+} from "@/lib/api/cobros-masivos";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
 import { formatMoney } from "@/shared/format";

@@ -1,7 +1,7 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   Wallet,
   ArrowDownLeft,
@@ -17,8 +17,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PageHeader, Card, BtnOutline } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { requireSupabase } from "@/lib/supabase";
-import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { useDashboard } from "@/hooks/useMovimientos";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -65,11 +64,6 @@ function Dashboard() {
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
 
-  const [movs, setMovs] = useState<any[]>([]);
-  const [saldoTotal, setSaldoTotal] = useState(0);
-  const [cuentas, setCuentas] = useState(1);
-  const [cbuLabel, setCbuLabel] = useState("");
-
   const range = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -95,55 +89,14 @@ function Dashboard() {
     return { start: s, end: e };
   }, [period, day, desde, hasta]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s
-          .from("clientes")
-          .select("legajo, cbu, alias")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) return;
-        setCbuLabel(cli.alias ? `CVU ${cli.alias}` : cli.cbu ? `CBU ${cli.cbu}` : "");
-        const { data: m } = await s
-          .from("transactions")
-          .select("tipo, monto_operacion, fecha")
-          .eq("legajo", cli.legajo)
-          .gte("fecha", range.start.toISOString())
-          .lte("fecha", range.end.toISOString());
-        if (cancelled) return;
-        setMovs(m ?? []);
-        const { data: subs } = await s
-          .from("subaccounts")
-          .select(SALDOS_EMBED)
-          .eq("cliente_legajo", cli.legajo);
-        if (cancelled) return;
-        const saldo = (subs ?? [])
-          .map(conSaldos)
-          .reduce(
-            (a: number, x: any) =>
-              a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0),
-            0,
-          );
-        setSaldoTotal(saldo);
-        setCuentas((subs ?? []).length + 1);
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [range.start, range.end]);
+  const { movs, saldoTotal, cuentas, cbuLabel } = useDashboard(range.start, range.end);
 
   const data = useMemo(() => {
     const dias = eachDay(range.start, range.end);
-    const byDate = new Map<string, any>();
+    const byDate = new Map<
+      string,
+      { date: string; depositos: number; cobrosQR: number; linkPago: number; total: number }
+    >();
     dias.forEach((d) => {
       const key = toKey(d);
       byDate.set(key, { date: fmtKey(d), depositos: 0, cobrosQR: 0, linkPago: 0, total: 0 });

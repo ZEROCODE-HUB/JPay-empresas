@@ -32,7 +32,7 @@ import {
   type NoCobradasData,
   type EvolucionData,
   type LoteResumen,
-} from "@/data/cobros-masivos";
+} from "@/lib/api/cobros-masivos";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";

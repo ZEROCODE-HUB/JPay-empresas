@@ -10,6 +10,7 @@ import {
 } from "@/components/onboarding";
 import { TIPOS_SOCIEDAD, useOnboarding } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
+import { useDatosEmpresaGuardados } from "@/hooks/useOnboarding";
 
 export const Route = createFileRoute("/onboarding/datos-empresa")({
   head: () => ({
@@ -32,35 +33,19 @@ function DatosEmpresa() {
     nombreFantasia: datosEmpresa.nombreFantasia ?? "",
   });
   const [err, setErr] = useState<Record<string, string>>({});
+  const { data: cli } = useDatosEmpresaGuardados();
   useEffect(() => {
-    (async () => {
-      try {
-        const { requireSupabase } = await import("@/lib/supabase");
-        const sb = requireSupabase();
-        const { data: u } = await sb.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await sb
-          .from("clientes")
-          .select("cuit, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) return;
-        // No sobrescribir si ya hay valor en store (edición fresca)
-        const realCuit =
-          (cli as any).cuit && !(cli as any).cuit.startsWith("99") ? (cli as any).cuit : "";
-        setF((prev) => ({
-          cuit: prev.cuit || realCuit || "",
-          fechaInscripcion: prev.fechaInscripcion || (cli as any).fecha_inscripcion || "",
-          tipoId: prev.tipoId || (cli as any).tipo_sociedad || "",
-          nombreLegal: prev.nombreLegal || (cli as any).nombre_legal || "",
-          nombreFantasia: prev.nombreFantasia || (cli as any).nombre_fantasia || "",
-        }));
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
+    if (!cli) return;
+    // No sobrescribir si ya hay valor en store (edición fresca)
+    const realCuit = cli.cuit && !cli.cuit.startsWith("99") ? cli.cuit : "";
+    setF((prev) => ({
+      cuit: prev.cuit || realCuit || "",
+      fechaInscripcion: prev.fechaInscripcion || cli.fecha_inscripcion || "",
+      tipoId: prev.tipoId || cli.tipo_sociedad || "",
+      nombreLegal: prev.nombreLegal || cli.nombre_legal || "",
+      nombreFantasia: prev.nombreFantasia || cli.nombre_fantasia || "",
+    }));
+  }, [cli]);
 
   const cuitDigits = f.cuit.replace(/\D/g, "");
   const cuitExcede = cuitDigits.length > 11;

@@ -13,6 +13,7 @@ import {
 } from "@/components/onboarding";
 import { OCUPACIONES, ORIGEN_FONDOS, useOnboarding } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
+import { useDatosPersonalesGuardados } from "@/hooks/useOnboarding";
 
 export const Route = createFileRoute("/onboarding/datos-personales")({
   head: () => ({
@@ -38,39 +39,26 @@ function DatosPersonales() {
     esPEP: datosPersonales.esPEP ?? false,
   });
   const [err, setErr] = useState<Record<string, string>>({});
+  const { data: guardados } = useDatosPersonalesGuardados();
   useEffect(() => {
-    (async () => {
-      try {
-        const { requireSupabase } = await import("@/lib/supabase");
-        const sb = requireSupabase();
-        const { data: u } = await sb.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        // Protección: si el store persiste datos de otra cuenta en el mismo browser,
-        // vaciarlo y reiniciar el formulario antes de que se pre-carge con esa data.
-        const st = useOnboarding.getState();
-        if (st.registro.email && st.registro.email !== mail) {
-          st.reset();
-          setF({ genero: "", cuitCuil: "", ocupacion: "", origenFondos: "", esPEP: false });
-        }
-        const { data: cli } = await sb
-          .from("clientes")
-          .select("genero, cuit_cuil, ocupacion, origen_fondos, es_pep")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) return;
-        setF((prev) => ({
-          genero: prev.genero || (cli as any).genero || "",
-          cuitCuil: prev.cuitCuil || (cli as any).cuit_cuil || "",
-          ocupacion: prev.ocupacion || (cli as any).ocupacion || "",
-          origenFondos: prev.origenFondos || (cli as any).origen_fondos || "",
-          esPEP: prev.esPEP || !!(cli as any).es_pep,
-        }));
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
+    if (!guardados) return;
+    const { email: mail, cliente: cli } = guardados;
+    // Protección: si el store persiste datos de otra cuenta en el mismo browser,
+    // vaciarlo y reiniciar el formulario antes de que se pre-carge con esa data.
+    const st = useOnboarding.getState();
+    if (st.registro.email && st.registro.email !== mail) {
+      st.reset();
+      setF({ genero: "", cuitCuil: "", ocupacion: "", origenFondos: "", esPEP: false });
+    }
+    if (!cli) return;
+    setF((prev) => ({
+      genero: prev.genero || cli.genero || "",
+      cuitCuil: prev.cuitCuil || cli.cuit_cuil || "",
+      ocupacion: prev.ocupacion || cli.ocupacion || "",
+      origenFondos: prev.origenFondos || cli.origen_fondos || "",
+      esPEP: prev.esPEP || !!cli.es_pep,
+    }));
+  }, [guardados]);
 
   const cuitDigits = f.cuitCuil.replace(/\D/g, "");
   const cuitExcede = cuitDigits.length > 11;

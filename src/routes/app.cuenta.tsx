@@ -1,6 +1,6 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { brand } from "@/brand/brand";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Building2,
   Upload,
@@ -28,7 +28,9 @@ import {
 import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand-logo";
 import { useOnboarding } from "@/lib/onboarding-store";
-import { requireSupabase, getSignedDocUrls } from "@/lib/supabase";
+import { updateCliente, type Cliente } from "@/lib/api/cuenta";
+import type { TablesUpdate } from "@/lib/database.types";
+import { useClienteSesion, useResumenCuenta } from "@/hooks/useCuenta";
 import { DocPreviewModal } from "@/components/doc-preview";
 import { ESTADO_LABEL, normalizarEstado, siguientePasoOnboarding } from "@/lib/cliente-estados";
 import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/shared/format";
@@ -91,14 +93,49 @@ const planPersona = {
   total: 500,
 };
 
+type ClienteForm = {
+  nombre: string;
+  apellido: string;
+  nombreLegal: string;
+  nombreFantasia: string;
+  cuit: string;
+  tipo_sociedad: string;
+  fecha_inscripcion: string;
+  direccion: string;
+  ciudad: string;
+  provincia: string;
+  cp: string;
+  telefono: string;
+  actividad: string;
+  genero: string;
+  cuit_cuil: string;
+  fecha_nacimiento: string;
+  ocupacion: string;
+  origen_fondos: string;
+  es_pep: boolean;
+};
+
 function Page() {
   const [cbuPreview, setCbuPreview] = useState(false);
   const [docPreview, setDocPreview] = useState<DocReal | null>(null);
-  const [kycDocs, setKycDocs] = useState<DocReal[]>([]);
-  const [loadingDocs, setLoadingDocs] = useState(true);
-  const [cliente, setCliente] = useState<any | null>(null);
-  const [movCount, setMovCount] = useState(0);
-  const [form, setForm] = useState<any>({});
+  const { cliente, isLoading: loadingCliente, setCliente } = useClienteSesion();
+  const resumen = useResumenCuenta(cliente?.legajo);
+  const movCount = resumen.movimientosMes;
+  const loadingDocs = loadingCliente || (!!cliente && resumen.isLoading);
+  const kycDocs = useMemo<DocReal[]>(
+    () =>
+      resumen.documentos.map((d) => ({
+        tipo: TIPO_LABEL[d.tipo] ?? d.tipo,
+        rawTipo: d.tipo,
+        label: d.label ?? d.url,
+        url: d.url as string,
+        signedUrl: d.signedUrl,
+        kind: kindOf(d.label ?? d.url, d.url as string),
+        date: d.created_at,
+      })),
+    [resumen.documentos],
+  );
+  const [form, setForm] = useState<Partial<ClienteForm>>({});
   const [saving, setSaving] = useState(false);
   const { tipoCuenta, registro, datosPersonales, datosEmpresa, kyc, emailValidado } =
     useOnboarding();
@@ -108,7 +145,7 @@ function Page() {
     : tipoCuenta === "juridica";
   const plan = isPJ ? planEmpresa : planPersona;
   const estadoNorm = cliente?.estado
-    ? normalizarEstado(cliente.estado as string)
+    ? normalizarEstado(cliente.estado)
     : emailValidado
       ? ("registrado" as const)
       : ("pendiente_verificacion" as const);
@@ -147,7 +184,7 @@ function Page() {
     alias: cliente?.alias ?? "—",
   };
 
-  const clienteToForm = (c: any) => {
+  const clienteToForm = (c: Cliente): ClienteForm => {
     const [n, ...rest] = (c.nombre ?? "").split(" ");
     return {
       nombre: n ?? "",
@@ -172,7 +209,8 @@ function Page() {
     };
   };
 
-  const setF = (k: string, v: any) => setForm((p: typeof form) => ({ ...p, [k]: v }));
+  const setF = (k: Exclude<keyof ClienteForm, "es_pep">, v: string) =>
+    setForm((p) => ({ ...p, [k]: v }));
 
   useEffect(() => {
     if (cliente) setForm(clienteToForm(cliente));
@@ -182,7 +220,6 @@ function Page() {
     if (!cliente) return;
     setSaving(true);
     try {
-      const s = requireSupabase();
       const nombre = `${form.nombre ?? ""} ${form.apellido ?? ""}`.trim();
       const patch = {
         nombre,
@@ -204,9 +241,9 @@ function Page() {
         origen_fondos: form.origen_fondos || null,
         es_pep: !!form.es_pep,
       };
-      const { error } = await s.from("clientes").update(patch).eq("legajo", cliente.legajo);
-      if (error) throw error;
-      setCliente({ ...cliente, ...patch });
+      // `cuit` es NOT NULL en la base: vacío se manda null igual que antes (falla y avisa).
+      await updateCliente(cliente.legajo, patch as TablesUpdate<"clientes">);
+      setCliente({ ...cliente, ...patch } as Cliente);
       toast.success("Cambios guardados");
     } catch {
       toast.error("No se pudieron guardar los cambios");
@@ -214,51 +251,6 @@ function Page() {
       setSaving(false);
     }
   };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s.from("clientes").select("*").eq("correo", mail).maybeSingle();
-        setCliente(cli);
-        if (cli) {
-          const { data: docs } = await s
-            .from("documentos")
-            .select("tipo, url, label, created_at")
-            .eq("cliente_legajo", cli.legajo);
-          const rawDocs = (docs ?? []) as any[];
-          const urls = await getSignedDocUrls(rawDocs.map((d) => d.url));
-          setKycDocs(
-            rawDocs.map((d) => ({
-              tipo: TIPO_LABEL[d.tipo] ?? d.tipo,
-              rawTipo: d.tipo,
-              label: d.label ?? d.url,
-              url: d.url,
-              signedUrl: urls[d.url] ?? null,
-              kind: kindOf(d.label ?? d.url, d.url),
-              date: d.created_at,
-            })),
-          );
-          const start = new Date();
-          start.setDate(1);
-          start.setHours(0, 0, 0, 0);
-          const { count } = await s
-            .from("transactions")
-            .select("*", { count: "exact", head: true })
-            .eq("legajo", cli.legajo)
-            .gte("fecha", start.toISOString());
-          setMovCount(count ?? 0);
-        }
-      } catch {
-        // silencioso
-      } finally {
-        setLoadingDocs(false);
-      }
-    })();
-  }, []);
 
   const antiguedad = (() => {
     const base = cliente?.fecha_alta

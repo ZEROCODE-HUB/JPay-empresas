@@ -11,8 +11,16 @@ import {
   SuccessCard,
   validatePassword,
 } from "@/components/onboarding";
-import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
-import { readDemoVerifyUrl, registerClient, resendVerification } from "@/lib/api/onboarding";
+import { getAuthErrorMessage } from "@/lib/supabase";
+import {
+  getClienteOnboardingPorCorreo,
+  getEstadoClientePorCorreo,
+  readDemoVerifyUrl,
+  registerClient,
+  resendVerification,
+  tieneValidacionODocumento,
+} from "@/lib/api/onboarding";
+import { iniciarSesion } from "@/lib/api/auth";
 import { brand, pageTitle, mailto } from "@/brand/brand";
 
 export const Route = createFileRoute("/login")({
@@ -124,11 +132,7 @@ function LoginForm({
         setLoading(true);
         setError(null);
         try {
-          const sb = requireSupabase();
-          const { data, error: authErr } = await sb.auth.signInWithPassword({
-            email,
-            password: pw,
-          });
+          const { data, error: authErr } = await iniciarSesion(email, pw);
           if (authErr || !data.user) {
             const raw = authErr?.message ?? "";
             if (/email not confirmed/i.test(raw)) {
@@ -141,12 +145,9 @@ function LoginForm({
           }
           let estado: "aprobado" | "pendiente" | "rechazado" = "pendiente";
           try {
-            const { data: cli } = await sb
-              .from("clientes")
-              .select("estado")
-              .eq("correo", data.user.email ?? email)
-              .maybeSingle();
-            const raw = (cli?.estado as string) ?? "pendiente_verificacion";
+            const raw =
+              (await getEstadoClientePorCorreo(data.user.email ?? email)) ??
+              "pendiente_verificacion";
             // homologado: mapear nuevo flujo a compatibilidad con onSuccess existente
             if (raw === "activado" || raw === "activo") estado = "aprobado";
             else if (raw === "deshabilitado" || raw === "eliminado" || raw === "rechazado")
@@ -430,17 +431,13 @@ function LoginPage() {
       return;
     }
     try {
-      const sb = requireSupabase();
-      const { data: cli } = await sb
-        .from("clientes")
-        .select("legajo, estado, onboarding_completo")
-        .eq("correo", email)
-        .maybeSingle();
+      // Un error de consulta se trata como "sin cliente", igual que antes.
+      const cli = await getClienteOnboardingPorCorreo(email).catch(() => null);
       if (!cli) {
         navigate({ to: "/onboarding/datos-personales" });
         return;
       }
-      const raw = (cli.estado as string) ?? "";
+      const raw = cli.estado ?? "";
       if (raw === "pendiente_verificacion") {
         // Mostrar recuadro de verificación en lugar de validación simulada
         navigate({ to: "/onboarding/en-proceso" });
@@ -448,23 +445,10 @@ function LoginPage() {
       }
       if (raw === "registrado") {
         // Registrado: si aún no envió documentación -> onboarding, si ya envió -> recuadro en revisión
-        const incompleto =
-          (cli as any).onboarding_completo === false || (cli as any).onboarding_completo === null;
+        const incompleto = cli.onboarding_completo === false || cli.onboarding_completo === null;
         if (incompleto) {
           try {
-            const { data: val } = await sb
-              .from("validaciones")
-              .select("id")
-              .eq("cliente_legajo", (cli as any).legajo)
-              .limit(1)
-              .maybeSingle();
-            const { data: doc } = await sb
-              .from("documentos")
-              .select("id")
-              .eq("cliente_legajo", (cli as any).legajo)
-              .limit(1)
-              .maybeSingle();
-            if (!val && !doc) {
+            if (!(await tieneValidacionODocumento(cli.legajo))) {
               navigate({ to: "/onboarding/datos-personales" });
               return;
             }

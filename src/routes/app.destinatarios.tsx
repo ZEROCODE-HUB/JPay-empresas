@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Send, Search, Upload, Star, Trash2, Tag } from "lucide-react";
 import {
   PageHeader,
@@ -14,17 +14,16 @@ import {
 import { toast } from "sonner";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
-import { requireSupabase, toDataError, isPermissionError } from "@/lib/supabase";
+import { toDataError, isPermissionError } from "@/lib/supabase";
 import { executeTransfer } from "@/lib/transfer-orchestrator";
 import {
   type FrequentRecipient,
-  listFrequentRecipients,
   createFrequentRecipient,
   deleteFrequentRecipient,
-} from "@/lib/transfer-store";
+} from "@/lib/api/transferencias";
 import { detectIdentifierKind } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
-import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { useDestinatariosFrecuentes, useSubcuentasOrigen } from "@/hooks/useTransferencias";
 import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/destinatarios")({ component: Page });
@@ -41,8 +40,6 @@ type Destinatario = {
   ult: string;
   ops: number;
 };
-
-type Subcuenta = { id: string; nombre: string; cbu: string | null; saldo_disponible: number };
 
 /**
  * Agenda real: `destinatarios_frecuentes` (migración 1012), misma tabla que
@@ -82,51 +79,25 @@ function Page() {
   const [concepto, setConcepto] = useState("");
   const [subcuentaOrigen, setSubcuentaOrigen] = useState("");
   const [sending, setSending] = useState(false);
-  const [subcuentas, setSubcuentas] = useState<Subcuenta[]>([]);
-  const [items, setItems] = useState<Destinatario[]>([]);
-  const [cargando, setCargando] = useState(true);
+  const {
+    frecuentes,
+    cargando,
+    setFrecuentes,
+    recargar: cargarDestinatarios,
+  } = useDestinatariosFrecuentes();
+  const items = useMemo(() => frecuentes.map(aDestinatario), [frecuentes]);
+  const { subcuentas, recargar: recargarSubcuentas } = useSubcuentasOrigen();
 
-  const cargarDestinatarios = useCallback(async () => {
-    setCargando(true);
-    try {
-      const lista = await listFrequentRecipients();
-      setItems(lista.map(aDestinatario));
-    } catch {
-      setItems([]);
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-
-  const cargarSubcuentas = useCallback(async () => {
-    try {
-      const sb = requireSupabase();
-      const {
-        data: { user },
-      } = await sb.auth.getUser();
-      const { data: cli } = await sb
-        .from("clientes")
-        .select("legajo")
-        .eq("correo", user?.email ?? "")
-        .maybeSingle();
-      if (!cli?.legajo) return;
-      const { data: subs } = await sb
-        .from("subaccounts")
-        .select(`id, nombre, cbu, ${SALDOS_EMBED}`)
-        .eq("cliente_legajo", cli.legajo)
-        .order("nombre", { ascending: true });
-      const lista = (subs ?? []).map(conSaldos);
-      setSubcuentas(lista);
-      if (lista.length > 0) setSubcuentaOrigen(lista[0].id);
-    } catch {
-      // silently fail
-    }
-  }, []);
-
+  // Al cargar (o recargar) las subcuentas se preselecciona la primera.
+  const primeraSubcuenta = subcuentas[0]?.id;
   useEffect(() => {
-    cargarSubcuentas();
-    void cargarDestinatarios();
-  }, [cargarSubcuentas, cargarDestinatarios]);
+    if (primeraSubcuenta) setSubcuentaOrigen(primeraSubcuenta);
+  }, [primeraSubcuenta]);
+
+  const cargarSubcuentas = async () => {
+    const lista = await recargarSubcuentas();
+    if (lista && lista.length > 0) setSubcuentaOrigen(lista[0].id);
+  };
 
   const handleTransferir = async () => {
     if (!transferir || !subcuentaOrigen || !monto) return;
@@ -460,7 +431,7 @@ function Page() {
           if (!d) return;
           try {
             await deleteFrequentRecipient(d.id);
-            setItems((prev) => prev.filter((x) => x.id !== d.id));
+            setFrecuentes((prev) => prev.filter((x) => x.id !== d.id));
             toast.success("Destinatario eliminado de la agenda");
           } catch (e) {
             toast.error(toDataError(e).message);

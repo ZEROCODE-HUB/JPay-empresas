@@ -1,5 +1,5 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import {
   PieChart,
   Pie,
@@ -23,8 +23,7 @@ import {
   Store,
 } from "lucide-react";
 import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
-import { toast } from "sonner";
-import { requireSupabase } from "@/lib/supabase";
+import { useDashboardQr } from "@/hooks/useQr";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -65,123 +64,68 @@ type Kpi = { icon: typeof QrCode; label: string; value: string };
 
 function Dashboard() {
   const [presetLabel, setPresetLabel] = useState(PRESETS[2].label);
-  const [loading, setLoading] = useState(true);
-  const [kpis, setKpis] = useState<Kpi[]>([]);
-  const [statusData, setStatusData] = useState<{ name: string; value: number }[]>([]);
-  const [pdvData, setPdvData] = useState<{ name: string; value: number }[]>([]);
-  const [evolucion, setEvolucion] = useState<{ mes: string; cobros: number; monto: number }[]>([]);
-
-  useEffect(() => {
-    cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const sinceIso = useMemo(() => {
+    const days = PRESETS.find((p) => p.label === presetLabel)?.days ?? 30;
+    const since = new Date();
+    since.setHours(0, 0, 0, 0);
+    if (days > 0) since.setDate(since.getDate() - (days - 1));
+    return since.toISOString();
   }, [presetLabel]);
+  const { data: datos, isLoading: loading } = useDashboardQr(sinceIso);
 
-  async function cargar() {
-    setLoading(true);
-    try {
-      const s = requireSupabase();
-      const { data: u } = await s.auth.getUser();
-      const mail = u.user?.email;
-      if (!mail) {
-        setLoading(false);
-        return;
-      }
-      const { data: cli } = await s
-        .from("clientes")
-        .select("legajo")
-        .eq("correo", mail)
-        .maybeSingle();
-      if (!cli?.legajo) {
-        setLoading(false);
-        return;
-      }
-      const legajo = cli.legajo;
+  const { kpis, statusData, pdvData, evolucion } = useMemo(() => {
+    if (!datos)
+      return {
+        kpis: [] as Kpi[],
+        statusData: [] as { name: string; value: number }[],
+        pdvData: [] as { name: string; value: number }[],
+        evolucion: [] as { mes: string; cobros: number; monto: number }[],
+      };
+    const { cobros: lista, estados, pdvsPorEstado } = datos;
 
-      const days = PRESETS.find((p) => p.label === presetLabel)?.days ?? 30;
-      const since = new Date();
-      since.setHours(0, 0, 0, 0);
-      if (days > 0) since.setDate(since.getDate() - (days - 1));
-      const sinceIso = since.toISOString();
+    const nombreEstado = (id: number | null) =>
+      estados?.find((e) => e.id === id)?.nombre ?? "Desconocido";
 
-      const [{ data: movs, error }, { data: estados }] = await Promise.all([
-        s
-          .from("transactions")
-          .select("monto_operacion, estado_id, fecha")
-          .eq("legajo", legajo)
-          .eq("tipo", "cobro_pct")
-          .gte("fecha", sinceIso),
-        s.from("estados_movimiento").select("id, nombre"),
-      ]);
+    const total = lista.length;
+    const montoTotal = lista.reduce((a, m) => a + Number(m.monto_operacion ?? 0), 0);
+    const aprobados = lista.filter(
+      (m) => nombreEstado(m.estado_id).toLowerCase() === "aprobado",
+    ).length;
+    const pendientes = total - aprobados;
+    const tasa = total ? (aprobados / total) * 100 : 0;
+    const pdvActivos = pdvsPorEstado["Activado"] ?? 0;
 
-      if (error) {
-        toast.error("No se pudieron cargar los cobros QR");
-        console.error(error);
-      }
+    // Estado de cobros (pie)
+    const porEstado: Record<string, number> = {};
+    for (const m of lista) {
+      const n = nombreEstado(m.estado_id);
+      porEstado[n] = (porEstado[n] ?? 0) + 1;
+    }
+    const statusArr = Object.entries(porEstado).map(([name, value]) => ({ name, value }));
 
-      const nombreEstado = (id: number | null) =>
-        estados?.find((e: any) => e.id === id)?.nombre ?? "Desconocido";
+    // Evolución por mes (últimos 6)
+    const porMes: Record<string, { cobros: number; monto: number }> = {};
+    for (const m of lista) {
+      const key = (m.fecha ?? "").slice(0, 7);
+      if (!key) continue;
+      porMes[key] = porMes[key] ?? { cobros: 0, monto: 0 };
+      porMes[key].cobros += 1;
+      porMes[key].monto += Number(m.monto_operacion ?? 0);
+    }
+    const meses = Object.keys(porMes).sort().slice(-6);
+    const evArr = meses.map((k) => {
+      const [, mm] = k.split("-");
+      return {
+        mes: MESES[parseInt(mm, 10) - 1] ?? k,
+        cobros: porMes[k].cobros,
+        monto: +(porMes[k].monto / 1_000_000).toFixed(2),
+      };
+    });
 
-      // Puntos de venta del comercio del usuario
-      const { data: com } = await s
-        .from("comercios")
-        .select("id")
-        .eq("legajo", legajo)
-        .maybeSingle();
-      const pdvsPorEstado: Record<string, number> = {};
-      if (com?.id) {
-        const { data: pdvs } = await s
-          .from("puntos_venta")
-          .select("estado")
-          .eq("comercio_id", com.id);
-        for (const p of pdvs ?? []) {
-          pdvsPorEstado[p.estado] = (pdvsPorEstado[p.estado] ?? 0) + 1;
-        }
-      }
+    const pdvArr = Object.entries(pdvsPorEstado).map(([name, value]) => ({ name, value }));
 
-      const lista = (movs ?? []) as {
-        monto_operacion: number;
-        estado_id: number | null;
-        fecha: string;
-      }[];
-      const total = lista.length;
-      const montoTotal = lista.reduce((a, m) => a + Number(m.monto_operacion ?? 0), 0);
-      const aprobados = lista.filter(
-        (m) => nombreEstado(m.estado_id).toLowerCase() === "aprobado",
-      ).length;
-      const pendientes = total - aprobados;
-      const tasa = total ? (aprobados / total) * 100 : 0;
-      const pdvActivos = pdvsPorEstado["Activado"] ?? 0;
-
-      // Estado de cobros (pie)
-      const porEstado: Record<string, number> = {};
-      for (const m of lista) {
-        const n = nombreEstado(m.estado_id);
-        porEstado[n] = (porEstado[n] ?? 0) + 1;
-      }
-      const statusArr = Object.entries(porEstado).map(([name, value]) => ({ name, value }));
-
-      // Evolución por mes (últimos 6)
-      const porMes: Record<string, { cobros: number; monto: number }> = {};
-      for (const m of lista) {
-        const key = (m.fecha ?? "").slice(0, 7);
-        if (!key) continue;
-        porMes[key] = porMes[key] ?? { cobros: 0, monto: 0 };
-        porMes[key].cobros += 1;
-        porMes[key].monto += Number(m.monto_operacion ?? 0);
-      }
-      const meses = Object.keys(porMes).sort().slice(-6);
-      const evArr = meses.map((k) => {
-        const [, mm] = k.split("-");
-        return {
-          mes: MESES[parseInt(mm, 10) - 1] ?? k,
-          cobros: porMes[k].cobros,
-          monto: +(porMes[k].monto / 1_000_000).toFixed(2),
-        };
-      });
-
-      const pdvArr = Object.entries(pdvsPorEstado).map(([name, value]) => ({ name, value }));
-
-      setKpis([
+    return {
+      kpis: [
         { icon: QrCode, label: "Total cobros QR", value: total.toString() },
         {
           icon: DollarSign,
@@ -192,17 +136,12 @@ function Dashboard() {
         { icon: TrendingUp, label: "Pendientes", value: pendientes.toString() },
         { icon: Store, label: "PDV activos", value: pdvActivos.toString() },
         { icon: TrendingUp, label: "Tasa de exito", value: tasa.toFixed(1) + "%" },
-      ]);
-      setStatusData(statusArr);
-      setPdvData(pdvArr);
-      setEvolucion(evArr);
-    } catch (e) {
-      toast.error("Error al cargar el dashboard de Cobros QR");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
+      ] as Kpi[],
+      statusData: statusArr,
+      pdvData: pdvArr,
+      evolucion: evArr,
+    };
+  }, [datos]);
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet([
@@ -220,7 +159,11 @@ function Dashboard() {
     doc.text("Dashboard - Cobros con QR", 14, 20);
     doc.text("Periodo: " + presetLabel, 14, 30);
     const body = kpis.map((k) => [k.label, k.value]);
-    (doc as any).autoTable({ startY: 38, head: [["Metrica", "Valor"]], body });
+    (doc as unknown as { autoTable: (opts: object) => void }).autoTable({
+      startY: 38,
+      head: [["Metrica", "Valor"]],
+      body,
+    });
     doc.save("qr-dashboard-" + presetLabel + ".pdf");
   };
 
@@ -300,7 +243,9 @@ function Dashboard() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ name, value }: any) => name + " " + value}
+                      label={({ name, value }: { name?: string; value?: number }) =>
+                        name + " " + value
+                      }
                     >
                       {statusData.map((e, i) => (
                         <Cell key={e.name} fill={statusColor(e.name, i)} />
@@ -328,7 +273,9 @@ function Dashboard() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ name, value }: any) => name + " " + value}
+                      label={({ name, value }: { name?: string; value?: number }) =>
+                        name + " " + value
+                      }
                     >
                       {pdvData.map((e) => (
                         <Cell key={e.name} fill={pdvColor(e.name)} />

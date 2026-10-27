@@ -33,7 +33,7 @@ import {
   type LoteEstado,
   type Lote,
   type RegistroDeLote,
-} from "@/data/cobros-masivos";
+} from "@/lib/api/cobros-masivos";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";

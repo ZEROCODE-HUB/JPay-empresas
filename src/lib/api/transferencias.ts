@@ -1,6 +1,5 @@
 // ============================================================================
-// transfer-store.ts
-// Persistence for the /app/transferencias screen. Everything lives in Supabase
+// Acceso a datos de /app/transferencias y /app/destinatarios. Everything lives in Supabase
 // with RLS by `cliente_legajo`:
 //   Drafts               -> transferencias_borrador       (1012)
 //   Scheduled transfers  -> transferencias_programadas    (1012)
@@ -11,6 +10,14 @@
 import { requireSupabase, toDataError } from "@/lib/supabase";
 import { detectIdentifierKind, type IdentifierKind } from "@/lib/recipient-validation";
 import { formatDate, formatMoney } from "@/shared/format";
+import { emailSesion } from "./cuenta";
+import { DataAccessError } from "./errors";
+import {
+  listSubcuentasOrigen,
+  listSubcuentasOrigenConTipo,
+  type SubcuentaOrigen,
+  type SubcuentaOrigenTipada,
+} from "./subcuentas";
 
 /** UI row for a draft. */
 export type Draft = {
@@ -676,4 +683,122 @@ export async function cotizarTransferencia(input: {
         }
       : null,
   };
+}
+
+// ============================================================================
+// Contexto de la pantalla: cliente, subcuentas de origen y enviado del mes
+// ============================================================================
+
+const digitsOnly = (v?: string | null) => (v ?? "").replace(/\D/g, "");
+
+export type ContextoTransferencias = {
+  clienteCuit: string;
+  clienteNombre: string;
+  subcuentas: SubcuentaOrigenTipada[];
+  enviadoMes: { monto: number; ops: number };
+};
+
+export async function getContextoTransferencias(): Promise<ContextoTransferencias | null> {
+  const sb = requireSupabase();
+  const mail = await emailSesion();
+  const { data: cli, error: errCli } = await sb
+    .from("clientes")
+    .select("legajo, nombre, cuit, cuit_cuil")
+    .eq("correo", mail ?? "")
+    .maybeSingle();
+  if (errCli) throw new DataAccessError(errCli);
+  if (!cli?.legajo) return null;
+
+  const subcuentas = await listSubcuentasOrigenConTipo(cli.legajo);
+
+  const now = new Date();
+  const primerDiaMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  const { data: movs, error } = await sb
+    .from("transactions")
+    .select("monto_operacion, tipo")
+    .eq("legajo", cli.legajo)
+    .gte("fecha", primerDiaMes)
+    .in("tipo", ["transferencia"]);
+  if (error) throw new DataAccessError(error);
+  const movsArr = movs ?? [];
+  return {
+    clienteCuit: digitsOnly(cli.cuit) || digitsOnly(cli.cuit_cuil),
+    clienteNombre: String(cli.nombre ?? ""),
+    subcuentas,
+    enviadoMes: {
+      monto: movsArr.reduce((s, m) => s + (Number(m.monto_operacion) || 0), 0),
+      ops: movsArr.length,
+    },
+  };
+}
+
+/** Subcuentas de origen del cliente de la sesión (agenda de destinatarios). */
+export async function listSubcuentasOrigenSesion(): Promise<SubcuentaOrigen[] | null> {
+  const sb = requireSupabase();
+  const mail = await emailSesion();
+  const { data: cli, error } = await sb
+    .from("clientes")
+    .select("legajo")
+    .eq("correo", mail ?? "")
+    .maybeSingle();
+  if (error) throw new DataAccessError(error);
+  if (!cli?.legajo) return null;
+  return listSubcuentasOrigen(cli.legajo);
+}
+
+// ============================================================================
+// 2FA por correo (Edge Functions). Se relanza el error original para que
+// `extraerMensajeEdgeFunction` pueda leer el cuerpo de la respuesta.
+// ============================================================================
+
+export async function enviarOtpTransferencia(): Promise<{ demo_codigo?: string }> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<{ error?: string; demo_codigo?: string }>(
+    "enviar-otp-transferencia",
+    { body: {} },
+  );
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  return { demo_codigo: data?.demo_codigo };
+}
+
+export async function verificarOtpTransferencia(codigo: string): Promise<void> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<{ error?: string; ok?: boolean }>(
+    "verificar-otp-transferencia",
+    { body: { codigo } },
+  );
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  if (!data?.ok) throw new Error("Código no válido");
+}
+
+// ============================================================================
+// Transferencia externa (orquestador): registra el movimiento tras validar.
+// ============================================================================
+
+export type TransferenciaExternaResultado = {
+  ok: boolean;
+  id_txn: string;
+  comision: number;
+  impuesto: number;
+  total_debitado: number;
+  motivo?: string;
+};
+
+export async function registrarTransferenciaExterna(input: {
+  subcuentaOrigen: string;
+  destinatarioCbu: string;
+  monto: number;
+  concepto?: string | null;
+}): Promise<TransferenciaExternaResultado> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.rpc("registrar_transferencia_externa", {
+    p_subcuenta_origen: input.subcuentaOrigen,
+    p_destinatario_cbu: input.destinatarioCbu,
+    p_monto: input.monto,
+    p_concepto: input.concepto ?? undefined,
+  });
+  if (error) throw new DataAccessError(error);
+  return data as unknown as TransferenciaExternaResultado;
 }

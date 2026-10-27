@@ -5,7 +5,7 @@
 // historial, auditoría ni panel admin. El movimiento se crea SOLO tras
 // ejecución exitosa, nunca al ingresar CBU.
 // ============================================================================
-import { requireSupabase } from "@/lib/supabase";
+import { registrarTransferenciaExterna } from "@/lib/api/transferencias";
 import {
   recipientValidator,
   type RecipientValidator,
@@ -63,22 +63,12 @@ export async function executeTransfer(
   // Normalizar a CBU para RPC (si era Alias, usar CBU del titular resuelto)
   const cbuParaRpc = validation.titular?.cbu ?? identifier;
 
-  const sb = requireSupabase();
-  const { data, error } = await sb.rpc("registrar_transferencia_externa", {
-    p_subcuenta_origen: req.subcuentaOrigenId,
-    p_destinatario_cbu: cbuParaRpc.replace(/\s/g, ""),
-    p_monto: req.monto,
-    p_concepto: req.concepto ?? undefined,
+  const txn = await registrarTransferenciaExterna({
+    subcuentaOrigen: req.subcuentaOrigenId,
+    destinatarioCbu: cbuParaRpc.replace(/\s/g, ""),
+    monto: req.monto,
+    concepto: req.concepto,
   });
-  if (error) throw error;
-  const txn = data as {
-    ok: boolean;
-    id_txn: string;
-    comision: number;
-    impuesto: number;
-    total_debitado: number;
-    motivo?: string;
-  };
   // Rechazada por bloqueo, saldo o controles: queda registrada sin mover dinero.
   if (txn.ok === false)
     return { ok: false, validation, error: txn.motivo ?? "La transferencia fue rechazada" };

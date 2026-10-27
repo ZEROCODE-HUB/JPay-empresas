@@ -1,5 +1,5 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -18,7 +18,7 @@ import { formatMoney } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { requireSupabase } from "@/lib/supabase";
+import { useClienteActual, useDashboardLinksPago } from "@/hooks/useLinksPago";
 
 export const Route = createFileRoute("/app/link-pago/dashboard")({ component: Dashboard });
 
@@ -51,70 +51,10 @@ const METHOD_COLORS = [
 
 function Dashboard() {
   const [days, setDays] = useState(30);
-  const [movs, setMovs] = useState<any[]>([]);
-  const [links, setLinks] = useState<any[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s
-          .from("clientes")
-          .select("legajo")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) return;
-        const lg = cli.legajo;
-        const now = new Date();
-        const start = new Date(now);
-        start.setDate(now.getDate() - (days === 0 ? 0 : days - 1));
-        start.setHours(0, 0, 0, 0);
-        const end = new Date(now);
-        end.setHours(23, 59, 59, 999);
-
-        const { data: m } = await s
-          .from("transactions")
-          .select("monto_operacion, fecha, estado_id, id_txn")
-          .eq("legajo", lg)
-          .eq("tipo", "tarjeta")
-          .gte("fecha", start.toISOString())
-          .lte("fecha", end.toISOString());
-
-        const ids = Array.from(new Set((m ?? []).map((x: any) => x.estado_id).filter(Boolean)));
-        const estadoNombre: Record<string, string> = {};
-        if (ids.length) {
-          const { data: est } = await s
-            .from("estados_movimiento")
-            .select("codigo, nombre")
-            .in("codigo", ids);
-          (est ?? []).forEach((e: any) => (estadoNombre[e.codigo] = e.nombre));
-        }
-        const rows = (m ?? []).map((x: any) => ({
-          monto: Math.abs(Number(x.monto_operacion ?? 0)),
-          fecha: x.fecha,
-          estado: estadoNombre[x.estado_id] ?? "Aprobado",
-          id: x.id_txn ?? x.fecha,
-        }));
-        if (cancelled) return;
-        setMovs(rows);
-
-        const { data: lk } = await s
-          .from("cliente_links_pago")
-          .select("id, monto, estado, url")
-          .eq("cliente_legajo", lg);
-        if (!cancelled) setLinks(lk ?? []);
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [days]);
+  const { data: cliente } = useClienteActual();
+  const { data } = useDashboardLinksPago(cliente?.legajo, days);
+  const movs = useMemo(() => data?.movs ?? [], [data]);
+  const links = data?.links ?? [];
 
   const metrics = useMemo(() => {
     const total = movs.length;
@@ -141,7 +81,7 @@ function Dashboard() {
     { name: "Reembolsado", value: metrics.refunds },
   ];
 
-  const linkData = links.map((l: any) => ({
+  const linkData = links.map((l) => ({
     name: (l.url ?? "").split("/").pop() || String(l.id).slice(0, 8).toUpperCase(),
     amount: Number(l.monto ?? 0),
   }));
@@ -241,7 +181,7 @@ function Dashboard() {
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
-                label={({ name, value }: any) => name + " " + value}
+                label={({ name, value }: { name?: string; value?: number }) => name + " " + value}
               >
                 {statusData.map((e) => (
                   <Cell key={e.name} fill={COLORS[e.name] || "#666"} />
@@ -265,7 +205,7 @@ function Dashboard() {
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
-                label={({ name }: any) => name}
+                label={({ name }: { name?: string }) => name}
               >
                 {linkData.map((_, i) => (
                   <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />

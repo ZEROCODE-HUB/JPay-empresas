@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import {
   Wallet,
   Clock,
@@ -31,82 +30,21 @@ import {
   Label,
 } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { requireSupabase } from "@/lib/supabase";
+import type { Ticket, TicketEstado } from "@/lib/api/liquidaciones";
+import {
+  useAdelantosPorDia,
+  useCalendarioAcreditaciones,
+  useCancelarAdelanto,
+  useIngresarAdelanto,
+  useLiquidaciones,
+  useMinMontoAdelanto,
+} from "@/hooks/useLiquidaciones";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
-import { formatDate, formatDateShort, formatMoney } from "@/shared/format";
+import { formatDate, formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/liquidaciones")({ component: Liquidaciones });
-
-type TicketEstado = "pendiente" | "aprobado" | "cancelado" | "rechazado" | "acreditado";
-type Ticket = {
-  id: string;
-  fullId?: string;
-  fecha: string;
-  montoSolicitado: number;
-  montoPorAcreditar: number;
-  fechaAcreditacion: string;
-  estado: TicketEstado;
-  motivo?: string;
-  tasaInteres?: number | null;
-  plazoAdelantado?: number | null;
-};
-
-type DiaAcreditacion = {
-  date: string; // YYYY-MM-DD
-  label: string; // DD/MM
-  monto: number;
-  cantidad: number;
-};
-
-type LoteVenta = {
-  id: string;
-  fecha: string;
-  bandera: string;
-  cantidadOperaciones: number;
-  montoOperaciones: number;
-  comision: number;
-  impuesto: number;
-  montoCobrado: number;
-};
-
-type LoteAcredDetalle = {
-  id: string;
-  fullId?: string;
-  fecha: string;
-  fechaAcreditacion?: string;
-  fechaCobroReal?: string | null;
-  bandera: string;
-  cantidadOperaciones: number;
-  importeNeto: number;
-  comisionCierrePct: number | null;
-  comisionCierreMonto: number | null;
-  estado?: string;
-};
-
-type ComisionBandera = {
-  bandera: string;
-  cuotas: number;
-  tasaMensual: number;
-  estado: string;
-};
-
-type Impuesto = {
-  id: string;
-  codigo: string;
-  descripcion: string;
-  tipo: string;
-  alicuota: number;
-  estado: string;
-};
-
-type Excepcion = {
-  impuestoCodigo: string;
-  motivo: string;
-  estado: string;
-  vigenciaHasta: string | null;
-};
 
 const ESTADO_TICKET_LABEL: Record<TicketEstado, string> = {
   pendiente: "Pendiente",
@@ -196,12 +134,8 @@ function parseDateLocalC(dateStr: string): Date {
 }
 
 import {
-  listCalendarioAcreditaciones,
-  getAdelantosPorDia,
   getExportDia,
-  getMinMontoAdelanto,
   type CalendarioAcreditacion as CACal,
-  type AdelantoParaCalendario,
 } from "@/lib/api/calendario-acreditaciones";
 
 function CalendarioAcreditacionesTab({
@@ -227,28 +161,14 @@ function CalendarioAcreditacionesTab({
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [minMonto, setMinMonto] = useState<number>(100);
+  const minMonto = useMinMontoAdelanto();
   const [exporting, setExporting] = useState<"xlsx" | "pdf" | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    getMinMontoAdelanto()
-      .then((v) => alive && setMinMonto(v))
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const { data: items = [], isLoading: loadingCal } = useQuery<CACal[]>({
-    queryKey: ["calendario", comercioId, mes, anio],
-    queryFn: () => {
-      if (!comercioId) return Promise.resolve([]);
-      return listCalendarioAcreditaciones({ mes, anio, comercioId });
-    },
-    enabled: !!comercioId,
-    staleTime: 60_000,
-  });
+  const { data: items = [], isLoading: loadingCal } = useCalendarioAcreditaciones(
+    comercioId,
+    mes,
+    anio,
+  );
 
   // Map fechaAcreditacion → items del día
   const itemsPorFecha = useMemo(() => {
@@ -299,14 +219,7 @@ function CalendarioAcreditacionesTab({
 
   // Para el modal: si hay día seleccionado, levantamos los adelantos del comercio
   // que se imputan a ese día. Lo cacheamos por fecha.
-  const { data: adelantosDelDia = [] } = useQuery<AdelantoParaCalendario[]>({
-    queryKey: ["calendario-adelantos-dia", comercioId, selectedDate],
-    queryFn: () => {
-      if (!comercioId || !selectedDate) return Promise.resolve([]);
-      return getAdelantosPorDia(comercioId, selectedDate);
-    },
-    enabled: !!comercioId && !!selectedDate,
-  });
+  const { data: adelantosDelDia = [] } = useAdelantosPorDia(comercioId, selectedDate);
 
   // Ticket activo del día (entre los tickets que ya tenemos en memoria)
   const ticketDelDia = useMemo<Ticket | null>(() => {
@@ -888,22 +801,23 @@ function exportPdfDia(
 }
 
 function Liquidaciones() {
-  const [loading, setLoading] = useState(true);
-  const [faltaCobrar, setFaltaCobrar] = useState(0);
-  const [porAcreditar, setPorAcreditar] = useState(0);
-  const [adelantosEnCurso, setAdelantosEnCurso] = useState(0);
-  const [disponible, setDisponible] = useState(0);
-  const [comercioId, setComercioId] = useState<string | null>(null);
-  const [dias, setDias] = useState<DiaAcreditacion[]>([]);
-  const [, setDiasAcreditados] = useState<DiaAcreditacion[]>([]);
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { comercioId, datos, isLoading: loading, actualizarDatos } = useLiquidaciones();
+  const ingresarAdelanto = useIngresarAdelanto();
+  const cancelarAdelanto = useCancelarAdelanto();
+  const {
+    faltaCobrar,
+    porAcreditar,
+    adelantosEnCurso,
+    disponible,
+    dias,
+    tickets,
+    lotesVenta,
+    lotesAcreditados,
+    comisiones,
+    impuestos,
+    excepciones,
+  } = datos;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [lotesVenta, setLotesVenta] = useState<LoteVenta[]>([]);
-  const [, setLotesAcredDetalle] = useState<LoteAcredDetalle[]>([]);
-  const [lotesAcreditados, setLotesAcreditados] = useState<LoteAcredDetalle[]>([]);
-  const [comisiones, setComisiones] = useState<ComisionBandera[]>([]);
-  const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
-  const [excepciones, setExcepciones] = useState<Excepcion[]>([]);
 
   // tabs & paginación
   const [activeTab, setActiveTab] = useState<TabSeccion>("calendario");
@@ -986,315 +900,6 @@ function Liquidaciones() {
     return d ? d.monto : porAcreditar;
   }, [selectedDate, dias, porAcreditar]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const sb = requireSupabase();
-        const { data: u } = await sb.auth.getUser();
-        const mail = u.user?.email ?? null;
-
-        // 0) Resolver el legajo y el comercioId del usuario logueado.
-        //    Traemos ambos valores de una vez: clientes.legajo para
-        //    las tablas indexadas por legajo, y comercios.id (UUID)
-        //    para las indexadas por comercio_id. Las RLS no siempre
-        //    restringen por usuario en estas tablas, así que el
-        //    filtrado en el front es obligatorio.
-        let legajo: string | null = null;
-        let cuit: string | null = null;
-        let comercioId: string | null = null;
-        if (mail) {
-          const { data: cli } = await sb
-            .from("clientes")
-            .select("legajo, cuit")
-            .eq("correo", mail)
-            .maybeSingle();
-          legajo = cli?.legajo ?? null;
-          cuit = cli?.cuit ?? null;
-
-          if (legajo) {
-            const { data: com } = await sb
-              .from("comercios")
-              .select("id")
-              .eq("legajo", legajo)
-              .maybeSingle();
-            comercioId = com?.id ?? null;
-            if (comercioId) setComercioId(comercioId);
-          }
-        }
-
-        // 1) Falta cobrar: usamos la RPC `calendario_resumen_saldos` que es
-        //    la fuente única de verdad (suma de lotes_venta sin lote_acreditacion).
-        let falta = 0;
-        let adelantosEnCursoCalc = 0;
-        if (comercioId) {
-          try {
-            const { data: resumenRpc, error: rpcErr } = await sb.rpc("calendario_resumen_saldos", {
-              p_comercio_id: comercioId,
-            });
-            if (!rpcErr && resumenRpc) {
-              const r = resumenRpc as Record<string, unknown>;
-              falta = Number(r.falta_cobrar ?? 0);
-              adelantosEnCursoCalc = Number(r.adelantos_en_curso ?? 0);
-            }
-          } catch (e) {
-            console.warn("calendario_resumen_saldos no disponible, fallback:", e);
-          }
-        }
-
-        // 2) Lotes de acreditación del comercio logueado. Filtramos
-        //    por comercio_id explícitamente (no por RLS) y separamos
-        //    los pendientes (calendario futuro) de los ya Acreditados
-        //    (historial), porque un lote Acreditado no es "por acreditar".
-        let acreditar = 0;
-        let disp = 0;
-        const ticketsReal: Ticket[] = [];
-        const porDia: Record<string, { monto: number; cantidad: number }> = {};
-        const porDiaAcreditado: Record<string, { monto: number; cantidad: number }> = {};
-        let acredDetalle: LoteAcredDetalle[] = [];
-        let acredListado: LoteAcredDetalle[] = [];
-
-        if (comercioId) {
-          const { data: loteRows } = await sb
-            .from("lotes_acreditacion")
-            .select(
-              "id, fecha, cantidad_operaciones, importe_neto, estado, comision_cierre_lote_pct, comision_cierre_lote_monto, bandera, fecha_resolucion, fecha_cobro_real",
-            )
-            .eq("comercio_id", comercioId);
-
-          const rows = (loteRows ?? []) as any[];
-          const pendientes = rows.filter(
-            (l) =>
-              l.estado !== "Acreditado" && l.estado !== "Rechazado" && l.estado !== "Cancelado",
-          );
-          const acreditados = rows.filter((l) => l.estado === "Acreditado");
-          // KPI "Por acreditar": solo los pendientes (los Acreditados ya están pagados).
-          acreditar = pendientes.reduce((s, l) => s + Number(l.importe_neto ?? 0), 0);
-
-          // Detalle completo de TODOS los lotes (para que el operador
-          // pueda ver también el historial de los Acreditados al
-          // seleccionar una fecha).
-          acredDetalle = rows.map((l) => ({
-            id: String(l.id).slice(0, 8).toUpperCase(),
-            fullId: l.id,
-            fecha: (l.fecha ?? "").slice(0, 10),
-            fechaAcreditacion:
-              l.fecha_resolucion != null
-                ? new Date(l.fecha_resolucion).toISOString().slice(0, 10)
-                : "",
-            fechaCobroReal: l.fecha_cobro_real ?? null,
-            bandera: l.bandera ?? "—",
-            cantidadOperaciones: Number(l.cantidad_operaciones ?? 0),
-            importeNeto: Number(l.importe_neto ?? 0),
-            comisionCierrePct:
-              l.comision_cierre_lote_pct != null ? Number(l.comision_cierre_lote_pct) : null,
-            comisionCierreMonto:
-              l.comision_cierre_lote_monto != null ? Number(l.comision_cierre_lote_monto) : null,
-            estado: l.estado,
-          }));
-          acredListado = acredDetalle.filter((l) => l.estado === "Acreditado");
-
-          // Calendario de próximas acreditaciones.
-          pendientes.forEach((l) => {
-            const fecha = (l.fecha ?? "").slice(0, 10);
-            if (!fecha) return;
-            if (!porDia[fecha]) porDia[fecha] = { monto: 0, cantidad: 0 };
-            porDia[fecha].monto += Number(l.importe_neto ?? 0);
-            porDia[fecha].cantidad += Number(l.cantidad_operaciones ?? 0);
-          });
-          // Calendario de acreditaciones pasadas (para mostrar el
-          // historial de pagos confirmados).
-          acreditados.forEach((l) => {
-            const fecha = (l.fecha ?? "").slice(0, 10);
-            if (!fecha) return;
-            if (!porDiaAcreditado[fecha]) porDiaAcreditado[fecha] = { monto: 0, cantidad: 0 };
-            porDiaAcreditado[fecha].monto += Number(l.importe_neto ?? 0);
-            porDiaAcreditado[fecha].cantidad += Number(l.cantidad_operaciones ?? 0);
-          });
-
-          // 3) Adelantos del propio comercio. Filtro por comercio_id.
-          const { data: adelRows } = await sb
-            .from("adelantos")
-            .select(
-              "id, monto_solicitado, monto_por_acreditar, fecha_acreditacion, estado, motivo, fecha_solicitud, created_at, tasa_interes_pct, plazo_adelantado_dias, fecha_resolucion",
-            )
-            .eq("comercio_id", comercioId);
-
-          // El "Disponible para adelanto" sale de la RPC `fn_calcular_tope_disponible`
-          // (fuente única de verdad). Si la RPC no existe todavía (migración
-          // no aplicada), caemos al cálculo JS para no romper la pantalla.
-          try {
-            const { data: topeRpc, error: rpcError } = await sb.rpc("fn_calcular_tope_disponible", {
-              p_comercio_id: comercioId,
-            });
-            if (!rpcError) {
-              disp = Math.max(0, Number(topeRpc ?? 0));
-            } else {
-              throw new Error(rpcError.message);
-            }
-          } catch {
-            const reservado = (adelRows ?? []).reduce(
-              (s: number, a: any) =>
-                s +
-                (a.estado === "Pendiente" || a.estado === "Aprobado"
-                  ? Number(a.monto_solicitado ?? 0)
-                  : 0),
-              0,
-            );
-            disp = Math.max(0, acreditar - reservado);
-          }
-
-          ticketsReal.push(
-            ...((adelRows ?? []) as any[]).map((r: any) => ({
-              id: String(r.id).slice(0, 8).toUpperCase(),
-              fullId: r.id,
-              fecha: (r.fecha_solicitud ?? r.created_at ?? "").slice(0, 10),
-              montoSolicitado: Number(r.monto_solicitado ?? 0),
-              montoPorAcreditar: Number(r.monto_por_acreditar ?? 0),
-              fechaAcreditacion: (r.fecha_acreditacion ?? "").slice(0, 10),
-              estado: ((r.estado ?? "pendiente") as string).toLowerCase() as TicketEstado,
-              motivo: r.motivo ?? undefined,
-              tasaInteres: r.tasa_interes_pct != null ? Number(r.tasa_interes_pct) : null,
-              plazoAdelantado:
-                r.plazo_adelantado_dias != null ? Number(r.plazo_adelantado_dias) : null,
-            })),
-          );
-          // Σ adelantos en curso (Pendiente + Aprobado)
-          adelantosEnCursoCalc = (adelRows ?? [])
-            .filter((r: any) => r.estado === "Pendiente" || r.estado === "Aprobado")
-            .reduce(
-              (s: number, r: any) => s + Number(r.monto_por_acreditar ?? r.monto_solicitado ?? 0),
-              0,
-            );
-        }
-
-        // 4) Lotes de venta — filtrado por comercio_id.
-        let ventaRows: LoteVenta[] = [];
-        try {
-          let q = sb.from("v_lotes_venta").select("*").order("fecha", { ascending: false });
-          if (comercioId) q = q.eq("comercio_id", comercioId);
-          const { data: vRows } = await q;
-          ventaRows = (vRows ?? []).map((r: any) => ({
-            id: String(r.id ?? "")
-              .slice(0, 8)
-              .toUpperCase(),
-            fecha: (r.fecha ?? "").slice(0, 10),
-            bandera: r.bandera ?? "—",
-            cantidadOperaciones: Number(r.cantidad_operaciones ?? r.cantidad ?? 0),
-            montoOperaciones: Number(r.monto_operaciones ?? r.monto ?? 0),
-            comision: Number(r.comision ?? 0),
-            impuesto: Number(r.impuesto ?? 0),
-            montoCobrado: Number(r.monto_cobrado ?? 0),
-          }));
-        } catch {
-          // v_lotes_venta puede no existir aún; se muestra vacío
-        }
-
-        // 5) Comisiones por bandera y cuota (filtradas por comercio_id).
-        let comisionesData: ComisionBandera[] = [];
-        try {
-          const { data: cbRows } = comercioId
-            ? await sb
-                .from("comercio_banderas")
-                .select("id, bandera, estado")
-                .eq("comercio_id", comercioId)
-            : { data: null };
-          if (cbRows && cbRows.length > 0) {
-            const cbIds = (cbRows as any[]).map((r: any) => r.id);
-            const { data: cuotasRows } = await sb
-              .from("comercio_banderas_cuotas")
-              .select("comercio_bandera_id, cuotas, tasa_mensual, estado")
-              .in("comercio_bandera_id", cbIds);
-            const banderaMap = new Map((cbRows as any[]).map((r: any) => [r.id, r.bandera]));
-            comisionesData = (cuotasRows ?? []).map((c: any) => ({
-              bandera: banderaMap.get(c.comercio_bandera_id) ?? "—",
-              cuotas: Number(c.cuotas ?? 0),
-              tasaMensual: Number(c.tasa_mensual ?? 0),
-              estado: c.estado ?? "Activo",
-            }));
-          }
-        } catch {
-          // Tablas aún no creadas
-        }
-
-        // 6) Impuestos externos + excepciones del comercio
-        let impuestosData: Impuesto[] = [];
-        let excepcionesData: Excepcion[] = [];
-        try {
-          const { data: impRows } = await sb
-            .from("impuestos")
-            .select("id, codigo, descripcion, tipo, alicuota, estado, ambito")
-            .eq("ambito", "Externo")
-            .eq("estado", "Activo");
-          impuestosData = (impRows ?? []).map((r: any) => ({
-            id: r.id,
-            codigo: r.codigo ?? "",
-            descripcion: r.descripcion ?? "",
-            tipo: r.tipo ?? "",
-            alicuota: Number(r.alicuota ?? 0),
-            estado: r.estado ?? "Activo",
-          }));
-
-          if (cuit) {
-            const { data: excRows } = await sb
-              .from("dc_excepciones")
-              .select("tipo, motivo, estado, vigencia_hasta, impuesto_id")
-              .eq("cuit", cuit)
-              .eq("estado", "Activo");
-            const impIdToCodigo = new Map(impuestosData.map((i) => [i.id, i.codigo]));
-            excepcionesData = (excRows ?? []).map((r: any) => ({
-              impuestoCodigo: impIdToCodigo.get(r.impuesto_id) ?? r.tipo ?? "—",
-              motivo: r.motivo ?? r.tipo ?? "Exención",
-              estado: r.estado ?? "Activo",
-              vigenciaHasta: r.vigencia_hasta ?? null,
-            }));
-          }
-        } catch {
-          // Tablas aún no disponibles
-        }
-
-        if (cancelled) return;
-        setFaltaCobrar(falta);
-        setPorAcreditar(acreditar);
-        setAdelantosEnCurso(adelantosEnCursoCalc);
-        setDisponible(disp);
-        setLotesAcredDetalle(acredDetalle);
-        setLotesAcreditados(acredListado);
-        setLotesVenta(ventaRows);
-        setComisiones(comisionesData);
-        setImpuestos(impuestosData);
-        setExcepciones(excepcionesData);
-        const diasArr: DiaAcreditacion[] = Object.entries(porDia)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([date, v]) => ({
-            date,
-            label: formatDateShort(date),
-            monto: v.monto,
-            cantidad: v.cantidad,
-          }));
-        setDias(diasArr);
-        const acredArr: DiaAcreditacion[] = Object.entries(porDiaAcreditado)
-          .sort(([a], [b]) => b.localeCompare(a)) // más reciente primero
-          .map(([date, v]) => ({
-            date,
-            label: formatDateShort(date),
-            monto: v.monto,
-            cantidad: v.cantidad,
-          }));
-        setDiasAcreditados(acredArr);
-        setTickets(ticketsReal);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const openGeneral = () => {
     setSelectedDate(null);
     setFechaAcred(dias[0]?.date ?? toISO(addDays(new Date(), 1)));
@@ -1319,16 +924,13 @@ function Liquidaciones() {
     }
     setSaving(true);
     try {
-      const sb = requireSupabase();
       // Alta con validación server-side (RPC security definer): recalcula el
       // disponible y rechaza si el monto supera el pendiente por acreditar.
-      const { data, error } = await sb.rpc("ingresar_adelanto", {
+      const row = await ingresarAdelanto.mutateAsync({
         monto: montoNum,
-        fecha_acreditacion: fechaAcred,
+        fechaAcreditacion: fechaAcred,
         motivo: motivo || undefined,
       });
-      if (error) throw new Error(error.message);
-      const row = data as any;
       const nuevo: Ticket = {
         id: String(row?.id ?? Date.now())
           .slice(0, 8)
@@ -1344,12 +946,15 @@ function Liquidaciones() {
         plazoAdelantado:
           row?.plazo_adelantado_dias != null ? Number(row.plazo_adelantado_dias) : null,
       };
-      setTickets((prev) => [nuevo, ...prev]);
-      setDisponible((prev) => Math.max(0, prev - montoNum));
+      actualizarDatos((d) => ({
+        ...d,
+        tickets: [nuevo, ...d.tickets],
+        disponible: Math.max(0, d.disponible - montoNum),
+      }));
       setOpen(false);
       toast.success(`Ticket ${nuevo.id} creado — pendiente de aprobación`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo crear el ticket");
+    } catch (e) {
+      toast.error((e as Error | null)?.message ?? "No se pudo crear el ticket");
     } finally {
       setSaving(false);
     }
@@ -1362,27 +967,23 @@ function Liquidaciones() {
     }
     setSaving(true);
     try {
-      const sb = requireSupabase();
-      const { data, error } = await sb.rpc("cancelar_adelanto", {
-        p_adelanto_id: adelantoId,
-      });
-      if (error) throw new Error(error.message);
-      const row = data as any;
-      setTickets((prev) =>
-        prev.map((t) =>
+      const row = await cancelarAdelanto.mutateAsync(adelantoId);
+      actualizarDatos((d) => ({
+        ...d,
+        tickets: d.tickets.map((t) =>
           t.fullId === adelantoId
             ? { ...t, estado: (row?.estado ?? "cancelado").toLowerCase() as TicketEstado }
             : t,
         ),
-      );
+      }));
       setDetalle((prev) =>
         prev && prev.fullId === adelantoId
           ? { ...prev, estado: (row?.estado ?? "cancelado").toLowerCase() as TicketEstado }
           : null,
       );
       toast.success("Adelanto cancelado correctamente");
-    } catch (e: any) {
-      toast.error(e?.message ?? "No se pudo cancelar el adelantar");
+    } catch (e) {
+      toast.error((e as Error | null)?.message ?? "No se pudo cancelar el adelantar");
     } finally {
       setSaving(false);
     }

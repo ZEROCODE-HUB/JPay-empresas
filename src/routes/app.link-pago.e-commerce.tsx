@@ -1,5 +1,6 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   RefreshCw,
   Pause,
@@ -17,7 +18,12 @@ import {
 } from "lucide-react";
 import { Card, Badge, BtnOutline, Input, Label, PageHeader } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { requireSupabase } from "@/lib/supabase";
+import { getClaveIntegracionEcommerce, type IntegracionEcommerceRow } from "@/lib/api/links-pago";
+import {
+  useClienteActual,
+  useIntegracionesEcommerce,
+  useUpsertIntegracionEcommerce,
+} from "@/hooks/useLinksPago";
 import { formatDateTime } from "@/shared/format";
 
 export const Route = createFileRoute("/app/link-pago/e-commerce")({ component: Page });
@@ -52,8 +58,11 @@ const ecoms: Ecom[] = [
 const PAGE_SIZES = [10, 20, 50];
 
 function Page() {
-  const [legajo, setLegajo] = useState("");
-  const [list, setList] = useState<Ecom[]>(ecoms);
+  const queryClient = useQueryClient();
+  const { data: cliente } = useClienteActual();
+  const legajo = cliente?.legajo ?? "";
+  const integraciones = useIntegracionesEcommerce(cliente?.legajo);
+  const upsertIntegracion = useUpsertIntegracionEcommerce(cliente?.legajo);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [claveModal, setClaveModal] = useState<{ id: string; name: string } | null>(null);
@@ -61,83 +70,69 @@ function Page() {
   const [webhookUrl, setWebhookUrl] = useState("");
   const [refreshing, setRefreshing] = useState(false);
 
+  const list = useMemo<Ecom[]>(() => {
+    const map = new Map((integraciones.data ?? []).map((r) => [r.plataforma, r]));
+    return ecoms.map((e) => {
+      const r = map.get(e.id);
+      if (!r) return e;
+      return {
+        ...e,
+        estado: (r.estado ?? e.estado) as Ecom["estado"],
+        created: r.created_at ? formatDateTime(r.created_at) : e.created,
+      };
+    });
+  }, [integraciones.data]);
+
+  // Cambio local inmediato del estado (la lista se vuelve a leer de la base solo con ACTUALIZAR).
+  const setEstadoLocal = (plataforma: string, estado: Ecom["estado"]) => {
+    queryClient.setQueryData<IntegracionEcommerceRow[]>(
+      ["links-pago", "ecommerce", cliente?.legajo],
+      (prev = []) =>
+        prev.some((r) => r.plataforma === plataforma)
+          ? prev.map((r) => (r.plataforma === plataforma ? { ...r, estado } : r))
+          : [
+              ...prev,
+              {
+                id: "",
+                cliente_legajo: legajo,
+                plataforma,
+                estado,
+                created_at: "",
+                api_key: null,
+                webhook_url: null,
+              },
+            ],
+    );
+  };
+
   const totalPages = Math.ceil(list.length / pageSize);
   const paginated = useMemo(
     () => list.slice(page * pageSize, (page + 1) * pageSize),
     [list, page, pageSize],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s
-          .from("clientes")
-          .select("legajo")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli || cancelled) return;
-        setLegajo(cli.legajo);
-        await refreshFromDB(cli.legajo);
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const refreshFromDB = async (lg: string) => {
-    const s = requireSupabase();
-    const { data } = await s
-      .from("cliente_integraciones_ecommerce")
-      .select("*")
-      .eq("cliente_legajo", lg);
-    const map = new Map<string, any>((data ?? []).map((r: any) => [r.plataforma, r]));
-    setList(
-      ecoms.map((e) => {
-        const r = map.get(e.id);
-        if (!r) return e;
-        return {
-          ...e,
-          estado: (r.estado ?? e.estado) as Ecom["estado"],
-          created: r.created_at ? formatDateTime(r.created_at) : e.created,
-        };
-      }),
-    );
-  };
-
-  const upsert = async (plataforma: string, patch: Record<string, any>) => {
+  const upsert = async (
+    plataforma: string,
+    patch: { estado: string; api_key?: string; webhook_url?: string },
+  ) => {
     if (!legajo) return;
-    const s = requireSupabase();
-    await s
-      .from("cliente_integraciones_ecommerce")
-      .upsert(
-        { cliente_legajo: legajo, plataforma, ...patch },
-        { onConflict: "cliente_legajo,plataforma" },
-      );
+    // Igual que antes: un error al guardar no se informa.
+    await upsertIntegracion.mutateAsync({ plataforma, patch }).catch(() => {});
   };
 
   const toggleEstado = (id: string) => {
     const e = list.find((x) => x.id === id);
     if (!e) return;
     const nuevo = e.estado === "Habilitado" ? "Deshabilitado" : "Habilitado";
-    setList((prev) =>
-      prev.map((x) => (x.id === id ? { ...x, estado: nuevo as Ecom["estado"] } : x)),
-    );
-    upsert(id, { estado: nuevo });
+    setEstadoLocal(id, nuevo);
+    void upsert(id, { estado: nuevo });
     toast.success(`${e.name} ${nuevo === "Habilitado" ? "habilitada" : "deshabilitada"}`);
   };
 
   const refreshList = () => {
     setRefreshing(true);
     setTimeout(async () => {
-      if (legajo) await refreshFromDB(legajo);
+      if (legajo) await integraciones.refetch();
       setRefreshing(false);
       toast.success("Catalogo de integraciones actualizado");
     }, 600);
@@ -146,13 +141,7 @@ function Page() {
   const openClaveModal = (id: string, name: string) => {
     if (legajo) {
       (async () => {
-        const s = requireSupabase();
-        const { data } = await s
-          .from("cliente_integraciones_ecommerce")
-          .select("api_key, webhook_url")
-          .eq("cliente_legajo", legajo)
-          .eq("plataforma", id)
-          .maybeSingle();
+        const data = await getClaveIntegracionEcommerce(legajo, id);
         setClaveApi(data?.api_key ?? "");
         setWebhookUrl(data?.webhook_url ?? "");
         setClaveModal({ id, name });
@@ -170,9 +159,7 @@ function Page() {
       return;
     }
     await upsert(id, { estado: "Habilitado", api_key: apiKey, webhook_url: webhook });
-    setList((prev) =>
-      prev.map((x) => (x.id === id ? { ...x, estado: "Habilitado" as Ecom["estado"] } : x)),
-    );
+    setEstadoLocal(id, "Habilitado");
     setClaveModal(null);
     toast.success(`${name} conectada correctamente`);
   };

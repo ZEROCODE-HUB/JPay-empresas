@@ -1,5 +1,5 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   Plus,
   Search,
@@ -23,28 +23,23 @@ import {
 } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { FormDialog } from "@/shared/ui/form-dialog";
-import { requireSupabase } from "@/lib/supabase";
+import { useEliminarPuntoVenta, useGuardarPuntoVenta, usePuntosVenta } from "@/hooks/useQr";
+import type { EstadoPdv, PuntoVenta } from "@/lib/api/qr";
 import { buildQrPdvUrl } from "@/lib/pay-url";
 import QRCode from "qrcode";
 import { formatDate } from "@/shared/format";
 
 export const Route = createFileRoute("/app/qr/puntos-de-venta")({ component: Page });
 
-type EstadoPdv = "Activado" | "Desactivado";
-
-type PuntoVenta = {
-  id: string;
-  nombre: string;
-  estado: EstadoPdv;
-  created_at: string;
-};
-
 const ROWS_OPTIONS = [10, 20, 50];
 
 function Page() {
-  const [pdvs, setPdvs] = useState<PuntoVenta[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [comercioId, setComercioId] = useState<string | null>(null);
+  const pdvsQuery = usePuntosVenta();
+  const pdvs = useMemo(() => pdvsQuery.data?.pdvs ?? [], [pdvsQuery.data]);
+  const comercioId = pdvsQuery.data?.comercioId ?? null;
+  const loading = pdvsQuery.isFetching;
+  const guardarPdv = useGuardarPuntoVenta();
+  const eliminarPdv = useEliminarPuntoVenta();
   const [search, setSearch] = useState("");
   const [estadoFilter, setEstadoFilter] = useState("Todos");
   const [fechaInicio, setFechaInicio] = useState("");
@@ -61,93 +56,6 @@ function Page() {
   const [eliminarOpen, setEliminarOpen] = useState(false);
   const [eliminarId, setEliminarId] = useState<string | null>(null);
   const [scan, setScan] = useState(false);
-
-  useEffect(() => {
-    cargar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function resolverComercio(
-    s: ReturnType<typeof requireSupabase>,
-  ): Promise<{ id: string | null; error?: string }> {
-    const { data: u } = await s.auth.getUser();
-    const mail = u.user?.email;
-    if (!mail) return { id: null, error: "No se pudo obtener el correo del usuario" };
-    const { data: cli, error: cliErr } = await s
-      .from("clientes")
-      .select("legajo")
-      .eq("correo", mail)
-      .maybeSingle();
-    if (cliErr) {
-      console.error("Error buscando cliente:", cliErr);
-      return { id: null, error: "Error al buscar el cliente asociado" };
-    }
-    if (!cli?.legajo)
-      return { id: null, error: "No se encontró un cliente asociado a este usuario" };
-
-    const { data: com, error: comErr } = await s
-      .from("comercios")
-      .select("id")
-      .eq("legajo", cli.legajo)
-      .maybeSingle();
-    if (comErr) {
-      console.error("Error buscando comercio:", comErr);
-      return { id: null, error: "Error al buscar el comercio" };
-    }
-    if (com?.id) return { id: com.id };
-
-    // Si el usuario no tiene un comercio todavia, lo creamos para poder vincular PDVs.
-    const { data: nuevo, error } = await s
-      .from("comercios")
-      .insert({ usuario: mail, legajo: cli.legajo, estado: "Activado", nivel: "Estándar" })
-      .select("id")
-      .single();
-    if (error) {
-      console.error("Error creando comercio:", error);
-      return {
-        id: null,
-        error: "No se pudo crear el comercio. Verificá tu cuenta o contactá soporte.",
-      };
-    }
-    return { id: nuevo?.id ?? null };
-  }
-
-  async function cargar() {
-    setLoading(true);
-    try {
-      const s = requireSupabase();
-      const resultado = await resolverComercio(s);
-      setComercioId(resultado.id);
-      if (!resultado.id) {
-        setPdvs([]);
-        if (resultado.error) toast.error(resultado.error);
-        return;
-      }
-      const { data, error } = await s
-        .from("puntos_venta")
-        .select("id, nombre, estado, created_at")
-        .eq("comercio_id", resultado.id)
-        .order("created_at", { ascending: true });
-      if (error) {
-        toast.error("No se pudieron cargar los puntos de venta");
-        console.error(error);
-        return;
-      }
-      setPdvs(
-        (data ?? []).map((r: any) => ({
-          id: r.id,
-          nombre: r.nombre,
-          estado: r.estado,
-          created_at: r.created_at,
-        })),
-      );
-    } catch (e) {
-      toast.error("Error al cargar los puntos de venta");
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const filtered = useMemo(() => {
     let list = [...pdvs];
@@ -200,26 +108,16 @@ function Page() {
       return;
     }
     try {
-      const s = requireSupabase();
-      if (editingId) {
-        const { error } = await s
-          .from("puntos_venta")
-          .update({ nombre: form.nombre.trim(), estado: form.estado })
-          .eq("id", editingId);
-        if (error) throw error;
-        toast.success("Punto de venta actualizado");
-      } else {
-        const { error } = await s.from("puntos_venta").insert({
-          comercio_id: comercioId,
-          nombre: form.nombre.trim(),
-          estado: "Pendiente de aprobación",
-        });
-        if (error) throw error;
-        toast.success("Punto de venta creado (Pendiente de aprobación — Payway lo activará)");
-      }
+      await guardarPdv.mutateAsync({
+        editingId,
+        comercioId,
+        nombre: form.nombre.trim(),
+        estado: form.estado,
+      });
+      if (editingId) toast.success("Punto de venta actualizado");
+      else toast.success("Punto de venta creado (Pendiente de aprobación — Payway lo activará)");
       setCrearOpen(false);
       setEditingId(null);
-      await cargar();
     } catch (e) {
       toast.error("No se pudo guardar el punto de venta");
       console.error(e);
@@ -234,11 +132,8 @@ function Page() {
   const ejecutarEliminar = async () => {
     if (!eliminarId) return;
     try {
-      const s = requireSupabase();
-      const { error } = await s.from("puntos_venta").delete().eq("id", eliminarId);
-      if (error) throw error;
+      await eliminarPdv.mutateAsync(eliminarId);
       toast.success("Punto de venta eliminado");
-      setPdvs((prev) => prev.filter((p) => p.id !== eliminarId));
     } catch (e) {
       toast.error("No se pudo eliminar el punto de venta");
       console.error(e);

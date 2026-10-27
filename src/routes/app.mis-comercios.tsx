@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect } from "react";
 import { Search, Store } from "lucide-react";
 import { PageHeader, Card, Badge, Input, BtnOutline } from "@/components/portal-shell";
-import { requireSupabase } from "@/lib/supabase";
-import type { Tables } from "@/lib/database.types";
+import type { ComercioClienteRow } from "@/lib/api/comercios";
+import { useComerciosCliente } from "@/hooks/useComercios";
 
 export const Route = createFileRoute("/app/mis-comercios")({ component: Page });
 
@@ -17,12 +17,7 @@ type Comercio = {
   creado: string;
 };
 
-type ComercioRow = Pick<
-  Tables<"comercios">,
-  "id" | "nombre_comercio" | "legajo" | "nivel" | "estado" | "usuario" | "created_at"
->;
-
-const mapComercios = (rows: ComercioRow[] | null): Comercio[] =>
+const mapComercios = (rows: ComercioClienteRow[] | null): Comercio[] =>
   (rows ?? []).map((r) => ({
     id: r.id,
     nombre: r.nombre_comercio ?? "Comercio",
@@ -48,40 +43,13 @@ const estadoTone = (estado: string): "neutral" | "success" | "warn" | "danger" =
 };
 
 function Page() {
-  const [comercios, setComercios] = useState<Comercio[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { rows, isLoading: loading } = useComerciosCliente();
+  const comercios = useMemo(() => mapComercios(rows), [rows]);
   const [q, setQ] = useState("");
   const [nivel, setNivel] = useState("Todos");
   const [estado, setEstado] = useState("Todos");
   const [page, setPage] = useState(1);
   const pageSize = 10;
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s
-          .from("clientes")
-          .select("legajo")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli?.legajo) return;
-        const { data: rows } = await s
-          .from("comercios")
-          .select("id, nombre_comercio, legajo, nivel, estado, usuario, created_at")
-          .or(`legajo.eq.${cli.legajo},usuario.eq.${mail}`)
-          .order("created_at", { ascending: false });
-        setComercios(mapComercios(rows));
-      } catch {
-        // silencioso
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const niveles = useMemo(
     () => Array.from(new Set(comercios.map((c) => c.nivel).filter(Boolean))).sort(),

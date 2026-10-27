@@ -1,5 +1,5 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Plus, Copy, Share2, Edit3, Search, Eye, Trash2, X } from "lucide-react";
 import {
   Card,
@@ -15,38 +15,25 @@ import { FormDialog } from "@/shared/ui/form-dialog";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { paymentMethods, type Product, type PaymentLink } from "@/data/links-pago";
 import { formatDate, formatMoney } from "@/shared/format";
-import { requireSupabase } from "@/lib/supabase";
-import type { Tables } from "@/lib/database.types";
+import type { ComercioBanderaRow, LinkPagoConDetalle, ProductoRow } from "@/lib/api/links-pago";
+import {
+  useActualizarLinkPago,
+  useBanderasActivasComercio,
+  useClienteActual,
+  useComerciosUsuario,
+  useCrearLinkPago,
+  useEliminarLinkPago,
+  useEliminarProducto,
+  useGuardarProducto,
+  useLinksPago,
+  useNombresBanderasComercio,
+  useProductos,
+} from "@/hooks/useLinksPago";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
 
 export const Route = createFileRoute("/app/link-pago/productos")({ component: Page });
 
-type DbProducto = {
-  id: string;
-  nombre: string;
-  descripcion: string | null;
-  precio: number;
-  cantidad: number;
-};
-
-type DbLink = Tables<"cliente_links_pago">;
-
-type DbLinkDetalle = {
-  id: string;
-  link_id: string;
-  producto_id: string | null;
-  producto_nombre: string;
-  cantidad: number;
-  precio_unitario: number;
-};
-
-type ComercioBandera = {
-  id: string;
-  bandera: string;
-  estado: string;
-  metodo_key: string | null;
-  methodId: string;
-};
+type ComercioBandera = ComercioBanderaRow & { methodId: string };
 
 /**
  * Normaliza el texto de una bandera al id de método que usa el checkout.
@@ -88,10 +75,65 @@ function linkDisplayStatus(l: PaymentLink): string {
   return l.status;
 }
 
+function toProduct(r: ProductoRow): Product {
+  return {
+    id: r.id,
+    name: r.nombre,
+    qty: Number(r.cantidad ?? 1),
+    price: Number(r.precio ?? 0),
+    desc: r.descripcion ?? undefined,
+  };
+}
+
+function toPaymentLink(x: LinkPagoConDetalle): PaymentLink {
+  const prods: Product[] = x.detalle.map((d) => ({
+    id: d.producto_id ?? d.id,
+    name: d.producto_nombre,
+    qty: Number(d.cantidad ?? 1),
+    price: Number(d.precio_unitario ?? 0),
+  }));
+  return {
+    id: x.id,
+    // La URL guardada puede ser branding (brand.web.payLinksBase) o un origen
+    // viejo (localhost). Se reconstruye con el dominio de producción para
+    // que "Copiar" y el detalle apunten siempre al deploy.
+    url: toResolvableLinkPagoUrl(x.url ?? ""),
+    products: prods,
+    status: (x.estado ?? "Activo") as PaymentLink["status"],
+    partialPayments: !!x.pagos_parciales,
+    methods: Array.isArray(x.metodos_pago)
+      ? x.metodos_pago.filter((m): m is string => typeof m === "string")
+      : [],
+    reference: x.referencia ?? undefined,
+    notes: x.notas ?? undefined,
+    createdAt: (x.created_at ?? "").slice(0, 10).split("-").reverse().join("/"),
+    expiresAt: x.expira_en ? x.expira_en.slice(0, 10).split("-").reverse().join("/") : undefined,
+    views: Number(x.vistas ?? 0),
+    payments: Number(x.pagos ?? 0),
+    comercioId: x.comercio_id ?? undefined,
+    comercioNombre: x.comercio_nombre ?? undefined,
+  };
+}
+
 function Page() {
-  const [legajo, setLegajo] = useState<string>("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [links, setLinks] = useState<PaymentLink[]>([]);
+  const { data: cliente } = useClienteActual();
+  const legajo = cliente?.legajo ?? "";
+  const productosQuery = useProductos(cliente?.legajo);
+  const linksQuery = useLinksPago(cliente?.legajo);
+  const { data: userComercios = [] } = useComerciosUsuario(cliente?.legajo, cliente?.mail);
+  const guardarProducto = useGuardarProducto(cliente?.legajo);
+  const eliminarProducto = useEliminarProducto(cliente?.legajo);
+  const crearLink = useCrearLinkPago();
+  const actualizarLink = useActualizarLinkPago(cliente?.legajo);
+  const eliminarLink = useEliminarLinkPago(cliente?.legajo);
+
+  const products = useMemo(() => (productosQuery.data ?? []).map(toProduct), [productosQuery.data]);
+  // Link recién generado que se muestra arriba mientras se relee la lista.
+  const [linksRecienCreados, setLinksRecienCreados] = useState<PaymentLink[]>([]);
+  const links = useMemo(
+    () => [...linksRecienCreados, ...(linksQuery.data ?? []).map(toPaymentLink)],
+    [linksRecienCreados, linksQuery.data],
+  );
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -100,7 +142,6 @@ function Page() {
   const [confirmarEliminarLinkId, setConfirmarEliminarLinkId] = useState<string | null>(null);
   const [tab, setTab] = useState<"productos" | "links">("productos");
   const [detailLink, setDetailLink] = useState<PaymentLink | null>(null);
-  const [detailLinkBanderas, setDetailLinkBanderas] = useState<string[]>([]);
   const [editLink, setEditLink] = useState<PaymentLink | null>(null);
   const [linksPage, setLinksPage] = useState(1);
   const LINKS_PAGE_SIZE = 10;
@@ -113,173 +154,34 @@ function Page() {
   const [linkStatus, setLinkStatus] = useState<string>("Activo");
   const [linkRef, setLinkRef] = useState("");
   const [linkNotes, setLinkNotes] = useState("");
-  const [userComercios, setUserComercios] = useState<
-    { id: string; nombre_comercio: string | null }[]
-  >([]);
   const [selectedComercioId, setSelectedComercioId] = useState<string>("");
-  const [comercioBanderas, setComercioBanderas] = useState<ComercioBandera[]>([]);
 
-  const loadProductos = async (lg: string) => {
-    const s = requireSupabase();
-    const { data } = await s
-      .from("productos")
-      .select("*")
-      .eq("cliente_legajo", lg)
-      .order("created_at", { ascending: false });
-    const rows: Product[] = (data ?? []).map((r: DbProducto) => ({
-      id: r.id,
-      name: r.nombre,
-      qty: Number(r.cantidad ?? 1),
-      price: Number(r.precio ?? 0),
-      desc: r.descripcion ?? undefined,
-    }));
-    setProducts(rows);
-  };
-
-  const loadLinks = async (lg: string) => {
-    const s = requireSupabase();
-    const { data: lks } = await s
-      .from("cliente_links_pago")
-      .select("*")
-      .eq("cliente_legajo", lg)
-      .order("created_at", { ascending: false });
-    const lk = lks ?? [];
-    const ids = lk.map((x: DbLink) => x.id);
-    let det: DbLinkDetalle[] = [];
-    if (ids.length) {
-      const { data: d } = await s.from("cliente_links_pago_detalle").select("*").in("link_id", ids);
-      det = d ?? [];
-    }
-    const byLink = new Map<string, DbLinkDetalle[]>();
-    det.forEach((d) => {
-      const arr = byLink.get(d.link_id) ?? [];
-      arr.push(d);
-      byLink.set(d.link_id, arr);
+  const { data: banderasComercio } = useBanderasActivasComercio(selectedComercioId || undefined);
+  // Un comercio puede tener varias filas que apuntan al mismo metodo
+  // (ej. "Visa" y "Visa Crédito" -> visa-cred). Se muestra una sola vez.
+  const banderasUnicas = useMemo(() => {
+    if (!banderasComercio) return undefined;
+    const byMethod = new Map<string, ComercioBandera>();
+    banderasComercio.forEach((b) => {
+      const methodId = b.metodo_key || methodIdFromBandera(b.bandera);
+      if (!byMethod.has(methodId)) byMethod.set(methodId, { ...b, methodId });
     });
-    const rows: PaymentLink[] = lk.map((x: DbLink) => {
-      const dd = byLink.get(x.id) ?? [];
-      const prods: Product[] = dd.map((d) => ({
-        id: d.producto_id ?? d.id,
-        name: d.producto_nombre,
-        qty: Number(d.cantidad ?? 1),
-        price: Number(d.precio_unitario ?? 0),
-      }));
-      return {
-        id: x.id,
-        // La URL guardada puede ser branding (brand.web.payLinksBase) o un origen
-        // viejo (localhost). Se reconstruye con el dominio de producción para
-        // que "Copiar" y el detalle apunten siempre al deploy.
-        url: toResolvableLinkPagoUrl(x.url ?? ""),
-        products: prods,
-        status: (x.estado ?? "Activo") as PaymentLink["status"],
-        partialPayments: !!x.pagos_parciales,
-        methods: Array.isArray(x.metodos_pago)
-          ? x.metodos_pago.filter((m): m is string => typeof m === "string")
-          : [],
-        reference: x.referencia ?? undefined,
-        notes: x.notas ?? undefined,
-        createdAt: (x.created_at ?? "").slice(0, 10).split("-").reverse().join("/"),
-        expiresAt: x.expira_en
-          ? (x.expira_en as string).slice(0, 10).split("-").reverse().join("/")
-          : undefined,
-        views: Number(x.vistas ?? 0),
-        payments: Number(x.pagos ?? 0),
-        comercioId: x.comercio_id ?? undefined,
-        comercioNombre: x.comercio_nombre ?? undefined,
-      };
-    });
-    setLinks(rows);
-  };
+    return Array.from(byMethod.values());
+  }, [banderasComercio]);
+  const comercioBanderas: ComercioBandera[] = (selectedComercioId && banderasUnicas) || [];
 
+  // Al cargar las banderas del comercio elegido se preseleccionan todos sus métodos.
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const s = requireSupabase();
-        const { data: u } = await s.auth.getUser();
-        const mail = u.user?.email;
-        if (!mail) return;
-        const { data: cli } = await s
-          .from("clientes")
-          .select("legajo")
-          .eq("correo", mail)
-          .maybeSingle();
-        if (!cli) return;
-        if (cancelled) return;
-        setLegajo(cli.legajo);
-        await loadProductos(cli.legajo);
-        await loadLinks(cli.legajo);
-        const { data: com } = await s
-          .from("comercios")
-          .select("id, nombre_comercio")
-          .or(`legajo.eq.${cli.legajo},usuario.eq.${mail}`);
-        if (!cancelled) setUserComercios(com ?? []);
-      } catch {
-        // silencioso
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (banderasUnicas) setLinkMethods(banderasUnicas.map((b) => b.methodId));
+  }, [banderasUnicas]);
 
-  useEffect(() => {
-    if (!selectedComercioId) {
-      setComercioBanderas([]);
-      return;
-    }
-    const s = requireSupabase();
-    s.from("comercio_banderas")
-      .select("id, bandera, estado, metodo_key")
-      .eq("comercio_id", selectedComercioId)
-      .eq("estado", "Activo")
-      .then(({ data }) => {
-        const rows = (
-          (data ?? []) as {
-            id: string;
-            bandera: string;
-            estado: string;
-            metodo_key: string | null;
-          }[]
-        ).map((b) => ({
-          ...b,
-          methodId: b.metodo_key || methodIdFromBandera(b.bandera),
-        }));
-
-        // Un comercio puede tener varias filas que apuntan al mismo metodo
-        // (ej. "Visa" y "Visa Crédito" -> visa-cred). Se muestra una sola vez.
-        const byMethod = new Map<string, ComercioBandera>();
-        rows.forEach((b) => {
-          if (!byMethod.has(b.methodId)) byMethod.set(b.methodId, b);
-        });
-        const unique = Array.from(byMethod.values());
-
-        setComercioBanderas(unique);
-        setLinkMethods(unique.map((b) => b.methodId));
-      });
-  }, [selectedComercioId]);
-
-  useEffect(() => {
-    if (!detailLink?.comercioId) {
-      setDetailLinkBanderas([]);
-      return;
-    }
-    const s = requireSupabase();
-    s.from("comercio_banderas")
-      .select("id, bandera")
-      .eq("comercio_id", detailLink.comercioId)
-      .eq("estado", "Activo")
-      .then(({ data }) => {
-        setDetailLinkBanderas((data ?? []).map((b: { bandera: string }) => b.bandera));
-      });
-  }, [detailLink?.comercioId]);
+  const { data: detailLinkBanderas = [] } = useNombresBanderasComercio(detailLink?.comercioId);
 
   const toggleMethod = (id: string) => {
     setLinkMethods((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const generateLink = async () => {
-    const s = requireSupabase();
     const selProducts = products.filter((p) => selected.includes(p.id));
     if (selProducts.length === 0) {
       toast.error("Selecciona al menos un producto");
@@ -311,24 +213,22 @@ function Page() {
       pagos_parciales: linkPartial,
       metodos_pago: linkMethods,
     };
-    const { data: inserted, error } = await s
-      .from("cliente_links_pago")
-      .insert(insertLink)
-      .select()
-      .single();
-    if (error || !inserted) {
+    let inserted: { id: string; detalleOk: boolean };
+    try {
+      inserted = await crearLink.mutateAsync({
+        link: insertLink,
+        detalle: selProducts.map((p) => ({
+          producto_id: p.id,
+          producto_nombre: p.name,
+          cantidad: p.qty,
+          precio_unitario: p.price,
+        })),
+      });
+    } catch {
       toast.error("No se pudo generar el link");
       return;
     }
-    const detRows = selProducts.map((p) => ({
-      link_id: inserted.id,
-      producto_id: p.id,
-      producto_nombre: p.name,
-      cantidad: p.qty,
-      precio_unitario: p.price,
-    }));
-    const { error: e2 } = await s.from("cliente_links_pago_detalle").insert(detRows);
-    if (e2) toast.error("Link creado, pero fallo el detalle");
+    if (!inserted.detalleOk) toast.error("Link creado, pero fallo el detalle");
     const link: PaymentLink = {
       id: inserted.id,
       url,
@@ -345,7 +245,7 @@ function Page() {
       comercioId: selectedComercioId,
       comercioNombre: selectedComercio?.nombre_comercio ?? undefined,
     };
-    setLinks((prev) => [link, ...prev]);
+    setLinksRecienCreados([link]);
     setShowLinkForm(false);
     setTab("links");
     setLinksPage(1);
@@ -357,19 +257,19 @@ function Page() {
     setLinkMethods([]);
     setLinkStatus("Activo");
     setSelectedComercioId("");
-    setComercioBanderas([]);
     toast.success("Link generado con exito");
-    await loadLinks(legajo);
+    await linksQuery.refetch();
+    setLinksRecienCreados([]);
   };
 
   const deleteLink = async (id: string) => {
-    const s = requireSupabase();
-    const { error } = await s.from("cliente_links_pago").delete().eq("id", id);
-    if (error) {
+    try {
+      await eliminarLink.mutateAsync(id);
+    } catch {
       toast.error("No se pudo eliminar");
       return;
     }
-    setLinks((prev) => prev.filter((l) => l.id !== id));
+    setLinksRecienCreados((prev) => prev.filter((l) => l.id !== id));
     toast.success("Link de pago eliminado");
   };
 
@@ -384,41 +284,38 @@ function Page() {
       methods: string[];
     },
   ) => {
-    const s = requireSupabase();
-    const { error } = await s
-      .from("cliente_links_pago")
-      .update({
-        estado: vals.status,
-        referencia: vals.reference || null,
-        notas: vals.notes || null,
-        expira_en: vals.expires ? new Date(vals.expires + "T23:59:59").toISOString() : null,
-        pagos_parciales: vals.partial,
-        metodos_pago: vals.methods,
-      })
-      .eq("id", id);
-    if (error) {
+    try {
+      await actualizarLink.mutateAsync({
+        id,
+        patch: {
+          estado: vals.status,
+          referencia: vals.reference || null,
+          notas: vals.notes || null,
+          expira_en: vals.expires ? new Date(vals.expires + "T23:59:59").toISOString() : null,
+          pagos_parciales: vals.partial,
+          metodos_pago: vals.methods,
+        },
+      });
+    } catch {
       toast.error("No se pudo actualizar el link");
       return;
     }
     toast.success("Link de pago actualizado");
     setEditLink(null);
-    if (legajo) await loadLinks(legajo);
   };
 
   const deleteProduct = async (id: string) => {
-    const s = requireSupabase();
-    const { error } = await s.from("productos").delete().eq("id", id);
-    if (error) {
+    try {
+      await eliminarProducto.mutateAsync(id);
+    } catch {
       toast.error("No se pudo eliminar");
       return;
     }
-    setProducts((prev) => prev.filter((p) => p.id !== id));
     setSelected((prev) => prev.filter((x) => x !== id));
     toast.success("Producto eliminado");
   };
 
   const saveProduct = async (product: Product) => {
-    const s = requireSupabase();
     const payload = {
       cliente_legajo: legajo,
       nombre: product.name,
@@ -426,24 +323,15 @@ function Page() {
       precio: product.price,
       cantidad: product.qty,
     };
-    if (editingProduct) {
-      const { error } = await s.from("productos").update(payload).eq("id", editingProduct.id);
-      if (error) {
-        toast.error("No se pudo actualizar");
-        return;
-      }
-      toast.success("Producto actualizado");
-    } else {
-      const { error } = await s.from("productos").insert(payload);
-      if (error) {
-        toast.error("No se pudo crear");
-        return;
-      }
-      toast.success("Producto creado");
+    try {
+      await guardarProducto.mutateAsync({ id: editingProduct?.id, payload });
+    } catch {
+      toast.error(editingProduct ? "No se pudo actualizar" : "No se pudo crear");
+      return;
     }
+    toast.success(editingProduct ? "Producto actualizado" : "Producto creado");
     setShowProductForm(false);
     setEditingProduct(null);
-    if (legajo) await loadProductos(legajo);
   };
 
   return (
@@ -602,7 +490,6 @@ function Page() {
             onClose={() => {
               setShowLinkForm(false);
               setSelectedComercioId("");
-              setComercioBanderas([]);
             }}
             title="Generar link de pago"
             description="Configura los metodos de pago y opciones del enlace."
@@ -920,7 +807,6 @@ function Page() {
             className="absolute inset-0 bg-black/50"
             onClick={() => {
               setDetailLink(null);
-              setDetailLinkBanderas([]);
             }}
           />
           <div className="relative bg-card rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -929,7 +815,6 @@ function Page() {
               <button
                 onClick={() => {
                   setDetailLink(null);
-                  setDetailLinkBanderas([]);
                 }}
                 className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-accent transition"
               >

@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { BtnOutline, BtnPrimary } from "@/components/portal-shell";
-import { cotizarTransferencia, type ComisionConfig, type Cotizacion } from "@/lib/transfer-store";
+import {
+  cotizarTransferencia,
+  type ComisionConfig,
+  type Cotizacion,
+} from "@/lib/api/transferencias";
 import { formatMoney, formatPercent } from "@/shared/format";
 
 /** "1,5% del monto" o "fijo $ 5,00 por transferencia". */

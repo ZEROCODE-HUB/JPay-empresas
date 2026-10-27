@@ -37,8 +37,16 @@ import {
 import { toast } from "sonner";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
-import { requireSupabase, toDataError, isPermissionError } from "@/lib/supabase";
-import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { toDataError, isPermissionError } from "@/lib/supabase";
+import {
+  createSubcuenta,
+  deleteSubcuenta,
+  setEstadoSubcuenta,
+  transferirEntreSubcuentas,
+  updateSubcuenta,
+  type SubcuentaConSaldos,
+} from "@/lib/api/subcuentas";
+import { useMovimientosSubcuenta, useSubcuentasCliente } from "@/hooks/useSubcuentas";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -78,15 +86,15 @@ type Mov = {
 
 const PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-const mapSubs = (rows: any[]): Sub[] =>
+const mapSubs = (rows: SubcuentaConSaldos[]): Sub[] =>
   rows.map((r, i) => ({
     id: r.id,
     n: r.nombre,
     apellido: r.apellido ?? "",
     email: r.email ?? "",
     cbu: r.cbu ?? "",
-    tipo: r.tipo,
-    e: r.estado,
+    tipo: r.tipo as Sub["tipo"],
+    e: r.estado as Sub["e"],
     disp: Number(r.saldo_disponible ?? 0),
     ret: Number(r.saldo_retenido ?? 0),
     conc: Number(r.saldo_conciliado ?? 0),
@@ -145,10 +153,8 @@ const TITULO_MOV: Record<string, string> = {
 
 function Page() {
   const navigate = useNavigate();
-  const [subs, setSubs] = useState<Sub[]>([]);
+  const { subs, setSubs, clienteLegajo, loading, recargar: cargar } = useSubcuentasCliente(mapSubs);
   const [menuId, setMenuId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [clienteLegajo, setClienteLegajo] = useState<string | null>(null);
 
   const [nuevoOpen, setNuevoOpen] = useState(false);
   const [transfOpen, setTransfOpen] = useState(false);
@@ -177,37 +183,6 @@ function Page() {
   const [transfMonto, setTransfMonto] = useState("");
   const [transfConcepto, setTransfConcepto] = useState("");
   const [transfLoading, setTransfLoading] = useState(false);
-
-  const cargar = async () => {
-    const s = requireSupabase();
-    const { data: u } = await s.auth.getUser();
-    const mail = u.user?.email;
-    if (!mail) return null;
-    const { data: cli } = await s
-      .from("clientes")
-      .select("legajo")
-      .eq("correo", mail)
-      .maybeSingle();
-    setClienteLegajo(cli?.legajo ?? null);
-    const { data: rows } = await s
-      .from("subaccounts")
-      .select(`*, ${SALDOS_EMBED}`)
-      .eq("cliente_legajo", cli?.legajo ?? "");
-    setSubs(mapSubs((rows ?? []).map(conSaldos)));
-    return cli;
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await cargar();
-      } catch {
-        /* silencioso */
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
 
   const filtradas = useMemo(
     () =>
@@ -283,32 +258,27 @@ function Page() {
   };
 
   const onSubmitSub = async () => {
-    const s = requireSupabase();
     if (!clienteLegajo) {
       toast.error("No se pudo identificar la cuenta");
       return;
     }
     try {
       if (editSub && editSub.id) {
-        const { error } = await s
-          .from("subaccounts")
-          .update({
-            nombre: form.n,
-            apellido: form.apellido,
-            email: form.email,
-            tipo: form.tipo,
-            responsable: form.resp,
-            limite: form.lim || null,
-          })
-          .eq("id", editSub.id);
-        if (error) throw error;
+        await updateSubcuenta(editSub.id, {
+          nombre: form.n,
+          apellido: form.apellido,
+          email: form.email,
+          tipo: form.tipo,
+          responsable: form.resp,
+          limite: form.lim || null,
+        });
         toast.success("Subcuenta actualizada");
       } else {
         // CVU de 22 dígitos: 8 de entidad + 14 de cuenta (como los reales).
         // Antes daba 19 dígitos y el banco lo rechazaba como origen.
         const cbu = "00000031" + Math.floor(10000000000000 + Math.random() * 89999999999999);
         // El saldo nace en 0 (trigger en subaccounts); el cliente no puede fijarlo.
-        const { error } = await s.from("subaccounts").insert({
+        await createSubcuenta({
           cliente_legajo: clienteLegajo,
           nombre: form.n,
           apellido: form.apellido,
@@ -322,7 +292,6 @@ function Page() {
           egresos: "",
           retiros_habilitados: true,
         });
-        if (error) throw error;
         toast.success("Subcuenta creada correctamente");
       }
       setNuevoOpen(false);
@@ -335,9 +304,8 @@ function Page() {
 
   const onBorrar = async () => {
     if (!confirmarBorrar?.id) return;
-    const s = requireSupabase();
     try {
-      await s.from("subaccounts").delete().eq("id", confirmarBorrar.id);
+      await deleteSubcuenta(confirmarBorrar.id);
       setSubs((prev) => prev.filter((x) => x.id !== confirmarBorrar.id));
       toast.success("Subcuenta eliminada");
     } catch {
@@ -348,9 +316,8 @@ function Page() {
   };
 
   const cambiarEstado = async (id: string, estado: "Activa" | "Pausada") => {
-    const s = requireSupabase();
     try {
-      await s.from("subaccounts").update({ estado }).eq("id", id);
+      await setEstadoSubcuenta(id, estado);
       setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, e: estado } : x)));
       if (detailSub?.id === id) setDetailSub((d) => (d ? { ...d, e: estado } : d));
       toast.success(estado === "Activa" ? "Subcuenta reactivada" : "Subcuenta pausada");
@@ -382,14 +349,12 @@ function Page() {
     }
     setTransfLoading(true);
     try {
-      const s = requireSupabase();
-      const { error } = await s.rpc("registrar_transferencia_subcuentas", {
-        p_subcuenta_origen: origen.id,
-        p_subcuenta_destino: destino.id,
-        p_monto: monto,
-        p_concepto: transfConcepto || undefined,
+      await transferirEntreSubcuentas({
+        origenId: origen.id,
+        destinoId: destino.id,
+        monto,
+        concepto: transfConcepto || undefined,
       });
-      if (error) throw error;
       setTransfOpen(false);
       setTransfMonto("");
       setTransfConcepto("");
@@ -947,48 +912,24 @@ function SubDetailModal({
   const [filterOpen, setFilterOpen] = useState(false);
   const [filterTipo, setFilterTipo] = useState<"todos" | "ingreso" | "egreso">("todos");
   const [filterSearch, setFilterSearch] = useState("");
-  const [moves, setMoves] = useState<Mov[]>([]);
-  const [loadingMoves, setLoadingMoves] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const s = requireSupabase();
-        // `subcuenta_id` identifica la subcuenta propia que intervino; `cvu` es
-        // la contraparte. Se usan ambos para no perder movimientos viejos
-        // (anteriores a subcuenta_id) ni las transferencias internas.
-        const filtro = sub.cbu
-          ? `subcuenta_id.eq.${sub.id},cvu.eq.${sub.cbu}`
-          : `subcuenta_id.eq.${sub.id}`;
-        const { data } = await s
-          .from("transactions")
-          .select("tipo, monto_operacion, comision, cvu, id_txn, fecha")
-          .or(filtro)
-          .order("fecha", { ascending: false })
-          .limit(200);
-        setMoves(
-          (data ?? []).map((m: any) => {
-            const egreso =
-              m.tipo === "transferencia" || m.tipo === "retiro" || m.tipo === "pago_pct";
-            return {
-              tipo: egreso ? "egreso" : "ingreso",
-              titulo: TITULO_MOV[m.tipo] ?? m.tipo,
-              txid: m.id_txn,
-              cbu: m.cvu,
-              entidad: brand.name,
-              fecha: (m.fecha ?? "").slice(0, 10),
-              hora: (m.fecha ?? "").slice(11, 16),
-              monto: Math.abs(Number(m.monto_operacion ?? 0)),
-            } as Mov;
-          }),
-        );
-      } catch {
-        setMoves([]);
-      } finally {
-        setLoadingMoves(false);
-      }
-    })();
-  }, [sub.id, sub.cbu]);
+  const { movimientos, loading: loadingMoves } = useMovimientosSubcuenta(sub.id, sub.cbu);
+  const moves = useMemo(
+    () =>
+      movimientos.map((m): Mov => {
+        const egreso = m.tipo === "transferencia" || m.tipo === "retiro" || m.tipo === "pago_pct";
+        return {
+          tipo: egreso ? "egreso" : "ingreso",
+          titulo: TITULO_MOV[m.tipo] ?? m.tipo,
+          txid: m.id_txn,
+          cbu: m.cvu ?? "",
+          entidad: brand.name,
+          fecha: (m.fecha ?? "").slice(0, 10),
+          hora: (m.fecha ?? "").slice(11, 16),
+          monto: Math.abs(Number(m.monto_operacion ?? 0)),
+        };
+      }),
+    [movimientos],
+  );
 
   const allMoves = moves;
   const filtMoves = allMoves.filter((m) => {

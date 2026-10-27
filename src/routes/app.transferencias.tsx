@@ -1,6 +1,6 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { brand } from "@/brand/brand";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ArrowUpRight,
   Calendar,
@@ -20,12 +20,7 @@ import { PageHeader, Input, Label, BtnPrimary, BtnOutline, Badge } from "@/compo
 import { toast } from "sonner";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
-import {
-  requireSupabase,
-  toDataError,
-  isPermissionError,
-  extraerMensajeEdgeFunction,
-} from "@/lib/supabase";
+import { toDataError, isPermissionError, extraerMensajeEdgeFunction } from "@/lib/supabase";
 import { detectIdentifierKind, type RecipientTitular } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
 import { descargarComprobantePdf } from "@/lib/comprobante-pdf";
@@ -33,7 +28,7 @@ import { compartirComprobante } from "@/lib/comprobante-imagen";
 import { type DatosComprobante } from "@/lib/comprobante";
 import { executeTransfer } from "@/lib/transfer-orchestrator";
 import { createBdcClient, canTransferBdc, type BdcAccount } from "@/lib/bdc";
-import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { useContextoTransferencias, useListasTransferencias } from "@/hooks/useTransferencias";
 import { formatDate, formatMoney } from "@/shared/format";
 import {
   ResumenCotizacion,
@@ -47,10 +42,8 @@ import {
   type Scheduled as Scheduled,
   type FrequentRecipient,
   type Template,
-  listDrafts,
   createDraft,
   deleteDraft,
-  listScheduledTransfers,
   createScheduledTransfer,
   updateScheduledTransfer,
   cancelScheduledTransfer,
@@ -58,20 +51,21 @@ import {
   listFrequentRecipients,
   createFrequentRecipient,
   deleteFrequentRecipient,
-  listTemplates,
   createTemplate,
   updateTemplate,
   deleteTemplate,
   reserveBdcTransfer,
   confirmBdcTransfer,
   cancelBdcTransfer,
-} from "@/lib/transfer-store";
+  enviarOtpTransferencia,
+  verificarOtpTransferencia,
+} from "@/lib/api/transferencias";
 
 export const Route = createFileRoute("/app/transferencias")({ component: Page });
 
 type Tab = "unica" | "programar" | "borradores" | "programadas" | "destinatarios";
 
-// Drafts and scheduled transfers are persisted in Supabase (`transfer-store`):
+// Drafts and scheduled transfers are persisted in Supabase (`lib/api/transferencias`):
 // their types live there and are re-exported here with the names this screen uses.
 type CoelsaResult = {
   nombre: string;
@@ -257,15 +251,8 @@ function Page() {
   const [templatesOpen, setTemplatesOpen] = useState(false);
   /** Scheduled que se esta editando en la pestana "Programar" (null = nueva). */
   const [editingScheduled, setEditingScheduled] = useState<Scheduled | null>(null);
-  /** Real template list (table `plantillas_transferencia`, migration 1016). */
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [templatesError, setTemplatesError] = useState<string | null>(null);
   /** Template picked: it prefills the form and is cleared afterwards. */
   const [templatePrefill, setTemplatePrefill] = useState<Template | null>(null);
-  const [drafts, setDrafts] = useState<Draft[]>([]);
-  const [scheduled, setScheduled] = useState<Scheduled[]>([]);
-  const [frecuentes, setFrecuentes] = useState<FrequentRecipient[]>([]);
-  const [listasError, setListasError] = useState<string | null>(null);
   const [otpOpen, setOtpOpen] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -274,102 +261,32 @@ function Page() {
     id: string;
   } | null>(null);
 
-  const [subcuentas, setSubcuentas] = useState<Subcuenta[]>([]);
-  const [clienteCuit, setClienteCuit] = useState("");
-  const [clienteNombre, setClienteNombre] = useState("");
-  const [totalDisponible, setTotalDisponible] = useState(0);
-  const [enviadoMes, setEnviadoMes] = useState({ monto: 0, ops: 0 });
-  const [, setLoading] = useState(true);
-
-  const cargarDatos = useCallback(async () => {
-    try {
-      const sb = requireSupabase();
-      const {
-        data: { user },
-      } = await sb.auth.getUser();
-      const { data: cli } = await sb
-        .from("clientes")
-        .select("legajo, nombre, cuit, cuit_cuil")
-        .eq("correo", user?.email ?? "")
-        .maybeSingle();
-      if (!cli?.legajo) return;
-      setClienteCuit(digitsOnly(cli.cuit) || digitsOnly(cli.cuit_cuil));
-      setClienteNombre(String(cli.nombre ?? ""));
-
-      const { data: subs } = await sb
-        .from("subaccounts")
-        .select(`id, nombre, cbu, tipo, ${SALDOS_EMBED}`)
-        .eq("cliente_legajo", cli.legajo)
-        .order("nombre", { ascending: true });
-      const lista = (subs ?? []).map(conSaldos);
-      setSubcuentas(lista);
-      setTotalDisponible(lista.reduce((s, x) => s + (Number(x.saldo_disponible) || 0), 0));
-
-      const now = new Date();
-      const primerDiaMes = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const { data: movs } = await sb
-        .from("transactions")
-        .select("monto_operacion, tipo")
-        .eq("legajo", cli.legajo)
-        .gte("fecha", primerDiaMes)
-        .in("tipo", ["transferencia"]);
-      const movsArr = movs ?? [];
-      setEnviadoMes({
-        monto: movsArr.reduce((s, m) => s + (Number(m.monto_operacion) || 0), 0),
-        ops: movsArr.length,
-      });
-    } catch {
-      // silently fail
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
+  const {
+    subcuentas,
+    clienteCuit,
+    clienteNombre,
+    totalDisponible,
+    enviadoMes,
+    recargar: cargarDatos,
+  } = useContextoTransferencias();
 
   /**
-     /**
-      * Drafts, scheduled transfers and frequent recipients live in Supabase: they are
-      * reloaded on mount so they survive a reload / another tab / another device.
+   * Drafts, scheduled transfers, frequent recipients and templates (table
+   * `plantillas_transferencia`, migration 1016) live in Supabase.
    */
-  const cargarListas = useCallback(async () => {
-    setListasError(null);
-    try {
-      const [b, p, f] = await Promise.all([
-        listDrafts(),
-        listScheduledTransfers(),
-        listFrequentRecipients(),
-      ]);
-      setDrafts(b);
-      setScheduled(p);
-      setFrecuentes(f);
-      // Templates (migration 1016) load separately on purpose: if the table
-      // does not exist yet it must not break the other lists.
-      try {
-        setTemplates(await listTemplates());
-        setTemplatesError(null);
-      } catch (e) {
-        setTemplatesError(toDataError(e).message);
-      }
-    } catch (e) {
-      setListasError(toDataError(e).message);
-    }
-  }, []);
-
-  useEffect(() => {
-    void cargarListas();
-  }, [cargarListas]);
-
-  /** Refreshes scheduled transfers only (when opening that tab), in case the worker ran one. */
-  const refreshScheduledTransfers = useCallback(async () => {
-    try {
-      setScheduled(await listScheduledTransfers());
-    } catch {
-      // el error de listas ya se muestra en la pantalla
-    }
-  }, []);
+  const {
+    drafts,
+    scheduled,
+    frecuentes,
+    listasError,
+    templates,
+    templatesError,
+    setDrafts,
+    setScheduled,
+    setFrecuentes,
+    setTemplates,
+    refreshScheduledTransfers,
+  } = useListasTransferencias();
 
   /** Closes the dialog, switches tab and prefills the form. */
   const applyTemplate = (p: Template) => {
@@ -451,11 +368,8 @@ function Page() {
   const enviarOtpCorreo = async () => {
     setOtpSending(true);
     try {
-      const sb = requireSupabase();
-      const { data, error } = await sb.functions.invoke("enviar-otp-transferencia", { body: {} });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.demo_codigo) {
+      const data = await enviarOtpTransferencia();
+      if (data.demo_codigo) {
         // Modo demo (sin Resend configurado): el código no se envía por correo.
         toast.info(`Modo demo: tu código es ${data.demo_codigo}`, { duration: 60_000 });
       } else {
@@ -495,13 +409,7 @@ function Page() {
     }
     setOtpVerifying(true);
     try {
-      const sb = requireSupabase();
-      const { data, error } = await sb.functions.invoke("verificar-otp-transferencia", {
-        body: { codigo: code },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (!data?.ok) throw new Error("Código no válido");
+      await verificarOtpTransferencia(code);
     } catch (e) {
       const msg = (await extraerMensajeEdgeFunction(e)) || toDataError(e).message;
       toast.error(msg || "Código incorrecto o expirado");
@@ -1559,7 +1467,7 @@ function Unica({
       return;
     }
 
-    // The draft is persisted in `transferencias_borrador` (via transfer-store);
+    // The draft is persisted in `transferencias_borrador` (via lib/api/transferencias);
     // here the row is only assembled. It creates no movement: when executed it goes
     // through validation -> execution -> movement.
     await onSaveDraft({

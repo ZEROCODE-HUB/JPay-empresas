@@ -1,4 +1,5 @@
 import { requireSupabase } from "@/lib/supabase";
+import type { Tables } from "@/lib/database.types";
 import {
   buildResolvableUrl,
   toResolvableLinkPagoUrl as toResolvableLinkPagoUrlShared,
@@ -150,8 +151,7 @@ function parseJsonbArray(val: unknown): unknown[] {
 }
 
 // ===== Helper: mapear row de Supabase a Lote =====
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToLote(row: any): Lote {
+function rowToLote(row: Tables<"lotes">): Lote {
   return {
     id: row.id,
     cliente_legajo: row.cliente_legajo,
@@ -172,8 +172,7 @@ function rowToLote(row: any): Lote {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToRegistro(row: any): RegistroDeLote {
+function rowToRegistro(row: Tables<"lote_registros">): RegistroDeLote {
   return {
     id: row.id,
     loteId: row.lote_id,
