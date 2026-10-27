@@ -8,3 +8,4 @@ bun.lock
 routeTree.gen.ts
 src/lib/database.types.ts
 src/brand/brand.generated.css
+supabase/functions/_shared/brand.ts

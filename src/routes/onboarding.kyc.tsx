@@ -144,7 +144,9 @@ function KycWizard() {
     setKyc(addr);
 
     // Leer el estado fresco del store (no la referencia estancada de la última renderización)
-    let { tipoCuenta, registro, datosPersonales, datosEmpresa } = useOnboarding.getState();
+    const estado = useOnboarding.getState();
+    let { tipoCuenta, registro } = estado;
+    const { datosPersonales, datosEmpresa } = estado;
     // Fallback si el store perdió datos (ej: login directo sin pasar por registro)
     if (!registro.email || !tipoCuenta) {
       try {

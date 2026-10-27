@@ -215,13 +215,11 @@ function Page() {
         if (error) throw error;
         toast.success("Punto de venta actualizado");
       } else {
-        const { error } = await s
-          .from("puntos_venta")
-          .insert({
-            comercio_id: comercioId,
-            nombre: form.nombre.trim(),
-            estado: "Pendiente de aprobación",
-          });
+        const { error } = await s.from("puntos_venta").insert({
+          comercio_id: comercioId,
+          nombre: form.nombre.trim(),
+          estado: "Pendiente de aprobación",
+        });
         if (error) throw error;
         toast.success("Punto de venta creado (Pendiente de aprobación — Payway lo activará)");
       }
