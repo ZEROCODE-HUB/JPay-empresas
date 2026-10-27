@@ -1,5 +1,5 @@
 import type { MovimientoSubcuentaRow, SubcuentaConSaldos } from "@/lib/api/subcuentas";
-import { formatMoney } from "@/shared/format";
+import { formatMoney, parseMonto } from "@/shared/format";
 import { TIPOS_EGRESO, TITULO_MOV } from "./estados";
 import type { FiltroTipoMov, Mov, Sub } from "./types";
 
@@ -25,32 +25,11 @@ export const mapSubs = (rows: SubcuentaConSaldos[]): Sub[] =>
     retirosHab: !!r.retiros_habilitados,
   }));
 
-/**
- * Monto escrito a mano en formato es-AR: coma decimal y punto de miles
- * ("1,5" → 1.5, "1.234,56" → 1234.56, "1.500" → 1500). Sin coma, un punto que no
- * separa miles se toma como decimal ("1500.5" → 1500.5). NaN si no es un número.
- */
-export function parseMontoAr(texto: string): number {
-  const t = (texto ?? "").trim().replace(/\s/g, "").replace(/^\$/, "");
-  if (!t) return NaN;
-  let normal: string;
-  if (t.includes(",")) {
-    if (!/^-?\d{1,3}(\.\d{3})*(,\d+)?$|^-?\d+(,\d+)?$/.test(t)) return NaN;
-    normal = t.replace(/\./g, "").replace(",", ".");
-  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(t)) {
-    normal = t.replace(/\./g, "");
-  } else {
-    if (!/^-?\d+(\.\d+)?$/.test(t)) return NaN;
-    normal = t;
-  }
-  return Number(normal);
-}
-
 /** `limite` es texto libre: puede venir "50000", "50.000,00" o vacío. */
 export const fmtLimite = (lim: string) => {
   const t = (lim ?? "").trim();
   if (!t) return "Sin límite";
-  const n = parseMontoAr(t);
+  const n = parseMonto(t);
   if (Number.isNaN(n)) return t;
   return n > 0 ? formatMoney(n) : "Sin límite";
 };

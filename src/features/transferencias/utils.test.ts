@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { setPaisActivo } from "@/shared/pais";
 import type { Scheduled, Template } from "@/lib/api/transferencias";
 import {
   bancoConCodigo,
@@ -43,7 +44,9 @@ describe("parseMontoPlantilla", () => {
   it("vacío = sin monto", () => {
     expect(parseMontoPlantilla("  ")).toBeUndefined();
   });
-  it("acepta formato argentino", () => {
+  it("acepta el formato del país", () => {
+    expect(parseMontoPlantilla("482,000.50")).toBe(482000.5);
+    setPaisActivo("AR");
     expect(parseMontoPlantilla("482.000,50")).toBe(482000.5);
     expect(parseMontoPlantilla("482000")).toBe(482000);
   });

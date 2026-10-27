@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { BtnOutline, BtnPrimary } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 
+import { getPais } from "@/shared/pais";
 // Comprobante de transferencia enviada.
 
 export type ReciboCuenta = {
@@ -94,7 +95,7 @@ export function TransferReceiptModal({
   const fecha = new Date(recibo.fecha);
   const fechaTxt = Number.isNaN(fecha.getTime())
     ? recibo.fecha
-    : fecha.toLocaleString("es-AR", {
+    : fecha.toLocaleString(getPais().locale, {
         day: "2-digit",
         month: "long",
         year: "numeric",

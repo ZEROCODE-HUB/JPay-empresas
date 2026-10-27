@@ -4,6 +4,7 @@ import type {
   CalendarioAcreditacion,
 } from "@/lib/api/calendario-acreditaciones";
 
+import { getPais } from "@/shared/pais";
 // ============================================================================
 // Fechas
 // ============================================================================
@@ -28,12 +29,16 @@ export function parseDateLocal(dateStr: string): Date {
 export function fmtDateCorta(iso: string): string {
   if (!iso) return "—";
   const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("es-AR", { weekday: "short", day: "2-digit", month: "2-digit" });
+  return d.toLocaleDateString(getPais().locale, {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 /** Título largo de un día ("lunes, 3 de noviembre de 2026"). */
 export function fmtDateLarga(iso: string): string {
-  return parseDateLocal(iso).toLocaleDateString("es-AR", {
+  return parseDateLocal(iso).toLocaleDateString(getPais().locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -42,7 +47,10 @@ export function fmtDateLarga(iso: string): string {
 }
 
 export function nombreDelMes(mes: number, anio: number): string {
-  return new Date(anio, mes - 1).toLocaleDateString("es-AR", { month: "long", year: "numeric" });
+  return new Date(anio, mes - 1).toLocaleDateString(getPais().locale, {
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export type MesAnio = { mes: number; anio: number };

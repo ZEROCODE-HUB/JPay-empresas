@@ -15,6 +15,7 @@ import { Card } from "@/components/portal-shell";
 import { PALETTE, pdvColor, statusColor } from "../estados";
 import type { Porcion, PuntoEvolucion } from "../utils";
 
+import { monedaActiva } from "@/shared/format";
 /** Charts */
 export function GraficosQr({
   statusData,
@@ -85,7 +86,7 @@ export function GraficosQr({
 
       <Card className="md:col-span-2 xl:col-span-1">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-          Evolucion de cobros (millones ARS)
+          Evolucion de cobros (millones {monedaActiva()})
         </h4>
         {evolucion.length === 0 ? (
           <EmptyChart />
@@ -112,7 +113,7 @@ export function GraficosQr({
                 dataKey="monto"
                 stroke={PALETTE[1]}
                 strokeWidth={2}
-                name="Monto (millones ARS)"
+                name={`Monto (millones ${monedaActiva()})`}
               />
             </LineChart>
           </ResponsiveContainer>

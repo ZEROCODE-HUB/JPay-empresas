@@ -15,6 +15,7 @@ import {
   type Domicilio,
 } from "../utils";
 
+import { getPais } from "@/shared/pais";
 /** Estado del wizard KYC: documentos, domicilio, prefill y envío del alta. */
 export function useKycWizard() {
   const nav = useNavigate();
@@ -67,7 +68,7 @@ export function useKycWizard() {
   const canNext = puedeAvanzar(step, files);
 
   const finish = async () => {
-    const e = validarDomicilio(addr);
+    const e = validarDomicilio(addr, getPais().domicilio.largoCodigoPostal);
     setErr(e);
     if (Object.keys(e).length) return;
     setKyc(addr);
@@ -94,7 +95,7 @@ export function useKycWizard() {
         /* ignore fallback */
       }
     }
-    const { perfil, cuit, nombre } = armarAlta(
+    const { perfil, taxId, nombre } = armarAlta(
       addr,
       tipoCuenta,
       registro,
@@ -115,7 +116,8 @@ export function useKycWizard() {
         email: registro.email ?? "",
         tipoCuenta: tipoCuenta as "fisica" | "juridica",
         nombre: nombre ?? "",
-        cuit,
+        pais: getPais().codigo,
+        taxId,
         perfil,
         kyc: kycB64,
       });

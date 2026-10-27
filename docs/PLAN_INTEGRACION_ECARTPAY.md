@@ -48,6 +48,30 @@ Orden propuesto (cada fase se puede probar sola):
 
 Estas definen la arquitectura del dinero. Las marco con (!) en el resto del plan.
 
+**Decididas (2026-10-27):**
+
+- D1 → **Ambos modelos, configurables** (default de la instalación + override por comercio):
+  - `directo` (A): el comercio conecta su cuenta Ecart Pay por OAuth y cobra en ella.
+  - `centralizado` (B): se cobra con la cuenta Ecart Pay de JPay y se le liquida al comercio
+    por Payouts. Requiere revisión regulatoria antes de producción.
+  - Arranque recomendado: `directo`.
+- D2 → **Solo México** (confirmado). La estructura queda neutral por país; lo argentino
+  (Payway/BDC, CUIT, BCRA) se apaga por configuración, no se borra.
+- D3 → **Configurable** por comercio y con valor por defecto global: porcentaje y/o monto fijo,
+  IVA 16% sobre la comisión. En sandbox solo se calcula y se muestra. Forma de cobro de la
+  comisión, también configurable (se soportan todas):
+  - `split_proveedor`: Ecart Pay la separa sola en cada cobro. Según el usuario existe, pero la
+    activa Ecart Pay por negociación aparte; JPay solo la registra y concilia.
+  - `descuento_liquidacion`: en modelo `centralizado`, se descuenta antes del payout.
+  - `cobro_aparte`: en modelo `directo` sin split, se acumula y se cobra (payout del comercio a
+    JPay si los scopes lo permiten, o factura/cargo mensual).
+- D4 → CFDI fuera de esta etapa.
+- D5 → Primero terminales físicas Ecart Pay; Tap to Phone y kiosco quedan modelados.
+- D6 → Onboarding México: RFC (física/moral), CURP (física), régimen fiscal, CLABE, INE,
+  comprobante de domicilio. Campos definidos por país (estructura neutral).
+- Trabajo en ramas `feature/ecartpay-*`; no se mergea a `main` sin OK. Cliente demo MX
+  `empresa.mx@jpay.example`.
+
 D1. ¿Quién recibe el dinero? (la más importante) - Opción A "cada comercio con su cuenta Ecart Pay": el comercio conecta su cuenta por OAuth,
 el dinero de sus ventas cae en SU cuenta Ecart Pay. JPay organiza, muestra y cobra su
 comisión aparte (factura o débito). Es lo que la documentación de OAuth propone. - Opción B "cuenta central de JPay": todo se cobra en la cuenta Ecart Pay de JPay y JPay le
@@ -75,20 +99,40 @@ comprobante de domicilio, INE. Reemplaza CUIT/DNI del onboarding argentino.
 
 ---
 
-1. Cómo se envía un cobro a una terminal física por API y cómo se entera el sistema del resultado
-   (¿webhook propio de terminal o solo consultar la orden?). La guía de Odoo lo hace pero no
-   publica las llamadas.
-2. Cómo simular en sandbox: pago en terminal física y pago OXXO en tienda.
-3. Header de autorización: ¿`Authorization: <token>` o `Authorization: Bearer <token>`?
-   (los ejemplos se contradicen; hay que probar endpoint por endpoint).
-4. Tabla oficial de estados de una orden y de un contracargo.
-5. Webhooks: cómo obtener el "Global Secret" (el panel dice "disponible pronto") y cómo se firman
-   los eventos de órdenes, que no traen `data`.
-6. OAuth: ¿con las claves obtenidas se puede usar TODA la API (links, POS, payouts, reembolsos)
-   o solo lo que dicen los scopes (credenciales y órdenes)? ¿Hay más scopes?
-7. Opción B (D1): ¿Ecart Pay ofrece modelo marketplace / split de pagos / subcuentas?
-8. Límites de sandbox (montos, cantidad de órdenes, comercios conectados).
-9. ¿Existe ambiente sandbox para OAuth (crear la app en sandbox.ecartpay.com)?
+Revisión completa de la documentación (2026-10-27, incluidas las páginas que faltaban de
+llms.txt). Resultado:
+
+**Resueltas con la documentación**
+
+- Header: la referencia de la API manda el token sin prefijo (`Authorization: <token>`, cientos
+  de ejemplos); solo las guías de POS, suscripciones y creación de apps OAuth usan `Bearer`.
+  El adaptador manda sin prefijo y reintenta con `Bearer` ante 401; se fija por endpoint al probar.
+- Estados de orden: `created`, `pending`, `paid`, `cancelled` (incluye referencias OXXO vencidas
+  a los 5 días), `refunded`, `partially_refunded`. Contracargos: `created`, `pending`,
+  `in_review`, `won`, `lost` (docs_webhook-events).
+- Global Secret de webhooks: se copia en el panel (Webhooks) al crear el webhook; los webhooks
+  también se crean por API. Firma: HMAC-SHA256 de `{timestamp}.{webhook_id}.{JSON(data)}`,
+  header `x-pay-signature: SHA256=...`.
+- OAuth en sandbox: existe (`https://sandbox.ecartpay.com`). Los scopes viajan dentro del token y
+  se pueden pedir más (ej. `read_customers`); la lista completa sale de `GET` scopes de la API.
+- Split / marketplace: no hay split automático. El único modelo marketplace documentado es
+  Payouts (JPay cobra y después reparte), que es la Opción B. Confirma la Opción A.
+- OXXO: tope $11.000 MXN por orden; comercio sin verificar, máximo $500 en efectivo (409).
+
+**Siguen sin respuesta (preguntar a Ecart Pay; no bloquean el arranque)**
+
+1. API para mandar un cobro a una terminal física y saber el resultado. La guía de Odoo lo hace
+   (sincroniza terminales, envía el cobro, consulta hasta 3 min) pero no publica las llamadas, y
+   las órdenes no tienen campos de sucursal/caja.
+2. Cómo marcar como pagada una referencia OXXO en sandbox (para SPEI sí existe
+   `POST /webhooks/stp`) y si hay terminal virtual para pruebas.
+3. Formato real del webhook de órdenes: una página lo muestra plano (`{id, status}`) y otra
+   dentro de `{event, data}`; la firma usa `data`. Se verifica en sandbox aceptando ambos.
+4. Scopes necesarios para POS, reembolsos y payouts con claves obtenidas por OAuth.
+5. Split automático: condiciones para activarlo y cómo aparece en la orden/transacción y en el
+   webhook (para conciliarlo). Y sin split: ¿se puede hacer un payout desde la cuenta del
+   comercio hacia JPay con sus claves OAuth? (Se programan todas las variantes, ver D3.)
+6. Límites generales del sandbox (no documentados).
 
 ---
 
@@ -130,7 +174,11 @@ conceptos pasa a salir de una configuración:
 5. `comercio_proveedores`: qué proveedor usa cada comercio y su conexión:
    `comercio_id`, `proveedor`, `estado` (pendiente, conectado, revocado), `cuenta_externa_id`
    (account_id de Ecart Pay), `public_id`, `secreto_ref` (referencia a Supabase Vault, nunca el
-   secreto en texto plano), `scopes`, `conectado_at`, `entorno` (sandbox/produccion).
+   secreto en texto plano), `scopes`, `conectado_at`, `entorno` (sandbox/produccion),
+   `modelo_fondos` (`directo` | `centralizado`, null = default de la instalación),
+   `cobro_comision` (`split_proveedor` | `descuento_liquidacion` | `cobro_aparte`), y la
+   comisión (`comision_pct`, `comision_fija`, null = default). Los defaults viven en una tabla
+   `configuracion_pagos` por país/proveedor editable desde admin.
 6. `pagos` (genérica, reemplaza a futuro `pagos_intentos_payway` y las columnas `payway_*`):
    `id`, `proveedor`, `proveedor_pago_id`, `proveedor_orden_id`, `comercio_id`, `link_id`,
    `pos_caja_id`, `metodo` (card, transfer, cash, pos, wallet), `monto`, `moneda`, `estado`
@@ -220,6 +268,38 @@ Hacer:
   `proveedores_pago`, flags de módulos).
   Listo cuando: con país MX, los montos se ven "$1,234.50", fechas en hora de CDMX, el onboarding
   pide RFC y valida CLABE; con país AR todo se ve como hoy (tests de ambos).
+
+**Estado (2026-10-27): HECHA** en las ramas `feature/ecartpay-fase1` (admin y empresas).
+
+- Base (migración `1015_paises_proveedores.sql`, aplicada): `paises` (MX instalación, AR inactivo),
+  `feriados` (días inhábiles bancarios MX 2026–2027), `proveedores_pago` (ecartpay sandbox;
+  payway y bdc inactivos), `configuracion_pagos` (defaults: directo, cobro aparte, IVA 16%),
+  `comercio_proveedores` (conexión + overrides por comercio), `clientes.pais/tax_id/id_personal/
+  regimen_fiscal/cuenta_bancaria`, `comercios.pais`, `sumar_dias_habiles(fecha, dias, pais)`.
+  RLS: catálogos de lectura, edición solo admin.
+- `clientes.cuit` sigue siendo el identificador interno (legajo); en México es el número con
+  prefijo 99 que asigna el registro y el RFC va en `tax_id`.
+- Compartido: `shared/pais.ts` (MX/AR), `shared/validadores.ts` (RFC, CURP, CLABE, CUIT, CBU con
+  dígito verificador), `format.ts` por país (`$1,234.50`), `parseMonto` por país (los campos de
+  monto aceptan "1,234.50"). `brand.json` con `country: "MX"`.
+- Empresas: onboarding con RFC/CURP/régimen SAT/CLABE, estados, colonia, CP de 5 dígitos, INE;
+  textos PLD/PEP de México; sin leyendas BCRA. "Mi cuenta" muestra RFC/CURP. Edge Function
+  `crear-cliente` por país (desplegada, compatible con el portal anterior).
+- Admin: Configuración > "País y proveedores" (modelo de fondos, cobro de comisión, comisión e
+  IVA con ejemplo, proveedores, países y módulos, feriados). Listados y ficha del cliente con el
+  identificador fiscal del país.
+- Probado de punta a punta en local: alta de persona moral MX, validaciones (RFC, CLABE, CP),
+  datos guardados, ficha en admin y guardado de la configuración de pagos.
+- Fechas: se muestran en la hora del navegador (en México coincide con CDMX); el servidor usa
+  `paises.timezone`.
+
+Pendiente (fases siguientes o decisión del usuario):
+- Textos legales (términos, privacidad) y landing siguen siendo argentinos: hay que redactarlos
+  para México (no se inventan textos legales).
+- Módulos argentinos (transferencias BDC, IIBB, BCRA, impuestos AR) siguen visibles; el menú por
+  `paises.modulos` se arma junto con SPEI (Fase 6).
+- En persona moral, los datos del representante legal (RFC/CURP) no se guardan (igual que antes
+  en Argentina con su CUIT/CUIL).
 
 ### Fase 2 — Conexión con Ecart Pay (servidor)
 
@@ -338,8 +418,9 @@ Empresas (el comercio):
   - Terminales: ver las terminales de su cuenta (`GET /api/pos/terminals/point-of-sale`),
     vincular/desvincular a una caja (`link-terminal` / `unlink-terminal`) y cambiar modo
     (`enable-pos` / `disable-pos`).
-  - "Cobrar en caja": el cajero elige caja, monto y concepto → se crea la orden con
-    `pos_branches_id` + `pos_sales_registers_id` → pantalla "Esperando terminal…" que consulta el
+  - "Cobrar en caja": el cajero elige caja, monto y concepto → se envía el cobro a la terminal
+    de esa caja (llamada NO documentada, pregunta 1 de la sección 2; queda detrás de un
+    adaptador) → pantalla "Esperando terminal…" que consulta el
     estado (máx. 3 minutos, como el módulo oficial de Odoo) → aprobado / rechazado / tiempo
     agotado ("revisá la terminal antes de reintentar para no cobrar dos veces").
   - Ventas por sucursal y por caja (historial y KPIs), cierre de caja (resumen del día).

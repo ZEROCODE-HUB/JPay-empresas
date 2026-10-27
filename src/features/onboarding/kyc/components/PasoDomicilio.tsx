@@ -1,25 +1,25 @@
 import { Link } from "@tanstack/react-router";
 import { Field, SelectField, WizardNav } from "@/features/onboarding/components";
-import { PROVINCIAS } from "@/lib/onboarding-store";
+import { getPais } from "@/shared/pais";
 import type { KycWizard } from "../hooks/useKycWizard";
 
 /** Paso 4: domicilio de residencia y envío del alta. */
 export function PasoDomicilio({ w }: { w: KycWizard }) {
   const { setStep, addr, setAddr, err, submitError, submitting, finish } = w;
+  const { domicilio } = getPais();
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-black-800">Domicilio de residencia</h2>
       <Field
-        label="Direccion"
+        label="Calle y número"
         value={addr.direccion}
         onChange={(e) => setAddr({ ...addr, direccion: e.target.value })}
         error={err.direccion}
       />
       <Field
-        label="Direccion (opcional)"
+        label={`${domicilio.linea2} (opcional)`}
         value={addr.direccion2}
         onChange={(e) => setAddr({ ...addr, direccion2: e.target.value })}
-        placeholder="Piso, departamento, referencia"
       />
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field
@@ -29,16 +29,17 @@ export function PasoDomicilio({ w }: { w: KycWizard }) {
           error={err.ciudad}
         />
         <SelectField
-          label="Provincia"
+          label={domicilio.region}
           value={addr.provincia}
           onChange={(v) => setAddr({ ...addr, provincia: v })}
-          options={PROVINCIAS}
+          options={domicilio.regiones}
           error={err.provincia}
         />
       </div>
       <Field
-        label="Codigo postal"
+        label={domicilio.codigoPostal}
         value={addr.cp}
+        inputMode="numeric"
         onChange={(e) => setAddr({ ...addr, cp: e.target.value })}
         error={err.cp}
       />

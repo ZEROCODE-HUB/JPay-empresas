@@ -60,23 +60,47 @@ describe("validarDomicilio", () => {
       cp: "Requerido",
     });
   });
+  it("valida el largo del código postal si el país lo fija", () => {
+    expect(validarDomicilio({ ...addr, cp: "0610" }, 5)).toEqual({ cp: "Debe tener 5 dígitos" });
+    expect(validarDomicilio({ ...addr, cp: "06100" }, 5)).toEqual({});
+  });
 });
 
 describe("armarAlta", () => {
   const registro = { nombre: "Ana", apellido: "Pérez", fechaNac: "1990-01-01" };
-  it("persona física usa CUIT/CUIL y nombre completo", () => {
-    const r = armarAlta(addr, "fisica", registro, { cuitCuil: "20-1-3", esPEP: false }, {});
-    expect(r.cuit).toBe("20-1-3");
+  it("persona física usa su identificador fiscal y nombre completo", () => {
+    const r = armarAlta(
+      addr,
+      "fisica",
+      registro,
+      {
+        taxId: "GODE561231GR8",
+        idPersonal: "HEGG560427MVZRRL04",
+        regimenFiscal: "612",
+        esPEP: false,
+      },
+      {},
+    );
+    expect(r.taxId).toBe("GODE561231GR8");
     expect(r.nombre).toBe("Ana Pérez");
     expect(r.perfil).toMatchObject({
-      cuitCuil: "20-1-3",
+      idPersonal: "HEGG560427MVZRRL04",
+      regimenFiscal: "612",
+      cuentaBancaria: null,
       esPEP: false,
       fechaNacimiento: "1990-01-01",
     });
   });
-  it("persona jurídica usa CUIT y nombre legal de la empresa", () => {
-    const r = armarAlta(addr, "juridica", registro, {}, { cuit: "30-1-9", nombreLegal: "ACME SA" });
-    expect(r.cuit).toBe("30-1-9");
+  it("persona jurídica usa el identificador fiscal y la razón social de la empresa", () => {
+    const r = armarAlta(
+      addr,
+      "juridica",
+      registro,
+      {},
+      { taxId: "SAT970701NN3", cuentaBancaria: "032180000118359719", nombreLegal: "ACME SA" },
+    );
+    expect(r.taxId).toBe("SAT970701NN3");
+    expect(r.perfil).toMatchObject({ cuentaBancaria: "032180000118359719" });
     expect(r.nombre).toBe("ACME SA");
     expect(r.perfil).toMatchObject({ nombreLegal: "ACME SA", direccion: "Calle 1" });
   });

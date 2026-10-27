@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
-import { formatMoney } from "@/shared/format";
+import { formatMoney, monedaActiva } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -218,7 +218,7 @@ function Dashboard() {
 
         <Card className="md:col-span-2 xl:col-span-1">
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Volumen por link (millones ARS)
+            Volumen por link (millones {monedaActiva()})
           </h4>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={volData}>

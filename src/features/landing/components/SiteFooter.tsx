@@ -92,7 +92,7 @@ export function SiteFooter() {
       <div className="border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between font-sans text-[0.7rem] text-white/40">
           <div>
-            {brand.name.toUpperCase()} — CUIT {brand.company.cuit}
+            {brand.name.toUpperCase()} — {brand.company.taxIdType} {brand.company.taxId}
           </div>
           <div>
             Los fondos depositados no constituyen depósitos en una entidad financiera ni cuentan con

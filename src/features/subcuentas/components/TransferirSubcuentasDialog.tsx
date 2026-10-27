@@ -1,6 +1,6 @@
 import { Input, Label } from "@/components/portal-shell";
 import { FormDialog } from "@/shared/ui/form-dialog";
-import { formatMoney } from "@/shared/format";
+import { formatMoney, monedaActiva } from "@/shared/format";
 import type { useTransferenciaInterna } from "../hooks/useTransferenciaInterna";
 import type { Sub } from "../types";
 
@@ -54,7 +54,7 @@ export function TransferirSubcuentasDialog({ subs, t }: Props) {
         <SelectSubcuenta label="Hacia" value={t.hacia} onChange={t.setHacia} subs={subs} />
       </div>
       <div>
-        <Label>Monto (ARS)</Label>
+        <Label>Monto ({monedaActiva()})</Label>
         <Input value={t.monto} onChange={(e) => t.setMonto(e.target.value)} placeholder="0,00" />
       </div>
       <div>

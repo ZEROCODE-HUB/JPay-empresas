@@ -5,13 +5,14 @@
   "previousNames": ["MoliPay", "MoliPlay", "Molly"],
   "tagline": "Plataforma de pagos digitales",
   "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
-  "regulatoryNote": "Operamos bajo normativa BCRA.",
+  "country": "MX",
   "company": {
-    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por la razón social y el CUIT reales de JPay.",
-    "legalName": "JPay Servicios Digitales S.A.",
+    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por la razón social y el RFC reales de JPay. taxIdType: RFC (México), CUIT (Argentina).",
+    "legalName": "JPay Servicios Digitales S.A. de C.V.",
     "shortName": "JPay",
-    "cuit": "30-00000000-0",
-    "country": "Argentina"
+    "taxIdType": "RFC",
+    "taxId": "XAXX010101000",
+    "country": "México"
   },
   "contact": {
     "$comment": "DATOS FICTICIOS de ejemplo (dominio .example, reservado): reemplazar por los emails reales.",

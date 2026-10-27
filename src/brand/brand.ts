@@ -8,6 +8,7 @@
  *   (errores). Para canvas/PDF usar `resolveColor` de `./colors`.
  */
 import data from "./brand.json";
+import { getPais } from "@/shared/pais";
 import logoSrc from "./assets/logo.svg";
 import logoLightSrc from "./assets/logo-light.svg";
 import isotipoSrc from "./assets/isotipo.svg";
@@ -21,7 +22,10 @@ export const brand = {
   shortName: data.shortName,
   tagline: data.tagline,
   description: data.description,
-  regulatoryNote: data.regulatoryNote,
+  /** Leyenda regulatoria del país de la instalación (null = no se muestra). */
+  regulatoryNote: getPais().textos.notaRegulatoria,
+  /** País de la instalación (código ISO, ver `@/shared/pais`). */
+  country: data.country,
   company: data.company,
   contact: data.contact,
   web: data.web,

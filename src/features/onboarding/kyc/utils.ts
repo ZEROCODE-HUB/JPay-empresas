@@ -7,7 +7,8 @@ import type {
 } from "@/lib/onboarding-store";
 import type { DocumentoKyc } from "@/lib/api/onboarding";
 
-export const STEPS = ["DNI", "Servicio", "Selfie", "Residencia"];
+/** Pasos del KYC; el primero es el documento de identidad del país (INE, DNI). */
+export const pasosKyc = (documento: string) => [documento, "Comprobante", "Selfie", "Domicilio"];
 
 export const CLAVES_ARCHIVOS = ["dniFrente", "dniDorso", "servicio", "selfie"] as const;
 
@@ -61,16 +62,23 @@ export function puedeAvanzar(step: number, files: ArchivosKyc): boolean {
 }
 
 /** Errores del domicilio (vacío = válido). */
-export function validarDomicilio(addr: Domicilio): Record<string, string> {
+export function validarDomicilio(
+  addr: Domicilio,
+  largoCp: number | null = null,
+): Record<string, string> {
   const e: Record<string, string> = {};
   if (!addr.direccion.trim()) e.direccion = "Requerido";
   if (!addr.ciudad.trim()) e.ciudad = "Requerido";
   if (!addr.provincia) e.provincia = "Requerido";
-  if (!addr.cp.trim()) e.cp = "Requerido";
+  const cp = addr.cp.trim();
+  if (!cp) e.cp = "Requerido";
+  else if (largoCp && (cp.length !== largoCp || !/^\d+$/.test(cp))) {
+    e.cp = `Debe tener ${largoCp} dígitos`;
+  }
   return e;
 }
 
-/** Perfil, CUIT y nombre que se envían en el alta según el tipo de cuenta. */
+/** Perfil, identificador fiscal y nombre que se envían en el alta según el tipo de cuenta. */
 export function armarAlta(
   addr: Domicilio,
   tipoCuenta: TipoCuenta | null,
@@ -86,17 +94,21 @@ export function armarAlta(
     cp: addr.cp,
     fechaNacimiento: registro.fechaNac ?? null,
   };
-  let cuit: string;
+  let taxId: string;
   if (tipoCuenta === "juridica") {
-    cuit = datosEmpresa.cuit ?? "";
+    taxId = datosEmpresa.taxId ?? "";
+    perfil.regimenFiscal = datosEmpresa.regimenFiscal || null;
+    perfil.cuentaBancaria = datosEmpresa.cuentaBancaria || null;
     perfil.tipoSociedad = datosEmpresa.tipoId;
     perfil.nombreLegal = datosEmpresa.nombreLegal;
     perfil.nombreFantasia = datosEmpresa.nombreFantasia;
     perfil.fechaInscripcion = datosEmpresa.fechaInscripcion;
   } else {
-    cuit = datosPersonales.cuitCuil ?? "";
+    taxId = datosPersonales.taxId ?? "";
     perfil.genero = datosPersonales.genero;
-    perfil.cuitCuil = datosPersonales.cuitCuil;
+    perfil.idPersonal = datosPersonales.idPersonal || null;
+    perfil.regimenFiscal = datosPersonales.regimenFiscal || null;
+    perfil.cuentaBancaria = datosPersonales.cuentaBancaria || null;
     perfil.ocupacion = datosPersonales.ocupacion;
     perfil.origenFondos = datosPersonales.origenFondos;
     perfil.esPEP = datosPersonales.esPEP;
@@ -105,5 +117,5 @@ export function armarAlta(
     tipoCuenta === "juridica"
       ? datosEmpresa.nombreLegal || registro.nombre
       : `${registro.nombre} ${registro.apellido}`.trim();
-  return { perfil, cuit, nombre };
+  return { perfil, taxId, nombre };
 }

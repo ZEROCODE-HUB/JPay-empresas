@@ -1,6 +1,7 @@
 import type { Product, PaymentLink } from "@/data/links-pago";
 import type { ComercioBanderaRow, LinkPagoConDetalle, ProductoRow } from "@/lib/api/links-pago";
 import { toResolvableLinkPagoUrl } from "@/lib/pay-url";
+import { parseMonto } from "@/shared/format";
 
 export type ComercioBandera = ComercioBanderaRow & { methodId: string };
 
@@ -140,24 +141,9 @@ export function nuevoCodigoLink(): string {
   return "LP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-/**
- * Precio tipeado, en formato es-AR ("29.900,50") o con punto decimal ("29900.50").
- *
- * Si hay coma, la coma es el decimal y los puntos son miles. Si no hay coma, un
- * unico punto seguido de 1-2 digitos al final es decimal; cualquier otro punto
- * se toma como separador de miles ("29.900" -> 29900).
- */
+/** Precio tipeado en el formato del país ("29,900.50" en México); 0 si no es un número. */
 export function parsePrecio(price: string): number {
-  const limpio = price.replace(/[^0-9.,]/g, "");
-  let normalizado: string;
-  if (limpio.includes(",")) {
-    normalizado = limpio.replace(/\./g, "").replace(",", ".").replace(/,/g, "");
-  } else if (/^\d*\.\d{1,2}$/.test(limpio)) {
-    normalizado = limpio;
-  } else {
-    normalizado = limpio.replace(/\./g, "");
-  }
-  return parseFloat(normalizado) || 0;
+  return parseMonto(price.replace(/[^0-9.,]/g, "")) || 0;
 }
 
 /** Texto en minusculas y sin acentos, para comparar busquedas. */

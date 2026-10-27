@@ -8,6 +8,7 @@ import type { LiquidacionesDatos } from "@/lib/api/liquidaciones";
 import { formatDate, formatMoney } from "@/shared/format";
 import { ESTADO_TICKET_LABEL } from "./estados";
 
+import { getPais } from "@/shared/pais";
 type Resumen = Pick<
   LiquidacionesDatos,
   "faltaCobrar" | "porAcreditar" | "disponible" | "dias" | "tickets"
@@ -57,7 +58,7 @@ export function exportarResumenPdf(r: Resumen) {
   doc.text(brand.name, 14, 16);
   doc.setTextColor(20, 20, 20);
   doc.setFontSize(10);
-  doc.text(`Liquidaciones · ${new Date().toLocaleDateString("es-AR")}`, 196, 16, {
+  doc.text(`Liquidaciones · ${new Date().toLocaleDateString(getPais().locale)}`, 196, 16, {
     align: "right",
   });
   autoTable(doc, {
@@ -123,7 +124,7 @@ export function exportarDiaPdf(titulo: string, rows: ExportDiaRow[]) {
   doc.setFontSize(14);
   doc.text(`Calendario de Acreditaciones — ${titulo}`, 14, 16);
   doc.setFontSize(9);
-  doc.text(`Generado: ${new Date().toLocaleString("es-AR")}`, 14, 22);
+  doc.text(`Generado: ${new Date().toLocaleString(getPais().locale)}`, 14, 22);
   autoTable(doc, {
     startY: 28,
     head: [

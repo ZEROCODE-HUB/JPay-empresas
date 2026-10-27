@@ -11,12 +11,13 @@ export const brand = {
   ],
   "tagline": "Plataforma de pagos digitales",
   "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
-  "regulatoryNote": "Operamos bajo normativa BCRA.",
+  "country": "MX",
   "company": {
-    "legalName": "JPay Servicios Digitales S.A.",
+    "legalName": "JPay Servicios Digitales S.A. de C.V.",
     "shortName": "JPay",
-    "cuit": "30-00000000-0",
-    "country": "Argentina"
+    "taxIdType": "RFC",
+    "taxId": "XAXX010101000",
+    "country": "México"
   },
   "contact": {
     "support": "soporte@jpay.example",

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   AuthShell,
-  Field,
   FormTitle,
   PrimaryButton,
   SecondaryButton,
@@ -11,33 +10,41 @@ import {
   Stepper,
   WizardNav,
 } from "@/features/onboarding/components";
-import { OCUPACIONES, ORIGEN_FONDOS, useOnboarding } from "@/lib/onboarding-store";
+import { CampoIdentificador, SelectRegimen } from "@/features/onboarding/components/identificacion";
+import { useOnboarding, type DatosPersonales as Datos } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
 import { useDatosPersonalesGuardados } from "@/hooks/useOnboarding";
+import { getPais } from "@/shared/pais";
 
 export const Route = createFileRoute("/onboarding/datos-personales")({
   head: () => ({
     meta: [
-      { title: pageTitle("Validacion de datos personales") },
+      { title: pageTitle("Validación de datos personales") },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: DatosPersonales,
 });
 
-const STEPS = ["Datos personales", "Informacion financiera", "Validacion final"];
+const STEPS = ["Datos personales", "Información financiera", "Validación final"];
+
+const VACIO: Datos = {
+  genero: "",
+  taxId: "",
+  idPersonal: "",
+  regimenFiscal: "",
+  cuentaBancaria: "",
+  ocupacion: "",
+  origenFondos: "",
+  esPEP: false,
+};
 
 function DatosPersonales() {
   const nav = useNavigate();
+  const pais = getPais();
   const { tipoCuenta, datosPersonales, setDatosPersonales } = useOnboarding();
   const [step, setStep] = useState(0);
-  const [f, setF] = useState({
-    genero: datosPersonales.genero ?? "",
-    cuitCuil: datosPersonales.cuitCuil ?? "",
-    ocupacion: datosPersonales.ocupacion ?? "",
-    origenFondos: datosPersonales.origenFondos ?? "",
-    esPEP: datosPersonales.esPEP ?? false,
-  });
+  const [f, setF] = useState<Datos>({ ...VACIO, ...datosPersonales });
   const [err, setErr] = useState<Record<string, string>>({});
   const { data: guardados } = useDatosPersonalesGuardados();
   useEffect(() => {
@@ -48,28 +55,31 @@ function DatosPersonales() {
     const st = useOnboarding.getState();
     if (st.registro.email && st.registro.email !== mail) {
       st.reset();
-      setF({ genero: "", cuitCuil: "", ocupacion: "", origenFondos: "", esPEP: false });
+      setF(VACIO);
     }
     if (!cli) return;
     setF((prev) => ({
       genero: prev.genero || cli.genero || "",
-      cuitCuil: prev.cuitCuil || cli.cuit_cuil || "",
+      taxId: prev.taxId || cli.tax_id || cli.cuit_cuil || "",
+      idPersonal: prev.idPersonal || cli.id_personal || "",
+      regimenFiscal: prev.regimenFiscal || cli.regimen_fiscal || "",
+      cuentaBancaria: prev.cuentaBancaria || cli.cuenta_bancaria || "",
       ocupacion: prev.ocupacion || cli.ocupacion || "",
       origenFondos: prev.origenFondos || cli.origen_fondos || "",
       esPEP: prev.esPEP || !!cli.es_pep,
     }));
   }, [guardados]);
 
-  const cuitDigits = f.cuitCuil.replace(/\D/g, "");
-  const cuitExcede = cuitDigits.length > 11;
+  const fiscal = pais.fiscal.fisica;
   const validateStep0 = () => {
     const e: Record<string, string> = {};
-    if (!f.genero) e.genero = "El genero es requerido";
-    if (!f.cuitCuil.trim()) e.cuitCuil = "Ingresa tu CUIT/CUIL";
-    else if (cuitExcede) e.cuitCuil = "Máximo 11 dígitos permitidos. Quita los excedentes.";
-    else if (cuitDigits.length !== 11)
-      e.cuitCuil = "El CUIT/CUIL debe tener exactamente 11 dígitos.";
-    if (!f.ocupacion) e.ocupacion = "Selecciona una ocupacion";
+    if (!f.genero) e.genero = "El género es requerido";
+    const errFiscal = fiscal.validar(f.taxId);
+    if (errFiscal) e.taxId = errFiscal;
+    const errPersonal = pais.personal?.validar(f.idPersonal);
+    if (errPersonal) e.idPersonal = errPersonal;
+    if (pais.regimenesFiscales.length && !f.regimenFiscal) e.regimenFiscal = "Requerido";
+    if (!f.ocupacion) e.ocupacion = "Selecciona una ocupación";
     setErr(e);
     return Object.keys(e).length === 0;
   };
@@ -77,6 +87,11 @@ function DatosPersonales() {
   const validateStep1 = () => {
     const e: Record<string, string> = {};
     if (!f.origenFondos) e.origenFondos = "Selecciona el origen de fondos";
+    // La cuenta es opcional, pero si se carga tiene que ser válida.
+    const errCuenta = f.cuentaBancaria.trim()
+      ? pais.cuentaBancaria.validar(f.cuentaBancaria)
+      : null;
+    if (errCuenta) e.cuentaBancaria = errCuenta;
     setErr(e);
     return Object.keys(e).length === 0;
   };
@@ -85,7 +100,12 @@ function DatosPersonales() {
     if (step === 0 && !validateStep0()) return;
     if (step === 1 && !validateStep1()) return;
     if (step === 2) {
-      setDatosPersonales(f);
+      setDatosPersonales({
+        ...f,
+        taxId: fiscal.normalizar(f.taxId),
+        idPersonal: pais.personal ? pais.personal.normalizar(f.idPersonal) : "",
+        cuentaBancaria: pais.cuentaBancaria.normalizar(f.cuentaBancaria),
+      });
       if (tipoCuenta === "juridica") return nav({ to: "/onboarding/datos-empresa" });
       return nav({ to: "/onboarding/kyc" });
     }
@@ -100,35 +120,46 @@ function DatosPersonales() {
           ? "Datos del representante legal."
           : "Completa tu perfil regulatorio."
       }
-      leftBody="Estos datos son requeridos por normativa antilavado (UIF) y solo se comparten con las autoridades competentes."
+      leftBody={pais.textos.normativaPld}
       step={`Paso ${step + 1} de 3`}
     >
-      <FormTitle eyebrow="KYC · Datos personales" title="Validacion de datos personales" />
+      <FormTitle eyebrow="KYC · Datos personales" title="Validación de datos personales" />
       <Stepper steps={STEPS} current={step} />
 
       {step === 0 && (
         <div className="space-y-4">
           <SelectField
-            label="Genero"
+            label="Género"
             value={f.genero}
             onChange={(v) => setF({ ...f, genero: v })}
             options={["Femenino", "Masculino", "No binario", "Prefiero no responder"]}
             error={err.genero}
           />
-          <Field
-            label="CUIT / CUIL"
-            value={f.cuitCuil}
-            onChange={(e) => setF({ ...f, cuitCuil: e.target.value })}
-            placeholder="20-12345678-9"
-            className="font-mono"
-            error={err.cuitCuil || (cuitExcede ? "Máximo 11 dígitos permitidos" : undefined)}
-            hint={cuitDigits.length > 0 ? `${cuitDigits.length}/11 dígitos` : undefined}
+          <CampoIdentificador
+            id={fiscal}
+            value={f.taxId}
+            onChange={(v) => setF({ ...f, taxId: v })}
+            error={err.taxId}
+          />
+          {pais.personal && (
+            <CampoIdentificador
+              id={pais.personal}
+              value={f.idPersonal}
+              onChange={(v) => setF({ ...f, idPersonal: v })}
+              error={err.idPersonal}
+            />
+          )}
+          <SelectRegimen
+            persona="fisica"
+            value={f.regimenFiscal}
+            onChange={(v) => setF({ ...f, regimenFiscal: v })}
+            error={err.regimenFiscal}
           />
           <SelectField
-            label="Ocupacion"
+            label="Ocupación"
             value={f.ocupacion}
             onChange={(v) => setF({ ...f, ocupacion: v })}
-            options={OCUPACIONES}
+            options={pais.ocupaciones}
             error={err.ocupacion}
           />
           <WizardNav onNext={next} nextLabel="Siguiente" />
@@ -141,9 +172,18 @@ function DatosPersonales() {
             label="Origen de fondos"
             value={f.origenFondos}
             onChange={(v) => setF({ ...f, origenFondos: v })}
-            options={ORIGEN_FONDOS}
+            options={pais.origenFondos}
             error={err.origenFondos}
           />
+          {tipoCuenta !== "juridica" && (
+            <CampoIdentificador
+              id={pais.cuentaBancaria}
+              opcional
+              value={f.cuentaBancaria}
+              onChange={(v) => setF({ ...f, cuentaBancaria: v })}
+              error={err.cuentaBancaria}
+            />
+          )}
           <WizardNav onBack={() => setStep(0)} onNext={next} nextLabel="Siguiente" />
         </div>
       )}
@@ -151,11 +191,7 @@ function DatosPersonales() {
       {step === 2 && (
         <div className="space-y-5">
           <div className="p-5 text-xs leading-relaxed text-black-500 bg-black-50 border border-black-100 rounded-sm">
-            Se consideran <strong>PEPs</strong> a los Funcionarios Públicos Nacionales, Provinciales
-            y Municipales (tanto Nacionales como Extranjeros) de los Poderes Ejecutivo, Legislativo
-            y Judicial, que ocupan o que ocuparon altos cargos jerárquicos, así como también a sus
-            familiares hasta el segundo grado de consanguinidad. Los funcionarios calificados como
-            PEPs continúan siéndolo hasta dos años después de haber cesado en sus funciones.
+            {pais.textos.pep}
           </div>
           <label className="flex items-center justify-between gap-4 py-2">
             <span className="text-sm font-semibold text-black-800">
@@ -178,7 +214,7 @@ function DatosPersonales() {
             </button>
           </label>
           <div className="mt-8 flex flex-col sm:flex-row gap-3">
-            <SecondaryButton onClick={() => setStep(1)}>Atras</SecondaryButton>
+            <SecondaryButton onClick={() => setStep(1)}>Atrás</SecondaryButton>
             <div className="flex-1">
               <PrimaryButton onClick={next}>Siguiente paso</PrimaryButton>
             </div>

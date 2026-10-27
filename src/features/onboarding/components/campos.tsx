@@ -38,7 +38,8 @@ export function SelectField({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: string[];
+  /** Texto (valor = etiqueta) o pares valor/etiqueta. */
+  options: Array<string | { value: string; label: string }>;
   error?: string;
   placeholder?: string;
 }) {
@@ -55,11 +56,14 @@ export function SelectField({
         }`}
       >
         <option value="">{placeholder}</option>
-        {options.map((o) => (
-          <option key={o} value={o}>
-            {o}
-          </option>
-        ))}
+        {options.map((o) => {
+          const { value: v, label: l } = typeof o === "string" ? { value: o, label: o } : o;
+          return (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          );
+        })}
       </select>
       {error && <span className="mt-1 block text-xs text-danger-500">{error}</span>}
     </label>

@@ -1,6 +1,6 @@
 import { Activity, DollarSign, QrCode, Store, TrendingUp } from "lucide-react";
 import type { DashboardQrDatos } from "@/lib/api/qr";
-import { formatMoney } from "@/shared/format";
+import { formatMoney, monedaActiva } from "@/shared/format";
 
 export const PRESETS = [
   { label: "Hoy", days: 0 },
@@ -92,7 +92,7 @@ export function calcularDashboardQr(
       {
         icon: DollarSign,
         label: "Monto total recaudado",
-        value: `${formatMoney(montoTotal, { decimals: 0 })} ARS`,
+        value: `${formatMoney(montoTotal, { decimals: 0 })} ${monedaActiva()}`,
       },
       { icon: Activity, label: "Aprobadas", value: aprobados.toString() },
       { icon: TrendingUp, label: "Pendientes", value: pendientes.toString() },

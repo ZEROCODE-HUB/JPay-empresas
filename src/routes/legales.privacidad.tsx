@@ -39,8 +39,9 @@ function Page() {
               1. Responsable del tratamiento
             </h2>
             <p>
-              {brand.company.legalName}, CUIT {brand.company.cuit}, con domicilio en Av. Corrientes
-              1234, CABA, Argentina, es la responsable del tratamiento de los datos personales.
+              {brand.company.legalName}, {brand.company.taxIdType} {brand.company.taxId}, con
+              domicilio en Av. Corrientes 1234, CABA, Argentina, es la responsable del tratamiento
+              de los datos personales.
             </p>
           </div>
           <div>

@@ -3,10 +3,12 @@ import { Badge, Card, Input, Label } from "@/components/portal-shell";
 import { siguientePasoOnboarding } from "@/lib/cliente-estados";
 import { ESTADO_CUENTA_TONE } from "../estados";
 import type { CuentaPantalla } from "../hooks/useCuentaPantalla";
+import { getPais } from "@/shared/pais";
 import { BotonesGuardar } from "./BotonesGuardar";
 
 export function InfoUsuarioCard({ c }: { c: CuentaPantalla }) {
   const { form, setF, dp } = c;
+  const pais = getPais();
   return (
     <Card>
       <h3 className="font-semibold mb-4 flex items-center gap-2">
@@ -46,18 +48,43 @@ export function InfoUsuarioCard({ c }: { c: CuentaPantalla }) {
         <FileText size={14} /> Datos personales
       </h4>
       <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <Label>CUIL / CUIT</Label>
-          <Input
-            value={form.cuit_cuil ?? dp.cuitCuil}
-            onChange={(e) => setF("cuit_cuil", e.target.value)}
-          />
-        </div>
-        <div>
-          <Label>DNI</Label>
-          {/* `clientes` no tiene columna de DNI: no hay dato real que mostrar. */}
-          <Input value="—" readOnly />
-        </div>
+        {pais.codigo === "AR" ? (
+          <>
+            <div>
+              <Label>CUIL / CUIT</Label>
+              <Input
+                value={form.cuit_cuil ?? dp.cuitCuil}
+                onChange={(e) => setF("cuit_cuil", e.target.value)}
+              />
+            </div>
+            <div>
+              <Label>DNI</Label>
+              {/* `clientes` no tiene columna de DNI: no hay dato real que mostrar. */}
+              <Input value="—" readOnly />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <Label>{pais.fiscal.fisica.etiqueta}</Label>
+              <Input
+                className="uppercase"
+                value={form.tax_id ?? dp.taxId}
+                onChange={(e) => setF("tax_id", e.target.value)}
+              />
+            </div>
+            {pais.personal && (
+              <div>
+                <Label>{pais.personal.etiqueta}</Label>
+                <Input
+                  className="uppercase"
+                  value={form.id_personal ?? dp.idPersonal}
+                  onChange={(e) => setF("id_personal", e.target.value)}
+                />
+              </div>
+            )}
+          </>
+        )}
         <div>
           <Label>Genero</Label>
           <select

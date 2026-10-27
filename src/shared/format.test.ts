@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import {
   formatCuit,
   formatDate,
@@ -7,9 +7,16 @@ import {
   formatMoney,
   formatNumber,
   formatPercent,
+  formatTaxId,
   formatTime,
+  monedaActiva,
+  parseMonto,
   toDate,
 } from "./format";
+import { setPaisActivo } from "./pais";
+
+// Los casos de abajo son de Argentina; México tiene su bloque al final.
+beforeEach(() => setPaisActivo("AR"));
 
 describe("formatNumber", () => {
   it("usa separadores es-AR", () => {
@@ -71,5 +78,58 @@ describe("formatCuit", () => {
   it("deja intacto lo que no es CUIT", () => {
     expect(formatCuit("123")).toBe("123");
     expect(formatCuit(null)).toBe("—");
+  });
+});
+
+describe("México", () => {
+  beforeEach(() => setPaisActivo("MX"));
+
+  it("montos, números y porcentajes en es-MX", () => {
+    expect(formatMoney(1234.5)).toBe("$1,234.50");
+    expect(formatMoney(-50)).toBe("-$50.00");
+    expect(formatMoney(50, { signo: true })).toBe("+$50.00");
+    expect(formatNumber(1234567)).toBe("1,234,567");
+    expect(formatPercent(3.5)).toBe("3.5%");
+    expect(monedaActiva()).toBe("MXN");
+  });
+
+  it("fechas dd/mm/aaaa", () => {
+    expect(formatDate("2026-03-01")).toBe("01/03/2026");
+  });
+});
+
+describe("formatTaxId", () => {
+  it("CUIT con guiones y el resto normalizado", () => {
+    expect(formatTaxId("20123456786", "CUIT")).toBe("20-12345678-6");
+    expect(formatTaxId("20-12345678-6")).toBe("20-12345678-6");
+    expect(formatTaxId("gode 561231 gr8", "RFC")).toBe("GODE561231GR8");
+    expect(formatTaxId(null)).toBe("—");
+  });
+});
+
+describe("parseMonto", () => {
+  it("Argentina: coma decimal y punto de miles", () => {
+    setPaisActivo("AR");
+    expect(parseMonto("1,5")).toBe(1.5);
+    expect(parseMonto("1.234,56")).toBe(1234.56);
+    expect(parseMonto("$ 1.500")).toBe(1500);
+    expect(parseMonto("1500.5")).toBe(1500.5);
+    expect(parseMonto("1.23,4")).toBeNaN();
+  });
+  it("México: punto decimal y coma de miles", () => {
+    setPaisActivo("MX");
+    expect(parseMonto("1,234.50")).toBe(1234.5);
+    expect(parseMonto("$1,500")).toBe(1500);
+    expect(parseMonto("1500.5")).toBe(1500.5);
+    expect(parseMonto("1500,5")).toBe(1500.5);
+    expect(parseMonto("1,234,567.8")).toBe(1234567.8);
+    expect(parseMonto("-250")).toBe(-250);
+    expect(parseMonto("MXN 99.9")).toBe(99.9);
+  });
+  it("NaN si no es un número", () => {
+    expect(parseMonto("")).toBeNaN();
+    expect(parseMonto(null)).toBeNaN();
+    expect(parseMonto("abc")).toBeNaN();
+    expect(parseMonto("1.2.3")).toBeNaN();
   });
 });

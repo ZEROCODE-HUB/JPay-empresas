@@ -7,7 +7,10 @@ export type OnboardingPayload = {
   email: string;
   tipoCuenta: "fisica" | "juridica";
   nombre: string;
-  cuit: string;
+  /** País del cliente (código de `@/shared/pais`). */
+  pais: string;
+  /** Identificador fiscal (RFC, CUIT). */
+  taxId: string;
   perfil: Record<string, unknown>;
   kyc: Record<string, { name: string; type: string; data: string } | null>;
 };
@@ -176,11 +179,26 @@ type Cliente = Tables<"clientes">;
 
 export type ClienteDatosPersonales = Pick<
   Cliente,
-  "genero" | "cuit_cuil" | "ocupacion" | "origen_fondos" | "es_pep"
+  | "genero"
+  | "cuit_cuil"
+  | "tax_id"
+  | "id_personal"
+  | "regimen_fiscal"
+  | "cuenta_bancaria"
+  | "ocupacion"
+  | "origen_fondos"
+  | "es_pep"
 >;
 export type ClienteDatosEmpresa = Pick<
   Cliente,
-  "cuit" | "fecha_inscripcion" | "tipo_sociedad" | "nombre_legal" | "nombre_fantasia"
+  | "cuit"
+  | "tax_id"
+  | "regimen_fiscal"
+  | "cuenta_bancaria"
+  | "fecha_inscripcion"
+  | "tipo_sociedad"
+  | "nombre_legal"
+  | "nombre_fantasia"
 >;
 export type ClienteDireccion = Pick<
   Cliente,
@@ -197,7 +215,9 @@ export async function getClienteDatosPersonales(
   const sb = requireSupabase();
   const { data, error } = await sb
     .from("clientes")
-    .select("genero, cuit_cuil, ocupacion, origen_fondos, es_pep")
+    .select(
+      "genero, cuit_cuil, tax_id, id_personal, regimen_fiscal, cuenta_bancaria, ocupacion, origen_fondos, es_pep",
+    )
     .eq("correo", email)
     .maybeSingle();
   if (error) throw new DataAccessError(error);
@@ -208,7 +228,9 @@ export async function getClienteDatosEmpresa(email: string): Promise<ClienteDato
   const sb = requireSupabase();
   const { data, error } = await sb
     .from("clientes")
-    .select("cuit, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia")
+    .select(
+      "cuit, tax_id, regimen_fiscal, cuenta_bancaria, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia",
+    )
     .eq("correo", email)
     .maybeSingle();
   if (error) throw new DataAccessError(error);

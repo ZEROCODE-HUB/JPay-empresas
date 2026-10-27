@@ -1,7 +1,7 @@
 import { CalendarDays, Clock, Wallet } from "lucide-react";
 import { BtnOutline, Input, Label } from "@/components/portal-shell";
 import type { DiaAcreditacion, Ticket } from "@/lib/api/liquidaciones";
-import { formatDate, formatMoney } from "@/shared/format";
+import { formatDate, formatMoney, monedaActiva } from "@/shared/format";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import { ModalDialog } from "@/shared/ui/modal-dialog";
 import type { SolicitudAdelanto } from "../hooks/useSolicitudAdelanto";
@@ -102,7 +102,7 @@ export function SolicitarAdelantoDialog({
       </div>
 
       <div>
-        <Label>Monto a adelantar (ARS)</Label>
+        <Label>Monto a adelantar ({monedaActiva()})</Label>
         {/* Sin min/max/step nativos: dentro de <form> bloquearían el envío con el
             globo del navegador; la validación (con toast) la hace `crear`. */}
         <Input

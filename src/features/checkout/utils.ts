@@ -1,5 +1,6 @@
 import type { CheckoutBandera, CheckoutLink } from "@/lib/api/checkout";
 import { paymentMethods } from "@/data/links-pago";
+import { parseMonto } from "@/shared/format";
 
 export const LOTE_CATEGORY_TO_METHODS: Record<string, string[]> = {
   TARJETA_CREDITO: ["visa-cred", "mc-cred", "amex", "cabal-cred", "naranja", "diners"],
@@ -235,10 +236,8 @@ export function vencPartes(venc: string): { mes: string; anio: string } {
   return { mes: digits.slice(0, 2), anio: digits.slice(2, 4) };
 }
 
-/** Monto tipeado (acepta coma decimal). Puede devolver NaN. */
-export function parseMonto(montoPagar: string): number {
-  return parseFloat(montoPagar.replace(",", "."));
-}
+/** Monto tipeado, en el formato del país (puede devolver NaN). */
+export { parseMonto };
 
 /** true si el monto a pagar es invalido para el total del link (vacio/NaN incluido). */
 export function montoInvalido(mp: number, total: number): boolean {

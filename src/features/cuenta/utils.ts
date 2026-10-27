@@ -3,6 +3,7 @@ import type { TablesUpdate } from "@/lib/database.types";
 import { TIPO_DOC_LABEL } from "./estados";
 import type { ClienteForm, DocReal } from "./types";
 
+import { normalizarId } from "@/shared/validadores";
 const IMG_EXT = [
   "png",
   "jpg",
@@ -46,6 +47,8 @@ export function clienteToForm(c: Cliente): ClienteForm {
     nombreLegal: c.nombre_legal ?? "",
     nombreFantasia: c.nombre_fantasia ?? "",
     cuit: c.cuit ?? "",
+    tax_id: c.tax_id ?? "",
+    id_personal: c.id_personal ?? "",
     tipo_sociedad: c.tipo_sociedad ?? "",
     fecha_inscripcion: c.fecha_inscripcion ?? "",
     direccion: c.direccion ?? "",
@@ -70,6 +73,9 @@ export function formToPatch(form: Partial<ClienteForm>): TablesUpdate<"clientes"
     nombre_fantasia: form.nombreFantasia || null,
     // `cuit` es NOT NULL en la base: si queda vacío no se envía y se conserva el actual.
     cuit: form.cuit || undefined,
+    // Vacío = no se envía (se conserva el actual).
+    tax_id: form.tax_id ? normalizarId(form.tax_id) : undefined,
+    id_personal: form.id_personal ? normalizarId(form.id_personal) : undefined,
     tipo_sociedad: form.tipo_sociedad || null,
     fecha_inscripcion: form.fecha_inscripcion || null,
     direccion: form.direccion || null,

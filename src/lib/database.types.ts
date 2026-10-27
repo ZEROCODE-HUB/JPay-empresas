@@ -1599,6 +1599,8 @@ export type Database = {
           correo: string
           cp: string | null
           created_at: string
+          cuenta_bancaria: string | null
+          cuenta_bancaria_tipo: string | null
           cuit: string
           cuit_cuil: string | null
           direccion: string | null
@@ -1612,6 +1614,8 @@ export type Database = {
           fecha_nacimiento: string | null
           genero: string | null
           id: string
+          id_personal: string | null
+          id_personal_tipo: string | null
           legajo: string
           limite_monto_diario: number | null
           limite_ops_diarias: number | null
@@ -1622,7 +1626,11 @@ export type Database = {
           ocupacion: string | null
           onboarding_completo: boolean
           origen_fondos: string | null
+          pais: string
           provincia: string | null
+          regimen_fiscal: string | null
+          tax_id: string | null
+          tax_id_tipo: string | null
           telefono: string | null
           tipo_persona: string
           tipo_sociedad: string | null
@@ -1637,6 +1645,8 @@ export type Database = {
           correo: string
           cp?: string | null
           created_at?: string
+          cuenta_bancaria?: string | null
+          cuenta_bancaria_tipo?: string | null
           cuit: string
           cuit_cuil?: string | null
           direccion?: string | null
@@ -1650,6 +1660,8 @@ export type Database = {
           fecha_nacimiento?: string | null
           genero?: string | null
           id?: string
+          id_personal?: string | null
+          id_personal_tipo?: string | null
           legajo: string
           limite_monto_diario?: number | null
           limite_ops_diarias?: number | null
@@ -1660,7 +1672,11 @@ export type Database = {
           ocupacion?: string | null
           onboarding_completo?: boolean
           origen_fondos?: string | null
+          pais?: string
           provincia?: string | null
+          regimen_fiscal?: string | null
+          tax_id?: string | null
+          tax_id_tipo?: string | null
           telefono?: string | null
           tipo_persona: string
           tipo_sociedad?: string | null
@@ -1675,6 +1691,8 @@ export type Database = {
           correo?: string
           cp?: string | null
           created_at?: string
+          cuenta_bancaria?: string | null
+          cuenta_bancaria_tipo?: string | null
           cuit?: string
           cuit_cuil?: string | null
           direccion?: string | null
@@ -1688,6 +1706,8 @@ export type Database = {
           fecha_nacimiento?: string | null
           genero?: string | null
           id?: string
+          id_personal?: string | null
+          id_personal_tipo?: string | null
           legajo?: string
           limite_monto_diario?: number | null
           limite_ops_diarias?: number | null
@@ -1698,13 +1718,25 @@ export type Database = {
           ocupacion?: string | null
           onboarding_completo?: boolean
           origen_fondos?: string | null
+          pais?: string
           provincia?: string | null
+          regimen_fiscal?: string | null
+          tax_id?: string | null
+          tax_id_tipo?: string | null
           telefono?: string | null
           tipo_persona?: string
           tipo_sociedad?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clientes_pais_fkey"
+            columns: ["pais"]
+            isOneToOne: false
+            referencedRelation: "paises"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       codigos_categoria: {
         Row: {
@@ -1922,6 +1954,85 @@ export type Database = {
           },
         ]
       }
+      comercio_proveedores: {
+        Row: {
+          cobro_comision: string | null
+          comercio_id: string
+          comision_fija: number | null
+          comision_pct: number | null
+          conectado_at: string | null
+          created_at: string
+          cuenta_externa_id: string | null
+          entorno: string
+          estado: string
+          id: string
+          modelo_fondos: string | null
+          proveedor: string
+          public_id: string | null
+          scopes: string[]
+          secreto_ref: string | null
+          updated_at: string
+        }
+        Insert: {
+          cobro_comision?: string | null
+          comercio_id: string
+          comision_fija?: number | null
+          comision_pct?: number | null
+          conectado_at?: string | null
+          created_at?: string
+          cuenta_externa_id?: string | null
+          entorno?: string
+          estado?: string
+          id?: string
+          modelo_fondos?: string | null
+          proveedor: string
+          public_id?: string | null
+          scopes?: string[]
+          secreto_ref?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cobro_comision?: string | null
+          comercio_id?: string
+          comision_fija?: number | null
+          comision_pct?: number | null
+          conectado_at?: string | null
+          created_at?: string
+          cuenta_externa_id?: string | null
+          entorno?: string
+          estado?: string
+          id?: string
+          modelo_fondos?: string | null
+          proveedor?: string
+          public_id?: string | null
+          scopes?: string[]
+          secreto_ref?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comercio_proveedores_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comercio_proveedores_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "comercio_proveedores_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
       comercios: {
         Row: {
           categoria_id: number | null
@@ -1932,6 +2043,7 @@ export type Database = {
           legajo: string
           nivel: string
           nombre_comercio: string | null
+          pais: string
           site_id: string | null
           updated_at: string
           usuario: string
@@ -1945,6 +2057,7 @@ export type Database = {
           legajo: string
           nivel: string
           nombre_comercio?: string | null
+          pais?: string
           site_id?: string | null
           updated_at?: string
           usuario: string
@@ -1958,6 +2071,7 @@ export type Database = {
           legajo?: string
           nivel?: string
           nombre_comercio?: string | null
+          pais?: string
           site_id?: string | null
           updated_at?: string
           usuario?: string
@@ -2004,6 +2118,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "comercios_pais_fkey"
+            columns: ["pais"]
+            isOneToOne: false
+            referencedRelation: "paises"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -2143,6 +2264,54 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      configuracion_pagos: {
+        Row: {
+          cobro_comision: string
+          comision_fija: number
+          comision_pct: number
+          iva_comision_pct: number
+          modelo_fondos: string
+          pais: string
+          proveedor: string
+          updated_at: string
+        }
+        Insert: {
+          cobro_comision?: string
+          comision_fija?: number
+          comision_pct?: number
+          iva_comision_pct?: number
+          modelo_fondos?: string
+          pais: string
+          proveedor: string
+          updated_at?: string
+        }
+        Update: {
+          cobro_comision?: string
+          comision_fija?: number
+          comision_pct?: number
+          iva_comision_pct?: number
+          modelo_fondos?: string
+          pais?: string
+          proveedor?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "configuracion_pagos_pais_fkey"
+            columns: ["pais"]
+            isOneToOne: false
+            referencedRelation: "paises"
+            referencedColumns: ["codigo"]
+          },
+          {
+            foreignKeyName: "configuracion_pagos_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       contracargos: {
         Row: {
@@ -2652,6 +2821,32 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "codigos_error"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      feriados: {
+        Row: {
+          descripcion: string
+          fecha: string
+          pais: string
+        }
+        Insert: {
+          descripcion: string
+          fecha: string
+          pais: string
+        }
+        Update: {
+          descripcion?: string
+          fecha?: string
+          pais?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feriados_pais_fkey"
+            columns: ["pais"]
+            isOneToOne: false
+            referencedRelation: "paises"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -3717,6 +3912,51 @@ export type Database = {
           },
         ]
       }
+      paises: {
+        Row: {
+          activo: boolean
+          codigo: string
+          cuenta_bancaria_tipo: string
+          locale: string
+          modulos: Json
+          moneda: string
+          nombre: string
+          predeterminado: boolean
+          prefijo_telefono: string
+          tax_id_tipos: string[]
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          cuenta_bancaria_tipo: string
+          locale: string
+          modulos?: Json
+          moneda: string
+          nombre: string
+          predeterminado?: boolean
+          prefijo_telefono: string
+          tax_id_tipos?: string[]
+          timezone: string
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          cuenta_bancaria_tipo?: string
+          locale?: string
+          modulos?: Json
+          moneda?: string
+          nombre?: string
+          predeterminado?: boolean
+          prefijo_telefono?: string
+          tax_id_tipos?: string[]
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parametros_globales: {
         Row: {
           clave: string
@@ -4031,6 +4271,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+        ]
+      }
+      proveedores_pago: {
+        Row: {
+          activo: boolean
+          codigo: string
+          nombre: string
+          pais: string
+          sandbox: boolean
+          tipos: string[]
+          updated_at: string
+        }
+        Insert: {
+          activo?: boolean
+          codigo: string
+          nombre: string
+          pais: string
+          sandbox?: boolean
+          tipos?: string[]
+          updated_at?: string
+        }
+        Update: {
+          activo?: boolean
+          codigo?: string
+          nombre?: string
+          pais?: string
+          sandbox?: boolean
+          tipos?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proveedores_pago_pais_fkey"
+            columns: ["pais"]
+            isOneToOne: false
+            referencedRelation: "paises"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -5670,6 +5948,7 @@ export type Database = {
         Returns: Json
       }
       obtener_link_pago: { Args: { p_codigo: string }; Returns: Json }
+      pais_predeterminado: { Args: never; Returns: string }
       registrar_deposito_entrante: {
         Args: {
           p_cbu_destino: string
@@ -5897,10 +6176,12 @@ export type Database = {
         }
         Returns: Json
       }
-      sumar_dias_habiles: {
-        Args: { p_dias: number; p_fecha: string }
-        Returns: string
-      }
+      sumar_dias_habiles:
+        | { Args: { p_dias: number; p_fecha: string }; Returns: string }
+        | {
+            Args: { p_dias: number; p_fecha: string; p_pais: string }
+            Returns: string
+          }
       usuario_comercio_id: { Args: never; Returns: string }
       validar_operacion_comercio: {
         Args: { p_comercio_id: string }

@@ -1,6 +1,6 @@
 import { Input, Label } from "@/components/portal-shell";
 import { FormDialog } from "@/shared/ui/form-dialog";
-import { formatMoney } from "@/shared/format";
+import { formatMoney, monedaActiva } from "@/shared/format";
 import type { TransferirDestinatario } from "../hooks/useTransferirDestinatario";
 
 export function TransferirDialog({ t }: { t: TransferirDestinatario }) {
@@ -40,7 +40,7 @@ export function TransferirDialog({ t }: { t: TransferirDestinatario }) {
         </select>
       </div>
       <div>
-        <Label>Monto (ARS)</Label>
+        <Label>Monto ({monedaActiva()})</Label>
         <Input
           type="number"
           value={t.monto}

@@ -8,6 +8,7 @@ import type { MovimientoDashboard } from "@/lib/api/movimientos";
 import { formatMoney } from "@/shared/format";
 import type { KpisDashboard } from "./utils";
 
+import { getPais } from "@/shared/pais";
 /** Exporta los KPIs y los movimientos del período a Excel o PDF. */
 export function exportarDashboard(
   fmt: "xlsx" | "pdf",
@@ -46,7 +47,7 @@ export function exportarDashboard(
     doc.setTextColor(20, 20, 20);
     doc.setFontSize(10);
     doc.text(`Dashboard · ${periodLabel}`, 196, 12, { align: "right" });
-    doc.text(new Date().toLocaleString("es-AR"), 196, 18, { align: "right" });
+    doc.text(new Date().toLocaleString(getPais().locale), 196, 18, { align: "right" });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (doc as any).autoTable({
       startY: 32,

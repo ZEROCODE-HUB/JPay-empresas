@@ -12,6 +12,7 @@ import {
   type TotalesHistorial,
 } from "./utils";
 
+import { getPais } from "@/shared/pais";
 const nombreArchivo = (ext: string) =>
   `historial-movimientos-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
@@ -56,7 +57,7 @@ export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie
   doc.text("Reporte de movimientos", 14, 23);
   doc.setTextColor(20, 20, 20);
   doc.setFontSize(10);
-  doc.text(`Generado: ${new Date().toLocaleString("es-AR")}`, 196, 17, { align: "right" });
+  doc.text(`Generado: ${new Date().toLocaleString(getPais().locale)}`, 196, 17, { align: "right" });
   doc.text(serie, 196, 23, { align: "right" });
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

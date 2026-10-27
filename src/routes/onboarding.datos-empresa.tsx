@@ -8,9 +8,12 @@ import {
   Stepper,
   WizardNav,
 } from "@/features/onboarding/components";
-import { TIPOS_SOCIEDAD, useOnboarding } from "@/lib/onboarding-store";
+import { CampoIdentificador, SelectRegimen } from "@/features/onboarding/components/identificacion";
+import { useOnboarding, type DatosEmpresa as Datos } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
 import { useDatosEmpresaGuardados } from "@/hooks/useOnboarding";
+import { formatDate } from "@/shared/format";
+import { getPais } from "@/shared/pais";
 
 export const Route = createFileRoute("/onboarding/datos-empresa")({
   head: () => ({
@@ -19,27 +22,35 @@ export const Route = createFileRoute("/onboarding/datos-empresa")({
   component: DatosEmpresa,
 });
 
-const STEPS = ["Datos de la empresa", "Confirmacion"];
+const STEPS = ["Datos de la empresa", "Confirmación"];
 
 function DatosEmpresa() {
   const nav = useNavigate();
+  const pais = getPais();
+  const fiscal = pais.fiscal.moral;
   const { datosEmpresa, setDatosEmpresa } = useOnboarding();
   const [step, setStep] = useState(0);
-  const [f, setF] = useState({
-    cuit: datosEmpresa.cuit ?? "",
-    fechaInscripcion: datosEmpresa.fechaInscripcion ?? "",
-    tipoId: datosEmpresa.tipoId ?? "",
-    nombreLegal: datosEmpresa.nombreLegal ?? "",
-    nombreFantasia: datosEmpresa.nombreFantasia ?? "",
+  const [f, setF] = useState<Datos>({
+    taxId: "",
+    regimenFiscal: "",
+    cuentaBancaria: "",
+    fechaInscripcion: "",
+    tipoId: "",
+    nombreLegal: "",
+    nombreFantasia: "",
+    ...datosEmpresa,
   });
   const [err, setErr] = useState<Record<string, string>>({});
   const { data: cli } = useDatosEmpresaGuardados();
   useEffect(() => {
     if (!cli) return;
-    // No sobrescribir si ya hay valor en store (edición fresca)
-    const realCuit = cli.cuit && !cli.cuit.startsWith("99") ? cli.cuit : "";
+    // No sobrescribir si ya hay valor en store (edición fresca). El `cuit` con prefijo 99
+    // es el número interno provisorio, no un identificador fiscal.
+    const cuitReal = cli.cuit && !cli.cuit.startsWith("99") ? cli.cuit : "";
     setF((prev) => ({
-      cuit: prev.cuit || realCuit || "",
+      taxId: prev.taxId || cli.tax_id || cuitReal,
+      regimenFiscal: prev.regimenFiscal || cli.regimen_fiscal || "",
+      cuentaBancaria: prev.cuentaBancaria || cli.cuenta_bancaria || "",
       fechaInscripcion: prev.fechaInscripcion || cli.fecha_inscripcion || "",
       tipoId: prev.tipoId || cli.tipo_sociedad || "",
       nombreLegal: prev.nombreLegal || cli.nombre_legal || "",
@@ -47,13 +58,15 @@ function DatosEmpresa() {
     }));
   }, [cli]);
 
-  const cuitDigits = f.cuit.replace(/\D/g, "");
-  const cuitExcede = cuitDigits.length > 11;
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!f.cuit.trim()) e.cuit = "Requerido";
-    else if (cuitExcede) e.cuit = "Máximo 11 dígitos permitidos. Quita los excedentes.";
-    else if (cuitDigits.length !== 11) e.cuit = "El CUIT debe tener exactamente 11 dígitos.";
+    const errFiscal = fiscal.validar(f.taxId);
+    if (errFiscal) e.taxId = errFiscal;
+    if (pais.regimenesFiscales.length && !f.regimenFiscal) e.regimenFiscal = "Requerido";
+    const errCuenta = f.cuentaBancaria.trim()
+      ? pais.cuentaBancaria.validar(f.cuentaBancaria)
+      : null;
+    if (errCuenta) e.cuentaBancaria = errCuenta;
     if (!f.fechaInscripcion) e.fechaInscripcion = "Requerido";
     if (!f.tipoId) e.tipoId = "Requerido";
     if (!f.nombreLegal.trim()) e.nombreLegal = "Requerido";
@@ -62,60 +75,73 @@ function DatosEmpresa() {
     return Object.keys(e).length === 0;
   };
 
+  const regimen = pais.regimenesFiscales.find((r) => r.codigo === f.regimenFiscal);
   const rows = [
-    ["CUIT de la empresa", f.cuit],
-    ["Fecha de inscripcion", f.fechaInscripcion],
-    ["Tipo de identificacion", f.tipoId],
-    ["Nombre legal", f.nombreLegal],
-    ["Nombre de fantasia", f.nombreFantasia],
+    [fiscal.etiqueta, fiscal.normalizar(f.taxId)],
+    ...(pais.regimenesFiscales.length ? [["Régimen fiscal", regimen?.nombre ?? ""]] : []),
+    [pais.cuentaBancaria.etiqueta, pais.cuentaBancaria.normalizar(f.cuentaBancaria)],
+    ["Fecha de constitución", f.fechaInscripcion ? formatDate(f.fechaInscripcion) : ""],
+    ["Tipo de sociedad", f.tipoId],
+    ["Razón social", f.nombreLegal],
+    ["Nombre comercial", f.nombreFantasia],
   ];
 
   return (
     <AuthShell
       leftEyebrow="Paso 4 · Empresa"
       leftTitle="Carga los datos societarios."
-      leftBody="Reconstituimos tu legajo con la informacion que consta en el Registro Publico de Comercio."
+      leftBody="Reconstituimos tu legajo con la información que consta en el Registro Público de Comercio."
       step={`Paso ${step + 1} de 2`}
     >
-      <FormTitle eyebrow="KYB · Empresa" title="Validacion de datos de la empresa" />
+      <FormTitle eyebrow="KYB · Empresa" title="Validación de datos de la empresa" />
       <Stepper steps={STEPS} current={step} />
 
       {step === 0 && (
         <div className="space-y-4">
-          <Field
-            label="CUIT de la empresa"
-            value={f.cuit}
-            onChange={(e) => setF({ ...f, cuit: e.target.value })}
-            placeholder="30-12345678-9"
-            className="font-mono"
-            error={err.cuit || (cuitExcede ? "Máximo 11 dígitos permitidos" : undefined)}
-            hint={cuitDigits.length > 0 ? `${cuitDigits.length}/11 dígitos` : undefined}
+          <CampoIdentificador
+            id={fiscal}
+            value={f.taxId}
+            onChange={(v) => setF({ ...f, taxId: v })}
+            error={err.taxId}
+          />
+          <SelectRegimen
+            persona="moral"
+            value={f.regimenFiscal}
+            onChange={(v) => setF({ ...f, regimenFiscal: v })}
+            error={err.regimenFiscal}
           />
           <Field
-            label="Fecha de inscripcion"
+            label="Fecha de constitución"
             type="date"
             value={f.fechaInscripcion}
             onChange={(e) => setF({ ...f, fechaInscripcion: e.target.value })}
             error={err.fechaInscripcion}
           />
           <SelectField
-            label="Tipo de identificacion"
+            label="Tipo de sociedad"
             value={f.tipoId}
             onChange={(v) => setF({ ...f, tipoId: v })}
-            options={TIPOS_SOCIEDAD}
+            options={pais.tiposSociedad}
             error={err.tipoId}
           />
           <Field
-            label="Nombre legal"
+            label="Razón social"
             value={f.nombreLegal}
             onChange={(e) => setF({ ...f, nombreLegal: e.target.value })}
             error={err.nombreLegal}
           />
           <Field
-            label="Nombre de fantasia"
+            label="Nombre comercial"
             value={f.nombreFantasia}
             onChange={(e) => setF({ ...f, nombreFantasia: e.target.value })}
             error={err.nombreFantasia}
+          />
+          <CampoIdentificador
+            id={pais.cuentaBancaria}
+            opcional
+            value={f.cuentaBancaria}
+            onChange={(v) => setF({ ...f, cuentaBancaria: v })}
+            error={err.cuentaBancaria}
           />
           <WizardNav
             onNext={() => {
@@ -123,14 +149,7 @@ function DatosEmpresa() {
             }}
             nextLabel="Siguiente"
           />
-          <div className="text-center pt-2">
-            <Link
-              to="/login"
-              className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
-            >
-              Volver a inicio de sesión
-            </Link>
-          </div>
+          <VolverLogin />
         </div>
       )}
 
@@ -154,21 +173,31 @@ function DatosEmpresa() {
           <WizardNav
             onBack={() => setStep(0)}
             onNext={() => {
-              setDatosEmpresa(f);
+              setDatosEmpresa({
+                ...f,
+                taxId: fiscal.normalizar(f.taxId),
+                cuentaBancaria: pais.cuentaBancaria.normalizar(f.cuentaBancaria),
+              });
               nav({ to: "/onboarding/kyc" });
             }}
             nextLabel="Registrar empresa"
           />
-          <div className="text-center pt-2">
-            <Link
-              to="/login"
-              className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
-            >
-              Volver a inicio de sesión
-            </Link>
-          </div>
+          <VolverLogin />
         </div>
       )}
     </AuthShell>
+  );
+}
+
+function VolverLogin() {
+  return (
+    <div className="text-center pt-2">
+      <Link
+        to="/login"
+        className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+      >
+        Volver a inicio de sesión
+      </Link>
+    </div>
   );
 }

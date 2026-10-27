@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { setPaisActivo } from "@/shared/pais";
 import type { PaymentLink, Product } from "@/data/links-pago";
 import type { ComercioBanderaRow } from "@/lib/api/links-pago";
 import { toneEstadoLink } from "./estados";
@@ -87,14 +88,24 @@ describe("helpers", () => {
     expect(nuevoCodigoLink()).toMatch(/^LP-[0-9A-Z]{1,6}$/);
   });
 
-  it("parsea el precio tomando el punto como separador de miles", () => {
+  it("parsea el precio tomando el punto como separador de miles (Argentina)", () => {
+    setPaisActivo("AR");
     expect(parsePrecio("29.900")).toBe(29900);
     expect(parsePrecio("29900,50")).toBe(29900.5);
     expect(parsePrecio("$ 1.000")).toBe(1000);
     expect(parsePrecio("abc")).toBe(0);
   });
 
+  it("parsea el precio en es-MX", () => {
+    setPaisActivo("MX");
+    expect(parsePrecio("29,900.50")).toBe(29900.5);
+    expect(parsePrecio("$1,000")).toBe(1000);
+    expect(parsePrecio("0.99")).toBe(0.99);
+    expect(parsePrecio("abc")).toBe(0);
+  });
+
   it("parsea el precio en es-AR y con punto decimal", () => {
+    setPaisActivo("AR");
     expect(parsePrecio("29.900,50")).toBe(29900.5);
     expect(parsePrecio("1.234.567,8")).toBe(1234567.8);
     expect(parsePrecio("29900.50")).toBe(29900.5);

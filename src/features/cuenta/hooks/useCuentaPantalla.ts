@@ -35,7 +35,9 @@ export function useCuentaPantalla() {
 
   const dp = {
     genero: cliente?.genero ?? datosPersonales.genero ?? "",
-    cuitCuil: cliente?.cuit_cuil ?? datosPersonales.cuitCuil ?? "",
+    cuitCuil: cliente?.cuit_cuil ?? "",
+    taxId: cliente?.tax_id ?? datosPersonales.taxId ?? "",
+    idPersonal: cliente?.id_personal ?? datosPersonales.idPersonal ?? "",
     ocupacion: cliente?.ocupacion ?? datosPersonales.ocupacion ?? "",
     origenFondos: cliente?.origen_fondos ?? datosPersonales.origenFondos ?? "",
     esPEP: cliente?.es_pep ?? datosPersonales.esPEP ?? false,
@@ -44,7 +46,8 @@ export function useCuentaPantalla() {
   const empresaInfo = {
     nombreLegal: cliente?.nombre_legal ?? datosEmpresa.nombreLegal ?? "",
     nombreFantasia: cliente?.nombre_fantasia ?? datosEmpresa.nombreFantasia ?? "",
-    cuit: cliente?.cuit ?? datosEmpresa.cuit ?? "",
+    cuit: cliente?.cuit ?? "",
+    taxId: cliente?.tax_id ?? datosEmpresa.taxId ?? "",
     tipoId: cliente?.tipo_sociedad ?? datosEmpresa.tipoId ?? "",
     fechaInscripcion: cliente?.fecha_inscripcion ?? datosEmpresa.fechaInscripcion ?? "",
   };

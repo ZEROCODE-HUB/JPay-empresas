@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { setPaisActivo } from "@/shared/pais";
 import type { MovimientoSubcuentaRow } from "@/lib/api/subcuentas";
 import type { Mov, Sub } from "./types";
 import {
@@ -8,7 +9,6 @@ import {
   fmtLimite,
   generarCvu,
   mapMovimientos,
-  parseMontoAr,
   pctSaldo,
   rangoPagina,
   totalesMovs,
@@ -43,7 +43,9 @@ describe("fmtLimite", () => {
   it("texto no numérico se muestra tal cual", () => {
     expect(fmtLimite("libre")).toBe("libre");
   });
-  it("acepta formato argentino y plano", () => {
+  it("acepta el formato del país y plano", () => {
+    expect(fmtLimite("50,000.00")).toBe(fmtLimite("50000"));
+    setPaisActivo("AR");
     expect(fmtLimite("50.000,00")).toBe(fmtLimite("50000"));
     expect(fmtLimite("50000")).not.toBe("Sin límite");
   });
@@ -133,25 +135,9 @@ describe("movimientos", () => {
   });
 });
 
-describe("parseMontoAr", () => {
-  it("acepta coma decimal y punto de miles (es-AR)", () => {
-    expect(parseMontoAr("1,5")).toBe(1.5);
-    expect(parseMontoAr("1.234,56")).toBe(1234.56);
-    expect(parseMontoAr("1.500")).toBe(1500);
-    expect(parseMontoAr("1.234.567")).toBe(1234567);
-    expect(parseMontoAr(" $ 2.000,00 ")).toBe(2000);
-  });
-  it("sin coma, un punto que no separa miles es decimal", () => {
-    expect(parseMontoAr("1500")).toBe(1500);
-    expect(parseMontoAr("1500.5")).toBe(1500.5);
-  });
-  it("NaN para texto vacío o inválido", () => {
-    expect(parseMontoAr("")).toBeNaN();
-    expect(parseMontoAr("abc")).toBeNaN();
-    expect(parseMontoAr("1,2,3")).toBeNaN();
-    expect(parseMontoAr("12.34,5")).toBeNaN();
-  });
+// El parseo de montos se prueba en shared/format.test.ts.
+describe("fmtLimite", () => {
   it("fmtLimite usa el mismo parseo", () => {
-    expect(fmtLimite("1.500")).toBe(fmtLimite("1500"));
+    expect(fmtLimite("1,500")).toBe(fmtLimite("1500"));
   });
 });

@@ -15,7 +15,12 @@ export const Route = createFileRoute("/login")({
       { title: pageTitle("Ingresar") },
       {
         name: "description",
-        content: `Accede al portal de ${brand.name}. Plataforma de pagos digitales bajo normativa BCRA.`,
+        content: [
+          `Accede al portal de ${brand.name}. Plataforma de pagos digitales.`,
+          brand.regulatoryNote,
+        ]
+          .filter(Boolean)
+          .join(" "),
       },
     ],
   }),
@@ -30,7 +35,12 @@ function LoginPage() {
     <AuthShell
       leftEyebrow={`${brand.name} · Acceso`}
       leftTitle="Tu plataforma de pagos, sin intermediarios."
-      leftBody={`${brand.name} opera bajo normativa BCRA. Tus datos viajan cifrados y se almacenan bajo los estándares del sistema financiero argentino.`}
+      leftBody={[
+        brand.regulatoryNote,
+        "Tus datos viajan cifrados y se almacenan bajo estándares de seguridad del sistema financiero.",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <SelectorAcceso
         tab={p.tab}

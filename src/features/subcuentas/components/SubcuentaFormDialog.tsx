@@ -4,6 +4,7 @@ import { FormDialog } from "@/shared/ui/form-dialog";
 import { TIPOS_SUB } from "../estados";
 import type { FormSubcuenta, Sub } from "../types";
 
+import { monedaActiva } from "@/shared/format";
 type Props = {
   open: boolean;
   editSub: Sub | null;
@@ -77,7 +78,7 @@ export function SubcuentaFormDialog({ open, editSub, form, setForm, onClose, onS
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <Label>Límite diario de egreso (ARS)</Label>
+          <Label>Límite diario de egreso ({monedaActiva()})</Label>
           <Input
             value={form.lim}
             onChange={(e) => setForm((p) => ({ ...p, lim: e.target.value }))}

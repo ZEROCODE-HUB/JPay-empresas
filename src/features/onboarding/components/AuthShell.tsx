@@ -3,11 +3,12 @@ import { Link } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand, mailto } from "@/brand/brand";
+import { getPais } from "@/shared/pais";
 
 export function AuthShell({
   children,
   leftEyebrow = `${brand.name} · Onboarding`,
-  leftTitle = "Tus datos están protegidos bajo normativa BCRA",
+  leftTitle = "Tus datos están protegidos y cifrados",
   leftBody,
   step,
 }: {
@@ -52,12 +53,14 @@ export function AuthShell({
         </div>
 
         <div className="relative z-10 space-y-5">
-          <div className="inline-flex items-center gap-2.5 px-3 py-2 border border-primary-400/30 rounded-sm bg-primary-500/5 backdrop-blur">
-            <ShieldCheck size={13} strokeWidth={1.5} className="text-primary-400" />
-            <span className="font-sans text-[0.65rem] tracking-[0.1em] uppercase text-primary-400">
-              Registrado ante BCRA
-            </span>
-          </div>
+          {getPais().textos.notaRegulatoria && (
+            <div className="inline-flex items-center gap-2.5 px-3 py-2 border border-primary-400/30 rounded-sm bg-primary-500/5 backdrop-blur">
+              <ShieldCheck size={13} strokeWidth={1.5} className="text-primary-400" />
+              <span className="font-sans text-[0.65rem] tracking-[0.1em] uppercase text-primary-400">
+                {getPais().textos.notaRegulatoria}
+              </span>
+            </div>
+          )}
           {step && (
             <p className="text-white/45 font-sans text-[0.65rem] tracking-[0.15em] uppercase">
               {step}

@@ -4,6 +4,7 @@ import {
   type RecipientValidationResult,
 } from "@/lib/recipient-validation";
 import type { DatosComprobante } from "@/lib/comprobante";
+import { parseMonto } from "@/shared/format";
 import type { FrequentRecipient, Scheduled, Template } from "@/lib/api/transferencias";
 import type { CoelsaResult, TransferSuccess } from "./types";
 
@@ -130,13 +131,13 @@ export function validacionGuardada(
 }
 
 /**
- * Monto escrito en el modal de plantillas ("482.000,50"). Vacío = sin monto;
+ * Monto escrito en el modal de plantillas, en el formato del país. Vacío = sin monto;
  * `null` = inválido.
  */
 export function parseMontoPlantilla(texto: string): number | undefined | null {
   const t = texto.trim();
   if (!t) return undefined;
-  const n = Number(t.replace(/\./g, "").replace(",", "."));
+  const n = parseMonto(t);
   if (!n || Number.isNaN(n) || n <= 0) return null;
   return n;
 }

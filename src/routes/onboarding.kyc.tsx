@@ -4,7 +4,8 @@ import { pageTitle } from "@/brand/brand";
 import { PasoDomicilio } from "@/features/onboarding/kyc/components/PasoDomicilio";
 import { PasosDocumentos } from "@/features/onboarding/kyc/components/PasosDocumentos";
 import { useKycWizard } from "@/features/onboarding/kyc/hooks/useKycWizard";
-import { STEPS } from "@/features/onboarding/kyc/utils";
+import { pasosKyc } from "@/features/onboarding/kyc/utils";
+import { getPais } from "@/shared/pais";
 
 export const Route = createFileRoute("/onboarding/kyc")({
   head: () => ({
@@ -16,16 +17,17 @@ export const Route = createFileRoute("/onboarding/kyc")({
 function KycWizard() {
   const w = useKycWizard();
   const { step } = w;
+  const pais = getPais();
 
   return (
     <AuthShell
       leftEyebrow="Paso 5 · Verificacion de identidad"
       leftTitle="Validamos tu identidad de forma segura."
-      leftBody="Tus documentos se procesan en un entorno cifrado y se conservan segun normativa BCRA y Ley 25.246."
+      leftBody={pais.textos.normativaDocumentos}
       step={`Paso ${step + 1} de 4`}
     >
       <FormTitle eyebrow="KYC · Documentacion" title="Validacion KYC" />
-      <Stepper steps={STEPS} current={step} />
+      <Stepper steps={pasosKyc(pais.documentoIdentidad)} current={step} />
 
       <PasosDocumentos w={w} />
 

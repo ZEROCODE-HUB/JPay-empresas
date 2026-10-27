@@ -4,6 +4,7 @@ import type { CuentaPantalla } from "../hooks/useCuentaPantalla";
 import type { CampoTexto } from "../types";
 import { BotonesGuardar } from "./BotonesGuardar";
 
+import { getPais } from "@/shared/pais";
 function Campo({
   c,
   label,
@@ -72,7 +73,16 @@ export function InfoEmpresaCard({ c }: { c: CuentaPantalla }) {
           campo="nombreFantasia"
           fallback={empresaInfo.nombreFantasia}
         />
-        <Campo c={c} label="CUIT" campo="cuit" fallback={empresaInfo.cuit} />
+        {getPais().codigo === "AR" ? (
+          <Campo c={c} label="CUIT" campo="cuit" fallback={empresaInfo.cuit} />
+        ) : (
+          <Campo
+            c={c}
+            label={getPais().fiscal.moral.etiqueta}
+            campo="tax_id"
+            fallback={empresaInfo.taxId}
+          />
+        )}
         <div>
           <Label>Tipo de sociedad</Label>
           <select
@@ -86,7 +96,7 @@ export function InfoEmpresaCard({ c }: { c: CuentaPantalla }) {
         <Campo c={c} label="Actividad principal" campo="actividad" fallback="" />
         <Campo
           c={c}
-          label="Fecha de inscripcion"
+          label="Fecha de constitución"
           campo="fecha_inscripcion"
           fallback={empresaInfo.fechaInscripcion}
           type="date"
