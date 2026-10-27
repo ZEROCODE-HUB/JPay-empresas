@@ -10,6 +10,7 @@ import {
   isCardMethod,
   metodoInicial,
   metodosDisponibles,
+  errorVencimiento,
   montoInvalido,
   normalizarBandera,
   parseMonto,
@@ -69,8 +70,14 @@ describe("banderas y metodos", () => {
   it("metodo inicial: primera bandera o primer metodo guardado", () => {
     expect(metodoInicial(["mastercard"], ["qr"])).toBe("mc-cred");
     expect(metodoInicial([], ["TARJETA_CREDITO"])).toBe("visa-cred");
-    expect(metodoInicial([], [" qr "])).toBe("qr");
+    expect(metodoInicial([], [" qr "])).toBe("");
     expect(metodoInicial([], null)).toBe("");
+  });
+
+  it("metodo inicial: si la primera bandera es desconocida, el primer metodo visible", () => {
+    expect(metodoInicial(["desconocida", "amex", "visa"], null)).toBe("visa-cred");
+    expect(metodoInicial(["desconocida"], ["qr"])).toBe("");
+    expect(metodoInicial([], ["otra", "qr"])).toBe("qr");
   });
 
   it("metodos disponibles: banderas tienen prioridad sobre metodos_pago", () => {
@@ -138,8 +145,16 @@ describe("montos", () => {
     expect(montoInvalido(0, 100)).toBe(true);
     expect(montoInvalido(100.0005, 100)).toBe(false);
     expect(montoInvalido(100.01, 100)).toBe(true);
-    // Comportamiento actual: NaN no se considera invalido.
-    expect(montoInvalido(NaN, 100)).toBe(false);
+    expect(montoInvalido(NaN, 100)).toBe(true);
+    expect(montoInvalido(Infinity, 100)).toBe(true);
+  });
+
+  it("monto parcial vacio es invalido", () => {
+    expect(validarPago({ ...pagoOk, montoPagar: "" })).toBe("Monto a pagar invalido");
+    expect(validarPago({ ...pagoOk, montoPagar: "abc" })).toBe("Monto a pagar invalido");
+    expect(validarSimulacion({ method: "qr", email: "a@b.co", montoPagar: "", total: 1 })).toBe(
+      "Monto a pagar invalido",
+    );
   });
 });
 
@@ -173,6 +188,30 @@ describe("validarPago", () => {
 
   it("sin link resuelto no valida el monto", () => {
     expect(validarPago({ ...pagoOk, montoPagar: "999", total: null })).toBeNull();
+  });
+});
+
+describe("vencimiento", () => {
+  const hoy = new Date(2026, 9, 27); // octubre 2026
+
+  it("rechaza el mes fuera de 01-12", () => {
+    expect(errorVencimiento("00/30", hoy)).toBe("Vencimiento invalido (MM/AA)");
+    expect(errorVencimiento("13/30", hoy)).toBe("Vencimiento invalido (MM/AA)");
+    expect(errorVencimiento("1/30", hoy)).toBe("Vencimiento invalido (MM/AA)");
+  });
+
+  it("rechaza tarjetas vencidas y acepta el mes en curso", () => {
+    expect(errorVencimiento("09/26", hoy)).toBe("La tarjeta esta vencida");
+    expect(errorVencimiento("12/25", hoy)).toBe("La tarjeta esta vencida");
+    expect(errorVencimiento("10/26", hoy)).toBeNull();
+    expect(errorVencimiento("11/26", hoy)).toBeNull();
+    expect(errorVencimiento("01/27", hoy)).toBeNull();
+  });
+
+  it("validarPago usa la validacion del vencimiento", () => {
+    expect(validarPago({ ...pagoOk, venc: "13/30" }, hoy)).toBe("Vencimiento invalido (MM/AA)");
+    expect(validarPago({ ...pagoOk, venc: "09/26" }, hoy)).toBe("La tarjeta esta vencida");
+    expect(validarPago({ ...pagoOk, venc: "10/26" }, hoy)).toBeNull();
   });
 });
 

@@ -4,6 +4,7 @@ import {
   cbuUnico,
   comprobanteDeMov,
   estadoVisible,
+  estadoVista,
   formatFechaLinea,
   labelTipoLinea,
   mapMov,
@@ -11,6 +12,7 @@ import {
   montoDetalleTexto,
   prettyTipo,
   rangoPagina,
+  subFiltroDeVista,
   tiposDeOperacion,
   totalesPagina,
   type Linea,
@@ -152,5 +154,22 @@ describe("lineas", () => {
   it("rango de pagina", () => {
     expect(rangoPagina(1, 25, 0)).toBe("0 registros");
     expect(rangoPagina(2, 25, 30)).toBe("26–30 de 30");
+  });
+});
+
+describe("vista / subcuenta", () => {
+  it("la vista sale del filtro de subcuenta", () => {
+    expect(estadoVista("Todas", false, "Caja")).toEqual({ vista: "principal", sub: "Caja" });
+    expect(estadoVista("Ventas", false, "Caja")).toEqual({ vista: "sub", sub: "Ventas" });
+    // Volver a "Todas" desde los filtros vuelve a la cuenta principal.
+    expect(estadoVista("Todas", true, "Caja")).toEqual({ vista: "principal", sub: "Caja" });
+    // Sin subcuentas, "Por subcuenta" queda elegida (muestra "Sin subcuentas").
+    expect(estadoVista("Todas", true, undefined)).toEqual({ vista: "sub", sub: "" });
+  });
+
+  it("elegir una vista fija el filtro de subcuenta", () => {
+    expect(subFiltroDeVista("principal", "Caja")).toBe("Todas");
+    expect(subFiltroDeVista("sub", "Caja")).toBe("Caja");
+    expect(subFiltroDeVista("sub", undefined)).toBe("Todas");
   });
 });

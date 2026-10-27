@@ -20,7 +20,12 @@ export function ProductosTabla({
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
-          <Input placeholder="Buscar producto..." className="pl-9" />
+          <Input
+            placeholder="Buscar producto..."
+            className="pl-9"
+            value={catalogo.busqueda}
+            onChange={(e) => catalogo.setBusqueda(e.target.value)}
+          />
         </div>
         <div className="flex gap-2">
           <BtnOutline className="h-10" onClick={catalogo.abrirNuevo}>
@@ -52,7 +57,7 @@ export function ProductosTabla({
               </tr>
             </thead>
             <tbody>
-              {products.map((p) => (
+              {catalogo.productosFiltrados.map((p) => (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-3 py-3">
                     <input

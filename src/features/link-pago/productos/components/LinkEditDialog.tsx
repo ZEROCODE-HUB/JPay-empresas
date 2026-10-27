@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Input, Label } from "@/components/portal-shell";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import { paymentMethods, type PaymentLink } from "@/data/links-pago";
+import { useBanderasActivasComercio } from "@/hooks/useLinksPago";
 import type { EdicionLink } from "../hooks/useListaLinks";
-import { dmyAIso } from "../utils";
+import { banderasUnicas, dmyAIso } from "../utils";
+
+const CLASE_METODO =
+  "flex items-center gap-2 px-3 py-2 rounded-md border text-xs cursor-pointer transition ";
 
 /** Edición de estado, referencia, vencimiento, pagos parciales y métodos de un link. */
 export function LinkEditDialog({
@@ -21,6 +25,12 @@ export function LinkEditDialog({
   const [expires, setExpires] = useState("");
   const [partial, setPartial] = useState(false);
   const [methods, setMethods] = useState<string[]>([]);
+  // Mismas banderas que ofrece el alta: las activas del comercio del link.
+  const { data: banderasComercio } = useBanderasActivasComercio(link?.comercioId);
+  const comercioBanderas = useMemo(
+    () => (banderasComercio ? banderasUnicas(banderasComercio) : []),
+    [banderasComercio],
+  );
 
   useEffect(() => {
     if (link) {
@@ -58,6 +68,10 @@ export function LinkEditDialog({
         >
           <option value="Activo">Activo</option>
           <option value="Inactivo">Inactivo</option>
+          {/* Lo asigna el admin: se muestra pero no se puede elegir. */}
+          <option value="Pendiente de aprobación" disabled>
+            Pendiente de aprobación
+          </option>
         </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -92,42 +106,78 @@ export function LinkEditDialog({
           className="toggle"
         />
       </label>
-      <div>
-        <Label>Metodos de pago permitidos</Label>
-        {(["credit", "debit"] as const).map((cat) => (
-          <div key={cat} className="mb-3">
-            <div className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">
-              {cat === "credit" ? "Tarjetas de Credito" : "Tarjetas de Debito"}
-            </div>
+      {link?.comercioId ? (
+        banderasComercio && comercioBanderas.length === 0 ? (
+          <div className="p-4 rounded-md bg-muted/50 text-center text-sm text-muted-foreground">
+            Este comercio no tiene metodos de pago configurados
+          </div>
+        ) : (
+          <div>
+            <Label>Metodos de pago permitidos</Label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {paymentMethods
-                .filter((m) => m.category === cat)
-                .map((m) => (
+              {comercioBanderas.map((b) => {
+                const isSelected = methods.includes(b.methodId);
+                return (
                   <label
-                    key={m.id}
+                    key={b.id}
                     className={
-                      "flex items-center gap-2 px-3 py-2 rounded-md border text-xs cursor-pointer transition " +
-                      (!m.enabled
-                        ? "opacity-40 cursor-not-allowed"
-                        : methods.includes(m.id)
-                          ? "border-primary bg-[color:var(--brand-primary-50)]"
-                          : "bg-card hover:bg-muted")
+                      CLASE_METODO +
+                      (isSelected
+                        ? "border-primary bg-[color:var(--brand-primary-50)]"
+                        : "bg-card hover:bg-muted")
                     }
                   >
                     <input
                       type="checkbox"
-                      checked={methods.includes(m.id)}
-                      disabled={!m.enabled}
-                      onChange={() => m.enabled && toggleMethod(m.id)}
+                      checked={isSelected}
+                      onChange={() => toggleMethod(b.methodId)}
                       className="accent-[color:var(--brand-primary-700)]"
                     />
-                    {m.label}
+                    {b.bandera}
                   </label>
-                ))}
+                );
+              })}
             </div>
           </div>
-        ))}
-      </div>
+        )
+      ) : (
+        <div>
+          <Label>Metodos de pago permitidos</Label>
+          {(["credit", "debit"] as const).map((cat) => (
+            <div key={cat} className="mb-3">
+              <div className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">
+                {cat === "credit" ? "Tarjetas de Credito" : "Tarjetas de Debito"}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                {paymentMethods
+                  .filter((m) => m.category === cat)
+                  .map((m) => (
+                    <label
+                      key={m.id}
+                      className={
+                        CLASE_METODO +
+                        (!m.enabled
+                          ? "opacity-40 cursor-not-allowed"
+                          : methods.includes(m.id)
+                            ? "border-primary bg-[color:var(--brand-primary-50)]"
+                            : "bg-card hover:bg-muted")
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        checked={methods.includes(m.id)}
+                        disabled={!m.enabled}
+                        onChange={() => m.enabled && toggleMethod(m.id)}
+                        className="accent-[color:var(--brand-primary-700)]"
+                      />
+                      {m.label}
+                    </label>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </FormDialog>
   );
 }

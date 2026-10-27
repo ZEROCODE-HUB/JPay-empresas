@@ -7,7 +7,7 @@ import {
   useLinksPago,
   useNombresBanderasComercio,
 } from "@/hooks/useLinksPago";
-import { expiraEnIso, toPaymentLink } from "../utils";
+import { expiraEnIso, filtrarLinks, toPaymentLink } from "../utils";
 
 export type EdicionLink = {
   status: string;
@@ -31,6 +31,12 @@ export function useListaLinks(legajo: string | undefined) {
     [recienCreados, linksQuery.data],
   );
   const [page, setPage] = useState(1);
+  const [busqueda, setBusquedaState] = useState("");
+  const linksFiltrados = useMemo(() => filtrarLinks(links, busqueda), [links, busqueda]);
+  const setBusqueda = (v: string) => {
+    setBusquedaState(v);
+    setPage(1);
+  };
   const [detailLink, setDetailLink] = useState<PaymentLink | null>(null);
   const [editLink, setEditLink] = useState<PaymentLink | null>(null);
   const [confirmarEliminarId, setConfirmarEliminarId] = useState<string | null>(null);
@@ -80,6 +86,9 @@ export function useListaLinks(legajo: string | undefined) {
 
   return {
     links,
+    linksFiltrados,
+    busqueda,
+    setBusqueda,
     page,
     setPage,
     detailLink,

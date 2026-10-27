@@ -11,6 +11,9 @@ import { exportarHistorialExcel, exportarHistorialPdf } from "@/features/histori
 import { useComprobanteMovimiento } from "@/features/historial/hooks/useComprobanteMovimiento";
 import { PAGE_SIZE, useFiltrosHistorial } from "@/features/historial/hooks/useFiltrosHistorial";
 import { useGruposTxid } from "@/features/historial/hooks/useGruposTxid";
+import { aLinea, totalesPagina } from "@/features/historial/utils";
+import { useExportacionHistorial } from "@/hooks/useMovimientos";
+import { MAX_FILAS_EXPORTACION } from "@/lib/api/movimientos";
 import {
   useMovimientosHistorial,
   useVistaHistorial,
@@ -29,17 +32,39 @@ function Page() {
   const { subcuenta: subcuentaInicial } = Route.useSearch();
   const filtros = useFiltrosHistorial(subcuentaInicial);
   const mov = useMovimientosHistorial(filtros.query);
-  const vista = useVistaHistorial(mov.subcuentas[0]?.nombre);
+  const vista = useVistaHistorial(
+    filtros.subFiltro,
+    filtros.setSubFiltro,
+    mov.subcuentas[0]?.nombre,
+  );
   const grupos = useGruposTxid(mov.lineas);
   const comprobante = useComprobanteMovimiento(mov.cliente);
+  const exportacion = useExportacionHistorial();
 
-  const exportExcel = () => {
-    exportarHistorialExcel(mov.lineas, mov.totales);
+  // Se exportan todos los movimientos filtrados, no solo la página visible.
+  const lineasAExportar = async () => {
+    const { page: _page, pageSize: _pageSize, ...filtrosSinPagina } = filtros.query;
+    try {
+      const res = await exportacion.mutateAsync(filtrosSinPagina);
+      if (res.truncado)
+        toast.warning(`Se exportan los primeros ${MAX_FILAS_EXPORTACION} movimientos`);
+      return res.lineas.map(aLinea);
+    } catch {
+      toast.error("No se pudieron obtener los movimientos para exportar");
+      return null;
+    }
+  };
+  const exportExcel = async () => {
+    const lineas = await lineasAExportar();
+    if (!lineas) return;
+    exportarHistorialExcel(lineas, totalesPagina(lineas));
     toast.success("Excel descargado");
   };
-  const exportPDF = () => {
+  const exportPDF = async () => {
+    const lineas = await lineasAExportar();
+    if (!lineas) return;
     const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
-    exportarHistorialPdf(mov.lineas, mov.totales, serie);
+    exportarHistorialPdf(lineas, totalesPagina(lineas), serie);
     toast.success("PDF descargado");
   };
 
@@ -50,10 +75,10 @@ function Page() {
         description="Auditoria completa de movimientos con filtros, exportacion y detalle de transacciones."
         action={
           <div className="flex gap-2">
-            <BtnOutline onClick={exportExcel}>
+            <BtnOutline onClick={() => void exportExcel()} disabled={exportacion.isPending}>
               <FileSpreadsheet size={14} /> Excel
             </BtnOutline>
-            <BtnPrimary onClick={exportPDF}>
+            <BtnPrimary onClick={() => void exportPDF()} disabled={exportacion.isPending}>
               <Download size={14} /> PDF
             </BtnPrimary>
           </div>
@@ -72,8 +97,8 @@ function Page() {
         totalCount={mov.totalCount}
         agrupar={grupos.agrupar}
         onAgrupar={grupos.setAgrupar}
-        onExcel={exportExcel}
-        onPdf={exportPDF}
+        onExcel={() => void exportExcel()}
+        onPdf={() => void exportPDF()}
       />
 
       <MovimientosTabla

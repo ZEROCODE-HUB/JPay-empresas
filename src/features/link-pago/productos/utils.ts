@@ -73,6 +73,20 @@ export function toProduct(r: ProductoRow): Product {
 /** "YYYY-MM-DD..." -> "DD/MM/YYYY". */
 const isoADmy = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
 
+/**
+ * Expiracion guardada (ISO, timestamptz) -> "DD/MM/YYYY" en hora local.
+ *
+ * Se guarda como fin del dia local (`expiraEnIso`), que en UTC puede caer al
+ * dia siguiente: cortar el texto del ISO mostraria un dia de mas.
+ */
+export function expiraEnDmy(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return isoADmy(iso);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}/${mm}/${d.getFullYear()}`;
+}
+
 /** "DD/MM/YYYY" -> "YYYY-MM-DD" (valor de un `<input type="date">`). */
 export const dmyAIso = (dmy: string) => dmy.split("/").reverse().join("-");
 
@@ -98,7 +112,7 @@ export function toPaymentLink(x: LinkPagoConDetalle): PaymentLink {
     reference: x.referencia ?? undefined,
     notes: x.notas ?? undefined,
     createdAt: isoADmy(x.created_at ?? ""),
-    expiresAt: x.expira_en ? isoADmy(x.expira_en) : undefined,
+    expiresAt: x.expira_en ? expiraEnDmy(x.expira_en) : undefined,
     views: Number(x.vistas ?? 0),
     payments: Number(x.pagos ?? 0),
     comercioId: x.comercio_id ?? undefined,
@@ -126,9 +140,51 @@ export function nuevoCodigoLink(): string {
   return "LP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
-/** Precio tipeado: se quedan digitos y coma decimal (los puntos se toman como miles). */
+/**
+ * Precio tipeado, en formato es-AR ("29.900,50") o con punto decimal ("29900.50").
+ *
+ * Si hay coma, la coma es el decimal y los puntos son miles. Si no hay coma, un
+ * unico punto seguido de 1-2 digitos al final es decimal; cualquier otro punto
+ * se toma como separador de miles ("29.900" -> 29900).
+ */
 export function parsePrecio(price: string): number {
-  return parseFloat(price.replace(/[^0-9,]/g, "").replace(",", ".")) || 0;
+  const limpio = price.replace(/[^0-9.,]/g, "");
+  let normalizado: string;
+  if (limpio.includes(",")) {
+    normalizado = limpio.replace(/\./g, "").replace(",", ".").replace(/,/g, "");
+  } else if (/^\d*\.\d{1,2}$/.test(limpio)) {
+    normalizado = limpio;
+  } else {
+    normalizado = limpio.replace(/\./g, "");
+  }
+  return parseFloat(normalizado) || 0;
+}
+
+/** Texto en minusculas y sin acentos, para comparar busquedas. */
+const normalizarBusqueda = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+function coincide(campos: Array<string | undefined | null>, busqueda: string): boolean {
+  const q = normalizarBusqueda(busqueda.trim());
+  if (!q) return true;
+  return campos.some((c) => !!c && normalizarBusqueda(c).includes(q));
+}
+
+/** Productos cuyo nombre o descripcion contienen la busqueda. */
+export function filtrarProductos(products: Product[], busqueda: string): Product[] {
+  return products.filter((p) => coincide([p.name, p.desc], busqueda));
+}
+
+/**
+ * Links cuyo codigo, productos (nombre), referencia, observaciones o comercio
+ * contienen la busqueda.
+ */
+export function filtrarLinks(links: PaymentLink[], busqueda: string): PaymentLink[] {
+  return links.filter((l) =>
+    coincide(
+      [codigoLink(l), l.reference, l.notes, l.comercioNombre, ...l.products.map((p) => p.name)],
+      busqueda,
+    ),
+  );
 }
 
 export type PaginaLinks<T> = { items: T[]; page: number; totalPages: number; total: number };

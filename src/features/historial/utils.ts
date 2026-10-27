@@ -350,3 +350,28 @@ export function rangoPagina(page: number, pageSize: number, total: number): stri
   if (total === 0) return "0 registros";
   return `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`;
 }
+
+export type ModoVista = "principal" | "sub";
+
+/**
+ * Estado del selector "Vista" derivado del filtro de subcuenta, que es el que
+ * filtra de verdad: "Cuenta principal" = todas las subcuentas (consolidado) y
+ * "Por subcuenta" = la subcuenta elegida. `modoSub` recuerda que se eligió
+ * "Por subcuenta" aunque todavía no haya ninguna subcuenta para filtrar.
+ */
+export function estadoVista(
+  subFiltro: string,
+  modoSub: boolean,
+  primeraSubcuenta: string | undefined,
+): { vista: ModoVista; sub: string } {
+  const filtrando = subFiltro !== "Todas";
+  return {
+    vista: filtrando || (modoSub && !primeraSubcuenta) ? "sub" : "principal",
+    sub: filtrando ? subFiltro : (primeraSubcuenta ?? ""),
+  };
+}
+
+/** Filtro de subcuenta que corresponde al elegir una vista. */
+export function subFiltroDeVista(vista: ModoVista, primeraSubcuenta: string | undefined): string {
+  return vista === "sub" && primeraSubcuenta ? primeraSubcuenta : "Todas";
+}

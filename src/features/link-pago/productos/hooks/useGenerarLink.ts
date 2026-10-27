@@ -11,6 +11,7 @@ import { buildResolvableUrl } from "@/lib/pay-url";
 import { formatDate } from "@/shared/format";
 import {
   banderasUnicas as calcularBanderasUnicas,
+  expiraEnDmy,
   expiraEnIso,
   montoProductos,
   nuevoCodigoLink,
@@ -138,7 +139,9 @@ export function useGenerarLink({
       reference: reference || undefined,
       notes: notes || undefined,
       createdAt: formatDate(new Date()),
-      expiresAt: expires || undefined,
+      // Mismo formato que al leer de la API ("DD/MM/YYYY"): si no, la tabla
+      // muestra el ISO y `linkDisplayStatus` no detecta el vencimiento.
+      expiresAt: insertLink.expira_en ? expiraEnDmy(insertLink.expira_en) : undefined,
       views: 0,
       payments: 0,
       comercioId,

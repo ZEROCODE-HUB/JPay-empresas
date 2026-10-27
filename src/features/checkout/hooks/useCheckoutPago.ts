@@ -87,7 +87,6 @@ export function useCheckoutPago(code: string) {
   useEffect(() => {
     if (resultado?.estado !== "ready") return;
     const d = resultado.link;
-    if (resultado.banderas) console.log("[Checkout] flags:", comercioBanderas);
     setMethod(metodoInicial(comercioBanderas, d.metodos_pago));
     setMontoPagar(totalLink(d).toFixed(2));
     // Solo al llegar un resultado nuevo de la consulta.
@@ -157,6 +156,7 @@ export function useCheckoutPago(code: string) {
       const res = await paymentProcessor.process({
         linkCode: code,
         metodo: method,
+        banderaId: banderaIdDelMethod(banderasRows, method),
         monto: mp,
         pagadorNombre: titular.trim(),
         pagadorEmail: email.trim(),

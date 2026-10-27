@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
-import type { PaymentLink } from "@/data/links-pago";
+import type { PaymentLink, Product } from "@/data/links-pago";
 import type { ComercioBanderaRow } from "@/lib/api/links-pago";
 import { toneEstadoLink } from "./estados";
 import {
   banderasUnicas,
   codigoLink,
   dmyAIso,
+  expiraEnDmy,
   expiraEnIso,
+  filtrarLinks,
+  filtrarProductos,
   linkDisplayStatus,
   methodIdFromBandera,
   montoProductos,
@@ -89,6 +92,55 @@ describe("helpers", () => {
     expect(parsePrecio("29900,50")).toBe(29900.5);
     expect(parsePrecio("$ 1.000")).toBe(1000);
     expect(parsePrecio("abc")).toBe(0);
+  });
+
+  it("parsea el precio en es-AR y con punto decimal", () => {
+    expect(parsePrecio("29.900,50")).toBe(29900.5);
+    expect(parsePrecio("1.234.567,8")).toBe(1234567.8);
+    expect(parsePrecio("29900.50")).toBe(29900.5);
+    expect(parsePrecio("29900.5")).toBe(29900.5);
+    expect(parsePrecio("0.99")).toBe(0.99);
+    expect(parsePrecio("1.234.567")).toBe(1234567);
+    expect(parsePrecio("1.234")).toBe(1234);
+    expect(parsePrecio("29900")).toBe(29900);
+    expect(parsePrecio("$ 29.900,50")).toBe(29900.5);
+    expect(parsePrecio("")).toBe(0);
+  });
+
+  it("expiracion ISO -> DD/MM/YYYY en hora local (igual al crear y al leer)", () => {
+    expect(expiraEnDmy(expiraEnIso("2026-12-31")!)).toBe("31/12/2026");
+    expect(expiraEnDmy(expiraEnIso("2026-01-05")!)).toBe("05/01/2026");
+    const ahora = new Date(2026, 5, 1).getTime();
+    const vencido = link({ expiresAt: expiraEnDmy(expiraEnIso("2026-05-31")!) });
+    expect(linkDisplayStatus(vencido, ahora)).toBe("Vencido");
+  });
+});
+
+describe("busqueda", () => {
+  const productos: Product[] = [
+    { id: "1", name: "Remera Algodón", qty: 1, price: 10, desc: "Talle M" },
+    { id: "2", name: "Pantalón", qty: 1, price: 20, desc: "Jean azul" },
+  ];
+
+  it("filtra productos por nombre o descripcion, sin acentos ni mayusculas", () => {
+    expect(filtrarProductos(productos, "").map((p) => p.id)).toEqual(["1", "2"]);
+    expect(filtrarProductos(productos, "algodon").map((p) => p.id)).toEqual(["1"]);
+    expect(filtrarProductos(productos, "JEAN").map((p) => p.id)).toEqual(["2"]);
+    expect(filtrarProductos(productos, "zapato")).toEqual([]);
+  });
+
+  it("filtra links por producto, referencia, notas, codigo o comercio", () => {
+    const links = [
+      link({ id: "a", products: [productos[0]], reference: "FACT-0034" }),
+      link({ id: "b", url: "https://x/p/LP-ZZZ999", notes: "Cliente mayorista" }),
+      link({ id: "c", url: "https://x/p/LP-CCC111", comercioNombre: "Kiosco Sur" }),
+    ];
+    expect(filtrarLinks(links, "remera").map((l) => l.id)).toEqual(["a"]);
+    expect(filtrarLinks(links, "fact-0034").map((l) => l.id)).toEqual(["a"]);
+    expect(filtrarLinks(links, "mayorista").map((l) => l.id)).toEqual(["b"]);
+    expect(filtrarLinks(links, "zzz999").map((l) => l.id)).toEqual(["b"]);
+    expect(filtrarLinks(links, "kiosco").map((l) => l.id)).toEqual(["c"]);
+    expect(filtrarLinks(links, "  ")).toHaveLength(3);
   });
 
   it("paginacion acotada", () => {

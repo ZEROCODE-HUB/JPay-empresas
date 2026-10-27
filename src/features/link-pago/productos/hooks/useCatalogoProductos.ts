@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Product } from "@/data/links-pago";
 import { useEliminarProducto, useGuardarProducto, useProductos } from "@/hooks/useLinksPago";
-import { toProduct } from "../utils";
+import { filtrarProductos, toProduct } from "../utils";
 
 /** Productos del cliente: listado, selección, alta/edición y baja. */
 export function useCatalogoProductos(legajo: string | undefined) {
@@ -15,6 +15,11 @@ export function useCatalogoProductos(legajo: string | undefined) {
   const [editing, setEditing] = useState<Product | null>(null);
   const [selected, setSelected] = useState<string[]>([]);
   const [confirmarEliminarId, setConfirmarEliminarId] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState("");
+  const productosFiltrados = useMemo(
+    () => filtrarProductos(products, busqueda),
+    [products, busqueda],
+  );
 
   const abrirNuevo = () => {
     setEditing(null);
@@ -64,6 +69,9 @@ export function useCatalogoProductos(legajo: string | undefined) {
 
   return {
     products,
+    productosFiltrados,
+    busqueda,
+    setBusqueda,
     selected,
     setSelected,
     toggleSelected,

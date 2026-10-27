@@ -15,7 +15,7 @@ import {
 const nombreArchivo = (ext: string) =>
   `historial-movimientos-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
-/** Excel de la pagina actual: resumen arriba y una fila por linea. */
+/** Excel de las lineas filtradas: resumen arriba y una fila por linea. */
 export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
   const body = lineas.map((l) => ({
     Legajo: l.legajo,
@@ -44,7 +44,7 @@ export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
   XLSX.writeFile(wb, nombreArchivo("xlsx"));
 }
 
-/** PDF de la pagina actual con el encabezado de marca y el numero de serie. */
+/** PDF de las lineas filtradas con el encabezado de marca y el numero de serie. */
 export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie: string) {
   const doc = new jsPDF();
   doc.setFillColor(...resolveColor("primary"));

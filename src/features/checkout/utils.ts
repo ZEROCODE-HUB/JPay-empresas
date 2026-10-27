@@ -123,14 +123,24 @@ export function totalLink(d: Pick<CheckoutLink, "detalle" | "monto">): number {
   return Number(d.monto ?? 0);
 }
 
-/** Metodo que se preselecciona al resolver el link. */
+/**
+ * Metodo que se preselecciona al resolver el link.
+ *
+ * Se prefiere el de la primera bandera (o el primer metodo guardado), pero
+ * solo si aparece en pantalla: si es desconocido se toma el primer metodo
+ * visible, y si no hay ninguno, nada.
+ */
 export function metodoInicial(
   comercioBanderas: string[],
   metodosPago: string[] | null | undefined,
 ): string {
-  if (comercioBanderas.length > 0) return getMethodIdFromBandera(comercioBanderas[0]);
-  const expanded = expandMethods(metodosPago);
-  return (expanded[0] ?? metodosPago?.[0] ?? "").trim();
+  const preferido =
+    comercioBanderas.length > 0
+      ? getMethodIdFromBandera(comercioBanderas[0])
+      : (expandMethods(metodosPago)[0] ?? metodosPago?.[0] ?? "").trim();
+  const visibles = metodosDisponibles(comercioBanderas, metodosPago);
+  if (visibles.some((m) => m.id === preferido)) return preferido;
+  return visibles[0]?.id ?? "";
 }
 
 /**
@@ -230,9 +240,25 @@ export function parseMonto(montoPagar: string): number {
   return parseFloat(montoPagar.replace(",", "."));
 }
 
-/** true si el monto a pagar es invalido para el total del link. */
+/** true si el monto a pagar es invalido para el total del link (vacio/NaN incluido). */
 export function montoInvalido(mp: number, total: number): boolean {
-  return mp <= 0 || mp > total + 0.001;
+  return !Number.isFinite(mp) || mp <= 0 || mp > total + 0.001;
+}
+
+/**
+ * Error del vencimiento "MM/AA", o null si es valido. El mes tiene que estar
+ * entre 01 y 12 y la tarjeta no puede estar vencida: vale hasta el ultimo dia
+ * del mes impreso, asi que el mes en curso es valido.
+ */
+export function errorVencimiento(venc: string, hoy: Date = new Date()): string | null {
+  const m = /^(\d{2})\/(\d{2})$/.exec(venc);
+  if (!m) return "Vencimiento invalido (MM/AA)";
+  const mes = Number(m[1]);
+  if (mes < 1 || mes > 12) return "Vencimiento invalido (MM/AA)";
+  const anio = 2000 + Number(m[2]);
+  const actual = hoy.getFullYear() * 12 + hoy.getMonth();
+  if (anio * 12 + (mes - 1) < actual) return "La tarjeta esta vencida";
+  return null;
 }
 
 export type DatosPago = {
@@ -249,13 +275,14 @@ export type DatosPago = {
 };
 
 /** Validacion previa a `paymentProcessor.process`. Devuelve el mensaje de error o null. */
-export function validarPago(d: DatosPago): string | null {
+export function validarPago(d: DatosPago, hoy: Date = new Date()): string | null {
   if (!d.method) return "Selecciona un metodo de pago";
   if (isCardMethod(d.method)) {
     if (!d.titular.trim()) return "Ingresa el titular de la tarjeta";
     if (d.nro.replace(/\s/g, "").length !== cardDigitsMax(d.method))
       return "Numero de tarjeta invalido";
-    if (!/^\d{2}\/\d{2}$/.test(d.venc)) return "Vencimiento invalido (MM/AA)";
+    const errVenc = errorVencimiento(d.venc, hoy);
+    if (errVenc) return errVenc;
     if (d.cvv.length !== cvvMax(d.method)) return "CVV invalido";
     // La API de Payway exige la identificacion del titular: sin esto el token
     // no se genera y el error que vuelve no dice que falta este campo.
