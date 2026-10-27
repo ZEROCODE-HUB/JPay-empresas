@@ -2,6 +2,7 @@
   "$comment": "Única fuente de verdad de la marca. Ver BRANDING.md. Después de editar este archivo corré `npm run brand:sync` (también corre solo antes de dev/build). Identidad visual tomada del Manual de identidad y lineamientos gráficos de JPay.",
   "name": "JPay",
   "shortName": "JPay",
+  "previousNames": ["MoliPay", "MoliPlay", "Molly"],
   "tagline": "Plataforma de pagos digitales",
   "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
   "regulatoryNote": "Operamos bajo normativa BCRA.",

@@ -4,6 +4,11 @@
 export const brand = {
   "name": "JPay",
   "shortName": "JPay",
+  "previousNames": [
+    "MoliPay",
+    "MoliPlay",
+    "Molly"
+  ],
   "tagline": "Plataforma de pagos digitales",
   "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
   "regulatoryNote": "Operamos bajo normativa BCRA.",
