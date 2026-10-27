@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:types": "node scripts/gen-types.mjs"
+    "gen:types": "node scripts/gen-types.mjs",
+    "shared:check": "node scripts/shared-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
