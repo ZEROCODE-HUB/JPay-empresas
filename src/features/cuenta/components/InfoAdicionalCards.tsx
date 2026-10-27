@@ -83,12 +83,7 @@ export function InfoEmpresaCard({ c }: { c: CuentaPantalla }) {
             <option>{c.form.tipo_sociedad ?? empresaInfo.tipoId}</option>
           </select>
         </div>
-        <Campo
-          c={c}
-          label="Actividad principal"
-          campo="actividad"
-          fallback="Servicios financieros"
-        />
+        <Campo c={c} label="Actividad principal" campo="actividad" fallback="" />
         <Campo
           c={c}
           label="Fecha de inscripcion"

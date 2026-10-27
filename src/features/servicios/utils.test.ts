@@ -1,9 +1,12 @@
 import { Globe, Zap } from "lucide-react";
 import { describe, expect, it } from "vitest";
-import type { Item, TxHist } from "./types";
+import type { Item, Remesa, TxHist } from "./types";
 import {
+  buscarServicios,
   CATEGORIAS,
   daysUntil,
+  kpisRemesas,
+  textoVencimiento,
   filtrarHistorial,
   nuevoServicio,
   ordenarPorVencimiento,
@@ -74,8 +77,9 @@ describe("totalAPagar", () => {
     ).toBe(350);
   });
 
-  it("conserva el comportamiento actual: la coma decimal se descarta", () => {
-    expect(totalAPagar([item("a", "$ 1.234,56", "-")])).toBe(123456);
+  it("suma con decimales (punto de miles, coma decimal)", () => {
+    expect(totalAPagar([item("a", "$ 1.234,56", "-"), item("b", "$ 0,44", "-")])).toBe(1235);
+    expect(totalAPagar([item("a", "$ 10,25", "-"), item("b", "$ 0,10", "-")])).toBe(10.35);
   });
 });
 
@@ -93,6 +97,16 @@ describe("filtrarHistorial", () => {
   it("por categoría y estado", () => {
     expect(filtrarHistorial(h, { ...base, cat: "Impuestos" }).map((t) => t.s)).toEqual(["AFIP"]);
     expect(filtrarHistorial(h, { ...base, status: "Pagado" }).map((t) => t.s)).toEqual(["Luz"]);
+  });
+
+  it("desde en aaaa-mm-dd (lo que entrega el input date)", () => {
+    expect(filtrarHistorial(h, { ...base, desde: "2026-10-10" }).map((t) => t.s)).toEqual(["AFIP"]);
+    expect(filtrarHistorial(h, { ...base, desde: "2026-10-01" })).toHaveLength(2);
+  });
+
+  it("busca por servicio o categoría", () => {
+    expect(filtrarHistorial(h, { ...base, q: "luz" }).map((t) => t.s)).toEqual(["Luz"]);
+    expect(filtrarHistorial(h, { ...base, q: "impuest" }).map((t) => t.s)).toEqual(["AFIP"]);
   });
 
   it("desde en dd/mm/aaaa", () => {
@@ -126,5 +140,69 @@ describe("varios", () => {
     const xs = [1, 2, 3, 4, 5, 6, 7];
     expect(preview(xs, false)).toEqual([1, 2, 3, 4, 5]);
     expect(preview(xs, true)).toBe(xs);
+  });
+});
+
+describe("textoVencimiento", () => {
+  const hoy = new Date(2026, 9, 27, 10);
+  it("sin fecha de vencimiento muestra 'Sin vencimiento' (no NaN)", () => {
+    expect(textoVencimiento("-", hoy)).toEqual({ texto: "Sin vencimiento", vencido: false });
+    expect(textoVencimiento("", hoy).texto).toBe("Sin vencimiento");
+  });
+  it("con fecha muestra días restantes o vencidos", () => {
+    expect(textoVencimiento("30/10/2026", hoy)).toEqual({
+      texto: "Vence en 3 dias",
+      vencido: false,
+    });
+    expect(textoVencimiento("25/10/2026", hoy)).toEqual({
+      texto: "Vencido hace 2 dias",
+      vencido: true,
+    });
+  });
+  it("un servicio sin vencimiento queda al final al ordenar", () => {
+    const sinVenc = item("Nuevo", "$ 0", "-");
+    const conVenc = item("Luz", "$ 1", "05/11/2026");
+    expect(ordenarPorVencimiento([sinVenc, conVenc]).map((s) => s.n)).toEqual(["Luz", "Nuevo"]);
+  });
+});
+
+describe("buscarServicios", () => {
+  const lista = [
+    item("Edenor", "$ 1", "-", { cat: "Servicios publicos", c: "Cliente 123" }),
+    item("Fibertel", "$ 1", "-", { cat: "Telefonia e internet", c: "Cliente 999" }),
+  ];
+  it("filtra por nombre, número de cliente o categoría", () => {
+    expect(buscarServicios(lista, "eden").map((s) => s.n)).toEqual(["Edenor"]);
+    expect(buscarServicios(lista, "999").map((s) => s.n)).toEqual(["Fibertel"]);
+    expect(buscarServicios(lista, "TELEFONIA").map((s) => s.n)).toEqual(["Fibertel"]);
+    expect(buscarServicios(lista, "  ")).toHaveLength(2);
+  });
+});
+
+describe("kpisRemesas", () => {
+  const hoy = new Date(2026, 9, 27);
+  it("sin datos todo en 0", () => {
+    expect(kpisRemesas([], hoy)).toEqual({ enviadasMes: 0, montoMes: 0, paises: 0, enProceso: 0 });
+  });
+  it("calcula del mes actual, países distintos y en proceso", () => {
+    const r = (f: string, pais: string, mARS: string, e: Remesa["e"]): Remesa => ({
+      f,
+      pais,
+      banco: "B",
+      mARS,
+      mDest: "-",
+      tc: "-",
+      e,
+    });
+    expect(
+      kpisRemesas(
+        [
+          r("02/10/2026", "Colombia", "$ 1.000,50", "Completado"),
+          r("20/10/2026", "Mexico", "$ 500", "En proceso"),
+          r("15/09/2026", "Colombia", "$ 9.999", "En proceso"),
+        ],
+        hoy,
+      ),
+    ).toEqual({ enviadasMes: 2, montoMes: 1500.5, paises: 2, enProceso: 2 });
   });
 });

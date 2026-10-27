@@ -31,5 +31,3 @@ export type ClienteForm = {
 };
 
 export type CampoTexto = Exclude<keyof ClienteForm, "es_pep">;
-
-export type Plan = { nombre: string; precio: string; ops: string; used: number; total: number };

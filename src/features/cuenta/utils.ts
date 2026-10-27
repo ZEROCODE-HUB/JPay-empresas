@@ -100,13 +100,13 @@ export function antiguedad(base: Date | null, now: Date = new Date()): string {
     : `${years} año${years > 1 ? "s" : ""}`;
 }
 
-/** Score de seguridad (0-100) de la ficha; 86 si todavía no hay cliente. */
+/** Score de seguridad (0-100) de la ficha; null si todavía no hay cliente. */
 export function scoreSeguridad(
   cliente: Pick<Cliente, "direccion" | "telefono"> | null,
   aprobado: boolean,
   cantDocs: number,
-): number {
-  if (!cliente) return 86;
+): number | null {
+  if (!cliente) return null;
   let s = 55;
   if (aprobado) s += 20;
   if (cliente.direccion) s += 8;

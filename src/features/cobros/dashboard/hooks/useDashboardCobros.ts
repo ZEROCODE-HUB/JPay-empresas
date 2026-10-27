@@ -15,6 +15,7 @@ import {
   type PeriodFilter,
   type VencimientoData,
 } from "@/lib/api/cobros-masivos";
+import { finDiaLocal, inicioDiaLocal } from "../../utils";
 
 const KPI_VACIO: DashboardKPI = {
   totalLotes: 0,
@@ -78,13 +79,17 @@ export function useDashboardCobros() {
   const cambiarDesde = (v: string) => {
     setCustomDesde(v);
     if (v && customHasta) {
-      setFilter(periodFilter("Personalizado", undefined, new Date(v), new Date(customHasta)));
+      setFilter(
+        periodFilter("Personalizado", undefined, inicioDiaLocal(v), finDiaLocal(customHasta)),
+      );
     }
   };
   const cambiarHasta = (v: string) => {
     setCustomHasta(v);
     if (customDesde && v) {
-      setFilter(periodFilter("Personalizado", undefined, new Date(customDesde), new Date(v)));
+      setFilter(
+        periodFilter("Personalizado", undefined, inicioDiaLocal(customDesde), finDiaLocal(v)),
+      );
     }
   };
 

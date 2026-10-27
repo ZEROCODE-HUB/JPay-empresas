@@ -1,5 +1,4 @@
-import { Lock, Pause, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { Lock, Pause, Pencil, Play } from "lucide-react";
 import { Badge, Input } from "@/components/portal-shell";
 import type { useDetalleSubcuenta } from "../hooks/useDetalleSubcuenta";
 import type { EstadoSub, Sub } from "../types";
@@ -11,9 +10,10 @@ type Props = {
   sub: Sub;
   d: ReturnType<typeof useDetalleSubcuenta>;
   onCambiarEstado: (id: string, estado: EstadoSub) => void;
+  onGuardarEmail: (id: string, email: string) => Promise<boolean>;
 };
 
-export function DetalleInfoGeneral({ sub, d, onCambiarEstado }: Props) {
+export function DetalleInfoGeneral({ sub, d, onCambiarEstado, onGuardarEmail }: Props) {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
@@ -35,22 +35,7 @@ export function DetalleInfoGeneral({ sub, d, onCambiarEstado }: Props) {
             className="h-7 w-7 inline-flex items-center justify-center rounded-md border bg-card hover:bg-muted transition text-muted-foreground hover:text-foreground"
             title={sub.e === "Activa" ? "Deshabilitar cuenta" : "Reactivar cuenta"}
           >
-            <Pause size={13} />
-          </button>
-          <button
-            onClick={() => {
-              if (
-                confirmAction(
-                  "eliminar esta subcuenta",
-                  "Esta accion es irreversible. Todos los fondos seran transferidos a la cuenta madre.",
-                )
-              )
-                toast.success("Subcuenta eliminada (demo)");
-            }}
-            className="h-7 w-7 inline-flex items-center justify-center rounded-md border bg-card hover:bg-danger-50 hover:text-danger-600 transition text-muted-foreground"
-            title="Eliminar subcuenta"
-          >
-            <Trash2 size={13} />
+            {sub.e === "Activa" ? <Pause size={13} /> : <Play size={13} />}
           </button>
         </div>
       </div>
@@ -73,8 +58,13 @@ export function DetalleInfoGeneral({ sub, d, onCambiarEstado }: Props) {
                     className="h-8 text-sm flex-1 min-w-0"
                   />
                   <button
-                    onClick={() => {
-                      d.setEditEmail(false);
+                    onClick={async () => {
+                      const email = d.emailVal.trim();
+                      if (!sub.id || email === sub.email) {
+                        d.setEditEmail(false);
+                        return;
+                      }
+                      if (await onGuardarEmail(sub.id, email)) d.setEditEmail(false);
                     }}
                     className="h-8 px-2 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 rounded border"
                   >

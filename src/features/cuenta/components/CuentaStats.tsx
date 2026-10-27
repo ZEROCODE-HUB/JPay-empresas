@@ -16,7 +16,7 @@ export function CuentaStats({ c }: { c: CuentaPantalla }) {
     {
       icon: TrendingUp,
       label: "Score de seguridad",
-      value: `${c.score} / 100`,
+      value: c.score === null ? "—" : `${c.score} / 100`,
       sub: "Recomendado: 80+",
     },
   ];

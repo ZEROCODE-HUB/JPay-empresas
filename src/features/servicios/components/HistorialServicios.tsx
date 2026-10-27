@@ -30,7 +30,12 @@ export function HistorialServicios({
               size={12}
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
-            <Input placeholder="Buscar servicio..." className="h-8 pl-7 text-xs max-w-[160px]" />
+            <Input
+              placeholder="Buscar servicio..."
+              className="h-8 pl-7 text-xs max-w-[160px]"
+              value={filtros.hBusqueda}
+              onChange={(e) => filtros.setHBusqueda(e.target.value)}
+            />
           </div>
           <select
             className="h-8 px-2 rounded border bg-card text-xs"

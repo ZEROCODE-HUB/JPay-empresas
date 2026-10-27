@@ -1,14 +1,4 @@
-import {
-  ArrowLeftRight,
-  Copy,
-  Eye,
-  History,
-  Pause,
-  Pencil,
-  Play,
-  SlidersHorizontal,
-  Trash2,
-} from "lucide-react";
+import { ArrowLeftRight, Copy, Eye, History, Pause, Pencil, Play, Trash2 } from "lucide-react";
 import { Badge } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { ESTADO_SUB_TONE, TIPO_LABEL } from "../estados";
@@ -103,11 +93,6 @@ export function SubcuentaFila({ s, menuAbierto, onToggleMenu, onCerrarMenu, ...a
               icon: <History size={14} />,
               label: "Ver historial",
               onClick: () => acc.onVerHistorial(s),
-            },
-            {
-              icon: <SlidersHorizontal size={14} />,
-              label: "Configurar límites y responsable",
-              onClick: () => acc.onEditar(s),
             },
             { icon: <Pencil size={14} />, label: "Editar datos", onClick: () => acc.onEditar(s) },
             {

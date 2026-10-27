@@ -2,7 +2,7 @@ import { Calendar, Clock } from "lucide-react";
 import { Badge, BtnPrimary, Card } from "@/components/portal-shell";
 import { tonoProximoPago } from "../estados";
 import type { Item } from "../types";
-import { daysUntil, preview } from "../utils";
+import { preview, textoVencimiento } from "../utils";
 import { VerTodos } from "./comunes";
 
 export function ProximosPagos({
@@ -25,8 +25,7 @@ export function ProximosPagos({
       <div className="divide-y">
         {preview(prox, all).map((s) => {
           const Icon = s.icon;
-          const dd = daysUntil(s.venc);
-          const isVencido = dd < 0;
+          const { texto, vencido: isVencido } = textoVencimiento(s.venc);
           return (
             <div key={s.n + s.c} className="flex items-center justify-between gap-3 py-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -45,7 +44,7 @@ export function ProximosPagos({
                   <div className="text-sm font-semibold">{s.v}</div>
                   <div className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
                     <Clock size={10} />
-                    {isVencido ? `Vencido hace ${Math.abs(dd)} dias` : `Vence en ${dd} dias`}
+                    {texto}
                   </div>
                 </div>
                 <Badge tone={tonoProximoPago(isVencido, s.e)}>{isVencido ? "Vencido" : s.e}</Badge>

@@ -62,6 +62,8 @@ function Page() {
           {p.sectionTab === "suscritos" && (
             <ServiciosSuscritos
               suscritos={p.suscritos}
+              busqueda={p.busqueda}
+              onBusqueda={p.setBusqueda}
               sort={p.sort}
               onSort={p.setSort}
               catFilt={p.catFilt}

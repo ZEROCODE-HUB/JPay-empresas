@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { calcularRango, etiquetaPeriodo, type PeriodKey } from "../utils";
+import { calcularRango, etiquetaPeriodo, toKey, type PeriodKey } from "../utils";
 
 /** Período elegido en el dashboard (atajo, día específico o rango) y su rango de fechas. */
 export function usePeriodoDashboard() {
   const [period, setPeriod] = useState<PeriodKey>("30d");
-  const [day, setDay] = useState(() => new Date().toISOString().slice(0, 10));
+  const [day, setDay] = useState(() => toKey(new Date()));
   const [desde, setDesde] = useState("");
   const [hasta, setHasta] = useState("");
 

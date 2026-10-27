@@ -87,6 +87,7 @@ function Page() {
           sub={detailSub}
           onClose={() => acciones.setDetailSub(null)}
           onCambiarEstado={acciones.cambiarEstado}
+          onGuardarEmail={acciones.guardarEmail}
           onFondear={() => abrirFondeo(detailSub)}
           onVerHistorial={() => verHistorial(detailSub)}
         />

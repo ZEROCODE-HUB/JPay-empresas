@@ -53,7 +53,7 @@ describe("antiguedad", () => {
 
 describe("scoreSeguridad", () => {
   it("86 sin cliente; suma por aprobado, dirección, teléfono y docs (tope 100)", () => {
-    expect(scoreSeguridad(null, false, 0)).toBe(86);
+    expect(scoreSeguridad(null, false, 0)).toBeNull();
     expect(scoreSeguridad({ direccion: null, telefono: null }, false, 0)).toBe(55);
     expect(scoreSeguridad({ direccion: "x", telefono: "y" }, true, 1)).toBe(93);
     expect(scoreSeguridad({ direccion: "x", telefono: "y" }, true, 10)).toBe(100);

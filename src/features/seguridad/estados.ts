@@ -2,7 +2,6 @@
 
 export type Tono = "neutral" | "success" | "warn" | "danger";
 
-export type Sesion = { d: string; l: string; ip: string; f: string; curr: boolean };
 export type Miembro = { n: string; e: string; r: string; a: string };
 
 export const LOG_ACTIVIDAD = [
@@ -17,24 +16,6 @@ export const EQUIPO_INICIAL: Miembro[] = [
   { n: "Carla Rivas", e: "carla@empresademo.com", r: "Owner", a: "Activa" },
   { n: "Diego Mendez", e: "diego@empresademo.com", r: "Operador", a: "Activa" },
   { n: "Sofia Lopez", e: "sofia@empresademo.com", r: "Solo lectura", a: "Pendiente" },
-];
-
-export const SESIONES_INICIALES: Sesion[] = [
-  {
-    d: "Chrome · MacBook Pro",
-    l: "Buenos Aires, AR",
-    ip: "190.12.44.21",
-    f: "Activa ahora",
-    curr: true,
-  },
-  {
-    d: "Safari · iPhone 14",
-    l: "Buenos Aires, AR",
-    ip: "190.12.44.21",
-    f: "Hace 2 horas",
-    curr: false,
-  },
-  { d: "Firefox · Windows", l: "Cordoba, AR", ip: "200.40.18.92", f: "Hace 3 dias", curr: false },
 ];
 
 export const OPCIONES_TIEMPO_SESION = ["Nunca", "30 minutos", "1 hora", "6 horas", "1 dia"];

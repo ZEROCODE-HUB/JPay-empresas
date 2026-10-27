@@ -111,7 +111,7 @@ export function useDetalleLoteModal(
   };
 
   const exportar = () => {
-    if (lote) exportarRegistrosExcel(registros, `cobros-lote-${lote.id}.xlsx`, false);
+    if (lote) exportarRegistrosExcel(registros, `cobros-lote-${lote.id}.xlsx`);
   };
 
   return {

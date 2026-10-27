@@ -103,13 +103,19 @@ export function useDetalleLote(id: string) {
     if (result.ok) {
       toast.success("Lote eliminado");
       navigate({ to: "/app/cobros/gestion" });
+    } else {
+      toast.error(result.error ?? "No se pudo eliminar el lote");
     }
   };
 
-  const copiarLink = (url: string) => {
+  const copiarLink = async (url: string) => {
     // Resoluble real usando @/lib/pay-url (VITE_APP_URL > window.location.origin).
-    navigator.clipboard.writeText(linkParaCopiar(url));
-    toast.success("Link copiado al portapapeles");
+    try {
+      await navigator.clipboard.writeText(linkParaCopiar(url));
+      toast.success("Link copiado al portapapeles");
+    } catch {
+      toast.error("No se pudo copiar. Seleccioná el link y copialo manualmente.");
+    }
   };
 
   const exportar = () => {
@@ -117,7 +123,6 @@ export function useDetalleLote(id: string) {
     exportarRegistrosExcel(
       registros,
       `cobros-lote-${lote.id}-${lote.nombre.replace(/\s/g, "-")}.xlsx`,
-      true,
     );
   };
 

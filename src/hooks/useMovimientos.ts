@@ -1,7 +1,8 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import {
   getDashboard,
   getHistorial,
+  getHistorialExportacion,
   type FiltrosHistorial,
   type MovimientoDashboard,
 } from "@/lib/api/movimientos";
@@ -44,4 +45,12 @@ export function useHistorial(filtros: FiltrosHistorial) {
     isError: query.isError,
     errorUpdatedAt: query.errorUpdatedAt,
   };
+}
+
+/** Todas las líneas filtradas (sin paginar, con tope) para exportar a Excel/PDF. */
+export function useExportacionHistorial() {
+  return useMutation({
+    mutationFn: (filtros: Omit<FiltrosHistorial, "page" | "pageSize">) =>
+      getHistorialExportacion(filtros),
+  });
 }

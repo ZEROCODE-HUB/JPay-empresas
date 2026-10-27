@@ -8,6 +8,7 @@ import {
   fmtLimite,
   generarCvu,
   mapMovimientos,
+  parseMontoAr,
   pctSaldo,
   rangoPagina,
   totalesMovs,
@@ -129,5 +130,28 @@ describe("movimientos", () => {
   });
   it("totaliza depósitos y retiros", () => {
     expect(totalesMovs(moves)).toEqual({ depositos: 100, retiros: 40 });
+  });
+});
+
+describe("parseMontoAr", () => {
+  it("acepta coma decimal y punto de miles (es-AR)", () => {
+    expect(parseMontoAr("1,5")).toBe(1.5);
+    expect(parseMontoAr("1.234,56")).toBe(1234.56);
+    expect(parseMontoAr("1.500")).toBe(1500);
+    expect(parseMontoAr("1.234.567")).toBe(1234567);
+    expect(parseMontoAr(" $ 2.000,00 ")).toBe(2000);
+  });
+  it("sin coma, un punto que no separa miles es decimal", () => {
+    expect(parseMontoAr("1500")).toBe(1500);
+    expect(parseMontoAr("1500.5")).toBe(1500.5);
+  });
+  it("NaN para texto vacío o inválido", () => {
+    expect(parseMontoAr("")).toBeNaN();
+    expect(parseMontoAr("abc")).toBeNaN();
+    expect(parseMontoAr("1,2,3")).toBeNaN();
+    expect(parseMontoAr("12.34,5")).toBeNaN();
+  });
+  it("fmtLimite usa el mismo parseo", () => {
+    expect(fmtLimite("1.500")).toBe(fmtLimite("1500"));
   });
 });

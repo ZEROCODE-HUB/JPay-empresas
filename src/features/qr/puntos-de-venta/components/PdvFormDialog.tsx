@@ -37,21 +37,29 @@ export function PdvFormDialog({
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
           />
         </div>
-        <div>
-          <Label>Estado</Label>
-          <select
-            className="w-full h-10 px-3 rounded-md border bg-card text-sm"
-            value={form.estado}
-            onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value as EstadoPdv }))}
-          >
-            <option value="Activado">Activado</option>
-            <option value="Desactivado">Desactivado</option>
-            {/* Lo aprueba el admin: se muestra pero no se puede elegir. */}
-            <option value="Pendiente de aprobación" disabled>
-              Pendiente de aprobación
-            </option>
-          </select>
-        </div>
+        {!editing && (
+          <p className="sm:col-span-2 text-xs text-muted-foreground">
+            El punto de venta se crea en estado <strong>Pendiente de aprobación</strong>. El
+            administrador lo aprueba y lo activa.
+          </p>
+        )}
+        {editing && (
+          <div>
+            <Label>Estado</Label>
+            <select
+              className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+              value={form.estado}
+              onChange={(e) => setForm((f) => ({ ...f, estado: e.target.value as EstadoPdv }))}
+            >
+              <option value="Activado">Activado</option>
+              <option value="Desactivado">Desactivado</option>
+              {/* Lo aprueba el admin: se muestra pero no se puede elegir. */}
+              <option value="Pendiente de aprobación" disabled>
+                Pendiente de aprobación
+              </option>
+            </select>
+          </div>
+        )}
       </div>
     </FormDialog>
   );

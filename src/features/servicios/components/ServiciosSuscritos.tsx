@@ -2,11 +2,13 @@ import { Clock, Search } from "lucide-react";
 import { Badge, BtnOutline, BtnPrimary, Card, Input } from "@/components/portal-shell";
 import { ESTADO_SERVICIO_TONE } from "../estados";
 import type { Item } from "../types";
-import { cats, preview } from "../utils";
+import { cats, parseDate, preview } from "../utils";
 import { VerTodos } from "./comunes";
 
 export function ServiciosSuscritos({
   suscritos,
+  busqueda,
+  onBusqueda,
   sort,
   onSort,
   catFilt,
@@ -17,6 +19,8 @@ export function ServiciosSuscritos({
   onPagar,
 }: {
   suscritos: Item[];
+  busqueda: string;
+  onBusqueda: (q: string) => void;
   sort: string;
   onSort: (s: string) => void;
   catFilt: string;
@@ -37,7 +41,12 @@ export function ServiciosSuscritos({
             size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
-          <Input placeholder="Buscar servicio o numero de cuenta..." className="pl-9" />
+          <Input
+            placeholder="Buscar servicio o numero de cuenta..."
+            className="pl-9"
+            value={busqueda}
+            onChange={(e) => onBusqueda(e.target.value)}
+          />
         </div>
         <select
           className="h-10 px-3 rounded-md border bg-card text-sm"
@@ -80,7 +89,8 @@ export function ServiciosSuscritos({
                 <div className="text-right hidden sm:block">
                   <div className="text-sm font-semibold">{s.v}</div>
                   <div className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
-                    <Clock size={10} /> Vence {s.venc}
+                    <Clock size={10} />{" "}
+                    {isNaN(parseDate(s.venc).getTime()) ? "Sin vencimiento" : `Vence ${s.venc}`}
                   </div>
                 </div>
                 <Badge tone={ESTADO_SERVICIO_TONE[s.e]}>{s.e}</Badge>

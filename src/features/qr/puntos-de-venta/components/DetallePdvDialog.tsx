@@ -29,6 +29,8 @@ export function DetallePdvDialog({
     if (qrDataUrl) {
       const w = window.open();
       if (w) {
+        // Sin noopener porque hay que escribir en la ventana: se corta el acceso a esta.
+        w.opener = null;
         w.document.write(`<img src="${qrDataUrl}" onload="window.print()" />`);
       }
     }

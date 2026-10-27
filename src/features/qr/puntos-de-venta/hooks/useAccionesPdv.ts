@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { useEliminarPuntoVenta, useGuardarPuntoVenta } from "@/hooks/useQr";
 import type { EstadoPdv, PuntoVenta } from "@/lib/api/qr";
 import { buildQrPdvUrl } from "@/lib/pay-url";
+import { ESTADO_ALTA_PDV, estadoAGuardar } from "../estados";
 
 export type FormPdv = { nombre: string; estado: EstadoPdv };
 
@@ -13,8 +14,8 @@ export function useAccionesPdv(comercioId: string | null) {
   const eliminarPdv = useEliminarPuntoVenta();
 
   const [crearOpen, setCrearOpen] = useState(false);
-  // Solo visual: el alta real queda en "Pendiente de aprobación".
-  const [form, setForm] = useState<FormPdv>({ nombre: "", estado: "Activado" });
+  // El alta siempre queda en "Pendiente de aprobación"; el estado solo se edita después.
+  const [form, setForm] = useState<FormPdv>({ nombre: "", estado: ESTADO_ALTA_PDV });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [detalleOpen, setDetalleOpen] = useState(false);
   const [detallePd, setDetallePd] = useState<PuntoVenta | null>(null);
@@ -23,7 +24,7 @@ export function useAccionesPdv(comercioId: string | null) {
   const [eliminarId, setEliminarId] = useState<string | null>(null);
 
   const openCrear = () => {
-    setForm({ nombre: "", estado: "Activado" });
+    setForm({ nombre: "", estado: ESTADO_ALTA_PDV });
     setEditingId(null);
     setCrearOpen(true);
   };
@@ -48,7 +49,7 @@ export function useAccionesPdv(comercioId: string | null) {
         editingId,
         comercioId,
         nombre: form.nombre.trim(),
-        estado: form.estado,
+        estado: estadoAGuardar(editingId, form.estado),
       });
       if (editingId) toast.success("Punto de venta actualizado");
       else toast.success("Punto de venta creado (Pendiente de aprobación — Payway lo activará)");

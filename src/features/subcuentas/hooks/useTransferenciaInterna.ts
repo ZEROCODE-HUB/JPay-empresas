@@ -4,7 +4,7 @@ import { isPermissionError, toDataError } from "@/lib/supabase";
 import { transferirEntreSubcuentas } from "@/lib/api/subcuentas";
 import { formatMoney } from "@/shared/format";
 import type { Sub } from "../types";
-import { esPool } from "../utils";
+import { esPool, parseMontoAr } from "../utils";
 
 /** Diálogo "Transferir entre subcuentas" (movimiento interno). */
 export function useTransferenciaInterna(subs: Sub[], recargar: () => Promise<void>) {
@@ -36,7 +36,7 @@ export function useTransferenciaInterna(subs: Sub[], recargar: () => Promise<voi
     if (loading) return;
     const origen = subs.find((x) => x.id === desde);
     const destino = subs.find((x) => x.id === hacia);
-    const importe = Number(monto || 0);
+    const importe = parseMontoAr(monto);
     if (!origen?.id || !destino?.id) {
       toast.error("Selecciona las subcuentas de origen y destino");
       return;
@@ -45,7 +45,7 @@ export function useTransferenciaInterna(subs: Sub[], recargar: () => Promise<voi
       toast.error("Las subcuentas deben ser distintas");
       return;
     }
-    if (!importe || importe <= 0) {
+    if (!Number.isFinite(importe) || importe <= 0) {
       toast.error("Ingresa un monto válido");
       return;
     }

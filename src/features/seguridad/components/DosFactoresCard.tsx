@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
-import { Mail, QrCode, Smartphone } from "lucide-react";
-import { toast } from "sonner";
-import { brand } from "@/brand/brand";
-import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
+import { QrCode, Smartphone } from "lucide-react";
+import { Badge, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import type { MetodoDosFactores, useDosFactores } from "../hooks/useDosFactores";
 
 function OpcionMetodo({
@@ -38,7 +36,7 @@ function OpcionMetodo({
   );
 }
 
-/** Bloque QR + clave + código; `qr` y `children` cambian entre la demo y el alta real. */
+/** Bloque QR + clave + código del alta de un factor TOTP. */
 function BloqueQr({ qr, clave, children }: { qr: ReactNode; clave: string; children: ReactNode }) {
   return (
     <div className="mt-4 border rounded-lg p-4 bg-muted/40">
@@ -70,7 +68,9 @@ export function DosFactoresCard({ f }: { f: ReturnType<typeof useDosFactores> })
           <Smartphone size={16} className="shrink-0" />{" "}
           <span className="truncate">Doble factor (2FA)</span>
         </h3>
-        <Badge tone="success">Activo</Badge>
+        {f.activo !== null && (
+          <Badge tone={f.activo ? "success" : "neutral"}>{f.activo ? "Activo" : "Inactivo"}</Badge>
+        )}
       </div>
       <p className="text-sm text-muted-foreground">
         Elegi el metodo de verificacion en dos pasos que preferis usar al iniciar sesion desde un
@@ -78,13 +78,6 @@ export function DosFactoresCard({ f }: { f: ReturnType<typeof useDosFactores> })
       </p>
 
       <div className="grid sm:grid-cols-2 gap-2 mt-4">
-        <OpcionMetodo
-          activo={f.metodo === "email"}
-          onClick={elegir("email")}
-          icon={<Mail size={16} className="text-primary-ink shrink-0" />}
-          titulo="Codigo por email"
-          descripcion="Enviamos un codigo de 8 digitos a tu correo corporativo."
-        />
         <OpcionMetodo
           activo={f.metodo === "totp"}
           onClick={elegir("totp")}
@@ -94,25 +87,10 @@ export function DosFactoresCard({ f }: { f: ReturnType<typeof useDosFactores> })
         />
       </div>
 
-      {f.metodo === "totp" && (
-        <BloqueQr
-          qr={<QrCode size={96} strokeWidth={1} className="text-foreground" />}
-          clave={`JBSWY3DPEHPK3PXP-${brand.name.toUpperCase()}-EMPRESA-DEMO`}
-        >
-          <div className="mt-3">
-            <Label>Codigo de verificacion</Label>
-            <Input placeholder="123 456" inputMode="numeric" maxLength={6} />
-          </div>
-        </BloqueQr>
-      )}
-
       <div className="flex gap-2 mt-4">
         <BtnPrimary className="flex-1" onClick={f.guardar}>
           Guardar metodo 2FA
         </BtnPrimary>
-        <BtnOutline onClick={() => toast.success("Codigos de respaldo enviados a tu correo")}>
-          Codigos de respaldo
-        </BtnOutline>
       </div>
 
       {f.enroll && (

@@ -8,6 +8,8 @@ import {
   resumenRegistros,
   totalPaginas,
   validarParametros,
+  finDiaLocal,
+  inicioDiaLocal,
   type ParametrosLote,
 } from "./utils";
 
@@ -143,7 +145,30 @@ describe("validarParametros", () => {
     expect(validarParametros({ ...ok, ...over }, manana)).toBe(msg);
   });
 
-  it("acepta 3er vencimiento sin 2do (comportamiento actual)", () => {
-    expect(validarParametros({ ...ok, fechaVenc3: "2026-04-01" }, manana)).toBeNull();
+  it("rechaza 3er vencimiento sin 2do", () => {
+    expect(validarParametros({ ...ok, fechaVenc3: "2026-05-01" }, manana)).toBe(
+      "Para cargar el 3º vencimiento primero carga el 2º vencimiento",
+    );
+  });
+});
+
+describe("rango personalizado del dashboard", () => {
+  it("el Hasta incluye todo el día local y el Desde arranca a las 00:00 locales", () => {
+    const desde = inicioDiaLocal("2026-10-01");
+    const hasta = finDiaLocal("2026-10-27");
+    expect([desde.getFullYear(), desde.getMonth(), desde.getDate(), desde.getHours()]).toEqual([
+      2026, 9, 1, 0,
+    ]);
+    expect([
+      hasta.getFullYear(),
+      hasta.getMonth(),
+      hasta.getDate(),
+      hasta.getHours(),
+      hasta.getMinutes(),
+      hasta.getSeconds(),
+      hasta.getMilliseconds(),
+    ]).toEqual([2026, 9, 27, 23, 59, 59, 999]);
+    // Un lote creado a la noche del último día entra en el rango.
+    expect(new Date(2026, 9, 27, 22, 0).getTime()).toBeLessThanOrEqual(hasta.getTime());
   });
 });

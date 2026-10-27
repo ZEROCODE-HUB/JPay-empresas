@@ -7,6 +7,7 @@ import {
   eachDay,
   etiquetaPeriodo,
   fmtKey,
+  toKey,
 } from "./utils";
 
 const mov = (tipo: string, monto: number, fecha: string) =>
@@ -66,8 +67,11 @@ describe("agregados", () => {
       opsRet: 1,
       cuentas: 3,
       cobrosLink: 20,
+      opsLink: 1,
       cobrosQR: 30,
+      opsQR: 1,
       pagosQR: 5,
+      opsPagoQR: 1,
     });
   });
 
@@ -77,5 +81,32 @@ describe("agregados", () => {
     const total = filas.reduce((a, f) => a + f.total, 0);
     expect(total).toBe(200);
     expect(filas.every((f) => f.total === f.depositos + f.cobrosQR + f.linkPago)).toBe(true);
+  });
+});
+
+describe("agrupación por fecha local", () => {
+  it("toKey usa la fecha local, no la UTC", () => {
+    expect(toKey(new Date(2026, 4, 1, 23, 30))).toBe("2026-05-01");
+    expect(toKey(new Date(2026, 0, 1, 0, 5))).toBe("2026-01-01");
+  });
+  it("un movimiento a las 23:30 locales cae en ese día aunque en UTC sea otro", () => {
+    const local = new Date(2026, 4, 1, 23, 30);
+    const filas = agruparPorDia(
+      [mov("deposito", 10, local.toISOString())],
+      new Date(2026, 4, 1),
+      new Date(2026, 4, 2, 23, 59),
+    );
+    expect(filas[0].depositos).toBe(10);
+    expect(filas[1].depositos).toBe(0);
+  });
+  it("cuenta las transacciones reales por tipo", () => {
+    const k = calcularKpis(
+      [mov("tarjeta", 85000, "2026-05-01"), mov("tarjeta", 1, "2026-05-01")],
+      0,
+      1,
+    );
+    expect(k.cobrosLink).toBe(85001);
+    expect(k.opsLink).toBe(2);
+    expect(k.opsQR).toBe(0);
   });
 });

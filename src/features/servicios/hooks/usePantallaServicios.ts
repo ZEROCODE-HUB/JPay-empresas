@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { historial, servicios } from "../data";
 import type { Item, SectionTab, Tab } from "../types";
 import {
+  buscarServicios,
   daysUntil,
   filtrarHistorial,
   nuevoServicio,
@@ -22,6 +23,8 @@ export function usePantallaServicios() {
   const [hCat, setHCat] = useState("Todas");
   const [hStatus, setHStatus] = useState("Todos");
   const [hDesde, setHDesde] = useState("");
+  const [hBusqueda, setHBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState("");
   const [sectionTab, setSectionTab] = useState<SectionTab>("proximos");
   // "Ver todos" de cada sección; vive acá para que no se pierda al cambiar de sección.
   const [verTodos, setVerTodos] = useState<Record<SectionTab, boolean>>({
@@ -53,14 +56,22 @@ export function usePantallaServicios() {
   const filtrados = catFilt === "Todos" ? sorted : sorted.filter((s) => s.cat === catFilt);
   const prox = ordenarPorVencimiento(filtrados);
 
-  const suscritos = filtrados.filter((s) => s.suscrito);
+  const suscritos = buscarServicios(
+    filtrados.filter((s) => s.suscrito),
+    busqueda,
+  );
   const disponibles = todos.filter((s) => !s.suscrito);
 
   const totalAdheridos = todos.filter((s) => s.suscrito).length;
   const totalPagarMes = totalAPagar(prox);
   const totalVencidos = prox.filter((s) => daysUntil(s.venc) < 0).length;
 
-  const hFiltrados = filtrarHistorial(historial, { cat: hCat, status: hStatus, desde: hDesde });
+  const hFiltrados = filtrarHistorial(historial, {
+    cat: hCat,
+    status: hStatus,
+    desde: hDesde,
+    q: hBusqueda,
+  });
 
   return {
     tab,
@@ -81,7 +92,18 @@ export function usePantallaServicios() {
     setCatFilt,
     sort,
     setSort,
-    historialFiltros: { hCat, setHCat, hStatus, setHStatus, hDesde, setHDesde },
+    busqueda,
+    setBusqueda,
+    historialFiltros: {
+      hCat,
+      setHCat,
+      hStatus,
+      setHStatus,
+      hDesde,
+      setHDesde,
+      hBusqueda,
+      setHBusqueda,
+    },
     alta: {
       nombreNuevo,
       setNombreNuevo,

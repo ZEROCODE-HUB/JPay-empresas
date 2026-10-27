@@ -77,17 +77,9 @@ export function descargarPlantilla(variante: "gestion" | "nuevo") {
 
 // ===== Registros de un lote =====
 
-/**
- * Exporta los registros de un lote a Excel.
- * `estadoConEtiqueta`: el detalle del lote exporta la etiqueta ("Pagado"); el modal de gestión
- * exporta el valor crudo ("pagado_total").
- */
-export function exportarRegistrosExcel(
-  registros: RegistroDeLote[],
-  archivo: string,
-  estadoConEtiqueta: boolean,
-) {
-  const rows = registros.map((r) => ({
+/** Filas del Excel de registros. El estado sale con su etiqueta legible ("Pagado"). */
+export function filasRegistrosExcel(registros: RegistroDeLote[]) {
+  return registros.map((r) => ({
     Descripcion: r.descripcion,
     Monto: r.monto,
     Pagado: r.montoPagado,
@@ -101,10 +93,14 @@ export function exportarRegistrosExcel(
     "Sub entidad": r.subEntidad,
     "Identificacion usuario": r.identificacionUsuario,
     "Fecha pago": r.fechaPago?.slice(0, 10) ?? "-",
-    Estado: estadoConEtiqueta ? (REGISTRO_ESTADO_BADGE[r.estado]?.label ?? r.estado) : r.estado,
+    Estado: REGISTRO_ESTADO_BADGE[r.estado]?.label ?? r.estado,
     "Link de pago": r.linkDePago ? toResolvableLinkPagoUrl(r.linkDePago) : "-",
   }));
-  const ws = XLSX.utils.json_to_sheet(rows);
+}
+
+/** Exporta los registros de un lote a Excel (detalle del lote y modal de gestión). */
+export function exportarRegistrosExcel(registros: RegistroDeLote[], archivo: string) {
+  const ws = XLSX.utils.json_to_sheet(filasRegistrosExcel(registros));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Registros");
   XLSX.writeFile(wb, archivo);

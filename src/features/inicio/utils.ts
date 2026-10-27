@@ -1,4 +1,5 @@
 import type { MovimientoDashboard } from "@/lib/api/movimientos";
+import { toDate } from "@/shared/format";
 
 export type PeriodKey = "today" | "15d" | "30d" | "60d" | "90d" | "day" | "range";
 
@@ -26,12 +27,18 @@ export type KpisDashboard = {
   opsRet: number;
   cuentas: number;
   cobrosLink: number;
+  opsLink: number;
   cobrosQR: number;
+  opsQR: number;
   pagosQR: number;
+  opsPagoQR: number;
 };
 
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** "aaaa-mm-dd" de la fecha LOCAL (no UTC: en Argentina las 22 h ya serían el día siguiente). */
 export function toKey(d: Date) {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 export function fmtKey(d: Date) {
@@ -101,7 +108,8 @@ export function agruparPorDia(movs: MovimientoDashboard[], start: Date, end: Dat
     byDate.set(toKey(d), { date: fmtKey(d), depositos: 0, cobrosQR: 0, linkPago: 0, total: 0 });
   });
   movs.forEach((m) => {
-    const row = byDate.get((m.fecha ?? "").slice(0, 10));
+    const fecha = toDate(m.fecha);
+    const row = fecha ? byDate.get(toKey(fecha)) : undefined;
     if (!row) return;
     const amt = monto(m);
     if (m.tipo === "deposito") row.depositos += amt;
@@ -127,7 +135,10 @@ export function calcularKpis(
     opsRet: count("retiro"),
     cuentas,
     cobrosLink: sum("tarjeta"),
+    opsLink: count("tarjeta"),
     cobrosQR: sum("cobro_pct"),
+    opsQR: count("cobro_pct"),
     pagosQR: sum("pago_pct"),
+    opsPagoQR: count("pago_pct"),
   };
 }

@@ -2,28 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { cerrarSesion as cerrarSesionAuth } from "@/lib/api/auth";
-import { SESIONES_INICIALES } from "../estados";
+import { useUsuarioActual } from "@/hooks/useAuth";
+import { SIN_EXPIRACION } from "../utils";
 
-/** Sesiones activas (de ejemplo) y tiempo de expiración por inactividad. */
+/**
+ * Sesión actual y tiempo de expiración por inactividad. supabase-js no lista ni
+ * revoca otras sesiones puntuales desde el cliente: solo se puede cerrar todas.
+ */
 export function useSesiones() {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState(SESIONES_INICIALES);
-  const [sesionTiempo, setSesionTiempo] = useState("Nunca");
+  const { usuario, loading } = useUsuarioActual();
+  const [sesionTiempo, setSesionTiempo] = useState(SIN_EXPIRACION);
   const [customTiempo, setCustomTiempo] = useState("");
-
-  const cerrarSesion = async (i: number) => {
-    setSessions((p) => p.filter((_, j) => j !== i));
-    if (sessions[i]?.curr) {
-      try {
-        await cerrarSesionAuth();
-      } catch {
-        /* noop */
-      }
-      navigate({ to: "/login" });
-    } else {
-      toast.success("Sesión cerrada");
-    }
-  };
 
   const cerrarTodas = async () => {
     try {
@@ -36,12 +26,12 @@ export function useSesiones() {
   };
 
   return {
-    sessions,
+    usuario,
+    loadingUsuario: loading,
     sesionTiempo,
     setSesionTiempo,
     customTiempo,
     setCustomTiempo,
-    cerrarSesion,
     cerrarTodas,
   };
 }

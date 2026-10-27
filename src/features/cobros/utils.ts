@@ -109,8 +109,23 @@ export function validarParametros(p: ParametrosLote, manana: string): string | n
     return "La primera fecha de vencimiento no puede ser anterior a manana";
   if (p.fechaVenc2 && p.fechaVenc2 <= p.fechaVenc1)
     return "El 2º vencimiento debe ser posterior al 1º";
+  if (p.fechaVenc3 && !p.fechaVenc2)
+    return "Para cargar el 3º vencimiento primero carga el 2º vencimiento";
   if (p.fechaVenc3 && p.fechaVenc3 <= p.fechaVenc2)
     return "El 3º vencimiento debe ser posterior al 2º";
   if (p.mediosPago.length === 0) return "Selecciona al menos un medio de pago";
   return null;
 }
+
+// ===== Rango personalizado del dashboard =====
+
+const partesFecha = (ymd: string): [number, number, number] => {
+  const [y, m, d] = ymd.split("-").map(Number);
+  return [y, m - 1, d];
+};
+
+/** Inicio del día local (00:00:00.000) de una fecha `yyyy-MM-dd` de un input date. */
+export const inicioDiaLocal = (ymd: string): Date => new Date(...partesFecha(ymd), 0, 0, 0, 0);
+
+/** Fin del día local (23:59:59.999) de una fecha `yyyy-MM-dd`: el "Hasta" incluye todo el día. */
+export const finDiaLocal = (ymd: string): Date => new Date(...partesFecha(ymd), 23, 59, 59, 999);

@@ -37,7 +37,7 @@ function FilaMovimiento({ m }: { m: Mov }) {
           >
             {m.tipo === "ingreso"
               ? formatMoney(m.monto, { signo: true })
-              : formatMoney(Math.abs(m.monto))}
+              : formatMoney(-Math.abs(m.monto))}
           </span>
         </div>
         <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-0.5">

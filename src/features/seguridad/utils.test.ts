@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { EQUIPO_INICIAL } from "./estados";
-import { tiempoCustomValido, validarCambioPassword, validarInvitacion } from "./utils";
+import { EQUIPO_INICIAL, OPCIONES_TIEMPO_SESION } from "./estados";
+import {
+  mfaActivo,
+  SIN_EXPIRACION,
+  tiempoCustomValido,
+  validarCambioPassword,
+  validarInvitacion,
+} from "./utils";
 
 describe("validarCambioPassword", () => {
   it("exige todos los campos, 12 caracteres y que coincidan", () => {
@@ -37,5 +43,19 @@ describe("tiempoCustomValido", () => {
     expect(tiempoCustomValido("")).toBe(false);
     expect(tiempoCustomValido("0")).toBe(false);
     expect(tiempoCustomValido("15")).toBe(true);
+  });
+});
+
+describe("mfaActivo", () => {
+  it("activo solo con un factor verificado", () => {
+    expect(mfaActivo([])).toBe(false);
+    expect(mfaActivo([{ status: "unverified" }])).toBe(false);
+    expect(mfaActivo([{ status: "unverified" }, { status: "verified" }])).toBe(true);
+  });
+});
+
+describe("tiempo de sesión", () => {
+  it("'Nunca' es una opción seleccionable (el estado guarda la opción tal cual)", () => {
+    expect(OPCIONES_TIEMPO_SESION).toContain(SIN_EXPIRACION);
   });
 });

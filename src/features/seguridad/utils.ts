@@ -20,3 +20,10 @@ export function validarInvitacion(email: string, nombre: string, team: Miembro[]
 
 /** Valida el tiempo de sesión personalizado (en minutos). */
 export const tiempoCustomValido = (minutos: string) => !!minutos && Number(minutos) >= 1;
+
+/** El 2FA está activo si hay al menos un factor MFA verificado. */
+export const mfaActivo = (factores: { status: string }[]) =>
+  factores.some((f) => f.status === "verified");
+
+/** Opción de tiempo de sesión que significa "sin expiración por inactividad". */
+export const SIN_EXPIRACION = "Nunca";

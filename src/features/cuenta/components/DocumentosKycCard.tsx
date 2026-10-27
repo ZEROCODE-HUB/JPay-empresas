@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye, FileText, Upload } from "lucide-react";
+import { CheckCircle2, Eye, FileText } from "lucide-react";
 import { BtnOutline, Card } from "@/components/portal-shell";
 import { formatDate } from "@/shared/format";
 import type { CuentaPantalla } from "../hooks/useCuentaPantalla";
@@ -38,9 +38,6 @@ export function DocumentosKycCard({
               <div className="flex items-center gap-2">
                 <BtnOutline className="h-9 px-2.5 text-xs" onClick={() => onPreview(d)}>
                   <Eye size={13} />
-                </BtnOutline>
-                <BtnOutline className="h-9 px-3 text-xs">
-                  <Upload size={12} /> Reemplazar
                 </BtnOutline>
               </div>
             </div>

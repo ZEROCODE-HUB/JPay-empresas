@@ -55,6 +55,20 @@ export async function verificarTotp(factorId: string, code: string): Promise<voi
   if (error) throw error;
 }
 
+export type FactorMfa = { id: string; factor_type: string; status: string };
+
+/** Factores MFA del usuario de la sesión (verificados o no). */
+export async function listarFactoresMfa(): Promise<FactorMfa[]> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.auth.mfa.listFactors();
+  if (error) throw error;
+  return (data?.all ?? []).map((f) => ({
+    id: f.id,
+    factor_type: f.factor_type,
+    status: f.status,
+  }));
+}
+
 /** Cierra la sesión actual o, con `global`, todas las sesiones del usuario. */
 export async function cerrarSesion(scope?: "global"): Promise<void> {
   const sb = requireSupabase();

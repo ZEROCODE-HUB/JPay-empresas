@@ -83,21 +83,21 @@ export function DashboardKpis({ kpis, cbuLabel }: { kpis: KpisDashboard; cbuLabe
         <Kpi
           label="Cobros mediante Link de Pago"
           value={formatMoney(kpis.cobrosLink)}
-          sub={`${Math.round(kpis.cobrosLink / 85000)} transacciones`}
+          sub={`${kpis.opsLink} transacciones`}
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
         <Kpi
           label="Cobros mediante Código QR"
           value={formatMoney(kpis.cobrosQR)}
-          sub={`${Math.round(kpis.cobrosQR / 32000)} transacciones`}
+          sub={`${kpis.opsQR} transacciones`}
           icon={<QrCode size={18} />}
           iconClass="bg-warning-bg text-warning"
         />
         <Kpi
           label="Pagos realizados mediante QR"
           value={formatMoney(kpis.pagosQR)}
-          sub={`${Math.round(kpis.pagosQR / 18000)} transacciones`}
+          sub={`${kpis.opsPagoQR} transacciones`}
           icon={<Smartphone size={18} />}
           iconClass="bg-plata-200 text-black-600"
         />

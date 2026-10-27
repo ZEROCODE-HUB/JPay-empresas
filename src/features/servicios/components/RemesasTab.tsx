@@ -1,17 +1,24 @@
 import { Globe, Send } from "lucide-react";
 import { Badge, BtnPrimary, Card, Input } from "@/components/portal-shell";
+import { formatMoney, formatNumber, VACIO } from "@/shared/format";
 import { remesas } from "../data";
 import { ESTADO_REMESA_TONE } from "../estados";
+import { kpisRemesas } from "../utils";
 import { KpiServicio } from "./comunes";
 
 export function RemesasTab({ onNueva }: { onNueva: () => void }) {
+  const k = kpisRemesas(remesas);
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <KpiServicio label="Enviadas este mes" value="12" nota="$ 18,4M ARS" />
-        <KpiServicio label="Paises destino" value="6" />
-        <KpiServicio label="TC promedio" value="MORE rate" nota="Bonos · Cripto · P2P" />
-        <KpiServicio label="En proceso" value="2" />
+        <KpiServicio
+          label="Enviadas este mes"
+          value={formatNumber(k.enviadasMes)}
+          nota={`${formatMoney(k.montoMes)} ARS`}
+        />
+        <KpiServicio label="Paises destino" value={formatNumber(k.paises)} />
+        <KpiServicio label="TC promedio" value={VACIO} nota="Bonos · Cripto · P2P" />
+        <KpiServicio label="En proceso" value={formatNumber(k.enProceso)} />
       </div>
       <div className="grid lg:grid-cols-[1fr_1.4fr] gap-6">
         <Card>

@@ -65,6 +65,21 @@ export function validarFilas(rawRows: FilaCruda[]): ResultadoCarga {
       };
     if (!row["identificacion_usuario"])
       return { ok: false, error: `Fila ${i + 1}: identificacion_usuario es obligatorio` };
+    if (row["fecha_vencimiento_3"] && !row["fecha_vencimiento_2"])
+      return {
+        ok: false,
+        error: `Fila ${i + 1}: fecha_vencimiento_3 requiere cargar fecha_vencimiento_2`,
+      };
+    if (parsearMediosPago(row["medios_de_pago"]) === null)
+      return {
+        ok: false,
+        error: `Fila ${i + 1}: medios_de_pago invalido (usar ${MEDIOS_VALIDOS.join(", ")} separados por |)`,
+      };
+    if (parsearBooleano(row["pagos_parciales_habilitado"]) === null)
+      return {
+        ok: false,
+        error: `Fila ${i + 1}: pagos_parciales_habilitado debe ser true o false`,
+      };
     filas.push({
       tipo_entidad: row["tipo_entidad"],
       id_entidad: row["id_entidad"],
@@ -79,25 +94,82 @@ export function validarFilas(rawRows: FilaCruda[]): ResultadoCarga {
       fecha_vencimiento_2: row["fecha_vencimiento_2"] || undefined,
       fecha_vencimiento_3: row["fecha_vencimiento_3"] || undefined,
       tasa_interes: row["tasa_interes"] ? parseFloat(row["tasa_interes"]) : undefined,
-      medios_de_pago: row["medios_de_pago"] || undefined,
-      pagos_parciales_habilitado: row["pagos_parciales_habilitado"] || undefined,
+      medios_de_pago: row["medios_de_pago"] ? String(row["medios_de_pago"]) : undefined,
+      pagos_parciales_habilitado:
+        row["pagos_parciales_habilitado"] !== undefined && row["pagos_parciales_habilitado"] !== ""
+          ? String(row["pagos_parciales_habilitado"])
+          : undefined,
     });
   }
   return { ok: true, filas };
 }
 
+/** Detecta el separador (`,` o `;`) por la cabecera: el que más aparece fuera de comillas. */
+export function detectarSeparador(cabecera: string): "," | ";" {
+  let comas = 0;
+  let puntoYComa = 0;
+  let enComillas = false;
+  for (const ch of cabecera) {
+    if (ch === '"') enComillas = !enComillas;
+    else if (!enComillas && ch === ",") comas++;
+    else if (!enComillas && ch === ";") puntoYComa++;
+  }
+  return puntoYComa > comas ? ";" : ",";
+}
+
 /**
- * Convierte el texto de un CSV en filas crudas. Encabezados en minúscula; separa por
- * coma sin soportar comillas (igual que la versión original).
+ * Parsea texto CSV a una matriz de celdas. Respeta campos entre comillas dobles (que pueden
+ * contener el separador o saltos de línea) y comillas escapadas como `""`.
+ */
+export function parsearCsv(text: string, sep: "," | ";"): string[][] {
+  const filas: string[][] = [];
+  let fila: string[] = [];
+  let campo = "";
+  let enComillas = false;
+  const src = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (enComillas) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') {
+          campo += '"';
+          i++;
+        } else enComillas = false;
+      } else campo += ch;
+    } else if (ch === '"') enComillas = true;
+    else if (ch === sep) {
+      fila.push(campo);
+      campo = "";
+    } else if (ch === "\n" || ch === "\r") {
+      if (ch === "\r" && src[i + 1] === "\n") i++;
+      fila.push(campo);
+      filas.push(fila);
+      fila = [];
+      campo = "";
+    } else campo += ch;
+  }
+  if (campo !== "" || fila.length > 0) {
+    fila.push(campo);
+    filas.push(fila);
+  }
+  return filas;
+}
+
+/**
+ * Convierte el texto de un CSV en filas crudas. Encabezados en minúscula; el separador
+ * (`,` o `;`) se detecta por la cabecera y se respetan los campos entre comillas.
  * Devuelve `null` si no hay al menos encabezado + una fila.
  */
 export function csvAFilas(text: string): FilaCruda[] | null {
-  const lines = text.split("\n").filter((l) => l.trim());
+  const primeraLinea = text.split(/\r?\n/, 1)[0] ?? "";
+  const lines = parsearCsv(text, detectarSeparador(primeraLinea)).filter((l) =>
+    l.some((v) => v.trim()),
+  );
   if (lines.length < 2) return null;
-  const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+  const headers = lines[0].map((h) => h.trim().toLowerCase());
   const rawRows: FilaCruda[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(",").map((v) => v.trim());
+    const values = lines[i].map((v) => v.trim());
     const row: FilaCruda = {};
     headers.forEach((h, idx) => {
       row[h] = values[idx] ?? "";
@@ -105,6 +177,42 @@ export function csvAFilas(text: string): FilaCruda[] | null {
     rawRows.push(row);
   }
   return rawRows;
+}
+
+const MEDIOS_VALIDOS: readonly MedioPago[] = [
+  "TRANSFERENCIA",
+  "TARJETA_CREDITO",
+  "TARJETA_DEBITO",
+  "QR",
+];
+
+/**
+ * Interpreta la columna `medios_de_pago` (p. ej. `TRANSFERENCIA|QR`; acepta `|`, `,`, `;`
+ * o espacios). Vacía → `undefined` (se usa el valor del lote). Con un medio desconocido → `null`.
+ */
+export function parsearMediosPago(valor: string | undefined): MedioPago[] | null | undefined {
+  const partes = String(valor ?? "")
+    .split(/[|,;\s]+/)
+    .map((m) => m.trim().toUpperCase())
+    .filter(Boolean);
+  if (partes.length === 0) return undefined;
+  if (partes.some((m) => !MEDIOS_VALIDOS.includes(m as MedioPago))) return null;
+  return [...new Set(partes)] as MedioPago[];
+}
+
+/**
+ * Interpreta la columna `pagos_parciales_habilitado` (true/false, si/no, 1/0).
+ * Vacía → `undefined` (se usa el valor del lote). Valor no reconocido → `null`.
+ */
+export function parsearBooleano(valor: string | boolean | undefined): boolean | null | undefined {
+  if (typeof valor === "boolean") return valor;
+  const v = String(valor ?? "")
+    .trim()
+    .toLowerCase();
+  if (!v) return undefined;
+  if (["true", "si", "sí", "1", "verdadero", "s", "yes"].includes(v)) return true;
+  if (["false", "no", "0", "falso", "n"].includes(v)) return false;
+  return null;
 }
 
 export const esExcel = (fileName: string): boolean =>
@@ -115,7 +223,7 @@ export const montoTotalFilas = (filas: FilaCarga[]): number =>
 
 /**
  * Arma los registros a guardar a partir de las filas validadas. Los medios de pago y los
- * pagos parciales se toman del lote (las columnas homónimas del archivo no se usan).
+ * pagos parciales de cada fila se usan si el archivo los trae; si no, los del lote.
  */
 export function filasARegistros(
   filas: FilaCarga[],
@@ -140,8 +248,8 @@ export function filasARegistros(
     fechaVencimiento2: row.fecha_vencimiento_2 ?? null,
     fechaVencimiento3: row.fecha_vencimiento_3 ?? null,
     tasaInteres: row.tasa_interes ?? null,
-    mediosPago,
-    pagosParcialesHabilitado: pagosParciales,
+    mediosPago: parsearMediosPago(row.medios_de_pago) ?? mediosPago,
+    pagosParcialesHabilitado: parsearBooleano(row.pagos_parciales_habilitado) ?? pagosParciales,
     cbuId: null,
     linkDePago: null,
     estado: "pendiente",

@@ -55,7 +55,8 @@ export function InfoUsuarioCard({ c }: { c: CuentaPantalla }) {
         </div>
         <div>
           <Label>DNI</Label>
-          <Input defaultValue={c.isPJ ? "30.123.456" : "32.123.456"} />
+          {/* `clientes` no tiene columna de DNI: no hay dato real que mostrar. */}
+          <Input value="—" readOnly />
         </div>
         <div>
           <Label>Genero</Label>

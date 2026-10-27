@@ -4,7 +4,6 @@ import { useOnboarding } from "@/lib/onboarding-store";
 import { updateCliente, type Cliente } from "@/lib/api/cuenta";
 import { useClienteSesion, useResumenCuenta } from "@/hooks/useCuenta";
 import { ESTADO_LABEL, normalizarEstado } from "@/lib/cliente-estados";
-import { PLAN_EMPRESA, PLAN_PERSONA } from "../estados";
 import type { CampoTexto, ClienteForm } from "../types";
 import { antiguedad, clienteToForm, formToPatch, mapDocumentos, scoreSeguridad } from "../utils";
 
@@ -25,7 +24,6 @@ export function useCuentaPantalla() {
   const isPJ = cliente?.tipo_persona
     ? cliente.tipo_persona === "juridica"
     : tipoCuenta === "juridica";
-  const plan = isPJ ? PLAN_EMPRESA : PLAN_PERSONA;
   const estadoNorm = cliente?.estado
     ? normalizarEstado(cliente.estado)
     : emailValidado
@@ -36,10 +34,10 @@ export function useCuentaPantalla() {
   const [userNombre, userApellido] = (cliente?.nombre ?? "").split(" ");
 
   const dp = {
-    genero: cliente?.genero ?? datosPersonales.genero ?? "Femenino",
+    genero: cliente?.genero ?? datosPersonales.genero ?? "",
     cuitCuil: cliente?.cuit_cuil ?? datosPersonales.cuitCuil ?? "",
     ocupacion: cliente?.ocupacion ?? datosPersonales.ocupacion ?? "",
-    origenFondos: cliente?.origen_fondos ?? datosPersonales.origenFondos ?? "Actividad comercial",
+    origenFondos: cliente?.origen_fondos ?? datosPersonales.origenFondos ?? "",
     esPEP: cliente?.es_pep ?? datosPersonales.esPEP ?? false,
   };
 
@@ -47,7 +45,7 @@ export function useCuentaPantalla() {
     nombreLegal: cliente?.nombre_legal ?? datosEmpresa.nombreLegal ?? "",
     nombreFantasia: cliente?.nombre_fantasia ?? datosEmpresa.nombreFantasia ?? "",
     cuit: cliente?.cuit ?? datosEmpresa.cuit ?? "",
-    tipoId: cliente?.tipo_sociedad ?? datosEmpresa.tipoId ?? "Sociedad Anonima (SA)",
+    tipoId: cliente?.tipo_sociedad ?? datosEmpresa.tipoId ?? "",
     fechaInscripcion: cliente?.fecha_inscripcion ?? datosEmpresa.fechaInscripcion ?? "",
   };
 
@@ -55,7 +53,7 @@ export function useCuentaPantalla() {
     direccion: cliente?.direccion ?? kyc.direccion ?? "",
     ciudad: cliente?.ciudad ?? kyc.ciudad ?? "",
     provincia: cliente?.provincia ?? kyc.provincia ?? "",
-    cp: cliente?.cp ?? (isPJ ? "C1043" : "C1425"),
+    cp: cliente?.cp ?? "",
   };
 
   const cbu = { cbu: cliente?.cbu ?? "—", alias: cliente?.alias ?? "—" };
@@ -92,7 +90,6 @@ export function useCuentaPantalla() {
   return {
     cliente,
     isPJ,
-    plan,
     estadoNorm,
     estadoLabel: ESTADO_LABEL[estadoNorm],
     aprobado,

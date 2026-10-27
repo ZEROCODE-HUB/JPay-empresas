@@ -9,6 +9,7 @@ type Props = {
   sub: Sub;
   onClose: () => void;
   onCambiarEstado: (id: string, estado: EstadoSub) => void;
+  onGuardarEmail: (id: string, email: string) => Promise<boolean>;
   onFondear: () => void;
   onVerHistorial: () => void;
 };
@@ -17,6 +18,7 @@ export function SubDetailModal({
   sub,
   onClose,
   onCambiarEstado,
+  onGuardarEmail,
   onFondear,
   onVerHistorial,
 }: Props) {
@@ -39,7 +41,12 @@ export function SubDetailModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-5 space-y-7">
-          <DetalleInfoGeneral sub={sub} d={d} onCambiarEstado={onCambiarEstado} />
+          <DetalleInfoGeneral
+            sub={sub}
+            d={d}
+            onCambiarEstado={onCambiarEstado}
+            onGuardarEmail={onGuardarEmail}
+          />
           <DetalleFinanciera
             sub={sub}
             totalDepositos={d.totalDepositos}

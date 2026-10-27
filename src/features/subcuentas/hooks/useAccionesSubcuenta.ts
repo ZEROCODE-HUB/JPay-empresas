@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { deleteSubcuenta, setEstadoSubcuenta } from "@/lib/api/subcuentas";
+import { deleteSubcuenta, setEstadoSubcuenta, updateSubcuenta } from "@/lib/api/subcuentas";
 import type { EstadoSub, Sub } from "../types";
 
-/** Detalle abierto, pausa/reactivación y eliminación de subcuentas. */
+/** Detalle abierto, pausa/reactivación, email y eliminación de subcuentas. */
 export function useAccionesSubcuenta(setSubs: (fn: (prev: Sub[]) => Sub[]) => void) {
   const [menuId, setMenuId] = useState<string | null>(null);
   const [detailSub, setDetailSub] = useState<Sub | null>(null);
@@ -33,6 +33,24 @@ export function useAccionesSubcuenta(setSubs: (fn: (prev: Sub[]) => Sub[]) => vo
     }
   };
 
+  /** Guarda el email editado en el detalle; devuelve false si no se pudo. */
+  const guardarEmail = async (id: string, email: string): Promise<boolean> => {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Ingresá un email válido");
+      return false;
+    }
+    try {
+      await updateSubcuenta(id, { email });
+      setSubs((prev) => prev.map((x) => (x.id === id ? { ...x, email } : x)));
+      setDetailSub((d) => (d?.id === id ? { ...d, email } : d));
+      toast.success("Email actualizado");
+      return true;
+    } catch {
+      toast.error("No se pudo guardar el email");
+      return false;
+    }
+  };
+
   return {
     menuId,
     setMenuId,
@@ -42,5 +60,6 @@ export function useAccionesSubcuenta(setSubs: (fn: (prev: Sub[]) => Sub[]) => vo
     setConfirmarBorrar,
     borrar,
     cambiarEstado,
+    guardarEmail,
   };
 }
