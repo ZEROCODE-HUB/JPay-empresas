@@ -23,6 +23,7 @@ const SHARED = [
   "scripts/gen-types.mjs",
   "scripts/shared-check.mjs",
   "scripts/sync-upstream.mjs",
+  "supabase/functions/_shared/http.ts",
   "vitest.config.ts",
 ];
 

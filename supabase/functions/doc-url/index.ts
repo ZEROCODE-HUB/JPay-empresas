@@ -1,14 +1,11 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { CORS, preflight } from "../_shared/http.ts";
 import { brand } from "../_shared/brand.ts";
 
 Deno.serve(async (req) => {
-  const cors = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
-  const headers = { ...cors, "content-type": "application/json" };
+  const pre = preflight(req);
+  if (pre) return pre;
+  const headers = { ...CORS, "content-type": "application/json" };
 
   const auth = req.headers.get("Authorization")?.replace("Bearer ", "");
   if (!auth) return new Response(JSON.stringify({ error: "no auth" }), { status: 401, headers });
