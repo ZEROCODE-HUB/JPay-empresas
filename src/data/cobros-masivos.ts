@@ -96,14 +96,6 @@ function generateId(prefix: string): string {
   return `${prefix}-${r}`;
 }
 
-function parseDate(s: string): Date {
-  try {
-    return new Date(s);
-  } catch {
-    return new Date();
-  }
-}
-
 // ===== Formateo =====
 export function formatARS(n: number) {
   return new Intl.NumberFormat("es-AR", {

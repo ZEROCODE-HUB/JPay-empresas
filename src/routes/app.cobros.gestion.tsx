@@ -31,7 +31,6 @@ import {
   reanudarLoteDB,
   eliminarLoteDB,
   getLegajoUsuario,
-  generateId,
   type LoteEstado,
   type Lote,
   type RegistroDeLote,
@@ -76,7 +75,7 @@ function GestionLotes() {
   const [confirmarEliminarId, setConfirmarEliminarId] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
   const [lotesData, setLotesData] = useState<Awaited<ReturnType<typeof getLotesGestionDB>>>([]);
-  const [cargando, setCargando] = useState(true);
+  const [, setCargando] = useState(true);
   const [registrosDetalle, setRegistrosDetalle] = useState<RegistroDeLote[]>([]);
   const [generandoLinks, setGenerandoLinks] = useState(false);
 

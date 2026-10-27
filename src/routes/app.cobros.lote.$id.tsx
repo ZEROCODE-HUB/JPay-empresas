@@ -8,15 +8,11 @@ import {
   Trash2,
   Copy,
   ExternalLink,
-  CheckCircle2,
   AlertCircle,
-  Clock,
-  XCircle,
   FileSpreadsheet,
-  Download,
   LinkIcon,
 } from "lucide-react";
-import { Card, BtnPrimary, BtnOutline, Badge } from "@/components/portal-shell";
+import { Card, BtnPrimary, BtnOutline } from "@/components/portal-shell";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { toast } from "sonner";
 import {
@@ -32,7 +28,6 @@ import {
   getLegajoUsuario,
   type Lote,
   type RegistroDeLote,
-  type MedioPago,
 } from "@/data/cobros-masivos";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
 import * as XLSX from "xlsx";

@@ -17,7 +17,7 @@ function EnProceso() {
   const [estado, setEstado] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasDocs, setHasDocs] = useState<boolean | null>(null);
-  const [tipoPersona, setTipoPersona] = useState<string | null>(null);
+  const [, setTipoPersona] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {

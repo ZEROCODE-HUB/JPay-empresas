@@ -212,7 +212,6 @@ import {
   getMinMontoAdelanto,
   type CalendarioAcreditacion as CACal,
   type AdelantoParaCalendario,
-  type EstadoCalendario,
 } from "@/lib/api/calendario-acreditaciones";
 
 function CalendarioAcreditacionesTab({
@@ -898,11 +897,11 @@ function Liquidaciones() {
   const [disponible, setDisponible] = useState(0);
   const [comercioId, setComercioId] = useState<string | null>(null);
   const [dias, setDias] = useState<DiaAcreditacion[]>([]);
-  const [diasAcreditados, setDiasAcreditados] = useState<DiaAcreditacion[]>([]);
+  const [, setDiasAcreditados] = useState<DiaAcreditacion[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [lotesVenta, setLotesVenta] = useState<LoteVenta[]>([]);
-  const [lotesAcredDetalle, setLotesAcredDetalle] = useState<LoteAcredDetalle[]>([]);
+  const [, setLotesAcredDetalle] = useState<LoteAcredDetalle[]>([]);
   const [lotesAcreditados, setLotesAcreditados] = useState<LoteAcredDetalle[]>([]);
   const [comisiones, setComisiones] = useState<ComisionBandera[]>([]);
   const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
@@ -910,8 +909,6 @@ function Liquidaciones() {
 
   // tabs & paginación
   const [activeTab, setActiveTab] = useState<TabSeccion>("calendario");
-  const [calPage, setCalPage] = useState(1);
-  const [calPageSize, setCalPageSize] = useState(10);
   const [tickPage, setTickPage] = useState(1);
   const [tickPageSize, setTickPageSize] = useState(10);
   const [ventaPage, setVentaPage] = useState(1);
@@ -929,8 +926,6 @@ function Liquidaciones() {
 
   const ROWS_OPTIONS = [10, 20, 50];
 
-  const calTotalPages = Math.max(1, Math.ceil(dias.length / calPageSize));
-  const calPaginated = dias.slice((calPage - 1) * calPageSize, calPage * calPageSize);
   const tickTotalPages = Math.max(1, Math.ceil(tickets.length / tickPageSize));
   const tickPaginated = tickets.slice((tickPage - 1) * tickPageSize, tickPage * tickPageSize);
   const ventaTotalPages = Math.max(1, Math.ceil(lotesVenta.length / ventaPageSize));
@@ -971,7 +966,7 @@ function Liquidaciones() {
    * "comprometido" (Acreditado > Aprobado > Pendiente) para no perder
    * estado al re-renderizar.
    */
-  const ticketPorFecha = useMemo<Record<string, Ticket>>(() => {
+  useMemo<Record<string, Ticket>>(() => {
     const mapa: Record<string, Ticket> = {};
     const orden = { pendiente: 0, aprobado: 1, acreditado: 2 } as Record<string, number>;
     for (const t of tickets) {
@@ -1302,14 +1297,6 @@ function Liquidaciones() {
     };
   }, []);
 
-  const openForDate = (date: string) => {
-    setSelectedDate(date);
-    setFechaAcred(date);
-    const d = dias.find((x) => x.date === date);
-    if (d) setMonto(String(Math.round(d.monto)));
-    setMotivo("");
-    setOpen(true);
-  };
   const openGeneral = () => {
     setSelectedDate(null);
     setFechaAcred(dias[0]?.date ?? toISO(addDays(new Date(), 1)));
@@ -1401,29 +1388,6 @@ function Liquidaciones() {
     } finally {
       setSaving(false);
     }
-  };
-
-  const exportLoteDetalle = (fecha: string) => {
-    const lotesDelDia = lotesAcredDetalle.filter((l) => l.fecha === fecha);
-    if (lotesDelDia.length === 0) {
-      toast.error("No hay lotes para exportar en esta fecha");
-      return;
-    }
-    const ws = XLSX.utils.json_to_sheet(
-      lotesDelDia.map((l) => ({
-        Lote: l.id,
-        Fecha: fmtDateFull(l.fecha),
-        Bandera: l.bandera,
-        Operaciones: l.cantidadOperaciones,
-        "Importe neto": formatARS(l.importeNeto),
-        "Comisión cierre %": l.comisionCierrePct != null ? `${l.comisionCierrePct}%` : "—",
-        "Comisión cierre $": l.comisionCierreMonto != null ? formatARS(l.comisionCierreMonto) : "—",
-      })),
-    );
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Detalle lote");
-    XLSX.writeFile(wb, `lote-acreditacion-${fecha}.xlsx`);
-    toast.success("Excel descargado");
   };
 
   const exportExcel = () => {

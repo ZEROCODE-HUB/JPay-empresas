@@ -10,9 +10,7 @@ import {
   Link2,
   QrCode,
   Smartphone,
-  TrendingUp,
   Clock,
-  Download,
   FileSpreadsheet,
   FileText,
 } from "lucide-react";

@@ -1,25 +1,7 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { brand } from "@/brand/brand";
-import {
-  ShoppingCart,
-  Power,
-  FileText,
-  ArrowRight,
-  Copy,
-  BadgeCheck,
-  XCircle,
-  Clock,
-  Search,
-} from "lucide-react";
-import {
-  PageHeader,
-  Card,
-  Input,
-  BtnPrimary,
-  BtnOutline,
-  Badge,
-  Label,
-} from "@/components/portal-shell";
+import { ShoppingCart, Power, FileText, ArrowRight, Copy, Search } from "lucide-react";
+import { PageHeader, Card, Input, BtnOutline, Badge, Label } from "@/components/portal-shell";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/ecommerce")({ component: Page });

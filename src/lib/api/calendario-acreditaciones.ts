@@ -1,5 +1,4 @@
 import { requireSupabase } from "@/lib/supabase";
-import type { SupabaseDataError } from "@/lib/supabase";
 
 // ============================================================================
 // Tipos

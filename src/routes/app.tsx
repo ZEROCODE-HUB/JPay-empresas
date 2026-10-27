@@ -1,4 +1,4 @@
-﻿import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+﻿import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -60,7 +60,6 @@ const nav: NavItem[] = [
 
 function AppLayout() {
   const { role, setRole } = useDemoMode();
-  const navigate = useNavigate();
   const [userName, setUserName] = useState<string | undefined>(undefined);
   const [userEmail, setUserEmail] = useState<string | undefined>(undefined);
 

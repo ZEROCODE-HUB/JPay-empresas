@@ -4,7 +4,6 @@ import { brand } from "@/brand/brand";
 import { useState, useEffect, useCallback } from "react";
 import {
   Download,
-  Filter,
   FileText,
   ArrowDownLeft,
   ArrowUpRight,
@@ -51,15 +50,6 @@ const formatFecha = (f: string | null) => {
     minute: "2-digit",
   });
 };
-
-type Categoria =
-  | "Ingresos"
-  | "Egresos"
-  | "Transferencias"
-  | "Comisiones"
-  | "Cobros con Tarjeta"
-  | "Pagos con QR"
-  | "Cobros con QR";
 
 type Mov = {
   txid: string;

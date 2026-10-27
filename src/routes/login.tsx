@@ -1,6 +1,5 @@
-﻿import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
+﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { BrandLogo } from "@/components/brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
 import { useOnboarding, type TipoCuenta } from "@/lib/onboarding-store";
 import {

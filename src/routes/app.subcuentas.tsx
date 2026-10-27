@@ -385,7 +385,7 @@ function Page() {
     setTransfLoading(true);
     try {
       const s = requireSupabase();
-      const { data, error } = await s.rpc("registrar_transferencia_subcuentas", {
+      const { error } = await s.rpc("registrar_transferencia_subcuentas", {
         p_subcuenta_origen: origen.id,
         p_subcuenta_destino: destino.id,
         p_monto: monto,

@@ -169,7 +169,6 @@ function Checkout() {
   const [cvv, setCvv] = useState("");
   const [email, setEmail] = useState("");
   const [documento, setDocumento] = useState("");
-  const processingRef = useRef(false);
   const cardFormRef = useRef<HTMLFormElement | null>(null);
   const [processing, setProcessing] = useState(false);
   /**

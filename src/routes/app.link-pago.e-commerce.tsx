@@ -143,7 +143,6 @@ function Page() {
   };
 
   const openClaveModal = (id: string, name: string) => {
-    const e = list.find((x) => x.id === id);
     if (legajo) {
       (async () => {
         const s = requireSupabase();

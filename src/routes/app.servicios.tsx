@@ -6,7 +6,6 @@ import {
   Flame,
   Droplet,
   Building2,
-  Tv,
   Phone,
   Wifi,
   FileText,

@@ -15,7 +15,6 @@ import {
   Activity,
   TrendingUp,
   Eye,
-  X,
 } from "lucide-react";
 import {
   PageHeader,

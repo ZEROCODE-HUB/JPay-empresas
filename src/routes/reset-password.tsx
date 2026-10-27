@@ -34,7 +34,6 @@ function ResetPassword() {
     const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
     const code = params.get("code") ?? hash.get("code");
     const tokenHash = params.get("token_hash") ?? hash.get("token_hash");
-    const type = (params.get("type") ?? hash.get("type") ?? "recovery") as string;
     const access = hash.get("access_token");
 
     (async () => {

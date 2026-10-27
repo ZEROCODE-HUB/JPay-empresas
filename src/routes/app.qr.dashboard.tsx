@@ -1,11 +1,9 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   PieChart,
   Pie,
   Cell,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -153,7 +151,6 @@ function Dashboard() {
         (m) => nombreEstado(m.estado_id).toLowerCase() === "aprobado",
       ).length;
       const pendientes = total - aprobados;
-      const ticket = total ? montoTotal / total : 0;
       const tasa = total ? (aprobados / total) * 100 : 0;
       const pdvActivos = pdvsPorEstado["Activado"] ?? 0;
 

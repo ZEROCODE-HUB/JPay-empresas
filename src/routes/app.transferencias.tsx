@@ -14,10 +14,7 @@ import {
   Save,
   Users,
   X,
-  Plus,
   KeyRound,
-  Download,
-  Share2,
 } from "lucide-react";
 import { PageHeader, Input, Label, BtnPrimary, BtnOutline, Badge } from "@/components/portal-shell";
 import { toast } from "sonner";
@@ -284,7 +281,7 @@ function Page() {
   const [clienteNombre, setClienteNombre] = useState("");
   const [totalDisponible, setTotalDisponible] = useState(0);
   const [enviadoMes, setEnviadoMes] = useState({ monto: 0, ops: 0 });
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -2530,37 +2527,3 @@ function DestinatariosList({
     </div>
   );
 }
-
-/* ===== QELSA mock (placeholder hasta integrar API real) ===== */
-const qelsaMock: CoelsaResult[] = [
-  {
-    nombre: "Proveedor SA",
-    cuit: "30-12345678-9",
-    cbu: "0000003100099887766112",
-    alias: "proveedor.sa",
-  },
-  {
-    nombre: "Estudio Rios",
-    cuit: "30-87654321-0",
-    cbu: "0000003200099887766223",
-    alias: "rios.contable",
-  },
-  {
-    nombre: "Servicios Generales",
-    cuit: "30-11122333-4",
-    cbu: "0000003300099887766334",
-    alias: "serv.generales",
-  },
-  {
-    nombre: "Juan Perez",
-    cuit: "20-22333444-5",
-    cbu: "0000003400099887766445",
-    alias: "juanperez.mp",
-  },
-  {
-    nombre: "Maria Lopez",
-    cuit: "27-33444555-6",
-    cbu: "0000003500099887766556",
-    alias: "mlopez.cv",
-  },
-];

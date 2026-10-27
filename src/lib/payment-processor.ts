@@ -159,7 +159,7 @@ export class PaywayProcessor implements PaymentProcessor {
     return session;
   }
 
-  private close(fingerprint: string, session: AttemptSession) {
+  private close(_fingerprint: string, session: AttemptSession) {
     session.definitive = true;
     session.updatedAt = Date.now();
   }
