@@ -54,7 +54,8 @@ export type AdelantoParaCalendario = {
 export type ResumenSaldos = {
   faltaCobrar: number;
   porAcreditar: number;
-  adelantosEnCurso: number;
+  /** null si la RPC no lo informa. */
+  adelantosEnCurso: number | null;
   disponibleReal: number;
 };
 
@@ -170,11 +171,11 @@ export async function getResumenSaldosCalendario(comercioId: string): Promise<Re
   if (error) throw error;
   const r = (data ?? {}) as Record<string, unknown>;
   const porAcreditar = parseNumber(r.por_acreditar);
-  const adelantosEnCurso = parseNumber(r.adelantos_en_curso);
+  const adelantosEnCurso = r.adelantos_en_curso != null ? parseNumber(r.adelantos_en_curso) : null;
   const disponibleReal =
     r.disponible_real != null
       ? parseNumber(r.disponible_real)
-      : Math.max(porAcreditar - adelantosEnCurso, 0);
+      : Math.max(porAcreditar - (adelantosEnCurso ?? 0), 0);
   return {
     faltaCobrar: parseNumber(r.falta_cobrar),
     porAcreditar,

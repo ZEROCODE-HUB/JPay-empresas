@@ -1,5 +1,5 @@
 import { requireSupabase } from "@/lib/supabase";
-import type { Database, Tables } from "@/lib/database.types";
+import type { Database } from "@/lib/database.types";
 import { formatDateShort } from "@/shared/format";
 import { getResumenSaldosCalendario } from "./calendario-acreditaciones";
 import { getEmailUsuarioActual } from "./auth";
@@ -30,15 +30,18 @@ export type DiaAcreditacion = {
   cantidad: number;
 };
 
+/** Fila de `v_lotes_venta` (ventas del comercio agrupadas por fecha y bandera). */
 export type LoteVenta = {
-  id: string;
   fecha: string;
   bandera: string;
   cantidadOperaciones: number;
-  montoOperaciones: number;
-  comision: number;
-  impuesto: number;
-  montoCobrado: number;
+  /** `importe_bruto` de la vista. */
+  montoOperaciones: number | null;
+  comision: number | null;
+  /** `impuestos` de la vista. */
+  impuesto: number | null;
+  /** `importe_neto` de la vista. */
+  montoCobrado: number | null;
 };
 
 export type LoteAcredDetalle = {
@@ -67,7 +70,8 @@ export type Impuesto = {
   codigo: string;
   descripcion: string;
   tipo: string;
-  alicuota: number;
+  /** `impuestos.monto`: porcentaje si `tipo === "Porcentaje"`, si no importe fijo. */
+  monto: number | null;
   estado: string;
 };
 
@@ -117,27 +121,15 @@ export const LIQUIDACIONES_VACIAS: LiquidacionesDatos = {
 
 export type AdelantoRow = Database["public"]["Functions"]["ingresar_adelanto"]["Returns"];
 
-// v_lotes_venta no expone todas las columnas que lee la pantalla; las que
-// faltan quedan undefined y caen al valor por defecto.
-type VLoteVentaRow = Tables<"v_lotes_venta"> & {
-  id?: string | null;
-  cantidad?: number | null;
-  monto_operaciones?: number | null;
-  monto?: number | null;
-  impuesto?: number | null;
-  monto_cobrado?: number | null;
-};
-
-type ImpuestoRow = Pick<
-  Tables<"impuestos">,
-  "id" | "codigo" | "descripcion" | "tipo" | "estado"
-> & {
-  alicuota?: number | null;
-};
-
 // ============================================================================
 // Lecturas
 // ============================================================================
+
+function numeroONull(v: number | string | null | undefined): number | null {
+  if (v == null) return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
 
 export async function getComercioLiquidaciones(): Promise<ComercioLiquidaciones> {
   const sb = requireSupabase();
@@ -179,9 +171,12 @@ export async function getLiquidacionesDatos({
   // 1) Falta cobrar: RPC `calendario_resumen_saldos` (suma de lotes_venta sin lote_acreditacion).
   let falta = 0;
   let adelantosEnCursoCalc = 0;
+  let adelantosEnCursoRpc: number | null = null;
   if (comercioId) {
     try {
-      falta = (await getResumenSaldosCalendario(comercioId)).faltaCobrar;
+      const resumen = await getResumenSaldosCalendario(comercioId);
+      falta = resumen.faltaCobrar;
+      adelantosEnCursoRpc = resumen.adelantosEnCurso;
     } catch (e) {
       console.warn("calendario_resumen_saldos no disponible, fallback:", e);
     }
@@ -281,30 +276,35 @@ export async function getLiquidacionesDatos({
         plazoAdelantado: r.plazo_adelantado_dias != null ? Number(r.plazo_adelantado_dias) : null,
       })),
     );
-    // Σ adelantos en curso (Pendiente + Aprobado)
+    // Σ adelantos en curso (Pendiente + Aprobado). Solo se usa si la RPC
+    // `calendario_resumen_saldos` no informa `adelantos_en_curso`.
     adelantosEnCursoCalc = adelantos
       .filter((r) => r.estado === "Pendiente" || r.estado === "Aprobado")
       .reduce((s, r) => s + Number(r.monto_por_acreditar ?? r.monto_solicitado ?? 0), 0);
   }
 
-  // 4) Lotes de venta. Sin comercio no se filtra.
+  // 4) Lotes de venta del comercio. Sin comercio no se consulta: la vista sin
+  // filtro devolvería los lotes de todos los comercios.
   let ventaRows: LoteVenta[] = [];
   try {
-    let q = sb.from("v_lotes_venta").select("*").order("fecha", { ascending: false });
-    if (comercioId) q = q.eq("comercio_id", comercioId);
-    const { data: vRows } = await q;
-    ventaRows = ((vRows ?? []) as VLoteVentaRow[]).map((r) => ({
-      id: String(r.id ?? "")
-        .slice(0, 8)
-        .toUpperCase(),
-      fecha: (r.fecha ?? "").slice(0, 10),
-      bandera: r.bandera ?? "—",
-      cantidadOperaciones: Number(r.cantidad_operaciones ?? r.cantidad ?? 0),
-      montoOperaciones: Number(r.monto_operaciones ?? r.monto ?? 0),
-      comision: Number(r.comision ?? 0),
-      impuesto: Number(r.impuesto ?? 0),
-      montoCobrado: Number(r.monto_cobrado ?? 0),
-    }));
+    if (comercioId) {
+      const { data: vRows } = await sb
+        .from("v_lotes_venta")
+        .select(
+          "fecha, bandera, cantidad_operaciones, importe_bruto, comision, impuestos, importe_neto",
+        )
+        .eq("comercio_id", comercioId)
+        .order("fecha", { ascending: false });
+      ventaRows = (vRows ?? []).map((r) => ({
+        fecha: (r.fecha ?? "").slice(0, 10),
+        bandera: r.bandera ?? "—",
+        cantidadOperaciones: Number(r.cantidad_operaciones ?? 0),
+        montoOperaciones: numeroONull(r.importe_bruto),
+        comision: numeroONull(r.comision),
+        impuesto: numeroONull(r.impuestos),
+        montoCobrado: numeroONull(r.importe_neto),
+      }));
+    }
   } catch {
     // v_lotes_venta puede no existir aún; se muestra vacío
   }
@@ -342,15 +342,15 @@ export async function getLiquidacionesDatos({
   try {
     const { data: impRows } = await sb
       .from("impuestos")
-      .select("id, codigo, descripcion, tipo, alicuota, estado, ambito")
+      .select("id, codigo, descripcion, tipo, monto, estado, ambito")
       .eq("ambito", "Externo")
       .eq("estado", "Activo");
-    impuestosData = ((impRows ?? []) as unknown as ImpuestoRow[]).map((r) => ({
+    impuestosData = (impRows ?? []).map((r) => ({
       id: r.id,
       codigo: r.codigo ?? "",
       descripcion: r.descripcion ?? "",
       tipo: r.tipo ?? "",
-      alicuota: Number(r.alicuota ?? 0),
+      monto: numeroONull(r.monto),
       estado: r.estado ?? "Activo",
     }));
 
@@ -385,7 +385,7 @@ export async function getLiquidacionesDatos({
   return {
     faltaCobrar: falta,
     porAcreditar: acreditar,
-    adelantosEnCurso: adelantosEnCursoCalc,
+    adelantosEnCurso: adelantosEnCursoRpc ?? adelantosEnCursoCalc,
     disponible: disp,
     dias,
     tickets: ticketsReal,
