@@ -6,7 +6,7 @@ import {
   PrimaryButton,
   SecondaryButton,
   SuccessCard,
-} from "@/components/onboarding";
+} from "@/features/onboarding/components";
 import { useOnboarding } from "@/lib/onboarding-store";
 import { readDemoVerifyUrl, resendVerification } from "@/lib/api/onboarding";
 import { getAuthErrorMessage } from "@/lib/supabase";

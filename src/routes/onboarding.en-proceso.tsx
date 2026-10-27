@@ -1,5 +1,10 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AuthShell, PrimaryButton, SecondaryButton, SuccessCard } from "@/components/onboarding";
+import {
+  AuthShell,
+  PrimaryButton,
+  SecondaryButton,
+  SuccessCard,
+} from "@/features/onboarding/components";
 import { useEstadoOnboarding } from "@/hooks/useOnboarding";
 import { ESTADO_LABEL, normalizarEstado, siguientePasoOnboarding } from "@/lib/cliente-estados";
 import { brand, pageTitle, mailto } from "@/brand/brand";

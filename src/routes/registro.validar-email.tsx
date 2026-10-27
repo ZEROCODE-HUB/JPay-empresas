@@ -1,5 +1,5 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AuthShell, PrimaryButton } from "@/components/onboarding";
+import { AuthShell, PrimaryButton } from "@/features/onboarding/components";
 import { useOnboarding } from "@/lib/onboarding-store";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand, pageTitle, mailto } from "@/brand/brand";

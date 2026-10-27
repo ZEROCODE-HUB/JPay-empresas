@@ -12,7 +12,7 @@ import {
   enviarOtpTransferencia,
   verificarOtpTransferencia,
 } from "@/lib/api/transferencias";
-import type { PasoTransferencia } from "@/components/transfer-ui";
+import type { PasoTransferencia } from "../components/TransferProcessingOverlay";
 import type { Subcuenta, TransferPayload, TransferSuccess } from "../types";
 import { OTP_ENABLED, digitsOnly, mensajeEjecucionFallida } from "../utils";
 

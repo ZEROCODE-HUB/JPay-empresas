@@ -1,6 +1,6 @@
 import { Save, ShieldCheck, Users, X } from "lucide-react";
 import { Input, Label, BtnPrimary, BtnOutline } from "@/components/portal-shell";
-import { ResumenCotizacion } from "@/components/transfer-ui";
+import { ResumenCotizacion } from "./ResumenCotizacion";
 import { formatMoney } from "@/shared/format";
 import type { FrequentRecipient } from "@/lib/api/transferencias";
 import {

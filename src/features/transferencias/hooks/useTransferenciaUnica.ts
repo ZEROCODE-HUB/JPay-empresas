@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { detectIdentifierKind } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
-import { useCotizacion } from "@/components/transfer-ui";
+import { useCotizacion } from "./useCotizacion";
 import { formatDate, formatMoney } from "@/shared/format";
 import type { Draft, FrequentRecipient, Template } from "@/lib/api/transferencias";
 import type { CoelsaResult, Subcuenta, TransferPayload } from "../types";

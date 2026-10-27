@@ -2,7 +2,7 @@
 import { FileText } from "lucide-react";
 import { PageHeader, BtnOutline } from "@/components/portal-shell";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
-import { TransferProcessingOverlay } from "@/components/transfer-ui";
+import { TransferProcessingOverlay } from "@/features/transferencias/components/TransferProcessingOverlay";
 import { usePantallaTransferencias } from "@/features/transferencias/hooks/usePantallaTransferencias";
 import { useEnvioTransferencia } from "@/features/transferencias/hooks/useEnvioTransferencia";
 import {

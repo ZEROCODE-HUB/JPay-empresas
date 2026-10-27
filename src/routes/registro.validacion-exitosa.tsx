@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AuthShell, PrimaryButton, SuccessCard } from "@/components/onboarding";
+import { AuthShell, PrimaryButton, SuccessCard } from "@/features/onboarding/components";
 import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/registro/validacion-exitosa")({

@@ -7,7 +7,7 @@ import {
   SelectField,
   Stepper,
   WizardNav,
-} from "@/components/onboarding";
+} from "@/features/onboarding/components";
 import { TIPOS_SOCIEDAD, useOnboarding } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
 import { useDatosEmpresaGuardados } from "@/hooks/useOnboarding";

@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { TransferReceiptModal } from "@/components/transfer-ui";
+import { TransferReceiptModal } from "./TransferReceiptModal";
 import { descargarComprobantePdf } from "@/lib/comprobante-pdf";
 import { compartirComprobante } from "@/lib/comprobante-imagen";
 import type { RecipientTitular, RecipientValidationResult } from "@/lib/recipient-validation";

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AuthShell, PrimaryButton, SuccessCard } from "@/components/onboarding";
+import { AuthShell, PrimaryButton, SuccessCard } from "@/features/onboarding/components";
 import { verifyEmail } from "@/lib/api/onboarding";
 import { getAuthErrorMessage } from "@/lib/supabase";
 import { useOnboarding } from "@/lib/onboarding-store";

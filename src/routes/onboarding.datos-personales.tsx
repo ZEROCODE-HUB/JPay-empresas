@@ -10,7 +10,7 @@ import {
   SelectField,
   Stepper,
   WizardNav,
-} from "@/components/onboarding";
+} from "@/features/onboarding/components";
 import { OCUPACIONES, ORIGEN_FONDOS, useOnboarding } from "@/lib/onboarding-store";
 import { pageTitle } from "@/brand/brand";
 import { useDatosPersonalesGuardados } from "@/hooks/useOnboarding";

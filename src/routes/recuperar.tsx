@@ -1,6 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AuthShell, Field, PrimaryButton, SuccessCard, FormTitle } from "@/components/onboarding";
+import {
+  AuthShell,
+  Field,
+  PrimaryButton,
+  SuccessCard,
+  FormTitle,
+} from "@/features/onboarding/components";
 import { requireSupabase, getAuthErrorMessage } from "@/lib/supabase";
 import { brand, pageTitle } from "@/brand/brand";
 

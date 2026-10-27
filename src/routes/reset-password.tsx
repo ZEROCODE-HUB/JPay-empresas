@@ -7,7 +7,7 @@ import {
   SuccessCard,
   FormTitle,
   validatePassword,
-} from "@/components/onboarding";
+} from "@/features/onboarding/components";
 import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
 import { brand, pageTitle } from "@/brand/brand";
 
