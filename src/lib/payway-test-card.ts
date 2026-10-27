@@ -61,12 +61,10 @@ export function isPaywayTestCardApproved(metodo: string): boolean {
 }
 
 /**
- * Si se deben prellenar los datos de prueba.
- *
- * Siempre true para que en producción también se prellenan los datos de
- * prueba de Payway (tarjeta validada por soporte). Facilita las pruebas
- * del flujo completo.
+ * Si se deben prellenar los datos de prueba: solo con `VITE_PAYWAY_TEST_CARD=true`
+ * (local o un ambiente de pruebas). Nunca debe estar activo en un sitio que cobra de
+ * verdad: el checkout quedaría precargado con una tarjeta ajena.
  */
 export function isDevWithTestCard(): boolean {
-  return true;
+  return import.meta.env.VITE_PAYWAY_TEST_CARD === "true";
 }
