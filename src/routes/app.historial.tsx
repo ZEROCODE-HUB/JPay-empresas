@@ -25,6 +25,7 @@ import type { DatosComprobante } from "@/lib/comprobante";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatDateTime, formatMoney } from "@/shared/format";
 
 // `?subcuenta=<nombre>` llega desde Subcuentas ("Ver historial") y preselecciona el filtro.
 export const Route = createFileRoute("/app/historial")({
@@ -35,21 +36,9 @@ export const Route = createFileRoute("/app/historial")({
   component: Page,
 });
 
+/** Solo para las exportaciones (Excel/PDF), que conservan su formato. */
 const formatARS = (n: number) =>
   `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-const formatFecha = (f: string | null) => {
-  if (!f) return "—";
-  const d = new Date(f);
-  if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
 
 type Mov = {
   txid: string;
@@ -147,7 +136,7 @@ function mapMov(r: MovRow): Mov {
     titular: r.legajo,
     cuit: "—",
     cbuCvu: r.cvu ?? "—",
-    fecha: formatFecha(r.fecha),
+    fecha: formatDateTime(r.fecha),
     fechaISO: r.fecha ?? "",
     monto: Number(r.monto_operacion) || 0,
     comision: Number(r.comision) || 0,
@@ -270,7 +259,6 @@ const OPERACIONES: Array<{ k: string; l: string; tipos: string[] | null }> = [
   { k: "Ajustes", l: "Ajustes de saldo", tipos: ["ajuste_manual"] },
 ];
 
-const formatMonto = (n: number) => `${n >= 0 ? "+" : "-"} ${formatARS(Math.abs(n))}`;
 const formatFechaLinea = (iso: string) => {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
@@ -709,7 +697,7 @@ function Page() {
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Ingresos del periodo</div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
-            {formatARS(totalIngresos)}
+            {formatMoney(totalIngresos)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             {lineas.filter((l) => l.monto > 0).length} líneas
@@ -718,7 +706,7 @@ function Page() {
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Egresos del periodo</div>
           <div className="text-xl md:text-2xl font-bold text-foreground">
-            {formatARS(totalEgresos)}
+            {formatMoney(totalEgresos)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
             {lineas.filter((l) => l.monto < 0).length} líneas (incluye comisiones e impuestos)
@@ -730,7 +718,7 @@ function Page() {
             className={`font-display tabular-nums text-xl md:text-2xl font-bold ${totalIngresos - totalEgresos >= 0 ? "text-emerald-700" : "text-danger-600"}`}
           >
             {totalIngresos - totalEgresos >= 0 ? "+ " : "- "}
-            {formatARS(Math.abs(totalIngresos - totalEgresos))}
+            {formatMoney(Math.abs(totalIngresos - totalEgresos))}
           </div>
         </Card>
         <Card className="p-5">
@@ -995,7 +983,7 @@ function Page() {
                       <td
                         className={`px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${l.monto >= 0 ? "text-emerald-700" : "text-danger-700"}`}
                       >
-                        {formatMonto(l.monto)}
+                        {formatMoney(l.monto, { signo: true })}
                       </td>
                       <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">
                         {formatFechaLinea(l.fecha)}
@@ -1119,13 +1107,13 @@ function Page() {
                     className={`font-display tabular-nums text-2xl font-bold ${detalle.tipo === "ingreso" ? "text-emerald-700" : ""}`}
                   >
                     {detalle.tipo === "ingreso"
-                      ? "+ " + formatARS(detalle.monto)
+                      ? "+ " + formatMoney(detalle.monto)
                       : detalle.categoria === "Transferencias" || detalle.categoria === "Egresos"
                         ? "- " +
-                          formatARS(
+                          formatMoney(
                             detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0),
                           )
-                        : "- " + formatARS(detalle.monto)}
+                        : "- " + formatMoney(detalle.monto)}
                   </div>
                 </div>
                 <div className="text-right">
@@ -1228,16 +1216,16 @@ function Page() {
                   <>
                     <div>
                       <div className="text-xs text-muted-foreground">Comisión</div>
-                      <div className="font-mono">{formatARS(detalle.comision)}</div>
+                      <div className="font-mono">{formatMoney(detalle.comision)}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">IVA</div>
-                      <div className="font-mono">{formatARS(detalle.impuesto)}</div>
+                      <div className="font-mono">{formatMoney(detalle.impuesto)}</div>
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground">Monto debitado</div>
                       <div className="font-mono font-semibold">
-                        {formatARS(
+                        {formatMoney(
                           detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0),
                         )}
                       </div>
@@ -1304,7 +1292,7 @@ function Page() {
                 <BrandLogo />
                 <div className="text-right text-xs text-muted-foreground">
                   <div className="font-mono font-semibold text-foreground">{serie}</div>
-                  <div>Generado: {new Date().toLocaleString("es-AR")}</div>
+                  <div>Generado: {formatDateTime(new Date())}</div>
                 </div>
               </div>
               <h2 className="text-xl font-semibold">Reporte de movimientos</h2>
@@ -1321,20 +1309,20 @@ function Page() {
                   <div>
                     <div className="text-xs text-muted-foreground">Ingresos</div>
                     <div className="font-display tabular-nums font-semibold">
-                      {formatARS(totalIngresos)}
+                      {formatMoney(totalIngresos)}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Egresos</div>
                     <div className="font-display tabular-nums font-semibold">
-                      {formatARS(totalEgresos)}
+                      {formatMoney(totalEgresos)}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Neto</div>
                     <div className="font-display tabular-nums font-semibold text-emerald-700">
                       {totalIngresos - totalEgresos >= 0 ? "+ " : "- "}
-                      {formatARS(Math.abs(totalIngresos - totalEgresos))}
+                      {formatMoney(Math.abs(totalIngresos - totalEgresos))}
                     </div>
                   </div>
                 </div>

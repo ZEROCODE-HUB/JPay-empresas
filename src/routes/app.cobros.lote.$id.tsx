@@ -18,7 +18,6 @@ import { toast } from "sonner";
 import {
   getLoteByIdDB,
   getRegistrosByLoteIdDB,
-  formatARS,
   estadoCatalogo,
   medioPagoLabels,
   iniciarLoteDB,
@@ -30,6 +29,7 @@ import {
   type RegistroDeLote,
 } from "@/data/cobros-masivos";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
+import { formatMoney } from "@/shared/format";
 import * as XLSX from "xlsx";
 
 export const Route = createFileRoute("/app/cobros/lote/$id")({
@@ -486,19 +486,19 @@ function DetalleLote() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total</span>
               <span className="font-display tabular-nums font-semibold text-lg">
-                {formatARS(montoTotal)}
+                {formatMoney(montoTotal)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Cobrado</span>
               <span className="font-display tabular-nums font-semibold text-emerald-600">
-                {formatARS(montoCobrado)}
+                {formatMoney(montoCobrado)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Pendiente</span>
               <span className="font-display tabular-nums font-semibold text-amber-600">
-                {formatARS(montoTotal - montoCobrado)}
+                {formatMoney(montoTotal - montoCobrado)}
               </span>
             </div>
             <div className="h-3 rounded-full bg-muted overflow-hidden mt-2">
@@ -548,7 +548,7 @@ function DetalleLote() {
                       <div className="text-[10px] text-muted-foreground font-mono">{r.id}</div>
                     </td>
                     <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-                      <span className="font-mono tabular-nums">{formatARS(r.monto)}</span>
+                      <span className="font-mono tabular-nums">{formatMoney(r.monto)}</span>
                     </td>
                     <td className="px-3 py-3 text-right whitespace-nowrap">
                       <span
@@ -560,7 +560,7 @@ function DetalleLote() {
                               : "text-muted-foreground font-mono tabular-nums"
                         }
                       >
-                        {formatARS(r.montoPagado)}
+                        {formatMoney(r.montoPagado)}
                       </span>
                     </td>
                     <td

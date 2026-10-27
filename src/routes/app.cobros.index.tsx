@@ -37,6 +37,7 @@ import {
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/cobros/")({ component: Dashboard });
 
@@ -286,13 +287,13 @@ function Dashboard() {
             Monto total
           </div>
           <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5">
-            {formatARS(kpi.montoTotal)}
+            {formatMoney(kpi.montoTotal)}
           </div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Cobrado</div>
           <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5 text-emerald-600">
-            {formatARS(kpi.montoCobrado)}
+            {formatMoney(kpi.montoCobrado)}
           </div>
         </div>
         <div className="bg-card border rounded-lg p-3">
@@ -300,7 +301,7 @@ function Dashboard() {
             Pendiente
           </div>
           <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5 text-amber-600">
-            {formatARS(kpi.montoPendiente)}
+            {formatMoney(kpi.montoPendiente)}
           </div>
         </div>
       </div>
@@ -329,7 +330,7 @@ function Dashboard() {
                   <Cell key={e.medio} fill={MEDIO_COLORS[e.medio] || "#666"} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => formatARS(v)} />
+              <Tooltip formatter={(v: number) => formatMoney(v)} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
@@ -400,7 +401,7 @@ function Dashboard() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground text-center pt-1">
-              Monto no cobrado: {formatARS(noCobradas.montoNoCobrado)}
+              Monto no cobrado: {formatMoney(noCobradas.montoNoCobrado)}
             </div>
           </div>
         </Card>
@@ -416,7 +417,7 @@ function Dashboard() {
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="fecha" tick={{ fontSize: 10 }} />
             <YAxis tick={{ fontSize: 10 }} />
-            <Tooltip formatter={(v: number) => formatARS(v)} />
+            <Tooltip formatter={(v: number) => formatMoney(v)} />
             <Legend />
             <Line
               type="monotone"
@@ -503,13 +504,13 @@ function Dashboard() {
                     </div>
                   </td>
                   <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
-                    {formatARS(l.montoTotal)}
+                    {formatMoney(l.montoTotal)}
                   </td>
                   <td className="px-5 py-3 font-mono tabular-nums text-right text-emerald-600 font-semibold">
-                    {formatARS(l.montoCobrado)}
+                    {formatMoney(l.montoCobrado)}
                   </td>
                   <td className="px-5 py-3 font-mono tabular-nums text-right text-amber-600 font-semibold">
-                    {formatARS(l.montoTotal - l.montoCobrado)}
+                    {formatMoney(l.montoTotal - l.montoCobrado)}
                   </td>
                   <td className="px-5 py-3 text-center">
                     <button

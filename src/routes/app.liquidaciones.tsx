@@ -36,6 +36,7 @@ import { formatARS } from "@/data/cobros-masivos";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatDate, formatDateShort, formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/liquidaciones")({ component: Liquidaciones });
 
@@ -123,16 +124,6 @@ const ESTADO_TICKET_TONE: Record<TicketEstado, "neutral" | "success" | "warn" | 
   acreditado: "success",
 };
 
-function fmtDate(iso: string) {
-  if (!iso) return "—";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit" });
-}
-function fmtDateFull(iso: string) {
-  if (!iso) return "—";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
-}
 function toISO(d: Date) {
   return d.toISOString().slice(0, 10);
 }
@@ -480,14 +471,16 @@ function CalendarioAcreditacionesTab({
                   </div>
                   {tieneItems && (
                     <div className="space-y-1">
-                      <div className="font-mono text-sm font-semibold">{formatARS(totalBruto)}</div>
+                      <div className="font-mono text-sm font-semibold">
+                        {formatMoney(totalBruto)}
+                      </div>
                       {dayItems.slice(0, 2).map((it) => {
                         const color = ESTADO_CAL_COLORS[it.estadoCalculado];
                         return (
                           <div
                             key={it.id}
                             className={`text-[10px] p-1 rounded truncate ${color.bg} ${color.text}`}
-                            title={`${it.bandera} · ${formatARS(it.importeBruto)}`}
+                            title={`${it.bandera} · ${formatMoney(it.importeBruto)}`}
                           >
                             {it.bandera}
                           </div>
@@ -503,8 +496,8 @@ function CalendarioAcreditacionesTab({
                           <div className="font-semibold flex items-center gap-1">
                             <Percent size={10} /> Adelanto
                           </div>
-                          <div className="font-mono">-{formatARS(totalAdelantos)}</div>
-                          <div className="font-mono">Libre: {formatARS(netoDelDia)}</div>
+                          <div className="font-mono">-{formatMoney(totalAdelantos)}</div>
+                          <div className="font-mono">Libre: {formatMoney(netoDelDia)}</div>
                           {cupoAgotado && (
                             <div className="text-danger-700 font-semibold mt-0.5">Cupo agotado</div>
                           )}
@@ -596,19 +589,19 @@ function CalendarioAcreditacionesTab({
                 <div className="rounded-md border bg-muted/30 px-3 py-2">
                   <div className="text-muted-foreground">Total bruto</div>
                   <div className="font-mono font-semibold text-base">
-                    {formatARS(totalBrutoDia)}
+                    {formatMoney(totalBrutoDia)}
                   </div>
                 </div>
                 <div className="rounded-md border bg-muted/30 px-3 py-2">
                   <div className="text-muted-foreground">Total neto</div>
                   <div className="font-mono font-semibold text-base text-emerald-700">
-                    {formatARS(totalNetoDia)}
+                    {formatMoney(totalNetoDia)}
                   </div>
                 </div>
                 <div className="rounded-md border bg-amber-50 border-amber-200 px-3 py-2">
                   <div className="text-amber-700">Adelantos reservados</div>
                   <div className="font-mono font-semibold text-base text-amber-700">
-                    {formatARS(totalAdelantosDia)}
+                    {formatMoney(totalAdelantosDia)}
                   </div>
                 </div>
               </div>
@@ -643,8 +636,8 @@ function CalendarioAcreditacionesTab({
                             }}
                             className="block w-full text-left hover:underline"
                           >
-                            {a.estado} · {formatARS(a.montoPorAcreditar ?? a.montoSolicitado)} · Tkt
-                            #{a.id.slice(0, 8).toUpperCase()}
+                            {a.estado} · {formatMoney(a.montoPorAcreditar ?? a.montoSolicitado)} ·
+                            Tkt #{a.id.slice(0, 8).toUpperCase()}
                           </button>
                         );
                       })}
@@ -686,45 +679,51 @@ function CalendarioAcreditacionesTab({
                         <tbody className="font-mono">
                           <tr>
                             <td className="py-1">Importe bruto del lote</td>
-                            <td className="text-right">{formatARS(it.importeBruto)}</td>
+                            <td className="text-right">{formatMoney(it.importeBruto)}</td>
                           </tr>
                           <tr className="text-danger-600">
                             <td className="py-1">
                               (-) Comisión {brand.name} ({it.tasaPropiaPct.toFixed(2)}%)
                             </td>
-                            <td className="text-right">-{formatARS(it.tasaPropiaMonto)}</td>
+                            <td className="text-right">-{formatMoney(it.tasaPropiaMonto)}</td>
                           </tr>
                           <tr className="text-danger-600">
                             <td className="py-1">
                               (-) Comisión PayWay ({it.tasaPaywayPct.toFixed(2)}%)
                             </td>
-                            <td className="text-right">-{formatARS(it.tasaPaywayMonto)}</td>
+                            <td className="text-right">-{formatMoney(it.tasaPaywayMonto)}</td>
                           </tr>
                           <tr className="text-danger-600">
                             <td className="py-1">
                               (-) Comisión cierre de lote ({comisionCierrePct.toFixed(2)}%)
                             </td>
-                            <td className="text-right">-{formatARS(it.comisionCierreLoteMonto)}</td>
+                            <td className="text-right">
+                              -{formatMoney(it.comisionCierreLoteMonto)}
+                            </td>
                           </tr>
                           <tr className="text-danger-600">
                             <td className="py-1">(-) Impuestos</td>
-                            <td className="text-right">-{formatARS(it.impuestos)}</td>
+                            <td className="text-right">-{formatMoney(it.impuestos)}</td>
                           </tr>
                           {it.contracargoMonto > 0 && (
                             <tr className="text-danger-600">
                               <td className="py-1">(-) Contracargo</td>
-                              <td className="text-right">-{formatARS(it.contracargoMonto)}</td>
+                              <td className="text-right">-{formatMoney(it.contracargoMonto)}</td>
                             </tr>
                           )}
                           {it.adelantosAplicadosDia > 0 && (
                             <tr className="text-amber-700">
                               <td className="py-1">(-) Adelanto aplicado a este día</td>
-                              <td className="text-right">-{formatARS(it.adelantosAplicadosDia)}</td>
+                              <td className="text-right">
+                                -{formatMoney(it.adelantosAplicadosDia)}
+                              </td>
                             </tr>
                           )}
                           <tr className="border-t-2 font-semibold">
                             <td className="py-1.5">= Neto a recibir en tu Operativa</td>
-                            <td className="text-right text-emerald-700">{formatARS(netoFinal)}</td>
+                            <td className="text-right text-emerald-700">
+                              {formatMoney(netoFinal)}
+                            </td>
                           </tr>
                         </tbody>
                       </table>
@@ -749,7 +748,7 @@ function CalendarioAcreditacionesTab({
                     onClick={() => {
                       if (netoDespuesAdelantos < minMonto) {
                         toast.error(
-                          `El remanente libre (${formatARS(netoDespuesAdelantos)}) es menor al mínimo (${formatARS(minMonto)}).`,
+                          `El remanente libre (${formatMoney(netoDespuesAdelantos)}) es menor al mínimo (${formatMoney(minMonto)}).`,
                         );
                         return;
                       }
@@ -1271,7 +1270,7 @@ function Liquidaciones() {
           .sort(([a], [b]) => a.localeCompare(b))
           .map(([date, v]) => ({
             date,
-            label: fmtDate(date),
+            label: formatDateShort(date),
             monto: v.monto,
             cantidad: v.cantidad,
           }));
@@ -1280,7 +1279,7 @@ function Liquidaciones() {
           .sort(([a], [b]) => b.localeCompare(a)) // más reciente primero
           .map(([date, v]) => ({
             date,
-            label: fmtDate(date),
+            label: formatDateShort(date),
             monto: v.monto,
             cantidad: v.cantidad,
           }));
@@ -1397,7 +1396,7 @@ function Liquidaciones() {
       { Metrica: "Disponible para adelanto", Valor: formatARS(disponible) },
       {},
       ...dias.map((d) => ({
-        Metrica: `Acredita ${fmtDateFull(d.date)}`,
+        Metrica: `Acredita ${formatDate(d.date)}`,
         Valor: formatARS(d.monto),
         Cantidad: d.cantidad,
       })),
@@ -1406,7 +1405,7 @@ function Liquidaciones() {
         Ticket: t.id,
         Fecha: t.fecha,
         "Monto solicitado": formatARS(t.montoSolicitado),
-        "Fecha acreditación": fmtDateFull(t.fechaAcreditacion),
+        "Fecha acreditación": formatDate(t.fechaAcreditacion),
         Estado: ESTADO_TICKET_LABEL[t.estado],
       })),
     ]);
@@ -1442,7 +1441,7 @@ function Liquidaciones() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       startY: (doc as any).lastAutoTable.finalY + 8,
       head: [["Fecha acredita", "Monto", "Ops"]],
-      body: dias.map((d) => [fmtDateFull(d.date), formatARS(d.monto), String(d.cantidad)]),
+      body: dias.map((d) => [formatDate(d.date), formatARS(d.monto), String(d.cantidad)]),
       styles: { fontSize: 8 },
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1454,7 +1453,7 @@ function Liquidaciones() {
         t.id,
         t.fecha,
         formatARS(t.montoSolicitado),
-        fmtDateFull(t.fechaAcreditacion),
+        formatDate(t.fechaAcreditacion),
         ESTADO_TICKET_LABEL[t.estado],
       ]),
       styles: { fontSize: 7 },
@@ -1496,7 +1495,7 @@ function Liquidaciones() {
             <Clock size={12} /> Falta cobrar
           </div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold mt-1">
-            {loading ? "—" : formatARS(faltaCobrar)}
+            {loading ? "—" : formatMoney(faltaCobrar)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Ventas sin lote aún</div>
         </Card>
@@ -1505,7 +1504,7 @@ function Liquidaciones() {
             <Wallet size={12} /> Por acreditar
           </div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold mt-1 text-blue-700">
-            {loading ? "—" : formatARS(porAcreditar)}
+            {loading ? "—" : formatMoney(porAcreditar)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Lotes no Acreditados</div>
         </Card>
@@ -1514,7 +1513,7 @@ function Liquidaciones() {
             <Percent size={12} /> Adelantos en curso
           </div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold mt-1 text-amber-700">
-            {loading ? "—" : formatARS(adelantosEnCurso)}
+            {loading ? "—" : formatMoney(adelantosEnCurso)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Pendiente + Aprobado</div>
         </Card>
@@ -1523,7 +1522,7 @@ function Liquidaciones() {
             <TrendingUp size={12} /> Disponible real
           </div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold mt-1 text-emerald-700">
-            {loading ? "—" : formatARS(disponible)}
+            {loading ? "—" : formatMoney(disponible)}
           </div>
           <div className="text-xs text-muted-foreground mt-1">Por acreditar − en curso</div>
         </Card>
@@ -1660,12 +1659,12 @@ function Liquidaciones() {
                       <tr key={t.id} className="hover:bg-muted/30">
                         <td className="px-5 py-3 font-mono font-semibold">{t.id}</td>
                         <td className="px-5 py-3 text-xs text-muted-foreground">
-                          {fmtDateFull(t.fecha)}
+                          {formatDate(t.fecha)}
                         </td>
                         <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
-                          {formatARS(t.montoSolicitado)}
+                          {formatMoney(t.montoSolicitado)}
                         </td>
-                        <td className="px-5 py-3 text-xs">{fmtDateFull(t.fechaAcreditacion)}</td>
+                        <td className="px-5 py-3 text-xs">{formatDate(t.fechaAcreditacion)}</td>
                         <td className="px-5 py-3">
                           <Badge tone={ESTADO_TICKET_TONE[t.estado]}>
                             {ESTADO_TICKET_LABEL[t.estado]}
@@ -1753,7 +1752,9 @@ function Liquidaciones() {
                 Lotes que ya fueron acreditados a tu subcuenta Operativa (estado{" "}
                 <Badge tone="success">Acreditado</Badge>). Suma:{" "}
                 <span className="font-mono font-semibold text-emerald-700">
-                  {formatARS(lotesAcreditados.reduce((s, l) => s + Number(l.importeNeto ?? 0), 0))}
+                  {formatMoney(
+                    lotesAcreditados.reduce((s, l) => s + Number(l.importeNeto ?? 0), 0),
+                  )}
                 </span>
               </div>
             </div>
@@ -1792,13 +1793,13 @@ function Liquidaciones() {
                           {l.cantidadOperaciones}
                         </td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums font-semibold text-emerald-700">
-                          {formatARS(l.importeNeto)}
+                          {formatMoney(l.importeNeto)}
                         </td>
-                        <td className="px-5 py-3 text-xs">{fmtDateFull(l.fecha)}</td>
+                        <td className="px-5 py-3 text-xs">{formatDate(l.fecha)}</td>
                         <td className="px-5 py-3 text-xs">
                           {l.fechaCobroReal ? (
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono">{fmtDateFull(l.fechaCobroReal)}</span>
+                              <span className="font-mono">{formatDate(l.fechaCobroReal)}</span>
                               <Badge tone="success">real</Badge>
                             </div>
                           ) : (
@@ -1806,7 +1807,7 @@ function Liquidaciones() {
                           )}
                         </td>
                         <td className="px-5 py-3 text-xs font-mono">
-                          {l.fechaAcreditacion ? fmtDateFull(l.fechaAcreditacion) : "—"}
+                          {l.fechaAcreditacion ? formatDate(l.fechaAcreditacion) : "—"}
                         </td>
                         <td className="px-5 py-3 text-center">
                           <Badge tone="success">Acreditado</Badge>
@@ -1912,7 +1913,7 @@ function Liquidaciones() {
                   ) : (
                     ventaPaginated.map((v, idx) => (
                       <tr key={`${v.fecha}-${v.bandera}-${idx}`} className="hover:bg-muted/30">
-                        <td className="px-5 py-3 text-xs">{fmtDateFull(v.fecha)}</td>
+                        <td className="px-5 py-3 text-xs">{formatDate(v.fecha)}</td>
                         <td className="px-5 py-3">
                           <Badge tone="neutral">{v.bandera}</Badge>
                         </td>
@@ -1920,16 +1921,16 @@ function Liquidaciones() {
                           {v.cantidadOperaciones}
                         </td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums font-semibold">
-                          {formatARS(v.montoOperaciones)}
+                          {formatMoney(v.montoOperaciones)}
                         </td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                          {formatARS(v.comision)}
+                          {formatMoney(v.comision)}
                         </td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums text-muted-foreground">
-                          {formatARS(v.impuesto)}
+                          {formatMoney(v.impuesto)}
                         </td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums font-semibold text-emerald-700">
-                          {formatARS(v.montoCobrado)}
+                          {formatMoney(v.montoCobrado)}
                         </td>
                       </tr>
                     ))
@@ -2089,7 +2090,7 @@ function Liquidaciones() {
                       <td className="px-4 py-2 text-xs">{imp.descripcion}</td>
                       <td className="px-4 py-2 text-right text-xs">{imp.tipo}</td>
                       <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">
-                        {imp.tipo === "Porcentaje" ? `${imp.alicuota}%` : formatARS(imp.alicuota)}
+                        {imp.tipo === "Porcentaje" ? `${imp.alicuota}%` : formatMoney(imp.alicuota)}
                       </td>
                       <td className="px-4 py-2 text-center">
                         {exento ? (
@@ -2119,7 +2120,7 @@ function Liquidaciones() {
                   </span>
                   {exc.vigenciaHasta && (
                     <span className="text-muted-foreground">
-                      (hasta {fmtDateFull(exc.vigenciaHasta)})
+                      (hasta {formatDate(exc.vigenciaHasta)})
                     </span>
                   )}
                 </div>
@@ -2169,7 +2170,7 @@ function Liquidaciones() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Por acreditar total</span>
-                      <span className="font-mono">{formatARS(porAcreditar)}</span>
+                      <span className="font-mono">{formatMoney(porAcreditar)}</span>
                     </div>
                     {(() => {
                       const reservados = tickets
@@ -2180,7 +2181,7 @@ function Liquidaciones() {
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">(-) Adelantos en curso</span>
                             <span className="font-mono text-amber-700">
-                              - {formatARS(reservados)}
+                              - {formatMoney(reservados)}
                             </span>
                           </div>
                         );
@@ -2190,14 +2191,14 @@ function Liquidaciones() {
                     <div className="flex justify-between border-t border-emerald-200 pt-1">
                       <span className="text-muted-foreground font-semibold">Disponible real</span>
                       <span className="font-mono font-bold text-emerald-700 text-sm">
-                        {formatARS(disponible)}
+                        {formatMoney(disponible)}
                       </span>
                     </div>
                     {selectedDate && (
                       <div className="flex justify-between pt-1 border-t border-emerald-200">
                         <span className="text-muted-foreground">Día seleccionado</span>
                         <span className="font-semibold">
-                          {fmtDateFull(selectedDate)} · {formatARS(totalSeleccionado)}
+                          {formatDate(selectedDate)} · {formatMoney(totalSeleccionado)}
                         </span>
                       </div>
                     )}
@@ -2228,7 +2229,7 @@ function Liquidaciones() {
                       placeholder="Ej. 500000"
                     />
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      Máximo {formatARS(maxMonto)}
+                      Máximo {formatMoney(maxMonto)}
                     </div>
                   </div>
                   <div>
@@ -2240,7 +2241,7 @@ function Liquidaciones() {
                     >
                       {dias.map((d) => (
                         <option key={d.date} value={d.date}>
-                          {fmtDateFull(d.date)} · {formatARS(d.monto)} ({d.cantidad} ops)
+                          {formatDate(d.date)} · {formatMoney(d.monto)} ({d.cantidad} ops)
                         </option>
                       ))}
                     </select>
@@ -2283,21 +2284,21 @@ function Liquidaciones() {
             <div className="p-6 space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha solicitud</span>
-                <span className="font-semibold">{fmtDateFull(detalle.fecha)}</span>
+                <span className="font-semibold">{formatDate(detalle.fecha)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monto solicitado</span>
                 <span className="font-mono font-semibold">
-                  {formatARS(detalle.montoSolicitado)}
+                  {formatMoney(detalle.montoSolicitado)}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Fecha a adelantar</span>
-                <span className="font-semibold">{fmtDateFull(detalle.fechaAcreditacion)}</span>
+                <span className="font-semibold">{formatDate(detalle.fechaAcreditacion)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Por acreditar al momento</span>
-                <span className="font-mono">{formatARS(detalle.montoPorAcreditar)}</span>
+                <span className="font-mono">{formatMoney(detalle.montoPorAcreditar)}</span>
               </div>
               {detalle.motivo && (
                 <div className="pt-3 border-t">
@@ -2329,7 +2330,7 @@ function Liquidaciones() {
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Monto solicitado</span>
                             <span className="font-mono font-semibold">
-                              {formatARS(detalle.montoSolicitado)}
+                              {formatMoney(detalle.montoSolicitado)}
                             </span>
                           </div>
                           <div className="flex justify-between">
@@ -2341,13 +2342,13 @@ function Liquidaciones() {
                               Costo financiero (interés)
                             </span>
                             <span className="font-mono font-semibold text-danger-600">
-                              - {formatARS(interes)}
+                              - {formatMoney(interes)}
                             </span>
                           </div>
                           <div className="flex justify-between pt-1 border-t border-emerald-200">
                             <span className="text-muted-foreground">Neto a recibir</span>
                             <span className="font-mono font-bold text-emerald-700">
-                              {formatARS(neto)}
+                              {formatMoney(neto)}
                             </span>
                           </div>
                           <div className="flex justify-between">

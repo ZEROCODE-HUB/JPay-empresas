@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
 import { FormDialog } from "@/components/form-dialog";
-import { formatARS } from "@/data/cobros-masivos";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/servicios")({ component: Page });
 
@@ -193,7 +193,7 @@ function Page() {
             A pagar este mes
           </div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {formatARS(totalPagarMes)}
+            {formatMoney(totalPagarMes)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">{prox.length} factura(s)</div>
         </div>

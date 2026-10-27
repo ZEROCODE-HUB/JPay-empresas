@@ -34,6 +34,7 @@ import { type DatosComprobante } from "@/lib/comprobante";
 import { executeTransfer } from "@/lib/transfer-orchestrator";
 import { createBdcClient, canTransferBdc, type BdcAccount } from "@/lib/bdc";
 import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { formatDate, formatMoney } from "@/shared/format";
 import {
   ResumenCotizacion,
   TransferProcessingOverlay,
@@ -227,9 +228,6 @@ type Subcuenta = {
   tipo: string;
 };
 
-const fmt = (n: number) =>
-  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
 const digitsOnly = (v?: string | null) => (v ?? "").replace(/\D/g, "");
 
 /** Badge color per scheduled-transfer status (executed = green). */
@@ -381,7 +379,7 @@ function Page() {
     toast.success(
       p.destinatario
         ? `Template "${p.nombre}" cargada`
-        : `Template "${p.nombre}" cargada${p.monto != null ? ` — ${fmt(p.monto)}` : ""}. Elegi el CBU/CVU/alias del destinatario.`,
+        : `Template "${p.nombre}" cargada${p.monto != null ? ` — ${formatMoney(p.monto)}` : ""}. Elegi el CBU/CVU/alias del destinatario.`,
     );
   };
 
@@ -738,7 +736,7 @@ function Page() {
             Disponible hoy
           </div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {fmt(totalDisponible)}
+            {formatMoney(totalDisponible)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5 truncate">
             {subcuentas.length} subcuentas
@@ -749,7 +747,7 @@ function Page() {
             Enviado este mes
           </div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {fmt(enviadoMes.monto)}
+            {formatMoney(enviadoMes.monto)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">
             {enviadoMes.ops} operaciones
@@ -1363,7 +1361,7 @@ function PlantillasDialog({
                       {p.destinatario
                         ? `${p.destinatario.nombre}${p.destinatario.alias ? ` · @${p.destinatario.alias}` : ""}`
                         : p.monto != null
-                          ? fmt(p.monto)
+                          ? formatMoney(p.monto)
                           : "Sin monto"}
                       {p.concepto ? ` · ${p.concepto}` : ""}
                       {origen ? ` · ${origen}` : ""}
@@ -1372,7 +1370,7 @@ function PlantillasDialog({
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="text-sm font-semibold">
-                    {p.monto != null ? fmt(p.monto) : "—"}
+                    {p.monto != null ? formatMoney(p.monto) : "—"}
                   </span>
                   <button
                     type="button"
@@ -1436,7 +1434,7 @@ function PlantillasDialog({
               <option value="">Sin especificar</option>
               {subcuentas.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.nombre} — {fmt(Number(s.saldo_disponible))}
+                  {s.nombre} — {formatMoney(Number(s.saldo_disponible))}
                 </option>
               ))}
             </select>
@@ -1570,10 +1568,10 @@ function Unica({
       cuit: dest.cuit,
       subcuentaOrigen,
       montoNum: amount,
-      monto: `$ ${amount.toLocaleString("es-AR")}`,
+      monto: formatMoney(amount),
       concepto,
       ref: "",
-      fecha: new Date().toLocaleDateString("es-AR"),
+      fecha: formatDate(new Date()),
     });
   };
 
@@ -1669,10 +1667,13 @@ function Unica({
                 .join(" ") || "—",
             ],
             ["Tipo de cuenta", selectedDestinatario?.tipoCuenta || "—"],
-            ["Monto", fmt(montoNum)],
-            ["Comisión", cot.cotizacion ? fmt(cot.cotizacion.comision) : "—"],
-            ["IVA", cot.cotizacion ? fmt(cot.cotizacion.impuesto) : "—"],
-            ["Total a debitar", cot.cotizacion ? fmt(cot.cotizacion.total) : fmt(montoNum)],
+            ["Monto", formatMoney(montoNum)],
+            ["Comisión", cot.cotizacion ? formatMoney(cot.cotizacion.comision) : "—"],
+            ["IVA", cot.cotizacion ? formatMoney(cot.cotizacion.impuesto) : "—"],
+            [
+              "Total a debitar",
+              cot.cotizacion ? formatMoney(cot.cotizacion.total) : formatMoney(montoNum),
+            ],
           ].map(([k, v]) => (
             <div key={k} className="flex justify-between py-2.5 px-3 text-sm">
               <span className="text-muted-foreground">{k}</span>
@@ -1685,7 +1686,8 @@ function Unica({
             className="rounded-md border border-danger-300 bg-danger-50 px-3 py-2 text-xs font-semibold text-danger-700"
             role="alert"
           >
-            Saldo insuficiente: te faltan {fmt(cot.faltante)}. Volvé y ajustá el monto o el origen.
+            Saldo insuficiente: te faltan {formatMoney(cot.faltante)}. Volvé y ajustá el monto o el
+            origen.
           </div>
         )}
         {OTP_ENABLED && (
@@ -1814,7 +1816,7 @@ function Unica({
               {subcuentas.length === 0 && <option value="">Sin subcuentas</option>}
               {subcuentas.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.nombre} — {fmt(Number(s.saldo_disponible))}
+                  {s.nombre} — {formatMoney(Number(s.saldo_disponible))}
                 </option>
               ))}
             </select>
@@ -2078,7 +2080,7 @@ function Programar({
             ["Origen", subcuentas.find((s) => s.id === subcuentaOrigen)?.nombre ?? "—"],
             ["Destinatario", destValid.titular?.nombre ?? destValid.identifier],
             ["Identificador", destValid.identifier + ` (${destValid.kind})`],
-            ["Monto", fmt(Number(monto) || 0)],
+            ["Monto", formatMoney(Number(monto) || 0)],
             ["Fecha", fecha || "—"],
             ["Hora", hora],
           ].map(([k, v]) => (
@@ -2168,7 +2170,7 @@ function Programar({
             >
               {subcuentas.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.nombre} — {fmt(Number(s.saldo_disponible))}
+                  {s.nombre} — {formatMoney(Number(s.saldo_disponible))}
                 </option>
               ))}
             </select>

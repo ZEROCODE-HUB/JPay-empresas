@@ -42,3 +42,6 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Generado por `deno check` de las Edge Functions
+deno.lock

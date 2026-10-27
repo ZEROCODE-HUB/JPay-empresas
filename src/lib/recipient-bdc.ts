@@ -19,14 +19,7 @@ import {
   type RecipientValidationResult,
 } from "./recipient-validation";
 import { createBdcClient, canQueryBdc, type BdcAccountInfoData } from "./bdc";
-
-/** 11 digits → `20-00000000-01`. Anything else is returned unchanged. */
-export function formatearCuit(cuit: string): string {
-  const digitos = cuit.replace(/\D/g, "");
-  return /^\d{11}$/.test(digitos)
-    ? `${digitos.slice(0, 2)}-${digitos.slice(2, 10)}-${digitos.slice(10)}`
-    : cuit;
-}
+import { formatCuit } from "@/shared/format";
 
 /** Palabras que el banco usa en el tipo de cuenta. */
 const TIPO_CUENTA_PALABRAS: Record<string, string> = {
@@ -167,7 +160,7 @@ export async function validateRecipient(
     raw: info,
     titular: {
       nombre: owner.displayName ?? raw,
-      cuit: formatearCuit(owner.id ?? ""),
+      cuit: owner.id ? formatCuit(owner.id) : "",
       cbu,
       alias: info?.data?.label ?? "",
       banco: info?.data?.entityRouting?.name ?? "",

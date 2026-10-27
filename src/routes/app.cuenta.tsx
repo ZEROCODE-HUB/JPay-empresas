@@ -31,6 +31,7 @@ import { useOnboarding } from "@/lib/onboarding-store";
 import { requireSupabase, getSignedDocUrls } from "@/lib/supabase";
 import { DocPreviewModal } from "@/components/doc-preview";
 import { ESTADO_LABEL, normalizarEstado, siguientePasoOnboarding } from "@/lib/cliente-estados";
+import { formatDate, formatDateTime, formatMoney, formatNumber } from "@/shared/format";
 
 export const Route = createFileRoute("/app/cuenta")({ component: Page });
 
@@ -72,24 +73,6 @@ function kindOf(label: string, url: string): DocReal["kind"] {
   if (IMG_EXT.includes(ext)) return "image";
   if (ext === "pdf") return "pdf";
   return "file";
-}
-
-function fmtFechaDoc(iso?: string) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-function fmtArs(v: any) {
-  if (v == null || v === "") return "—";
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(Number(v));
 }
 
 const planEmpresa = {
@@ -319,7 +302,7 @@ function Page() {
             : "Pendiente",
       sub: aprobado ? "Verificado" : "En revisión",
     },
-    { icon: Activity, label: "Transacciones mes", value: movCount.toLocaleString() },
+    { icon: Activity, label: "Transacciones mes", value: formatNumber(movCount) },
     { icon: User, label: "Antigüedad", value: antiguedad },
     {
       icon: TrendingUp,
@@ -611,7 +594,7 @@ function Page() {
                       <div>
                         <div className="text-sm font-semibold">{d.tipo}</div>
                         <div className="text-xs text-muted-foreground">
-                          Subido el {fmtFechaDoc(d.date)}
+                          Subido el {formatDate(d.date)}
                         </div>
                       </div>
                     </div>
@@ -662,7 +645,7 @@ function Page() {
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-muted-foreground">Consumo del mes</span>
                 <span className="font-semibold">
-                  {plan.used.toLocaleString()} / {plan.total.toLocaleString()}
+                  {formatNumber(plan.used)} / {formatNumber(plan.total)}
                 </span>
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -751,7 +734,9 @@ function Page() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monto max. por transferencia</span>
-                <span className="font-semibold">{fmtArs(cliente?.limite_transferencia)}</span>
+                <span className="font-semibold">
+                  {formatMoney(cliente?.limite_transferencia, { decimals: 0 })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Operaciones diarias</span>
@@ -759,7 +744,9 @@ function Page() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Monto acumulado diario</span>
-                <span className="font-semibold">{fmtArs(cliente?.limite_monto_diario)}</span>
+                <span className="font-semibold">
+                  {formatMoney(cliente?.limite_monto_diario, { decimals: 0 })}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Horario operativo</span>
@@ -789,7 +776,7 @@ function Page() {
                 <BrandLogo />
                 <div className="text-right text-xs text-muted-foreground">
                   <div className="font-mono font-semibold text-foreground">CBU-EMP-2026-000042</div>
-                  <div>Generado: {new Date().toLocaleString("es-AR")}</div>
+                  <div>Generado: {formatDateTime(new Date())}</div>
                 </div>
               </div>
               <h2 className="text-xl font-semibold">Constancia de CBU</h2>

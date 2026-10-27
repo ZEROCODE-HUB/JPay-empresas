@@ -13,7 +13,8 @@ import {
 import { toast } from "sonner";
 import { FormDialog } from "@/components/form-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { paymentMethods, formatARS, type Product, type PaymentLink } from "@/data/links-pago";
+import { paymentMethods, type Product, type PaymentLink } from "@/data/links-pago";
+import { formatDate, formatMoney } from "@/shared/format";
 import { requireSupabase } from "@/lib/supabase";
 import type { Tables } from "@/lib/database.types";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
@@ -337,7 +338,7 @@ function Page() {
       methods: linkMethods,
       reference: linkRef || undefined,
       notes: linkNotes || undefined,
-      createdAt: new Date().toLocaleDateString("es-AR"),
+      createdAt: formatDate(new Date()),
       expiresAt: linkExpires || undefined,
       views: 0,
       payments: 0,
@@ -554,7 +555,7 @@ function Page() {
                       <td className="px-3 py-3 font-semibold">{p.name}</td>
                       <td className="px-3 py-3 font-mono tabular-nums text-right">{p.qty}</td>
                       <td className="px-3 py-3 font-mono tabular-nums text-right font-semibold">
-                        {formatARS(p.price)}
+                        {formatMoney(p.price, { decimals: 0 })}
                       </td>
                       <td className="px-3 py-3 text-xs text-muted-foreground hidden md:table-cell">
                         {p.desc || "-"}
@@ -630,10 +631,11 @@ function Page() {
               <span className="font-semibold">{selected.length}</span>
               {" - "}
               <span className="font-semibold">
-                {formatARS(
+                {formatMoney(
                   products
                     .filter((p) => selected.includes(p.id))
                     .reduce((s, p) => s + p.price * p.qty, 0),
+                  { decimals: 0 },
                 )}
               </span>
             </div>
@@ -813,7 +815,7 @@ function Page() {
                               </Badge>
                             </td>
                             <td className="px-5 py-3 font-mono tabular-nums text-right text-xs font-semibold">
-                              {formatARS(monto)}
+                              {formatMoney(monto, { decimals: 0 })}
                             </td>
                             <td className="px-5 py-3 text-xs text-muted-foreground">
                               {l.expiresAt || "N/A"}
@@ -993,7 +995,10 @@ function Page() {
                 <div>
                   <span className="text-xs text-muted-foreground">Monto total</span>
                   <div className="font-semibold">
-                    {formatARS(detailLink.products.reduce((s, p) => s + p.price * p.qty, 0))}
+                    {formatMoney(
+                      detailLink.products.reduce((s, p) => s + p.price * p.qty, 0),
+                      { decimals: 0 },
+                    )}
                   </div>
                 </div>
                 <div>

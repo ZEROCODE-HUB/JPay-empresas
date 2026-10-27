@@ -10,6 +10,7 @@
 // ============================================================================
 import { requireSupabase, toDataError } from "@/lib/supabase";
 import { detectIdentifierKind, type IdentifierKind } from "@/lib/recipient-validation";
+import { formatDate, formatMoney } from "@/shared/format";
 
 /** UI row for a draft. */
 export type Draft = {
@@ -62,15 +63,6 @@ export type RecipientInput = {
   cbu: string;
   cuit?: string;
   banco?: string;
-};
-
-export const formatAmount = (n: number) =>
-  `$ ${(Number(n) || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-export const formatDate = (iso: string | null | undefined) => {
-  if (!iso) return "";
-  const d = new Date(String(iso).length <= 10 ? `${iso}T12:00:00` : iso);
-  return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString("es-AR");
 };
 
 /**
@@ -137,7 +129,7 @@ export function mapDraft(r: Record<string, unknown>): Draft {
     banco: r.destinatario_banco ? String(r.destinatario_banco) : undefined,
     subcuentaOrigen: r.subcuenta_origen ? String(r.subcuenta_origen) : undefined,
     montoNum,
-    monto: formatAmount(montoNum),
+    monto: formatMoney(montoNum),
     concepto: String(r.concepto ?? ""),
     ref: "",
     fecha: formatDate(String(r.created_at ?? "")),
@@ -216,7 +208,7 @@ export function mapScheduled(r: Record<string, unknown>): Scheduled {
     banco: r.destinatario_banco ? String(r.destinatario_banco) : undefined,
     subcuentaOrigen: r.subcuenta_origen ? String(r.subcuenta_origen) : undefined,
     montoNum,
-    monto: formatAmount(montoNum),
+    monto: formatMoney(montoNum),
     fecha: formatDate(String(r.fecha_envio ?? "")),
     fechaISO: String(r.fecha_envio ?? "").slice(0, 10),
     hora: String(r.hora_envio ?? "").slice(0, 5),

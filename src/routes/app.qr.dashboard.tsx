@@ -28,6 +28,7 @@ import { requireSupabase } from "@/lib/supabase";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/qr/dashboard")({ component: Dashboard });
 
@@ -59,9 +60,6 @@ const STATUS_COLOR: Record<string, string> = {
   Rechazado: "#ef4444",
   Reembolsado: "#a855f7",
 };
-
-const formatter = (n: number) =>
-  "$ " + n.toLocaleString("es-AR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " ARS";
 
 type Kpi = { icon: typeof QrCode; label: string; value: string };
 
@@ -185,7 +183,11 @@ function Dashboard() {
 
       setKpis([
         { icon: QrCode, label: "Total cobros QR", value: total.toString() },
-        { icon: DollarSign, label: "Monto total recaudado", value: formatter(montoTotal) },
+        {
+          icon: DollarSign,
+          label: "Monto total recaudado",
+          value: `${formatMoney(montoTotal, { decimals: 0 })} ARS`,
+        },
         { icon: Activity, label: "Transacciones", value: aprobados.toString() },
         { icon: TrendingUp, label: "Pendientes", value: pendientes.toString() },
         { icon: Store, label: "PDV activos", value: pdvActivos.toString() },

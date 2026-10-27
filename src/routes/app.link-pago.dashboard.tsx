@@ -15,6 +15,7 @@ import {
 import { Download, FileSpreadsheet } from "lucide-react";
 import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
 import { formatARS } from "@/data/links-pago";
+import { formatMoney } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
@@ -148,13 +149,13 @@ function Dashboard() {
   const volData = linkData.map((d) => ({ ...d, vol: +(d.amount / 1_000_000).toFixed(1) }));
 
   const kpis = [
-    { label: "Total aprobado", value: formatARS(metrics.totalApproved) },
+    { label: "Total aprobado", value: formatMoney(metrics.totalApproved, { decimals: 0 }) },
     { label: "Transacciones totales", value: metrics.totalTx.toString() },
     { label: "Pendientes", value: metrics.pending.toString() },
     { label: "Rechazadas", value: metrics.rejected.toString() },
     { label: "Reembolsos", value: metrics.refunds.toString() },
     { label: "Tasa de conversion", value: metrics.conversionRate + "%" },
-    { label: "Ticket promedio", value: formatARS(metrics.avgTicket) },
+    { label: "Ticket promedio", value: formatMoney(metrics.avgTicket, { decimals: 0 }) },
   ];
 
   const label = presets.find((p) => p.days === days)?.label ?? `${days} dias`;
@@ -271,7 +272,7 @@ function Dashboard() {
                   <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(v: number) => formatARS(v)} />
+              <Tooltip formatter={(v: number) => formatMoney(v, { decimals: 0 })} />
             </PieChart>
           </ResponsiveContainer>
         </Card>

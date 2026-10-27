@@ -13,16 +13,13 @@ import {
 import { toast } from "sonner";
 import { BtnOutline, BtnPrimary } from "@/components/portal-shell";
 import { cotizarTransferencia, type ComisionConfig, type Cotizacion } from "@/lib/transfer-store";
-
-const fmt = (n: number) =>
-  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-const fmtPct = (n: number) => `${n.toLocaleString("es-AR", { maximumFractionDigits: 2 })}%`;
+import { formatMoney, formatPercent } from "@/shared/format";
 
 /** "1,5% del monto" o "fijo $ 5,00 por transferencia". */
 const detalleComision = (c: ComisionConfig) =>
   c.modalidad === "Fijo"
-    ? `fijo ${fmt(c.montoFijo ?? 0)} por transferencia`
-    : `${fmtPct(c.porcentaje ?? 0)} del monto`;
+    ? `fijo ${formatMoney(c.montoFijo ?? 0)} por transferencia`
+    : `${formatPercent(c.porcentaje ?? 0)} del monto`;
 
 // ============================================================================
 // Cotizacion en tiempo real
@@ -93,7 +90,7 @@ export function ResumenCotizacion({
   if (!(monto > 0)) {
     return (
       <div className="text-xs text-muted-foreground mt-1">
-        Disponible: <span className="font-mono">{fmt(disponible)}</span>
+        Disponible: <span className="font-mono">{formatMoney(disponible)}</span>
       </div>
     );
   }
@@ -106,7 +103,7 @@ export function ResumenCotizacion({
       <div className="grid grid-cols-2 gap-y-1">
         <span className="text-muted-foreground">Disponible</span>
         <span className="text-right font-mono tabular-nums">
-          {fmt(cotizacion?.disponible ?? disponible)}
+          {formatMoney(cotizacion?.disponible ?? disponible)}
         </span>
         <span className="text-muted-foreground">
           Comisión
@@ -115,22 +112,22 @@ export function ResumenCotizacion({
           )}
         </span>
         <span className="text-right font-mono tabular-nums">
-          {cotizacion ? fmt(cotizacion.comision) : cargando ? "…" : "—"}
+          {cotizacion ? formatMoney(cotizacion.comision) : cargando ? "…" : "—"}
         </span>
         <span className="text-muted-foreground">
           IVA
           {cotizacion && !sinCargo && cfg && (
             <span className="ml-1 text-[11px]">
-              · {fmtPct(cfg.porcentajeImpuesto)} de la comisión
+              · {formatPercent(cfg.porcentajeImpuesto)} de la comisión
             </span>
           )}
         </span>
         <span className="text-right font-mono tabular-nums">
-          {cotizacion ? fmt(cotizacion.impuesto) : cargando ? "…" : "—"}
+          {cotizacion ? formatMoney(cotizacion.impuesto) : cargando ? "…" : "—"}
         </span>
         <span className="font-semibold">Total a debitar</span>
         <span className="text-right font-mono tabular-nums font-semibold">
-          {cotizacion ? fmt(cotizacion.total) : cargando ? "…" : fmt(monto)}
+          {cotizacion ? formatMoney(cotizacion.total) : cargando ? "…" : formatMoney(monto)}
         </span>
       </div>
       {cotizacion && (
@@ -147,7 +144,7 @@ export function ResumenCotizacion({
           className="mt-2 border-t border-danger-200 pt-2 text-xs font-semibold text-danger-700"
           role="alert"
         >
-          Saldo insuficiente: te faltan {fmt(faltante)} para cubrir el monto
+          Saldo insuficiente: te faltan {formatMoney(faltante)} para cubrir el monto
           {cotizacion && cotizacion.comision > 0 ? " más comisión e IVA" : ""}.
         </div>
       )}
@@ -189,7 +186,9 @@ export function TransferProcessingOverlay({
         </div>
         <div className="text-lg font-semibold">Procesando transferencia</div>
         {monto != null && (
-          <div className="mt-1 font-display tabular-nums text-2xl font-bold">{fmt(monto)}</div>
+          <div className="mt-1 font-display tabular-nums text-2xl font-bold">
+            {formatMoney(monto)}
+          </div>
         )}
         <ol className="mt-6 space-y-3 text-left">
           {PASOS.map((p, i) => {
@@ -356,7 +355,7 @@ export function TransferReceiptModal({
           </div>
           <div className="text-sm font-medium text-muted-foreground">Enviaste</div>
           <div className="mt-1 font-display tabular-nums text-4xl font-bold tracking-tight">
-            {fmt(recibo.monto)}
+            {formatMoney(recibo.monto)}
           </div>
           <div className="mt-2 text-xs text-muted-foreground">{fechaTxt}</div>
         </header>
@@ -383,17 +382,17 @@ export function TransferReceiptModal({
             <Fila label="Estado" value={recibo.estado || "Enviada"} />
             <Fila
               label="Comisión"
-              value={recibo.comision != null ? fmt(recibo.comision) : undefined}
+              value={recibo.comision != null ? formatMoney(recibo.comision) : undefined}
               mono
             />
             <Fila
               label="IVA"
-              value={recibo.impuesto != null ? fmt(recibo.impuesto) : undefined}
+              value={recibo.impuesto != null ? formatMoney(recibo.impuesto) : undefined}
               mono
             />
             <div className="flex justify-between gap-4 pt-2 mt-1 border-t text-sm font-semibold">
               <span>Total debitado</span>
-              <span className="font-mono tabular-nums">{fmt(total)}</span>
+              <span className="font-mono tabular-nums">{formatMoney(total)}</span>
             </div>
           </Seccion>
         </div>

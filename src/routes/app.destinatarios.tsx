@@ -25,6 +25,7 @@ import {
 import { detectIdentifierKind } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
 import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/destinatarios")({ component: Page });
 
@@ -42,9 +43,6 @@ type Destinatario = {
 };
 
 type Subcuenta = { id: string; nombre: string; cbu: string | null; saldo_disponible: number };
-
-const fmt = (n: number) =>
-  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Agenda real: `destinatarios_frecuentes` (migración 1012), misma tabla que
@@ -190,7 +188,7 @@ function Page() {
         <Stat label="Subcuentas" value={String(subcuentas.length)} />
         <Stat
           label="Disponible"
-          value={fmt(subcuentas.reduce((s, x) => s + (Number(x.saldo_disponible) || 0), 0))}
+          value={formatMoney(subcuentas.reduce((s, x) => s + (Number(x.saldo_disponible) || 0), 0))}
         />
       </div>
 
@@ -418,7 +416,7 @@ function Page() {
             {subcuentas.length === 0 && <option value="">Sin subcuentas</option>}
             {subcuentas.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.nombre} — {fmt(Number(s.saldo_disponible))}
+                {s.nombre} — {formatMoney(Number(s.saldo_disponible))}
               </option>
             ))}
           </select>

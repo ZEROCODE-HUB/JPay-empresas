@@ -26,6 +26,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { requireSupabase } from "@/lib/supabase";
 import { buildQrPdvUrl } from "@/lib/pay-url";
 import QRCode from "qrcode";
+import { formatDate } from "@/shared/format";
 
 export const Route = createFileRoute("/app/qr/puntos-de-venta")({ component: Page });
 
@@ -39,13 +40,6 @@ type PuntoVenta = {
 };
 
 const ROWS_OPTIONS = [10, 20, 50];
-
-function fmtFecha(iso: string): string {
-  if (!iso) return "-";
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return iso.slice(0, 10);
-  return d.toLocaleDateString("es-AR", { year: "numeric", month: "2-digit", day: "2-digit" });
-}
 
 function Page() {
   const [pdvs, setPdvs] = useState<PuntoVenta[]>([]);
@@ -417,7 +411,7 @@ function Page() {
               <div>
                 <Badge tone={p.estado === "Activado" ? "success" : "warn"}>{p.estado}</Badge>
               </div>
-              <div className="text-sm text-muted-foreground">{fmtFecha(p.created_at)}</div>
+              <div className="text-sm text-muted-foreground">{formatDate(p.created_at)}</div>
               <div className="flex gap-1 justify-end">
                 <BtnOutline className="h-8 px-2.5 text-xs" onClick={() => verDetalle(p)}>
                   <Eye size={13} /> Ver
@@ -555,7 +549,7 @@ function Page() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fecha de creación</span>
-                  <span className="font-semibold">{fmtFecha(detallePd.created_at)}</span>
+                  <span className="font-semibold">{formatDate(detallePd.created_at)}</span>
                 </div>
               </div>
 

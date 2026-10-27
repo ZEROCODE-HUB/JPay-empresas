@@ -22,11 +22,13 @@ import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 
+/** Solo para las exportaciones (Excel/PDF), que conservan su formato. */
 const formatARS = (n: number) =>
   `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -344,7 +346,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Saldo total de la cuenta</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.saldo)}
+                {formatMoney(kpis.saldo)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">{cbuLabel || "Sin CVU asignada"}</div>
             </div>
@@ -358,7 +360,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Depósitos del período</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.depositos)}
+                {formatMoney(kpis.depositos)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">{kpis.opsDep} operaciones</div>
             </div>
@@ -372,7 +374,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Retiros del período</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.retiros)}
+                {formatMoney(kpis.retiros)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">{kpis.opsRet} operaciones</div>
             </div>
@@ -404,7 +406,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Cobros mediante Link de Pago</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.cobrosLink)}
+                {formatMoney(kpis.cobrosLink)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">
                 {Math.round(kpis.cobrosLink / 85000)} transacciones
@@ -420,7 +422,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Cobros mediante Código QR</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.cobrosQR)}
+                {formatMoney(kpis.cobrosQR)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">
                 {Math.round(kpis.cobrosQR / 32000)} transacciones
@@ -436,7 +438,7 @@ function Dashboard() {
             <div>
               <div className="text-xs text-black-400 mb-1">Pagos realizados mediante QR</div>
               <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-                {formatARS(kpis.pagosQR)}
+                {formatMoney(kpis.pagosQR)}
               </div>
               <div className="text-xs text-black-400 mt-0.5">
                 {Math.round(kpis.pagosQR / 18000)} transacciones
@@ -502,7 +504,7 @@ function Dashboard() {
                       linkPago: "Link de Pago",
                       total: "Total del día",
                     };
-                    return [formatARS(value), labels[name] || name];
+                    return [formatMoney(value), labels[name] || name];
                   }}
                   labelFormatter={(label: string) => `Fecha: ${label}`}
                   contentStyle={{

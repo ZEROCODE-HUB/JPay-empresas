@@ -18,6 +18,7 @@ import {
 import { Card, Badge, BtnOutline, Input, Label, PageHeader } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
+import { formatDateTime } from "@/shared/format";
 
 export const Route = createFileRoute("/app/link-pago/e-commerce")({ component: Page });
 
@@ -105,7 +106,7 @@ function Page() {
         return {
           ...e,
           estado: (r.estado ?? e.estado) as Ecom["estado"],
-          created: r.created_at ? new Date(r.created_at).toLocaleString("es-AR") : e.created,
+          created: r.created_at ? formatDateTime(r.created_at) : e.created,
         };
       }),
     );

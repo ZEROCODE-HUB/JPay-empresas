@@ -14,6 +14,7 @@ import {
 } from "@/data/cobros-masivos";
 import { format } from "date-fns";
 import * as XLSX from "xlsx";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/cobros/nuevo")({ component: NuevoLote });
 
@@ -613,7 +614,7 @@ function NuevoLote() {
                           </td>
                           <td className="px-3 py-2">{r.identificacion_usuario}</td>
                           <td className="px-3 py-2 font-mono tabular-nums text-right font-medium">
-                            ${r.monto.toLocaleString("es-AR")}
+                            {formatMoney(r.monto)}
                           </td>
                           <td className="px-3 py-2 max-w-[150px] truncate">{r.descripcion}</td>
                           <td className="px-3 py-2">{r.email ?? "-"}</td>
@@ -738,7 +739,7 @@ function NuevoLote() {
             <div className="text-xs text-muted-foreground mt-1">
               Monto total estimado:{" "}
               <strong className="font-mono tabular-nums text-foreground">
-                ${csvData.reduce((s, r) => s + r.monto, 0).toLocaleString("es-AR")}
+                {formatMoney(csvData.reduce((s, r) => s + r.monto, 0))}
               </strong>
             </div>
           </Card>

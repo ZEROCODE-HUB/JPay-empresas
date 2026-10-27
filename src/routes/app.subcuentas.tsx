@@ -42,6 +42,7 @@ import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
+import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/subcuentas")({ component: Page });
 
@@ -97,16 +98,13 @@ const mapSubs = (rows: any[]): Sub[] =>
     retirosHab: !!r.retiros_habilitados,
   }));
 
-const fmt = (n: number) => "$ " + n.toLocaleString("es-AR");
-const fmtMov = (n: number) => (n >= 0 ? "+" : "") + "$ " + Math.abs(n).toLocaleString("es-AR");
-
 // `limite` es texto libre: puede venir "50000", "50.000,00" o vacio.
 const fmtLimite = (lim: string) => {
   const t = (lim ?? "").trim();
   if (!t) return "Sin límite";
   const n = Number(t.includes(",") ? t.replace(/\./g, "").replace(",", ".") : t);
   if (Number.isNaN(n)) return t;
-  return n > 0 ? fmt(n) : "Sin límite";
+  return n > 0 ? formatMoney(n) : "Sin límite";
 };
 
 // Recaudacion es la subcuenta funcional (pool) del sistema; el resto se asigna
@@ -395,7 +393,7 @@ function Page() {
       setTransfOpen(false);
       setTransfMonto("");
       setTransfConcepto("");
-      toast.success(`Transferencia interna por ${fmt(monto)} realizada`);
+      toast.success(`Transferencia interna por ${formatMoney(monto)} realizada`);
       await cargar();
     } catch (e) {
       const err = toDataError(e);
@@ -433,7 +431,7 @@ function Page() {
             Saldo total
           </div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {fmt(total)}
+            {formatMoney(total)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">{subs.length} subcuentas</div>
         </div>
@@ -442,14 +440,14 @@ function Page() {
             Disponible
           </div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {fmt(totalDisp)}
+            {formatMoney(totalDisp)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">Listo para operar</div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Retenido</div>
           <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-            {fmt(totalRet)}
+            {formatMoney(totalRet)}
           </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">Pendiente de liberar</div>
         </div>
@@ -465,7 +463,7 @@ function Page() {
                   <div className="flex justify-between text-[10px] leading-tight">
                     <span className="truncate mr-1">{s.n}</span>
                     <span className="font-semibold shrink-0">
-                      {fmt(s.disp + s.ret)} ({pct}%)
+                      {formatMoney(s.disp + s.ret)} ({pct}%)
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-muted overflow-hidden mt-0.5">
@@ -586,10 +584,12 @@ function Page() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-right whitespace-nowrap">
-                        <div className="font-display tabular-nums font-semibold">{fmt(s.disp)}</div>
+                        <div className="font-display tabular-nums font-semibold">
+                          {formatMoney(s.disp)}
+                        </div>
                         {s.ret > 0 && (
                           <div className="text-[11px] text-muted-foreground tabular-nums">
-                            Retenido {fmt(s.ret)}
+                            Retenido {formatMoney(s.ret)}
                           </div>
                         )}
                       </td>
@@ -808,7 +808,7 @@ function Page() {
               <option value="">Selecciona...</option>
               {subs.map((s) => (
                 <option key={s.id ?? s.n} value={s.id}>
-                  {s.n} — {fmt(s.disp)}
+                  {s.n} — {formatMoney(s.disp)}
                 </option>
               ))}
             </select>
@@ -823,7 +823,7 @@ function Page() {
               <option value="">Selecciona...</option>
               {subs.map((s) => (
                 <option key={s.id ?? s.n} value={s.id}>
-                  {s.n} — {fmt(s.disp)}
+                  {s.n} — {formatMoney(s.disp)}
                 </option>
               ))}
             </select>
@@ -1199,7 +1199,7 @@ function SubDetailModal({
                   Balance actual
                 </div>
                 <div className="font-display tabular-nums text-base font-semibold mt-1">
-                  {fmt(sub.disp)}
+                  {formatMoney(sub.disp)}
                 </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3">
@@ -1207,7 +1207,7 @@ function SubDetailModal({
                   Total depositos
                 </div>
                 <div className="font-display tabular-nums text-base font-semibold mt-1 text-emerald-700">
-                  {fmt(totalDepositos)}
+                  {formatMoney(totalDepositos)}
                 </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3">
@@ -1215,7 +1215,7 @@ function SubDetailModal({
                   Total retiros
                 </div>
                 <div className="font-display tabular-nums text-base font-semibold mt-1 text-danger-700">
-                  {fmt(totalRetiros)}
+                  {formatMoney(totalRetiros)}
                 </div>
               </div>
               <div className="bg-muted/30 rounded-lg p-3">
@@ -1353,7 +1353,9 @@ function SubDetailModal({
                         <span
                           className={`font-mono tabular-nums text-sm font-semibold whitespace-nowrap shrink-0 ${m.tipo === "ingreso" ? "text-emerald-700" : "text-danger-700"}`}
                         >
-                          {fmtMov(m.tipo === "ingreso" ? m.monto : -m.monto)}
+                          {m.tipo === "ingreso"
+                            ? formatMoney(m.monto, { signo: true })
+                            : formatMoney(Math.abs(m.monto))}
                         </span>
                       </div>
                       <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-0.5">

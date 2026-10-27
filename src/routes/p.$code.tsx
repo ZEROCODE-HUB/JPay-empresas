@@ -22,6 +22,7 @@ import {
   testCardFitsMethod,
 } from "@/lib/payway-test-card";
 import { paymentMethods } from "@/data/links-pago";
+import { formatDateTime, formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/p/$code")({ component: Checkout });
 
@@ -40,19 +41,6 @@ type LinkData = {
   comercio_id: string | null;
   comercio_nombre: string | null;
 };
-
-const formatARS = (n: number) =>
-  `$ ${Number(n || 0).toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-/** Fecha y hora del comprobante, en hora local de quien pago. */
-const formatFechaHora = (d: Date) =>
-  d.toLocaleString("es-AR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 const LOTE_CATEGORY_TO_METHODS: Record<string, string[]> = {
   TARJETA_CREDITO: ["visa-cred", "mc-cred", "amex", "cabal-cred", "naranja", "diners"],
@@ -611,7 +599,7 @@ function Checkout() {
                 </div>
               )}
               <div className="text-2xl font-black tracking-tight text-[color:var(--brand-primary-700)] mt-1">
-                {formatARS(result.monto)}
+                {formatMoney(result.monto)}
               </div>
 
               {/* Detalle de lo que se pago. Es el mismo listado que se ve antes
@@ -624,11 +612,11 @@ function Checkout() {
                       <div className="min-w-0">
                         <div className="font-semibold truncate">{p.producto_nombre}</div>
                         <div className="text-muted-foreground">
-                          {p.cantidad} × {formatARS(p.precio_unitario)}
+                          {p.cantidad} × {formatMoney(p.precio_unitario)}
                         </div>
                       </div>
                       <div className="font-mono tabular-nums font-semibold">
-                        {formatARS(p.precio_unitario * p.cantidad)}
+                        {formatMoney(p.precio_unitario * p.cantidad)}
                       </div>
                     </div>
                   ))}
@@ -636,7 +624,7 @@ function Checkout() {
               )}
 
               <div className="w-full mt-4 space-y-2 text-sm">
-                <Row label="Fecha y hora" value={formatFechaHora(result.pagoEn)} />
+                <Row label="Fecha y hora" value={formatDateTime(result.pagoEn)} />
                 {result.metodo && (
                   <Row
                     label="Metodo de pago"
@@ -670,7 +658,7 @@ function Checkout() {
                   {data.comercio_nombre || brand.name}
                 </div>
                 <div className="text-3xl font-black tracking-tight text-[color:var(--brand-primary-700)]">
-                  {formatARS(parseFloat(montoPagar.replace(",", ".")))}
+                  {formatMoney(parseFloat(montoPagar.replace(",", ".")) || 0)}
                 </div>
                 <div className="text-xs text-muted-foreground">Total a abonar</div>
 
@@ -684,11 +672,11 @@ function Checkout() {
                         <div className="min-w-0">
                           <div className="font-semibold truncate">{p.producto_nombre}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            {p.cantidad} × {formatARS(p.precio_unitario)}
+                            {p.cantidad} × {formatMoney(p.precio_unitario)}
                           </div>
                         </div>
                         <div className="font-mono tabular-nums font-semibold">
-                          {formatARS(p.precio_unitario * p.cantidad)}
+                          {formatMoney(p.precio_unitario * p.cantidad)}
                         </div>
                       </div>
                     ))}
@@ -715,7 +703,7 @@ function Checkout() {
                       onChange={(e) => setMontoPagar(e.target.value)}
                     />
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      Máximo {formatARS(total(data))}
+                      Máximo {formatMoney(total(data))}
                     </div>
                   </div>
                 )}
@@ -916,7 +904,7 @@ function Checkout() {
                       <Loader2 size={16} className="animate-spin" /> Procesando…
                     </>
                   ) : (
-                    `Pagar ${formatARS(parseFloat(montoPagar.replace(",", ".")))}`
+                    `Pagar ${formatMoney(parseFloat(montoPagar.replace(",", ".")) || 0)}`
                   )}
                 </BtnPrimary>
 
