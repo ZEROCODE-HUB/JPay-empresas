@@ -5,8 +5,8 @@ import { requireSupabase, getAuthErrorMessage } from "@/lib/supabase";
 import { brand, pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/recuperar")({
-  validateSearch: (search: Record<string, string | undefined>) => ({
-    email: (search.email as string) ?? "",
+  validateSearch: (search: Record<string, string | undefined>): { email?: string } => ({
+    email: search.email,
   }),
   head: () => ({
     meta: [
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/recuperar")({
 function Recuperar() {
   const { email: initialEmail } = Route.useSearch();
   const nav = useNavigate();
-  const [email, setEmail] = useState(initialEmail);
+  const [email, setEmail] = useState(initialEmail ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -58,7 +58,7 @@ function Recuperar() {
             </p>
           }
         >
-          <PrimaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>
+          <PrimaryButton onClick={() => nav({ to: "/login" })}>
             Volver al inicio de sesión
           </PrimaryButton>
         </SuccessCard>
@@ -87,7 +87,6 @@ function Recuperar() {
             <div className="text-center text-xs text-black-400 pt-2">
               <Link
                 to="/login"
-                search={{ register: undefined }}
                 className="text-primary-ink underline underline-offset-2 hover:opacity-80"
               >
                 Volver al inicio de sesión

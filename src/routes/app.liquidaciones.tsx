@@ -971,14 +971,16 @@ function Liquidaciones() {
         //    restringen por usuario en estas tablas, así que el
         //    filtrado en el front es obligatorio.
         let legajo: string | null = null;
+        let cuit: string | null = null;
         let comercioId: string | null = null;
         if (mail) {
           const { data: cli } = await sb
             .from("clientes")
-            .select("legajo")
+            .select("legajo, cuit")
             .eq("correo", mail)
             .maybeSingle();
           legajo = cli?.legajo ?? null;
+          cuit = cli?.cuit ?? null;
 
           if (legajo) {
             const { data: com } = await sb
@@ -1159,14 +1161,15 @@ function Liquidaciones() {
           // v_lotes_venta puede no existir aún; se muestra vacío
         }
 
-        // 5) Comisiones por bandera y cuota (filtradas por legajo,
-        //    ya estaba bien).
+        // 5) Comisiones por bandera y cuota (filtradas por comercio_id).
         let comisionesData: ComisionBandera[] = [];
         try {
-          const { data: cbRows } = await sb
-            .from("comercio_banderas")
-            .select("id, bandera, estado")
-            .eq("cliente_legajo", legajo);
+          const { data: cbRows } = comercioId
+            ? await sb
+                .from("comercio_banderas")
+                .select("id, bandera, estado")
+                .eq("comercio_id", comercioId)
+            : { data: null };
           if (cbRows && cbRows.length > 0) {
             const cbIds = (cbRows as any[]).map((r: any) => r.id);
             const { data: cuotasRows } = await sb
@@ -1203,11 +1206,11 @@ function Liquidaciones() {
             estado: r.estado ?? "Activo",
           }));
 
-          if (legajo) {
+          if (cuit) {
             const { data: excRows } = await sb
               .from("dc_excepciones")
               .select("tipo, motivo, estado, vigencia_hasta, impuesto_id")
-              .eq("legajo", legajo)
+              .eq("cuit", cuit)
               .eq("estado", "Activo");
             const impIdToCodigo = new Map(impuestosData.map((i) => [i.id, i.codigo]));
             excepcionesData = (excRows ?? []).map((r: any) => ({
@@ -1300,7 +1303,7 @@ function Liquidaciones() {
       const { data, error } = await sb.rpc("ingresar_adelanto", {
         monto: montoNum,
         fecha_acreditacion: fechaAcred,
-        motivo: motivo || null,
+        motivo: motivo || undefined,
       });
       if (error) throw new Error(error.message);
       const row = data as any;

@@ -64,7 +64,7 @@ export async function executeTransfer(
     p_subcuenta_origen: req.subcuentaOrigenId,
     p_destinatario_cbu: cbuParaRpc.replace(/\s/g, ""),
     p_monto: req.monto,
-    p_concepto: req.concepto ?? null,
+    p_concepto: req.concepto ?? undefined,
   });
   if (error) throw error;
   const txn = data as { ok: boolean; id_txn: string; comision: number; impuesto: number; total_debitado: number; motivo?: string };

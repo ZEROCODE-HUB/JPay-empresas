@@ -74,7 +74,7 @@ function Page() {
       if (twoFa === "totp") {
         const { data, error } = await sb.auth.mfa.enroll({ factorType: "totp" });
         if (error) throw error;
-        setEnroll({ factorId: data.id, qr: data.totp.qr_code_svg ?? "", secret: data.totp.secret });
+        setEnroll({ factorId: data.id, qr: data.totp.qr_code, secret: data.totp.secret });
         toast.success("Escanea el QR y verifica el código para activar TOTP");
       } else {
         toast.success("Método 2FA por email configurado");
@@ -261,9 +261,9 @@ function Page() {
             {enroll && (
               <div className="mt-4 border rounded-lg p-4 bg-muted/40">
                 <div className="grid grid-cols-1 sm:grid-cols-[auto_minmax(0,1fr)] gap-4 items-start">
-                  <div className="w-32 h-32 rounded-md bg-white border grid place-items-center shrink-0"
-                    dangerouslySetInnerHTML={{ __html: enroll.qr || "" }}
-                  />
+                  <div className="w-32 h-32 rounded-md bg-white border grid place-items-center shrink-0">
+                    {enroll.qr && <img src={enroll.qr} alt="QR para configurar 2FA" className="w-full h-full" />}
+                  </div>
                   <div className="min-w-0">
                     <div className="text-xs text-muted-foreground">Escanea el QR con Google Authenticator</div>
                     <div className="text-[11px] text-muted-foreground mt-1">O ingresa manualmente la clave:</div>

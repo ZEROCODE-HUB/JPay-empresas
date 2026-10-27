@@ -150,7 +150,7 @@ function Page() {
     };
   };
 
-  const setF = (k: string, v: any) => setForm((p) => ({ ...p, [k]: v }));
+  const setF = (k: string, v: any) => setForm((p: typeof form) => ({ ...p, [k]: v }));
 
   useEffect(() => {
     if (cliente) setForm(clienteToForm(cliente));

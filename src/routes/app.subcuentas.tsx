@@ -280,7 +280,7 @@ function Page() {
     const origen = subs.find((x) => x.id === transfDesde);
     const destino = subs.find((x) => x.id === transfHacia);
     const monto = Number(transfMonto || 0);
-    if (!origen || !destino) { toast.error("Selecciona las subcuentas de origen y destino"); return; }
+    if (!origen?.id || !destino?.id) { toast.error("Selecciona las subcuentas de origen y destino"); return; }
     if (transfDesde === transfHacia) { toast.error("Las subcuentas deben ser distintas"); return; }
     if (!monto || monto <= 0) { toast.error("Ingresa un monto válido"); return; }
     if (origen.disp < monto) { toast.error("Saldo insuficiente en la subcuenta de origen"); return; }
@@ -291,7 +291,7 @@ function Page() {
         p_subcuenta_origen: origen.id,
         p_subcuenta_destino: destino.id,
         p_monto: monto,
-        p_concepto: transfConcepto || null,
+        p_concepto: transfConcepto || undefined,
       });
       if (error) throw error;
       setTransfOpen(false);

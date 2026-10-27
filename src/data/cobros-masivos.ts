@@ -245,8 +245,9 @@ export async function crearLoteDB(
       p_dia_pago: parseInt(lote.diaProcesamiento),
       p_tasa_interes: lote.tasaInteres,
       p_fecha_venc_1: lote.fechaVencimiento1,
-      p_fecha_venc_2: lote.fechaVencimiento2 || null,
-      p_fecha_venc_3: lote.fechaVencimiento3 || null,
+      // Los tipos generados no marcan nullables los args de RPC; en SQL p_fecha_venc_2/3 (date) aceptan NULL.
+      p_fecha_venc_2: (lote.fechaVencimiento2 || null) as unknown as string,
+      p_fecha_venc_3: (lote.fechaVencimiento3 || null) as unknown as string,
       p_medios_pago: JSON.stringify(lote.mediosPago),
       p_pagos_parciales: lote.pagosParcialesHabilitado,
       p_notificaciones: lote.notificacionesHabilitado,
@@ -373,7 +374,7 @@ export async function iniciarLoteDB(
 
     const { data: lote, error: loteErr } = await s
       .from("lotes")
-      .select("medios_pago, pagos_parciales")
+      .select("medios_pago, pagos_parciales, estado")
       .eq("id", loteId)
       .single();
     if (loteErr || !lote) { console.error("[iniciarLoteDB] lote query error:", loteErr); return { ok: false, error: loteErr?.message ?? "Lote not found", linksCount: 0 }; }
@@ -442,7 +443,7 @@ export async function iniciarLoteDB(
     const { data: verifyRow, error: verifyErr } = await s
       .from("cliente_links_pago")
       .select("id, url")
-      .eq("url", inserted[0]?.url)
+      .eq("url", linkRows[0].url)
       .maybeSingle();
     console.log("[iniciarLoteDB] verify link exists:", !!verifyRow, "error:", verifyErr?.message);
 
@@ -450,7 +451,7 @@ export async function iniciarLoteDB(
     for (let i = 0; i < inserted.length; i++) {
       const { error: linkErr } = await s.rpc("actualizar_link_registro", {
         p_registro_id: regsSinLink[i].id,
-        p_link: inserted[i].url,
+        p_link: inserted[i].url ?? linkRows[i].url,
       });
       if (linkErr) console.error("[iniciarLoteDB] actualizar_link error:", linkErr);
       else linkUpdatesOk++;

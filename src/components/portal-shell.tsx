@@ -39,7 +39,7 @@ export function PortalShell({
 
   const onLogout = () => {
     setRole(null);
-    navigate({ to: "/login", search: { register: undefined } });
+    navigate({ to: "/login" });
   };
 
   return (

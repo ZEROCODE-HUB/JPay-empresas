@@ -92,7 +92,6 @@ function SiteHeader() {
         <div className="flex items-center gap-2 shrink-0">
           <Link
             to="/login"
-            search={{ register: undefined }}
             className={`hidden md:inline-flex h-10 items-center px-4 rounded-sm text-sm font-medium border transition-colors ${outline}`}
           >
             Iniciá sesión

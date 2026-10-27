@@ -185,7 +185,7 @@ function DatosPersonales() {
         </div>
       )}
       <div className="text-center pt-4">
-        <Link to="/login" search={{ register: undefined }} className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+        <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
       </div>
     </AuthShell>
   );

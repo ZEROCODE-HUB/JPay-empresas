@@ -9,7 +9,7 @@ import { readDemoVerifyUrl, registerClient, resendVerification } from "@/lib/api
 import { brand, pageTitle, mailto } from "@/brand/brand";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, string | undefined>) => ({
+  validateSearch: (search: Record<string, string | undefined>): { register?: "pf" | "pj" } => ({
     register: search.register as "pf" | "pj" | undefined,
   }),
   head: () => ({

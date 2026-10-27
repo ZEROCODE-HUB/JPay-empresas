@@ -92,7 +92,7 @@ function EnProceso() {
         }
       >
         <div className="flex flex-col gap-2">
-          <PrimaryButton onClick={() => nav({ to: norm === "activado" ? "/app" : "/login", search: { register: undefined } })}>
+          <PrimaryButton onClick={() => nav({ to: norm === "activado" ? "/app" : "/login" })}>
             {norm === "activado" ? "Ir al dashboard" : "Ir a iniciar sesion"}
           </PrimaryButton>
           {norm === "registrado" && hasDocs && (
@@ -101,7 +101,7 @@ function EnProceso() {
             </SecondaryButton>
           )}
           {norm === "pendiente_verificacion" && (
-            <SecondaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>
+            <SecondaryButton onClick={() => nav({ to: "/login" })}>
               Reenviar verificación
             </SecondaryButton>
           )}

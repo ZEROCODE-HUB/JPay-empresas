@@ -61,7 +61,7 @@ function VerificarCorreo() {
           title="¡Correo verificado!"
           body={<p>Tu dirección de correo fue confirmada correctamente. Ahora podés iniciar sesión y continuar con el onboarding.</p>}
         >
-          <PrimaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>
+          <PrimaryButton onClick={() => nav({ to: "/login" })}>
             Volver al inicio de sesión
           </PrimaryButton>
         </SuccessCard>
@@ -69,7 +69,7 @@ function VerificarCorreo() {
 
       {estado === "error" && (
         <SuccessCard variant="error" title="No pudimos verificar el correo" body={<p>{msg}</p>}>
-          <PrimaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>
+          <PrimaryButton onClick={() => nav({ to: "/login" })}>
             Volver al inicio de sesión
           </PrimaryButton>
         </SuccessCard>

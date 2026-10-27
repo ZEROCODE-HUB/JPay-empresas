@@ -3,6 +3,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Search, Store } from "lucide-react";
 import { PageHeader, Card, Badge, Input, BtnOutline } from "@/components/portal-shell";
 import { requireSupabase } from "@/lib/supabase";
+import type { Tables } from "@/lib/database.types";
 
 export const Route = createFileRoute("/app/mis-comercios")({ component: Page });
 
@@ -16,7 +17,12 @@ type Comercio = {
   creado: string;
 };
 
-const mapComercios = (rows: any[]): Comercio[] =>
+type ComercioRow = Pick<
+  Tables<"comercios">,
+  "id" | "nombre_comercio" | "legajo" | "nivel" | "estado" | "usuario" | "created_at"
+>;
+
+const mapComercios = (rows: ComercioRow[] | null): Comercio[] =>
   (rows ?? []).map((r) => ({
     id: r.id,
     nombre: r.nombre_comercio ?? "Comercio",

@@ -15,6 +15,7 @@ import { FormDialog } from "@/components/form-dialog";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { paymentMethods, formatARS, type Product, type PaymentLink } from "@/data/links-pago";
 import { requireSupabase } from "@/lib/supabase";
+import type { Tables } from "@/lib/database.types";
 import { buildResolvableUrl, toResolvableLinkPagoUrl } from "@/lib/pay-url";
 
 export const Route = createFileRoute("/app/link-pago/productos")({ component: Page });
@@ -27,21 +28,7 @@ type DbProducto = {
   cantidad: number;
 };
 
-type DbLink = {
-  id: string;
-  url: string;
-  estado: string | null;
-  pagos_parciales: boolean | null;
-  metodos_pago: string[] | null;
-  referencia: string | null;
-  notas: string | null;
-  created_at: string | null;
-  expira_en: string | null;
-  vistas: number | null;
-  pagos: number | null;
-  comercio_id: string | null;
-  comercio_nombre: string | null;
-};
+type DbLink = Tables<"cliente_links_pago">;
 
 type DbLinkDetalle = {
   id: string;
@@ -125,7 +112,7 @@ function Page() {
   const [linkStatus, setLinkStatus] = useState<string>("Activo");
   const [linkRef, setLinkRef] = useState("");
   const [linkNotes, setLinkNotes] = useState("");
-  const [userComercios, setUserComercios] = useState<{id: string; nombre_comercio: string}[]>([]);
+  const [userComercios, setUserComercios] = useState<{id: string; nombre_comercio: string | null}[]>([]);
   const [selectedComercioId, setSelectedComercioId] = useState<string>("");
   const [comercioBanderas, setComercioBanderas] = useState<ComercioBandera[]>([]);
 
@@ -179,11 +166,13 @@ function Page() {
         // La URL guardada puede ser branding (brand.web.payLinksBase) o un origen
         // viejo (localhost). Se reconstruye con el dominio de producción para
         // que "Copiar" y el detalle apunten siempre al deploy.
-        url: toResolvableLinkPagoUrl(x.url),
+        url: toResolvableLinkPagoUrl(x.url ?? ""),
         products: prods,
         status: (x.estado ?? "Activo") as PaymentLink["status"],
         partialPayments: !!x.pagos_parciales,
-        methods: Array.isArray(x.metodos_pago) ? x.metodos_pago : [],
+        methods: Array.isArray(x.metodos_pago)
+          ? x.metodos_pago.filter((m): m is string => typeof m === "string")
+          : [],
         reference: x.referencia ?? undefined,
         notes: x.notas ?? undefined,
         createdAt: (x.created_at ?? "").slice(0, 10).split("-").reverse().join("/"),
@@ -309,7 +298,7 @@ function Page() {
     const insertLink = {
       cliente_legajo: legajo,
       comercio_id: selectedComercioId,
-      comercio_nombre: selectedComercio?.nombre_comercio || null,
+      comercio_nombre: selectedComercio?.nombre_comercio || "",
       url,
       monto,
       estado: linkStatus,
@@ -351,7 +340,7 @@ function Page() {
       views: 0,
       payments: 0,
       comercioId: selectedComercioId,
-      comercioNombre: selectedComercio?.nombre_comercio,
+      comercioNombre: selectedComercio?.nombre_comercio ?? undefined,
     };
     setLinks((prev) => [link, ...prev]);
     setShowLinkForm(false);

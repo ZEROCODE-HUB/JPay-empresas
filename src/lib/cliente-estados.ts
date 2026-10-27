@@ -231,13 +231,11 @@ export function accionesParaEstado(
     acciones.push({ key: "reactivar", label: "Reactivar", target: "activado" });
   }
 
-  // Deshabilitar: disponible desde cualquier estado no terminal
-  if (estado !== "deshabilitado" && estado !== "eliminado") {
-    acciones.push({ key: "deshabilitar", label: "Deshabilitar", target: "deshabilitado", variant: "danger" });
-  }
+  // Deshabilitar: disponible desde cualquier estado no terminal (los terminales ya retornaron arriba)
+  acciones.push({ key: "deshabilitar", label: "Deshabilitar", target: "deshabilitado", variant: "danger" });
 
   // Eliminar: solo si no tiene movimientos
-  if (!ctx.hasMovimientos && estado !== "eliminado") {
+  if (!ctx.hasMovimientos) {
     acciones.push({ key: "eliminar", label: "Eliminar", target: "eliminado", variant: "danger" });
   }
 

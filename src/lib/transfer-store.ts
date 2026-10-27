@@ -586,10 +586,10 @@ export async function reserveBdcTransfer(input: {
     p_origin_id: input.originId,
     p_destinatario_cbu: input.destinatarioCbu,
     p_monto: input.monto,
-    p_concepto: input.concepto ?? null,
-    p_destinatario_nombre: input.destinatarioNombre ?? null,
-    p_destinatario_cuit: input.destinatarioCuit ?? null,
-    p_destinatario_banco: input.destinatarioBanco ?? null,
+    p_concepto: input.concepto ?? undefined,
+    p_destinatario_nombre: input.destinatarioNombre ?? undefined,
+    p_destinatario_cuit: input.destinatarioCuit ?? undefined,
+    p_destinatario_banco: input.destinatarioBanco ?? undefined,
   });
   if (error) fail(error);
   const r = data as BdcReserva & { motivo?: string };
@@ -604,7 +604,7 @@ export async function confirmBdcTransfer(originId: string, estadoBdc?: string | 
   const sb = requireSupabase();
   const { error } = await sb.rpc("confirmar_transferencia_bdc", {
     p_origin_id: originId,
-    p_estado_bdc: estadoBdc ?? null,
+    p_estado_bdc: estadoBdc ?? undefined,
   });
   if (error) fail(error);
 }
@@ -614,7 +614,7 @@ export async function cancelBdcTransfer(originId: string, motivo?: string): Prom
   const sb = requireSupabase();
   const { error } = await sb.rpc("cancelar_transferencia_bdc", {
     p_origin_id: originId,
-    p_motivo: motivo ?? null,
+    p_motivo: motivo ?? undefined,
   });
   if (error) fail(error);
 }
@@ -657,7 +657,7 @@ export async function cotizarTransferencia(input: {
   const { data, error } = await sb.rpc("cotizar_transferencia", {
     p_subcuenta_origen: input.subcuentaOrigen,
     p_monto: input.monto,
-    p_destino: input.destino ?? null,
+    p_destino: input.destino ?? undefined,
   });
   if (error) fail(error);
   const r = data as Record<string, unknown>;

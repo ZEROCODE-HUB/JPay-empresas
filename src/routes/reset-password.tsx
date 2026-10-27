@@ -43,8 +43,9 @@ function ResetPassword() {
           const r = await sb.auth.verifyOtp({ token_hash: tokenHash, type: "recovery" });
           err = r.error;
         } else if (access) {
-          const r = await sb.auth.getSessionFromUrl();
-          err = r.error;
+          // El cliente procesa el hash al inicializar (detectSessionInUrl); getSession espera a que termine.
+          const r = await sb.auth.getSession();
+          err = r.error ?? (r.data.session ? null : new Error("No pudimos validar el enlace de recuperación."));
         } else {
           setMode("error");
           setErrMsg("El enlace de recuperación no es válido o le faltan parámetros.");
@@ -107,7 +108,7 @@ function ResetPassword() {
           title="Contraseña actualizada"
           body={<p>Tu contraseña se cambió correctamente. Ya podés iniciar sesión con la nueva.</p>}
         >
-          <PrimaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>
+          <PrimaryButton onClick={() => nav({ to: "/login" })}>
             Iniciar sesión
           </PrimaryButton>
         </SuccessCard>

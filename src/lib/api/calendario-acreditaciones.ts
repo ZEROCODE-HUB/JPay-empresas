@@ -206,8 +206,8 @@ export async function listCalendarioAcreditaciones(
     p_mes: filters.mes,
     p_anio: filters.anio,
     p_comercio_id: filters.comercioId,
-    p_bandera: filters.bandera ?? null,
-    p_estado: filters.estado ?? null,
+    p_bandera: filters.bandera,
+    p_estado: filters.estado,
   });
   if (error) throw error;
   const arr = Array.isArray(data) ? data : [];
@@ -221,7 +221,7 @@ export async function getAdelantosPorDia(
   const sb = requireSupabase();
   const { data, error } = await sb.rpc("calendario_adelantos_por_dia", {
     p_comercio_id: comercioId,
-    p_fecha: fecha,
+    p_fecha: fecha ?? undefined,
   });
   if (error) throw error;
   const arr = Array.isArray(data) ? data : [];

@@ -72,7 +72,7 @@ function RegistroExito() {
           </>
         }
       >
-        <PrimaryButton onClick={() => nav({ to: "/login", search: { register: undefined } })}>Ir a inicio de sesion</PrimaryButton>
+        <PrimaryButton onClick={() => nav({ to: "/login" })}>Ir a inicio de sesion</PrimaryButton>
         <div className="flex justify-center">
           <SecondaryButton onClick={() => nav({ to: "/onboarding/datos-personales" })}>
             Continuar con el alta
