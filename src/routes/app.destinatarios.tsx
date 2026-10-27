@@ -12,8 +12,8 @@ import {
   Label,
 } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { FormDialog } from "@/components/form-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { requireSupabase, toDataError, isPermissionError } from "@/lib/supabase";
 import { executeTransfer } from "@/lib/transfer-orchestrator";
 import {
@@ -443,9 +443,12 @@ function Page() {
       </FormDialog>
 
       <ConfirmDialog
+        confirmLabel="Eliminar"
+        variant="danger"
+        closeOnConfirm
         open={!!eliminar}
         title="Eliminar destinatario"
-        description={
+        message={
           eliminar
             ? `Se quitará "${eliminar.n}" de tu agenda. No afecta transferencias ya hechas.`
             : ""

@@ -17,7 +17,7 @@ import {
   LinkIcon,
 } from "lucide-react";
 import { Card, BtnPrimary, BtnOutline, Input, Label } from "@/components/portal-shell";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { toast } from "sonner";
 import {
   getLotesGestionDB,
@@ -1061,9 +1061,12 @@ function GestionLotes() {
         })()}
 
       <ConfirmDialog
+        confirmLabel="Eliminar"
+        variant="danger"
+        closeOnConfirm
         open={confirmarEliminarId !== null}
         title="¿Eliminar lote?"
-        description="Esta accion no se puede deshacer. Los links de pago generados dejaran de funcionar."
+        message="Esta accion no se puede deshacer. Los links de pago generados dejaran de funcionar."
         onClose={() => setConfirmarEliminarId(null)}
         onConfirm={ejecutarEliminar}
       />

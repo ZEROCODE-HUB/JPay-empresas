@@ -11,8 +11,8 @@ import {
   PageHeader,
 } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { FormDialog } from "@/components/form-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { paymentMethods, type Product, type PaymentLink } from "@/data/links-pago";
 import { formatDate, formatMoney } from "@/shared/format";
 import { requireSupabase } from "@/lib/supabase";
@@ -729,9 +729,12 @@ function Page() {
           </FormDialog>
 
           <ConfirmDialog
+            confirmLabel="Eliminar"
+            variant="danger"
+            closeOnConfirm
             open={confirmarEliminarId !== null}
             title="¿Eliminar producto?"
-            description="Esta accion no se puede deshacer."
+            message="Esta accion no se puede deshacer."
             onClose={() => setConfirmarEliminarId(null)}
             onConfirm={() => {
               if (confirmarEliminarId) deleteProduct(confirmarEliminarId);
@@ -1066,9 +1069,12 @@ function Page() {
       )}
 
       <ConfirmDialog
+        confirmLabel="Eliminar"
+        variant="danger"
+        closeOnConfirm
         open={confirmarEliminarLinkId !== null}
         title="¿Eliminar link de pago?"
-        description="El enlace dejara de funcionar y no se podra recuperar. Esta accion no se puede deshacer."
+        message="El enlace dejara de funcionar y no se podra recuperar. Esta accion no se puede deshacer."
         onClose={() => setConfirmarEliminarLinkId(null)}
         onConfirm={() => {
           if (confirmarEliminarLinkId) deleteLink(confirmarEliminarLinkId);

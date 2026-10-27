@@ -21,7 +21,7 @@ import {
   BtnOutline,
   Badge,
 } from "@/components/portal-shell";
-import { FormDialog } from "@/components/form-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
 

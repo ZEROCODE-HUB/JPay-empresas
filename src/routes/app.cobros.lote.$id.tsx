@@ -13,7 +13,7 @@ import {
   LinkIcon,
 } from "lucide-react";
 import { Card, BtnPrimary, BtnOutline } from "@/components/portal-shell";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { toast } from "sonner";
 import {
   getLoteByIdDB,
@@ -674,9 +674,12 @@ function DetalleLote() {
       </Card>
 
       <ConfirmDialog
+        confirmLabel="Eliminar"
+        variant="danger"
+        closeOnConfirm
         open={confirmarEliminar}
         title="¿Eliminar lote?"
-        description="Esta accion no se puede deshacer. Los links de pago generados dejaran de funcionar."
+        message="Esta accion no se puede deshacer. Los links de pago generados dejaran de funcionar."
         onClose={() => setConfirmarEliminar(false)}
         onConfirm={handleEliminar}
       />

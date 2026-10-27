@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { PageHeader, Input, Label, BtnPrimary, BtnOutline, Badge } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { FormDialog } from "@/components/form-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import {
   requireSupabase,
   toDataError,
@@ -1196,13 +1196,15 @@ function Page() {
         })()}
 
       <ConfirmDialog
+        variant="danger"
+        closeOnConfirm
         open={confirmarEliminacion !== null}
         title={
           confirmarEliminacion?.tipo === "borrador"
             ? "¿Eliminar borrador?"
             : "¿Cancelar transferencia programada?"
         }
-        description="Esta accion no se puede deshacer."
+        message="Esta accion no se puede deshacer."
         confirmLabel={confirmarEliminacion?.tipo === "borrador" ? "Eliminar" : "Cancelar"}
         onClose={() => setConfirmarEliminacion(null)}
         onConfirm={async () => {

@@ -22,7 +22,7 @@ import {
   PageHeader,
 } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { FormDialog } from "@/components/form-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
 import { requireSupabase } from "@/lib/supabase";
 import { buildQrPdvUrl } from "@/lib/pay-url";
 import QRCode from "qrcode";

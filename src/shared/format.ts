@@ -1,7 +1,7 @@
 /**
  * Formato de números, montos, porcentajes, fechas y CUIT para toda la UI (es-AR).
  *
- * Archivo compartido: es idéntico en JPay-admin y JPay-empresas (`npm run shared:check`).
+ * Archivo compartido: es idéntico en los repos del panel admin y del portal empresas (`npm run shared:check`).
  * Los valores vacíos (null, undefined, NaN, fecha inválida) se muestran como "—".
  */
 

@@ -35,8 +35,8 @@ import {
   Label,
 } from "@/components/portal-shell";
 import { toast } from "sonner";
-import { FormDialog } from "@/components/form-dialog";
-import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
+import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { requireSupabase, toDataError, isPermissionError } from "@/lib/supabase";
 import { SALDOS_EMBED, conSaldos } from "@/lib/subaccounts";
 import * as XLSX from "xlsx";
@@ -848,9 +848,12 @@ function Page() {
       </FormDialog>
 
       <ConfirmDialog
+        confirmLabel="Eliminar"
+        variant="danger"
+        closeOnConfirm
         open={confirmarBorrar !== null}
         title="¿Eliminar subcuenta?"
-        description={`Se quitara la subcuenta ${confirmarBorrar?.n} (CVU ${confirmarBorrar?.cbu || "sin asignar"}). Esta accion no se puede deshacer.`}
+        message={`Se quitara la subcuenta ${confirmarBorrar?.n} (CVU ${confirmarBorrar?.cbu || "sin asignar"}). Esta accion no se puede deshacer.`}
         onClose={() => setConfirmarBorrar(null)}
         onConfirm={onBorrar}
       />

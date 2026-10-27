@@ -20,7 +20,7 @@ import {
 import { PortalShell, type NavItem } from "@/components/portal-shell";
 import { SupportBot } from "@/components/support-bot";
 import { useDemoMode } from "@/contexts/demo-mode";
-import { RouteSkeleton } from "@/components/route-skeleton";
+import { RouteSkeleton } from "@/shared/ui/route-skeleton";
 import { requireSupabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/app")({

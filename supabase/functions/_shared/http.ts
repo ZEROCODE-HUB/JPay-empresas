@@ -1,5 +1,5 @@
 // Utilidades HTTP comunes a todas las Edge Functions (CORS, respuestas JSON, clientes Supabase).
-// Archivo compartido: idéntico en JPay-admin y JPay-empresas (`npm run shared:check`).
+// Archivo compartido: idéntico en los repos del panel admin y del portal empresas (`npm run shared:check`).
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 export const CORS = {

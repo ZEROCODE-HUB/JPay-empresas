@@ -25,7 +25,7 @@ import {
 } from "@/components/portal-shell";
 import { toast } from "sonner";
 import type { LucideIcon } from "lucide-react";
-import { FormDialog } from "@/components/form-dialog";
+import { FormDialog } from "@/shared/ui/form-dialog";
 import { formatMoney } from "@/shared/format";
 
 export const Route = createFileRoute("/app/servicios")({ component: Page });
