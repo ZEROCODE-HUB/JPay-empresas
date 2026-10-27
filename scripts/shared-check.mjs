@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 
 const SHARED = [
   "src/shared",
+  "ARCHITECTURE.md",
   "src/brand/brand.json",
   "src/brand/colors.ts",
   "scripts/brand-assets.mjs",
