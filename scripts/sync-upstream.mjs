@@ -1,140 +1,71 @@
 #!/usr/bin/env node
 /**
- * Trae a JPay los commits nuevos del repo original de MoliPay (ver SYNC_MOLIPAY.md).
+ * Muestra qué hay de nuevo en el repo original de MoliPay para portarlo a mano (ver SYNC_MOLIPAY.md).
  *
- * - Lee `.upstream-sync.json` (repo, rama y último commit sincronizado).
- * - Hace cherry-pick -x, en orden, de cada commit posterior que todavía no esté aplicado
- *   (detecta los ya aplicados por el trailer "cherry picked from commit").
- * - Resuelve solo lo mecánico: `bun.lock` (JPay usa npm) se descarta y `package-lock.json`
- *   se regenera. Cualquier otro conflicto se deja para resolver a mano y el script se corta.
- * - Al terminar actualiza `.upstream-sync.json` y corre `brand:check`.
+ * Desde el refactor de 2026-10 JPay tiene otra estructura (features/, lib/api, shared/), así que
+ * los commits de MoliPay ya no se pueden aplicar con cherry-pick: se revisan y se portan por
+ * funcionalidad. Este script nunca modifica el código.
  *
- * Trabaja en una rama `sync/molipay-AAAA-MM-DD`; nunca toca `main` ni hace push.
- *
- * Uso: npm run sync:upstream            (o con --dry-run para solo listar lo pendiente)
+ *   npm run sync:upstream                 lista los commits nuevos y los archivos que tocan
+ *   npm run sync:upstream -- --diff <sha> muestra el diff de un commit de MoliPay
+ *   npm run sync:upstream -- --mark <sha> registra que se portó todo hasta <sha> (.upstream-sync.json)
  */
-import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, ".upstream-sync.json");
 const config = JSON.parse(readFileSync(configPath, "utf8"));
-const dryRun = process.argv.includes("--dry-run");
 const REMOTE = "upstream";
 
-const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
-const gitOk = (...args) => spawnSync("git", args, { cwd: root, stdio: "inherit" }).status === 0;
-const npm = (...args) => {
-  const r = spawnSync("npm", args, {
-    cwd: root,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  return r.status === 0;
-};
-const fail = (msg) => {
-  console.error(`\nsync-upstream: ${msg}`);
-  process.exit(1);
+const git = (...args) =>
+  execFileSync("git", args, { cwd: root, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 }).trim();
+const arg = (name) => {
+  const i = process.argv.indexOf(name);
+  return i >= 0 ? process.argv[i + 1] : undefined;
 };
 
-// 1. Remoto y fetch.
-const remotes = git("remote").split("\n");
-if (!remotes.includes(REMOTE)) git("remote", "add", REMOTE, config.repo);
+if (!git("remote").split("\n").includes(REMOTE)) git("remote", "add", REMOTE, config.repo);
 git("fetch", "--quiet", REMOTE, config.branch);
 const tip = git("rev-parse", `${REMOTE}/${config.branch}`);
 
-// 2. Commits pendientes: posteriores al último sincronizado y no aplicados todavía.
-const applied = new Set(
-  [
-    ...git("log", "--format=%B", "-n", "500").matchAll(/cherry picked from commit ([0-9a-f]{40})/g),
-  ].map((m) => m[1]),
-);
-const pending = git("rev-list", "--reverse", "--no-merges", `${config.lastSynced}..${tip}`)
-  .split("\n")
-  .filter(Boolean)
-  .filter((sha) => !applied.has(sha));
-
-if (pending.length === 0) {
-  console.log(`sync-upstream: al día con ${config.repo} (${config.branch} @ ${tip.slice(0, 7)}).`);
+const diffSha = arg("--diff");
+if (diffSha) {
+  process.stdout.write(git("show", "--stat", "--patch", diffSha) + "\n");
   process.exit(0);
 }
-// Si una corrida anterior se cortó en un conflicto, package.json pudo cambiar en un commit ya aplicado.
-const lockfileTouched = git("diff", "--name-only", `${config.lastSynced}..${tip}`)
+
+const markSha = arg("--mark");
+if (markSha) {
+  config.lastSynced = git("rev-parse", markSha);
+  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
+  console.log(`sync-upstream: registrado como portado hasta ${config.lastSynced.slice(0, 7)}.`);
+  console.log("Commiteá .upstream-sync.json junto con el código portado.");
+  process.exit(0);
+}
+
+const pending = git("rev-list", "--reverse", "--no-merges", `${config.lastSynced}..${tip}`)
   .split("\n")
-  .some((f) => f === "package.json" || f === "bun.lock");
+  .filter(Boolean);
 
-console.log(`sync-upstream: ${pending.length} commit(s) pendiente(s) de ${config.branch}:`);
-for (const sha of pending)
-  console.log(`  ${git("log", "-1", "--format=%h %ad %s", "--date=short", sha)}`);
-if (dryRun) process.exit(0);
-
-// 3. Rama de trabajo (nunca sobre main) y árbol limpio.
-if (existsSync(resolve(root, ".git/CHERRY_PICK_HEAD"))) {
-  fail(
-    "hay un cherry-pick a medias. Resolvelo y corré `git cherry-pick --continue`, después volvé a correr este script.",
+if (pending.length === 0) {
+  console.log(
+    `sync-upstream: nada nuevo en ${config.repo} (${config.branch} @ ${tip.slice(0, 7)}).`,
   );
-}
-if (git("status", "--porcelain", "--untracked-files=no"))
-  fail("hay cambios sin commitear. Commitealos o descartalos antes.");
-const branch = git("rev-parse", "--abbrev-ref", "HEAD");
-if (branch === "main") {
-  const name = `sync/molipay-${new Date().toISOString().slice(0, 10)}`;
-  git("checkout", "-b", name);
-  console.log(`sync-upstream: trabajando en la rama ${name}`);
+  process.exit(0);
 }
 
-// 4. Cherry-pick uno por uno.
+console.log(
+  `sync-upstream: ${pending.length} commit(s) nuevo(s) en ${config.branch} para revisar:\n`,
+);
 for (const sha of pending) {
-  console.log(`\n→ ${git("log", "-1", "--format=%h %s", sha)}`);
-  if (gitOk("cherry-pick", "-x", sha)) continue;
-
-  const unmerged = git("diff", "--name-only", "--diff-filter=U").split("\n").filter(Boolean);
-  for (const f of unmerged.filter((f) => f === "bun.lock" || f === "package-lock.json")) {
-    git("rm", "--cached", "--quiet", "--ignore-unmatch", f);
-    if (f === "bun.lock") rmSync(resolve(root, f), { force: true });
-    else git("checkout", "HEAD", "--", f);
-  }
-  const rest = git("diff", "--name-only", "--diff-filter=U").split("\n").filter(Boolean);
-  if (rest.length === 0) {
-    if (gitOk("-c", "core.editor=true", "cherry-pick", "--continue")) continue;
-    if (gitOk("commit", "--quiet", "--no-edit")) continue;
-  }
-  fail(
-    `conflicto en ${rest.join(", ")}.\n` +
-      "  Resolvelo siguiendo SYNC_MOLIPAY.md (conservar la marca de JPay, tomar la lógica nueva),\n" +
-      "  `git add` los archivos, `git cherry-pick --continue` y volvé a correr `npm run sync:upstream`.",
-  );
-}
-
-// 5. Dependencias: JPay usa npm, así que el lockfile se regenera acá.
-if (lockfileTouched) {
-  rmSync(resolve(root, "bun.lock"), { force: true });
-  if (!npm("install", "--no-audit", "--no-fund")) fail("npm install falló.");
-  if (git("status", "--porcelain", "package-lock.json")) {
-    git("add", "package-lock.json");
-    git("commit", "--quiet", "-m", "Sync MoliPay: regenerar package-lock.json");
-  }
-}
-
-saveMarker(tip);
-
-// 6. Marca.
-console.log("\nsync-upstream: verificando marca…");
-if (!npm("run", "-s", "brand:check")) {
-  fail(
-    "brand:check encontró restos de la marca anterior. Corregilos (ver SYNC_MOLIPAY.md) y commiteá.",
-  );
+  console.log(git("log", "-1", "--format=%h  %ad  %s", "--date=short", sha));
+  const files = git("diff-tree", "--no-commit-id", "--name-status", "-r", sha).split("\n");
+  for (const f of files.filter(Boolean)) console.log(`      ${f}`);
 }
 console.log(
-  "\nsync-upstream: listo. Revisá tipos (npx tsc --noEmit) y build (npx vite build) antes de mergear a main.",
+  "\nPara cada funcionalidad: revisá el diff (--diff <sha>), portala a la estructura de JPay" +
+    "\n(features/, lib/api, shared/) y al terminar registrá el avance con --mark <sha>.",
 );
-
-function saveMarker(sha) {
-  config.lastSynced = sha;
-  writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
-  git("add", ".upstream-sync.json");
-  if (git("diff", "--cached", "--name-only"))
-    git("commit", "--quiet", "-m", `Sync MoliPay: al día hasta ${sha.slice(0, 7)}`);
-}
