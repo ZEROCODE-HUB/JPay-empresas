@@ -62,6 +62,8 @@ export type FrequentRecipient = {
   cbu: string;
   alias: string;
   banco: string;
+  /** Fecha de alta en la agenda (`created_at`), para ordenar por recientes. */
+  creadoEn?: string;
 };
 
 export type RecipientInput = {
@@ -363,6 +365,7 @@ export function mapFrequentRecipient(r: Record<string, unknown>): FrequentRecipi
     cbu: String(r.cbu ?? identifier),
     alias: String(r.alias ?? ""),
     banco: String(r.banco ?? ""),
+    creadoEn: r.created_at ? String(r.created_at) : undefined,
   };
 }
 

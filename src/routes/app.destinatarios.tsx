@@ -1,13 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Send, Search, Upload, Star, Trash2, Tag } from "lucide-react";
+import { Plus, Send, Search, Upload, Star, Trash2 } from "lucide-react";
 import {
   PageHeader,
   Card,
   BtnPrimary,
   BtnOutline,
   Input,
-  Badge,
   Stat,
   Label,
 } from "@/components/portal-shell";
@@ -24,7 +23,12 @@ import {
 import { detectIdentifierKind } from "@/lib/recipient-validation";
 import { validateRecipient } from "@/lib/recipient-bdc";
 import { useDestinatariosFrecuentes, useSubcuentasOrigen } from "@/hooks/useTransferencias";
-import { formatMoney } from "@/shared/format";
+import { formatDate, formatMoney } from "@/shared/format";
+import {
+  filtrarDestinatarios,
+  ordenarDestinatarios,
+  type OrdenDestinatarios,
+} from "@/features/transferencias/utils";
 
 export const Route = createFileRoute("/app/destinatarios")({ component: Page });
 
@@ -35,10 +39,9 @@ type Destinatario = {
   a: string;
   cbu: string;
   b: string;
-  cat: string;
   fav: boolean;
-  ult: string;
-  ops: number;
+  /** Fecha de alta en la agenda (ISO). */
+  creadoEn?: string;
 };
 
 /**
@@ -52,20 +55,10 @@ function aDestinatario(f: FrequentRecipient): Destinatario {
     a: f.alias || "",
     cbu: f.cbu,
     b: f.banco || "—",
-    cat: "Destinatario frecuente",
     fav: false,
-    ult: "",
-    ops: 0,
+    creadoEn: f.creadoEn,
   };
 }
-
-const categorias = [
-  { n: "Todos", c: 24, active: true },
-  { n: "Proveedores", c: 12 },
-  { n: "Empleados", c: 8 },
-  { n: "Servicios", c: 3 },
-  { n: "Favoritos", c: 5 },
-];
 
 function Page() {
   const [nuevoOpen, setNuevoOpen] = useState(false);
@@ -86,6 +79,14 @@ function Page() {
     recargar: cargarDestinatarios,
   } = useDestinatariosFrecuentes();
   const items = useMemo(() => frecuentes.map(aDestinatario), [frecuentes]);
+  const [busqueda, setBusqueda] = useState("");
+  const [orden, setOrden] = useState<OrdenDestinatarios>("recientes");
+  // Filtro por nombre/alias/CBU y orden sobre la agenda real.
+  const visibles = useMemo(
+    () =>
+      ordenarDestinatarios(filtrarDestinatarios(frecuentes, busqueda), orden).map(aDestinatario),
+    [frecuentes, busqueda, orden],
+  );
   const { subcuentas, recargar: recargarSubcuentas } = useSubcuentasOrigen();
 
   // Al cargar (o recargar) las subcuentas se preselecciona la primera.
@@ -140,7 +141,7 @@ function Page() {
     <>
       <PageHeader
         title="Mis destinatarios"
-        description="Agenda de contactos frecuentes con etiquetas y validacion CBU."
+        description="Agenda de contactos frecuentes con validacion CBU."
         action={
           <div className="flex gap-2">
             <BtnOutline>
@@ -153,9 +154,8 @@ function Page() {
         }
       />
 
-      <div className="grid md:grid-cols-4 gap-4 mb-6">
+      <div className="grid md:grid-cols-3 gap-4 mb-6">
         <Stat label="Total destinatarios" value={String(items.length)} />
-        <Stat label="Favoritos" value={String(items.filter((d) => d.fav).length)} />
         <Stat label="Subcuentas" value={String(subcuentas.length)} />
         <Stat
           label="Disponible"
@@ -163,113 +163,99 @@ function Page() {
         />
       </div>
 
-      <div className="grid lg:grid-cols-[220px_1fr] gap-6">
-        <Card className="h-fit">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-3">
-            Categorias
+      <Card className="p-0 overflow-hidden">
+        <div className="p-4 border-b flex flex-wrap gap-2 items-center">
+          <div className="relative w-full sm:flex-1 sm:min-w-[240px]">
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              placeholder="Buscar por nombre, alias o CBU..."
+              className="pl-9"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
           </div>
-          <div className="space-y-1">
-            {categorias.map((c) => (
-              <button
-                key={c.n}
-                className={`w-full flex justify-between px-3 py-2 rounded-md text-sm ${
-                  c.active
-                    ? "bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)] font-semibold"
-                    : "hover:bg-muted"
-                }`}
+          <select
+            className="h-10 px-3 rounded-md border bg-card text-sm"
+            value={orden}
+            onChange={(e) => setOrden(e.target.value as OrdenDestinatarios)}
+          >
+            <option value="recientes">Ordenar: recientes</option>
+            <option value="alfabetico">Alfabetico</option>
+          </select>
+        </div>
+
+        <div className="hidden md:grid grid-cols-[auto_1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto] gap-4 px-5 py-3 border-b text-xs uppercase tracking-wide text-muted-foreground">
+          <div></div>
+          <div>Nombre</div>
+          <div>Alias</div>
+          <div>CBU</div>
+          <div>Banco</div>
+          <div>Agregado</div>
+          <div></div>
+        </div>
+        {frecuentes.length === 0 && !cargando && (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Todavía no guardaste destinatarios. Cargá uno con "Nuevo destinatario".
+          </div>
+        )}
+        {frecuentes.length > 0 && visibles.length === 0 && (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Ningún destinatario coincide con "{busqueda.trim()}".
+          </div>
+        )}
+        {cargando && (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            Cargando agenda…
+          </div>
+        )}
+        {visibles.map((d) => (
+          <div
+            key={d.id || d.n}
+            className="md:grid md:grid-cols-[auto_1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto] gap-4 px-5 py-4 border-b last:border-0 items-center"
+          >
+            <Star
+              size={14}
+              className={d.fav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}
+            />
+            <div>
+              <div className="font-semibold">{d.n}</div>
+              <div className="text-xs text-muted-foreground md:hidden">
+                @{d.a} · {d.b}
+              </div>
+            </div>
+            <div className="text-sm text-muted-foreground hidden md:block">
+              {d.a ? `@${d.a}` : "—"}
+            </div>
+            <div className="text-sm font-mono text-muted-foreground hidden md:block">{d.cbu}</div>
+            <div className="text-sm text-muted-foreground hidden md:block truncate">{d.b}</div>
+            <div className="text-sm text-muted-foreground hidden md:block">
+              {d.creadoEn ? formatDate(d.creadoEn) : "—"}
+            </div>
+            <div className="flex gap-1 mt-2 md:mt-0 justify-end">
+              <BtnOutline
+                className="h-9 px-3"
+                onClick={() => {
+                  setTransferir(d);
+                  setMonto("");
+                  setConcepto("");
+                }}
               >
-                <span className="flex items-center gap-2">
-                  <Tag size={12} /> {c.n}
-                </span>
-                <span className="text-xs text-muted-foreground">{c.c}</span>
+                <Send size={14} /> Transferir
+              </BtnOutline>
+              <button
+                className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-card hover:bg-danger-50 text-muted-foreground hover:text-danger-600"
+                title="Eliminar de la agenda"
+                onClick={() => setEliminar(d)}
+              >
+                <Trash2 size={14} />
               </button>
-            ))}
+            </div>
           </div>
-        </Card>
-
-        <Card className="p-0 overflow-hidden">
-          <div className="p-4 border-b flex flex-wrap gap-2 items-center">
-            <div className="relative w-full sm:flex-1 sm:min-w-[240px]">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input placeholder="Buscar por nombre, alias o CBU..." className="pl-9" />
-            </div>
-            <select className="h-10 px-3 rounded-md border bg-card text-sm">
-              <option>Ordenar: mas usados</option>
-              <option>Alfabetico</option>
-              <option>Recientes</option>
-            </select>
-          </div>
-
-          <div className="hidden md:grid grid-cols-[auto_1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto] gap-4 px-5 py-3 border-b text-xs uppercase tracking-wide text-muted-foreground">
-            <div></div>
-            <div>Nombre</div>
-            <div>Alias</div>
-            <div>CBU</div>
-            <div>Categoria</div>
-            <div>Ops</div>
-            <div></div>
-          </div>
-          {items.length === 0 && !cargando && (
-            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-              Todavía no guardaste destinatarios. Cargá uno con "Nuevo destinatario".
-            </div>
-          )}
-          {cargando && (
-            <div className="px-5 py-10 text-center text-sm text-muted-foreground">
-              Cargando agenda…
-            </div>
-          )}
-          {items.map((d) => (
-            <div
-              key={d.id || d.n}
-              className="md:grid md:grid-cols-[auto_1.2fr_1fr_1.4fr_0.8fr_0.8fr_auto] gap-4 px-5 py-4 border-b last:border-0 items-center"
-            >
-              <Star
-                size={14}
-                className={d.fav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}
-              />
-              <div>
-                <div className="font-semibold">{d.n}</div>
-                <div className="text-xs text-muted-foreground md:hidden">
-                  @{d.a} · {d.b}
-                </div>
-              </div>
-              <div className="text-sm text-muted-foreground hidden md:block">
-                {d.a ? `@${d.a}` : "—"}
-              </div>
-              <div className="text-sm font-mono text-muted-foreground hidden md:block">{d.cbu}</div>
-              <div className="hidden md:block">
-                <Badge tone="neutral">{d.cat}</Badge>
-              </div>
-              <div className="text-sm text-muted-foreground hidden md:block">
-                {d.ops ? `${d.ops} · ${d.ult}` : d.ult || "—"}
-              </div>
-              <div className="flex gap-1 mt-2 md:mt-0 justify-end">
-                <BtnOutline
-                  className="h-9 px-3"
-                  onClick={() => {
-                    setTransferir(d);
-                    setMonto("");
-                    setConcepto("");
-                  }}
-                >
-                  <Send size={14} /> Transferir
-                </BtnOutline>
-                <button
-                  className="h-9 w-9 inline-flex items-center justify-center rounded-md border bg-card hover:bg-danger-50 text-muted-foreground hover:text-danger-600"
-                  title="Eliminar de la agenda"
-                  onClick={() => setEliminar(d)}
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
-        </Card>
-      </div>
+        ))}
+      </Card>
 
       <FormDialog
         open={nuevoOpen}
@@ -317,24 +303,13 @@ function Page() {
             onChange={(e) => setNuevoNombre(e.target.value)}
           />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>Alias</Label>
-            <Input
-              placeholder="proveedor.sa"
-              value={nuevoAlias}
-              onChange={(e) => setNuevoAlias(e.target.value)}
-            />
-          </div>
-          <div>
-            <Label>Categoria</Label>
-            <select className="w-full h-10 px-3 rounded-md border bg-card text-sm">
-              <option>Proveedor</option>
-              <option>Empleado</option>
-              <option>Servicios</option>
-              <option>Otro</option>
-            </select>
-          </div>
+        <div>
+          <Label>Alias</Label>
+          <Input
+            placeholder="proveedor.sa"
+            value={nuevoAlias}
+            onChange={(e) => setNuevoAlias(e.target.value)}
+          />
         </div>
         <div>
           <Label>CBU / CVU / Alias</Label>
@@ -355,9 +330,6 @@ function Page() {
             onChange={(e) => setNuevoCuit(e.target.value)}
           />
         </div>
-        <label className="flex items-center gap-2 text-xs">
-          <input type="checkbox" /> Marcar como favorito
-        </label>
       </FormDialog>
 
       <FormDialog
