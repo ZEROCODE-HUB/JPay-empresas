@@ -112,16 +112,20 @@ export async function updateSubcuenta(
   if (error) throw new DataAccessError(error);
 }
 
-// Borrar y pausar/reactivar no propagan el error de PostgREST (comportamiento
-// heredado de la pantalla: el toast de éxito sale aunque RLS lo rechace).
+// RLS no devuelve error cuando bloquea un delete/update: solo afecta 0 filas. Por eso se
+// pide la fila afectada y se trata "ninguna" como error.
 export async function deleteSubcuenta(id: string): Promise<void> {
   const sb = requireSupabase();
-  await sb.from("subaccounts").delete().eq("id", id);
+  const { data, error } = await sb.from("subaccounts").delete().eq("id", id).select("id");
+  if (error) throw new DataAccessError(error);
+  if (!data?.length) throw new Error("No se pudo eliminar la subcuenta");
 }
 
 export async function setEstadoSubcuenta(id: string, estado: "Activa" | "Pausada"): Promise<void> {
   const sb = requireSupabase();
-  await sb.from("subaccounts").update({ estado }).eq("id", id);
+  const { data, error } = await sb.from("subaccounts").update({ estado }).eq("id", id).select("id");
+  if (error) throw new DataAccessError(error);
+  if (!data?.length) throw new Error("No se pudo actualizar el estado");
 }
 
 export async function transferirEntreSubcuentas(input: {

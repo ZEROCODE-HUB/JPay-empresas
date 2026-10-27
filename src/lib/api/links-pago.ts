@@ -59,20 +59,17 @@ export async function getDashboardLinksPago(
     .gte("fecha", start.toISOString())
     .lte("fecha", end.toISOString());
 
-  // Ojo: se cruza transactions.estado_id (numérico) contra estados_movimiento.codigo (texto).
-  const ids = Array.from(new Set((m ?? []).map((x) => x.estado_id).filter(Boolean))).map(String);
-  const estadoNombre: Record<string, string> = {};
+  // transactions.estado_id → estados_movimiento.id; el código se agrupa en las categorías del dashboard.
+  const ids = Array.from(new Set((m ?? []).map((x) => x.estado_id)));
+  const codigoPorId: Record<number, string> = {};
   if (ids.length) {
-    const { data: est } = await s
-      .from("estados_movimiento")
-      .select("codigo, nombre")
-      .in("codigo", ids);
-    (est ?? []).forEach((e) => (estadoNombre[e.codigo] = e.nombre));
+    const { data: est } = await s.from("estados_movimiento").select("id, codigo").in("id", ids);
+    (est ?? []).forEach((e) => (codigoPorId[e.id] = e.codigo));
   }
   const movs = (m ?? []).map((x) => ({
     monto: Math.abs(Number(x.monto_operacion ?? 0)),
     fecha: x.fecha,
-    estado: estadoNombre[x.estado_id] ?? "Aprobado",
+    estado: categoriaDashboard(codigoPorId[x.estado_id]),
     id: x.id_txn ?? x.fecha,
   }));
 
@@ -262,4 +259,21 @@ export async function upsertIntegracionEcommerce(
       { onConflict: "cliente_legajo,plataforma" },
     );
   if (error) throw new DataAccessError(error);
+}
+
+const CATEGORIA_POR_CODIGO: Record<string, string> = {
+  APROBADO: "Aprobado",
+  RECHAZADO: "Rechazado",
+  BLOQUEADO: "Rechazado",
+  EXPIRADO: "Rechazado",
+  REEMBOLSADO: "Reembolsado",
+  PENDIENTE: "Pendiente",
+  EN_PROGRESO: "Pendiente",
+  CREADO: "Pendiente",
+  ABIERTO: "Pendiente",
+};
+
+/** Categoría del dashboard (Aprobado / Pendiente / Rechazado / Reembolsado) según el código del estado. */
+function categoriaDashboard(codigo: string | undefined): string {
+  return (codigo && CATEGORIA_POR_CODIGO[codigo]) || "Pendiente";
 }

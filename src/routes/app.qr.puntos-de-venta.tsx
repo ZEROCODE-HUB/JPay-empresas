@@ -245,6 +245,7 @@ function Page() {
               <option value="Todos">Todos</option>
               <option value="Activado">Activado</option>
               <option value="Desactivado">Desactivado</option>
+              <option value="Pendiente de aprobación">Pendiente de aprobación</option>
             </select>
           </div>
           <div>
@@ -415,6 +416,10 @@ function Page() {
             >
               <option value="Activado">Activado</option>
               <option value="Desactivado">Desactivado</option>
+              {/* Lo aprueba el admin: se muestra pero no se puede elegir. */}
+              <option value="Pendiente de aprobación" disabled>
+                Pendiente de aprobación
+              </option>
             </select>
           </div>
         </div>

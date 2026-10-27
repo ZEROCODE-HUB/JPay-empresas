@@ -221,11 +221,12 @@ function Page() {
     setSaving(true);
     try {
       const nombre = `${form.nombre ?? ""} ${form.apellido ?? ""}`.trim();
-      const patch = {
+      const patch: TablesUpdate<"clientes"> = {
         nombre,
         nombre_legal: form.nombreLegal || null,
         nombre_fantasia: form.nombreFantasia || null,
-        cuit: form.cuit || null,
+        // `cuit` es NOT NULL en la base: si queda vacío no se envía y se conserva el actual.
+        cuit: form.cuit || undefined,
         tipo_sociedad: form.tipo_sociedad || null,
         fecha_inscripcion: form.fecha_inscripcion || null,
         direccion: form.direccion || null,
@@ -241,9 +242,8 @@ function Page() {
         origen_fondos: form.origen_fondos || null,
         es_pep: !!form.es_pep,
       };
-      // `cuit` es NOT NULL en la base: vacío se manda null igual que antes (falla y avisa).
-      await updateCliente(cliente.legajo, patch as TablesUpdate<"clientes">);
-      setCliente({ ...cliente, ...patch } as Cliente);
+      await updateCliente(cliente.legajo, patch);
+      setCliente({ ...cliente, ...patch, cuit: patch.cuit ?? cliente.cuit } as Cliente);
       toast.success("Cambios guardados");
     } catch {
       toast.error("No se pudieron guardar los cambios");

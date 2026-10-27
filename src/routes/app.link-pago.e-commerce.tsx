@@ -114,10 +114,15 @@ function Page() {
   const upsert = async (
     plataforma: string,
     patch: { estado: string; api_key?: string; webhook_url?: string },
-  ) => {
-    if (!legajo) return;
-    // Igual que antes: un error al guardar no se informa.
-    await upsertIntegracion.mutateAsync({ plataforma, patch }).catch(() => {});
+  ): Promise<boolean> => {
+    if (!legajo) return false;
+    try {
+      await upsertIntegracion.mutateAsync({ plataforma, patch });
+      return true;
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo guardar la integración");
+      return false;
+    }
   };
 
   const toggleEstado = (id: string) => {
@@ -125,8 +130,10 @@ function Page() {
     if (!e) return;
     const nuevo = e.estado === "Habilitado" ? "Deshabilitado" : "Habilitado";
     setEstadoLocal(id, nuevo);
-    void upsert(id, { estado: nuevo });
-    toast.success(`${e.name} ${nuevo === "Habilitado" ? "habilitada" : "deshabilitada"}`);
+    void upsert(id, { estado: nuevo }).then((ok) => {
+      if (ok) toast.success(`${e.name} ${nuevo === "Habilitado" ? "habilitada" : "deshabilitada"}`);
+      else setEstadoLocal(id, e.estado);
+    });
   };
 
   const refreshList = () => {
@@ -158,7 +165,8 @@ function Page() {
       toast.error("La API Key es requerida");
       return;
     }
-    await upsert(id, { estado: "Habilitado", api_key: apiKey, webhook_url: webhook });
+    if (!(await upsert(id, { estado: "Habilitado", api_key: apiKey, webhook_url: webhook })))
+      return;
     setEstadoLocal(id, "Habilitado");
     setClaveModal(null);
     toast.success(`${name} conectada correctamente`);

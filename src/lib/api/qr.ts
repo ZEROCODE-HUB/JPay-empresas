@@ -7,7 +7,7 @@ import { DataAccessError } from "./errors";
 // Puntos de venta
 // ============================================================================
 
-export type EstadoPdv = "Activado" | "Desactivado";
+export type EstadoPdv = "Activado" | "Desactivado" | "Pendiente de aprobación";
 
 export type PuntoVenta = {
   id: string;
