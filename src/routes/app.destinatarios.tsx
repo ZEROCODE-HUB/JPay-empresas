@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Plus, Upload } from "lucide-react";
-import { PageHeader, BtnPrimary, BtnOutline, Stat } from "@/components/portal-shell";
+import { Plus } from "lucide-react";
+import { PageHeader, BtnPrimary, Stat } from "@/components/portal-shell";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { formatMoney } from "@/shared/format";
 import { DestinatariosTabla } from "@/features/destinatarios/components/DestinatariosTabla";
@@ -26,9 +26,6 @@ function Page() {
         description="Agenda de contactos frecuentes con validacion CBU."
         action={
           <div className="flex gap-2">
-            <BtnOutline>
-              <Upload size={14} /> Importar CSV
-            </BtnOutline>
             <BtnPrimary onClick={() => nuevo.setOpen(true)}>
               <Plus size={16} /> Nuevo destinatario
             </BtnPrimary>

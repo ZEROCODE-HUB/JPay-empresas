@@ -15,7 +15,7 @@ export const Route = createFileRoute("/onboarding/kyc")({
 
 function KycWizard() {
   const w = useKycWizard();
-  const { step, loadingDocs } = w;
+  const { step } = w;
 
   return (
     <AuthShell
@@ -30,7 +30,7 @@ function KycWizard() {
       <PasosDocumentos w={w} />
 
       {step === 3 && <PasoDomicilio w={w} />}
-      {(step < 3 || loadingDocs) && (
+      {step < 3 && (
         <div className="text-center pt-4">
           <Link
             to="/login"

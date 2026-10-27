@@ -73,7 +73,8 @@ export function DestinatariosTabla({
           <div>
             <div className="font-semibold">{d.n}</div>
             <div className="text-xs text-muted-foreground md:hidden">
-              @{d.a} · {d.b}
+              {d.a ? `@${d.a} · ` : ""}
+              {d.b}
             </div>
           </div>
           <div className="text-sm text-muted-foreground hidden md:block">

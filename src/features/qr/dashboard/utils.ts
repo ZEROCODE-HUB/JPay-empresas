@@ -34,6 +34,8 @@ export function desdePreset(presetLabel: string, ahora = new Date()): string {
 }
 
 /** KPIs, tortas y evolución mensual (últimos 6 meses con datos) del dashboard QR. */
+const ESTADOS_EN_CURSO = new Set(["pendiente", "en progreso", "creado", "abierto"]);
+
 export function calcularDashboardQr(
   datos: DashboardQrDatos | null | undefined,
 ): DashboardQrCalculado {
@@ -48,7 +50,10 @@ export function calcularDashboardQr(
   const aprobados = lista.filter(
     (m) => nombreEstado(m.estado_id).toLowerCase() === "aprobado",
   ).length;
-  const pendientes = total - aprobados;
+  // Pendiente = todavía en curso; los rechazados/expirados no cuentan como pendientes.
+  const pendientes = lista.filter((m) =>
+    ESTADOS_EN_CURSO.has(nombreEstado(m.estado_id).toLowerCase()),
+  ).length;
   const tasa = total ? (aprobados / total) * 100 : 0;
   const pdvActivos = pdvsPorEstado["Activado"] ?? 0;
 
@@ -89,7 +94,7 @@ export function calcularDashboardQr(
         label: "Monto total recaudado",
         value: `${formatMoney(montoTotal, { decimals: 0 })} ARS`,
       },
-      { icon: Activity, label: "Transacciones", value: aprobados.toString() },
+      { icon: Activity, label: "Aprobadas", value: aprobados.toString() },
       { icon: TrendingUp, label: "Pendientes", value: pendientes.toString() },
       { icon: Store, label: "PDV activos", value: pdvActivos.toString() },
       { icon: TrendingUp, label: "Tasa de exito", value: tasa.toFixed(1) + "%" },

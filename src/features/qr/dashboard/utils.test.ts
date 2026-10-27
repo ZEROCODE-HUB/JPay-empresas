@@ -33,8 +33,8 @@ describe("calcularDashboardQr", () => {
     expect(kpis.map((k) => [k.label, k.value])).toEqual([
       ["Total cobros QR", "4"],
       ["Monto total recaudado", `${formatMoney(1_750_000, { decimals: 0 })} ARS`],
-      ["Transacciones", "2"],
-      ["Pendientes", "2"],
+      ["Aprobadas", "2"],
+      ["Pendientes", "1"],
       ["PDV activos", "3"],
       ["Tasa de exito", "50.0%"],
     ]);

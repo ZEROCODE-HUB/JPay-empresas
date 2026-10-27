@@ -18,7 +18,8 @@ export function TransferirDialog({ t }: { t: TransferirDestinatario }) {
         <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1">
           <div className="font-semibold text-sm text-foreground">{transferir.n}</div>
           <div className="text-muted-foreground">
-            @{transferir.a} · {transferir.b}
+            {transferir.a ? `@${transferir.a} · ` : ""}
+            {transferir.b}
           </div>
           <div className="font-mono text-muted-foreground">{transferir.cbu}</div>
         </div>

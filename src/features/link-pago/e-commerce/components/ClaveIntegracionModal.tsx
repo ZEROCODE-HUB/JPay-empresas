@@ -28,7 +28,7 @@ export function ClaveIntegracionModal({ s }: { s: IntegracionesEcom }) {
             <Input
               value={claveApi}
               onChange={(e) => s.setClaveApi(e.target.value)}
-              placeholder="Ingresa la API key de {claveModal.name}"
+              placeholder={`Ingresa la API key de ${claveModal.name}`}
               className="mt-1"
             />
           </div>
