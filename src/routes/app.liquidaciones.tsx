@@ -281,17 +281,28 @@ function CalendarioAcreditacionesTab({
     let diaSemana = primerDia.getDay();
     diaSemana = diaSemana === 0 ? 6 : diaSemana - 1;
     for (let i = diaSemana - 1; i >= 0; i--) {
-      out.push({ fecha: new Date(anio, mes - 1, -i), esActual: false, esPasado: false, esOtroMes: true });
+      out.push({
+        fecha: new Date(anio, mes - 1, -i),
+        esActual: false,
+        esPasado: false,
+        esOtroMes: true,
+      });
     }
     for (let d = 1; d <= ultimoDia.getDate(); d++) {
       const f = new Date(anio, mes - 1, d);
-      const esHoy = d === today.getDate() && mes === today.getMonth() + 1 && anio === today.getFullYear();
+      const esHoy =
+        d === today.getDate() && mes === today.getMonth() + 1 && anio === today.getFullYear();
       out.push({ fecha: f, esActual: esHoy, esPasado: f < today && !esHoy, esOtroMes: false });
     }
     const restante = 7 - (out.length % 7);
     if (restante < 7) {
       for (let i = 1; i <= restante; i++) {
-        out.push({ fecha: new Date(anio, mes, i), esActual: false, esPasado: false, esOtroMes: true });
+        out.push({
+          fecha: new Date(anio, mes, i),
+          esActual: false,
+          esPasado: false,
+          esOtroMes: true,
+        });
       }
     }
     return out;
@@ -311,19 +322,18 @@ function CalendarioAcreditacionesTab({
   // Ticket activo del día (entre los tickets que ya tenemos en memoria)
   const ticketDelDia = useMemo<Ticket | null>(() => {
     if (!selectedDate) return null;
-    return tickets.find((t) => {
-      const fechaAcred = t.fechaAcreditacion || t.fecha || "";
-      return fechaAcred.slice(0, 10) === selectedDate;
-    }) ?? null;
+    return (
+      tickets.find((t) => {
+        const fechaAcred = t.fechaAcreditacion || t.fecha || "";
+        return fechaAcred.slice(0, 10) === selectedDate;
+      }) ?? null
+    );
   }, [selectedDate, tickets]);
 
   const itemsDelDia = selectedDate ? (itemsPorFecha.get(selectedDate) ?? []) : [];
   const totalBrutoDia = itemsDelDia.reduce((s, i) => s + i.importeBruto, 0);
   const totalNetoDia = itemsDelDia.reduce((s, i) => s + i.importeNeto, 0);
-  const totalAdelantosDia = itemsDelDia.reduce(
-    (s, i) => s + (i.adelantosAplicadosDia ?? 0),
-    0,
-  );
+  const totalAdelantosDia = itemsDelDia.reduce((s, i) => s + (i.adelantosAplicadosDia ?? 0), 0);
   const netoDespuesAdelantos = Math.max(totalNetoDia - totalAdelantosDia, 0);
 
   const onExport = async (formato: "xlsx" | "pdf") => {
@@ -418,10 +428,7 @@ function CalendarioAcreditacionesTab({
         <div className="rounded-lg border overflow-hidden">
           <div className="grid grid-cols-7 border-b bg-muted/30">
             {DIAS_SEMANA_CAL.map((d) => (
-              <div
-                key={d}
-                className="p-2 text-center text-xs font-semibold text-muted-foreground"
-              >
+              <div key={d} className="p-2 text-center text-xs font-semibold text-muted-foreground">
                 {d}
               </div>
             ))}
@@ -462,9 +469,7 @@ function CalendarioAcreditacionesTab({
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span
-                      className={`text-sm font-semibold ${
-                        dia.esActual ? "text-primary-ink" : ""
-                      }`}
+                      className={`text-sm font-semibold ${dia.esActual ? "text-primary-ink" : ""}`}
                     >
                       {fmtDateCorta(fechaKey)}
                     </span>
@@ -639,8 +644,8 @@ function CalendarioAcreditacionesTab({
                             }}
                             className="block w-full text-left hover:underline"
                           >
-                            {a.estado} · {formatARS(a.montoPorAcreditar ?? a.montoSolicitado)} ·
-                            Tkt #{a.id.slice(0, 8).toUpperCase()}
+                            {a.estado} · {formatARS(a.montoPorAcreditar ?? a.montoSolicitado)} · Tkt
+                            #{a.id.slice(0, 8).toUpperCase()}
                           </button>
                         );
                       })}
@@ -651,13 +656,8 @@ function CalendarioAcreditacionesTab({
               {itemsDelDia.map((it) => {
                 const color = ESTADO_CAL_COLORS[it.estadoCalculado];
                 const comisionCierrePct =
-                  it.importeBruto > 0
-                    ? (it.comisionCierreLoteMonto / it.importeBruto) * 100
-                    : 0;
-                const netoFinal = Math.max(
-                  it.importeNeto - (it.adelantosAplicadosDia ?? 0),
-                  0,
-                );
+                  it.importeBruto > 0 ? (it.comisionCierreLoteMonto / it.importeBruto) * 100 : 0;
+                const netoFinal = Math.max(it.importeNeto - (it.adelantosAplicadosDia ?? 0), 0);
                 return (
                   <Card key={it.id} className="p-4">
                     <div className="flex justify-between items-start mb-3">
@@ -669,7 +669,9 @@ function CalendarioAcreditacionesTab({
                           {it.cantidadOperaciones} operaciones
                         </div>
                       </div>
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${color.bg} ${color.text}`}>
+                      <span
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded ${color.bg} ${color.text}`}
+                      >
                         {color.label}
                       </span>
                     </div>
@@ -718,9 +720,7 @@ function CalendarioAcreditacionesTab({
                           {it.adelantosAplicadosDia > 0 && (
                             <tr className="text-amber-700">
                               <td className="py-1">(-) Adelanto aplicado a este día</td>
-                              <td className="text-right">
-                                -{formatARS(it.adelantosAplicadosDia)}
-                              </td>
+                              <td className="text-right">-{formatARS(it.adelantosAplicadosDia)}</td>
                             </tr>
                           )}
                           <tr className="border-t-2 font-semibold">
@@ -778,7 +778,27 @@ function CalendarioAcreditacionesTab({
 // Export helpers (por día)
 // ============================================================================
 
-function exportExcelDia(titulo: string, rows: { id: string; codigo: string; nombreComercio: string | null; legajo: string; bandera: string; estado: string; cantidadOperaciones: number; importeBruto: number; tasaPropiaPct: number; tasaPropiaMonto: number; tasaPaywayPct: number; tasaPaywayMonto: number; comisionCierreLoteMonto: number; impuestos: number; contracargoMonto: number; importeNeto: number; }[]) {
+function exportExcelDia(
+  titulo: string,
+  rows: {
+    id: string;
+    codigo: string;
+    nombreComercio: string | null;
+    legajo: string;
+    bandera: string;
+    estado: string;
+    cantidadOperaciones: number;
+    importeBruto: number;
+    tasaPropiaPct: number;
+    tasaPropiaMonto: number;
+    tasaPaywayPct: number;
+    tasaPaywayMonto: number;
+    comisionCierreLoteMonto: number;
+    impuestos: number;
+    contracargoMonto: number;
+    importeNeto: number;
+  }[],
+) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const XLSX = require("xlsx") as typeof import("xlsx");
   const wb = XLSX.utils.book_new();
@@ -803,11 +823,29 @@ function exportExcelDia(titulo: string, rows: { id: string; codigo: string; nomb
   XLSX.writeFile(wb, `calendario_${safe}.xlsx`);
 }
 
-function exportPdfDia(titulo: string, rows: { codigo: string; nombreComercio: string | null; bandera: string; estado: string; cantidadOperaciones: number; importeBruto: number; tasaPropiaMonto: number; tasaPaywayMonto: number; comisionCierreLoteMonto: number; impuestos: number; contracargoMonto: number; importeNeto: number; }[]) {
+function exportPdfDia(
+  titulo: string,
+  rows: {
+    codigo: string;
+    nombreComercio: string | null;
+    bandera: string;
+    estado: string;
+    cantidadOperaciones: number;
+    importeBruto: number;
+    tasaPropiaMonto: number;
+    tasaPaywayMonto: number;
+    comisionCierreLoteMonto: number;
+    impuestos: number;
+    contracargoMonto: number;
+    importeNeto: number;
+  }[],
+) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { jsPDF } = require("jspdf") as typeof import("jspdf");
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const autoTableMod = require("jspdf-autotable") as { default: (doc: import("jspdf").jsPDF, opts: unknown) => void };
+  const autoTableMod = require("jspdf-autotable") as {
+    default: (doc: import("jspdf").jsPDF, opts: unknown) => void;
+  };
   const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(14);
   doc.text(`Calendario de Acreditaciones — ${titulo}`, 14, 16);
@@ -999,10 +1037,9 @@ function Liquidaciones() {
         let adelantosEnCursoCalc = 0;
         if (comercioId) {
           try {
-            const { data: resumenRpc, error: rpcErr } = await sb.rpc(
-              "calendario_resumen_saldos",
-              { p_comercio_id: comercioId },
-            );
+            const { data: resumenRpc, error: rpcErr } = await sb.rpc("calendario_resumen_saldos", {
+              p_comercio_id: comercioId,
+            });
             if (!rpcErr && resumenRpc) {
               const r = resumenRpc as Record<string, unknown>;
               falta = Number(r.falta_cobrar ?? 0);
@@ -1035,7 +1072,8 @@ function Liquidaciones() {
 
           const rows = (loteRows ?? []) as any[];
           const pendientes = rows.filter(
-            (l) => l.estado !== "Acreditado" && l.estado !== "Rechazado" && l.estado !== "Cancelado",
+            (l) =>
+              l.estado !== "Acreditado" && l.estado !== "Rechazado" && l.estado !== "Cancelado",
           );
           const acreditados = rows.filter((l) => l.estado === "Acreditado");
           // KPI "Por acreditar": solo los pendientes (los Acreditados ya están pagados).
@@ -1094,10 +1132,9 @@ function Liquidaciones() {
           // (fuente única de verdad). Si la RPC no existe todavía (migración
           // no aplicada), caemos al cálculo JS para no romper la pantalla.
           try {
-            const { data: topeRpc, error: rpcError } = await sb.rpc(
-              "fn_calcular_tope_disponible",
-              { p_comercio_id: comercioId },
-            );
+            const { data: topeRpc, error: rpcError } = await sb.rpc("fn_calcular_tope_disponible", {
+              p_comercio_id: comercioId,
+            });
             if (!rpcError) {
               disp = Math.max(0, Number(topeRpc ?? 0));
             } else {
@@ -1752,9 +1789,7 @@ function Liquidaciones() {
                 Lotes que ya fueron acreditados a tu subcuenta Operativa (estado{" "}
                 <Badge tone="success">Acreditado</Badge>). Suma:{" "}
                 <span className="font-mono font-semibold text-emerald-700">
-                  {formatARS(
-                    lotesAcreditados.reduce((s, l) => s + Number(l.importeNeto ?? 0), 0),
-                  )}
+                  {formatARS(lotesAcreditados.reduce((s, l) => s + Number(l.importeNeto ?? 0), 0))}
                 </span>
               </div>
             </div>
@@ -2065,8 +2100,8 @@ function Liquidaciones() {
             <h3 className="font-semibold text-sm">Impuestos aplicables a tu comercio</h3>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            Solo se muestran impuestos de ámbito Externo. Los impuestos internos de {brand.name} no se
-            visualizan.
+            Solo se muestran impuestos de ámbito Externo. Los impuestos internos de {brand.name} no
+            se visualizan.
           </p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -2179,9 +2214,7 @@ function Liquidaciones() {
                       if (reservados > 0) {
                         return (
                           <div className="flex justify-between">
-                            <span className="text-muted-foreground">
-                              (-) Adelantos en curso
-                            </span>
+                            <span className="text-muted-foreground">(-) Adelantos en curso</span>
                             <span className="font-mono text-amber-700">
                               - {formatARS(reservados)}
                             </span>
@@ -2191,9 +2224,7 @@ function Liquidaciones() {
                       return null;
                     })()}
                     <div className="flex justify-between border-t border-emerald-200 pt-1">
-                      <span className="text-muted-foreground font-semibold">
-                        Disponible real
-                      </span>
+                      <span className="text-muted-foreground font-semibold">Disponible real</span>
                       <span className="font-mono font-bold text-emerald-700 text-sm">
                         {formatARS(disponible)}
                       </span>
@@ -2316,53 +2347,54 @@ function Liquidaciones() {
                     <TrendingUp size={14} /> Oferta del administrador
                   </div>
                   <p className="text-[11px] text-emerald-900/80 mb-2">
-                    Si estás conforme con la tasa, no hace falta confirmar: el
-                    administrador procesará el pago en breve y vas a ver el neto
-                    acreditado en tu Saldo Disponible.
+                    Si estás conforme con la tasa, no hace falta confirmar: el administrador
+                    procesará el pago en breve y vas a ver el neto acreditado en tu Saldo
+                    Disponible.
                   </p>
-                  {detalle.tasaInteres != null && (() => {
-                    // Regla de negocio: TEM = Tasa Efectiva Mensual.
-                    // Interés = monto_solicitado * TEM / 100
-                    // Neto a recibir = monto_solicitado - Interés
-                    const tem = detalle.tasaInteres;
-                    const interes = Math.round(detalle.montoSolicitado * tem) / 100;
-                    const neto = Math.max(0, detalle.montoSolicitado - interes);
-                    const tna = tem * 12;
-                    return (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Monto solicitado</span>
-                          <span className="font-mono font-semibold">
-                            {formatARS(detalle.montoSolicitado)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Tasa de interés (TEM)</span>
-                          <span className="font-mono font-bold text-emerald-700">
-                            {tem}%
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Costo financiero (interés)</span>
-                          <span className="font-mono font-semibold text-danger-600">
-                            - {formatARS(interes)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between pt-1 border-t border-emerald-200">
-                          <span className="text-muted-foreground">Neto a recibir</span>
-                          <span className="font-mono font-bold text-emerald-700">
-                            {formatARS(neto)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">TNA equivalente</span>
-                          <span className="font-mono text-muted-foreground">
-                            {tna.toFixed(1)}%
-                          </span>
-                        </div>
-                      </>
-                    );
-                  })()}
+                  {detalle.tasaInteres != null &&
+                    (() => {
+                      // Regla de negocio: TEM = Tasa Efectiva Mensual.
+                      // Interés = monto_solicitado * TEM / 100
+                      // Neto a recibir = monto_solicitado - Interés
+                      const tem = detalle.tasaInteres;
+                      const interes = Math.round(detalle.montoSolicitado * tem) / 100;
+                      const neto = Math.max(0, detalle.montoSolicitado - interes);
+                      const tna = tem * 12;
+                      return (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Monto solicitado</span>
+                            <span className="font-mono font-semibold">
+                              {formatARS(detalle.montoSolicitado)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tasa de interés (TEM)</span>
+                            <span className="font-mono font-bold text-emerald-700">{tem}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Costo financiero (interés)
+                            </span>
+                            <span className="font-mono font-semibold text-danger-600">
+                              - {formatARS(interes)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between pt-1 border-t border-emerald-200">
+                            <span className="text-muted-foreground">Neto a recibir</span>
+                            <span className="font-mono font-bold text-emerald-700">
+                              {formatARS(neto)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">TNA equivalente</span>
+                            <span className="font-mono text-muted-foreground">
+                              {tna.toFixed(1)}%
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                 </div>
               )}
               <div className="flex gap-2 pt-4">
@@ -2404,4 +2436,3 @@ function Liquidaciones() {
     </>
   );
 }
-

@@ -1,6 +1,12 @@
 ﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { AuthShell, DemoVerifyBox, PrimaryButton, SecondaryButton, SuccessCard } from "@/components/onboarding";
+import {
+  AuthShell,
+  DemoVerifyBox,
+  PrimaryButton,
+  SecondaryButton,
+  SuccessCard,
+} from "@/components/onboarding";
 import { useOnboarding } from "@/lib/onboarding-store";
 import { readDemoVerifyUrl, resendVerification } from "@/lib/api/onboarding";
 import { getAuthErrorMessage } from "@/lib/supabase";
@@ -8,10 +14,7 @@ import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/registro/exito")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Registro exitoso") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Registro exitoso") }, { name: "robots", content: "noindex" }],
   }),
   component: RegistroExito,
 });
@@ -34,21 +37,28 @@ function RegistroExito() {
       if (res.demo_token) setDemoUrl(readDemoVerifyUrl(registro.email));
       else setMsg("Reenviamos el correo. Revisá tu bandeja.");
     } catch (e) {
-      setError(getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo reenviar el correo"));
+      setError(
+        getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo reenviar el correo"),
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AuthShell leftEyebrow="Paso 2 · Verificacion" leftTitle="Confirma tu correo para continuar." step="Correo enviado">
+    <AuthShell
+      leftEyebrow="Paso 2 · Verificacion"
+      leftTitle="Confirma tu correo para continuar."
+      step="Correo enviado"
+    >
       <SuccessCard
         title="Registro exitoso"
         body={
           <>
             <p>
               Enviamos un correo a{" "}
-              <span className="font-semibold text-black-800">{registro.email ?? "tu email"}</span>. Revisá tu bandeja y hacé clic en el link para validar la cuenta.
+              <span className="font-semibold text-black-800">{registro.email ?? "tu email"}</span>.
+              Revisá tu bandeja y hacé clic en el link para validar la cuenta.
             </p>
             <p className="mt-3 text-xs text-black-400">
               Si no lo recibís, revisá spam o{" "}

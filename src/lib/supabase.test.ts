@@ -3,11 +3,15 @@ import { getAuthErrorMessage, isPermissionError, toDataError } from "./supabase"
 
 describe("getAuthErrorMessage", () => {
   it("traduce credenciales inválidas", () => {
-    expect(getAuthErrorMessage("Invalid login credentials")).toBe("Usuario o contraseña incorrectos.");
+    expect(getAuthErrorMessage("Invalid login credentials")).toBe(
+      "Usuario o contraseña incorrectos.",
+    );
   });
 
   it("usa un mensaje genérico para errores desconocidos", () => {
-    expect(getAuthErrorMessage("algo raro")).toBe("No se pudo iniciar sesión. Intentalo nuevamente.");
+    expect(getAuthErrorMessage("algo raro")).toBe(
+      "No se pudo iniciar sesión. Intentalo nuevamente.",
+    );
   });
 });
 

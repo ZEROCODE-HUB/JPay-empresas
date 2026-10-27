@@ -7,7 +7,10 @@ export const Route = createFileRoute("/legales/comisiones")({
   head: () => ({
     meta: [
       { title: pageTitle("Tabla de Comisiones") },
-      { name: "description", content: "Detalle de comisiones y aranceles vigentes de la plataforma." },
+      {
+        name: "description",
+        content: "Detalle de comisiones y aranceles vigentes de la plataforma.",
+      },
     ],
   }),
   component: Page,
@@ -31,14 +34,19 @@ function Page() {
       <header className="border-b bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
           <BrandLogo />
-          <Link to="/" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+          <Link
+            to="/"
+            className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+          >
             <ArrowLeft size={14} /> Volver al inicio
           </Link>
         </div>
       </header>
       <article className="max-w-3xl mx-auto px-6 py-16">
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Tabla de Comisiones</h1>
-        <p className="text-sm text-muted-foreground mt-2">Vigente desde 01/06/2026 · Aplicable al Plan Empresa.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Vigente desde 01/06/2026 · Aplicable al Plan Empresa.
+        </p>
 
         <div className="mt-8 border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
@@ -52,7 +60,9 @@ function Page() {
               {filas.map((f) => (
                 <tr key={f.op} className="border-t">
                   <td className="px-4 py-3">{f.op}</td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap">{f.com}</td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap">
+                    {f.com}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -60,7 +70,9 @@ function Page() {
         </div>
 
         <p className="mt-6 text-xs text-muted-foreground">
-          Todas las comisiones estan expresadas en pesos argentinos. IVA no incluido salvo indicacion contraria. Los aranceles pueden modificarse con un preaviso minimo de 60 dias conforme normativa BCRA.
+          Todas las comisiones estan expresadas en pesos argentinos. IVA no incluido salvo
+          indicacion contraria. Los aranceles pueden modificarse con un preaviso minimo de 60 dias
+          conforme normativa BCRA.
         </p>
       </article>
     </div>

@@ -13,10 +13,7 @@ import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/onboarding/datos-empresa")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Datos de la empresa") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Datos de la empresa") }, { name: "robots", content: "noindex" }],
   }),
   component: DatosEmpresa,
 });
@@ -43,10 +40,15 @@ function DatosEmpresa() {
         const { data: u } = await sb.auth.getUser();
         const mail = u.user?.email;
         if (!mail) return;
-        const { data: cli } = await sb.from("clientes").select("cuit, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia").eq("correo", mail).maybeSingle();
+        const { data: cli } = await sb
+          .from("clientes")
+          .select("cuit, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia")
+          .eq("correo", mail)
+          .maybeSingle();
         if (!cli) return;
         // No sobrescribir si ya hay valor en store (edición fresca)
-        const realCuit = (cli as any).cuit && !(cli as any).cuit.startsWith("99") ? (cli as any).cuit : "";
+        const realCuit =
+          (cli as any).cuit && !(cli as any).cuit.startsWith("99") ? (cli as any).cuit : "";
         setF((prev) => ({
           cuit: prev.cuit || realCuit || "",
           fechaInscripcion: prev.fechaInscripcion || (cli as any).fecha_inscripcion || "",
@@ -54,7 +56,9 @@ function DatosEmpresa() {
           nombreLegal: prev.nombreLegal || (cli as any).nombre_legal || "",
           nombreFantasia: prev.nombreFantasia || (cli as any).nombre_fantasia || "",
         }));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
   }, []);
 
@@ -135,22 +139,28 @@ function DatosEmpresa() {
             nextLabel="Siguiente"
           />
           <div className="text-center pt-2">
-            <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+            <Link
+              to="/login"
+              className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+            >
+              Volver a inicio de sesión
+            </Link>
           </div>
         </div>
       )}
 
       {step === 1 && (
         <div>
-          <p className="mb-2 text-[0.7rem] tracking-[0.2em] uppercase text-primary-ink">
-            Resumen
-          </p>
+          <p className="mb-2 text-[0.7rem] tracking-[0.2em] uppercase text-primary-ink">Resumen</p>
           <h2 className="mb-6 text-[1.35rem] font-semibold text-black-800">
             Confirma los datos ingresados
           </h2>
           <dl className="divide-y border-t border-b border-black-100">
             {rows.map(([k, v]) => (
-              <div key={k} className="grid grid-cols-1 sm:grid-cols-[minmax(0,140px)_1fr] gap-1 sm:gap-4 py-3 text-sm">
+              <div
+                key={k}
+                className="grid grid-cols-1 sm:grid-cols-[minmax(0,140px)_1fr] gap-1 sm:gap-4 py-3 text-sm"
+              >
                 <dt className="text-black-400">{k}</dt>
                 <dd className="text-black-800 font-semibold">{v || "—"}</dd>
               </div>
@@ -165,7 +175,12 @@ function DatosEmpresa() {
             nextLabel="Registrar empresa"
           />
           <div className="text-center pt-2">
-            <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+            <Link
+              to="/login"
+              className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+            >
+              Volver a inicio de sesión
+            </Link>
           </div>
         </div>
       )}

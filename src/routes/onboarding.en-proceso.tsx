@@ -7,10 +7,7 @@ import { brand, pageTitle, mailto } from "@/brand/brand";
 
 export const Route = createFileRoute("/onboarding/en-proceso")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Solicitud enviada") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Solicitud enviada") }, { name: "robots", content: "noindex" }],
   }),
   component: EnProceso,
 });
@@ -28,16 +25,35 @@ function EnProceso() {
         const s = requireSupabase();
         const { data: u } = await s.auth.getUser();
         const mail = u.user?.email;
-        if (!mail) { setLoading(false); return; }
-        const { data: cli } = await s.from("clientes").select("estado, onboarding_completo, legajo, tipo_persona").eq("correo", mail).maybeSingle();
+        if (!mail) {
+          setLoading(false);
+          return;
+        }
+        const { data: cli } = await s
+          .from("clientes")
+          .select("estado, onboarding_completo, legajo, tipo_persona")
+          .eq("correo", mail)
+          .maybeSingle();
         if (cli?.estado) setEstado(cli.estado as string);
         if ((cli as any)?.tipo_persona) setTipoPersona((cli as any).tipo_persona as string);
         if (cli && (cli as any).legajo) {
           try {
-            const { data: val } = await s.from("validaciones").select("id").eq("cliente_legajo", (cli as any).legajo).limit(1).maybeSingle();
-            const { data: doc } = await s.from("documentos").select("id").eq("cliente_legajo", (cli as any).legajo).limit(1).maybeSingle();
+            const { data: val } = await s
+              .from("validaciones")
+              .select("id")
+              .eq("cliente_legajo", (cli as any).legajo)
+              .limit(1)
+              .maybeSingle();
+            const { data: doc } = await s
+              .from("documentos")
+              .select("id")
+              .eq("cliente_legajo", (cli as any).legajo)
+              .limit(1)
+              .maybeSingle();
             setHasDocs(!!val || !!doc);
-          } catch { setHasDocs(false); }
+          } catch {
+            setHasDocs(false);
+          }
         }
       } catch {
         // noop
@@ -49,12 +65,23 @@ function EnProceso() {
 
   const norm = estado ? normalizarEstado(estado) : null;
   const label = norm ? ESTADO_LABEL[norm] : "En proceso";
-  const paso = norm ? siguientePasoOnboarding(norm) : "Tu alta fue registrada y esta siendo validada por nuestro equipo de compliance.";
+  const paso = norm
+    ? siguientePasoOnboarding(norm)
+    : "Tu alta fue registrada y esta siendo validada por nuestro equipo de compliance.";
 
   if (loading) {
     return (
-      <AuthShell leftEyebrow="Paso 6 · Revision" leftTitle="Cargando tu estado..." leftBody="Consultando el estado de tu solicitud." step="Cargando...">
-        <SuccessCard variant="loading" title="Cargando..." body={<p>Un momento, estamos verificando tu estado.</p>} />
+      <AuthShell
+        leftEyebrow="Paso 6 · Revision"
+        leftTitle="Cargando tu estado..."
+        leftBody="Consultando el estado de tu solicitud."
+        step="Cargando..."
+      >
+        <SuccessCard
+          variant="loading"
+          title="Cargando..."
+          body={<p>Un momento, estamos verificando tu estado.</p>}
+        />
       </AuthShell>
     );
   }
@@ -67,23 +94,37 @@ function EnProceso() {
       step={label}
     >
       <SuccessCard
-        variant={norm === "deshabilitado" || norm === "eliminado" ? "error" : norm === "activado" ? "success" : "info"}
+        variant={
+          norm === "deshabilitado" || norm === "eliminado"
+            ? "error"
+            : norm === "activado"
+              ? "success"
+              : "info"
+        }
         title={norm ? label : "Solicitud enviada"}
         body={
           <>
             <p>
               {norm === "pendiente_verificacion" && "Verifica tu correo para pasar a Registrado."}
-              {norm === "registrado" && "Tu documentacion esta en revision. Permaneceras en Registrado hasta que Admin apruebe."}
-              {norm === "preactivado" && "Documentacion aprobada (Preactivado). Falta generar tu CBU y cargar tu comision para activar."}
+              {norm === "registrado" &&
+                "Tu documentacion esta en revision. Permaneceras en Registrado hasta que Admin apruebe."}
+              {norm === "preactivado" &&
+                "Documentacion aprobada (Preactivado). Falta generar tu CBU y cargar tu comision para activar."}
               {norm === "activado" && "Tu cuenta ya esta Activada. Podes operar."}
-              {norm === "suspendido" && "Tu cuenta esta Suspendida temporalmente. Contacta a soporte."}
-              {norm === "deshabilitado" && "Tu cuenta fue Deshabilitada. CBU cancelado, historial conservado para auditoria BCRA."}
+              {norm === "suspendido" &&
+                "Tu cuenta esta Suspendida temporalmente. Contacta a soporte."}
+              {norm === "deshabilitado" &&
+                "Tu cuenta fue Deshabilitada. CBU cancelado, historial conservado para auditoria BCRA."}
               {norm === "eliminado" && "Tu cuenta fue Eliminada."}
-              {!norm && "Tu alta fue registrada y esta siendo validada por nuestro equipo de compliance. Este proceso puede demorar hasta 24 horas habiles. Te avisaremos por correo cuando quede habilitada."}
+              {!norm &&
+                "Tu alta fue registrada y esta siendo validada por nuestro equipo de compliance. Este proceso puede demorar hasta 24 horas habiles. Te avisaremos por correo cuando quede habilitada."}
             </p>
             <p className="mt-3 text-xs text-black-400">
               Si tenés algún problema,{" "}
-              <a href={mailto(brand.contact.support)} className="underline underline-offset-2 hover:text-primary-ink">
+              <a
+                href={mailto(brand.contact.support)}
+                className="underline underline-offset-2 hover:text-primary-ink"
+              >
                 contactanos
               </a>
               .

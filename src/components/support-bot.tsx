@@ -102,7 +102,10 @@ export function SupportBot() {
 
           <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-[280px] max-h-[360px]">
             {messages.map((m, i) => (
-              <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div
+                key={i}
+                className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+              >
                 <div
                   className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm ${
                     m.role === "user"
@@ -131,8 +134,7 @@ export function SupportBot() {
           </div>
 
           <div className="px-3 pb-2 text-[10px] text-muted-foreground">
-            También podés escribir a{" "}
-            <span className="font-semibold">{brand.contact.support}</span>
+            También podés escribir a <span className="font-semibold">{brand.contact.support}</span>
           </div>
         </div>
       )}

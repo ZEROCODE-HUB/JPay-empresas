@@ -172,9 +172,7 @@ export class PaywayProcessor implements PaymentProcessor {
     // Tope duro: si el mapa crecio mas alla de lo esperado, se descarta lo mas
     // viejo. Un pico de trafico no debe convertir esto en una fuga de memoria.
     if (this.sessions.size > MAX_SESSIONS) {
-      const entries = [...this.sessions.entries()].sort(
-        (a, b) => a[1].updatedAt - b[1].updatedAt,
-      );
+      const entries = [...this.sessions.entries()].sort((a, b) => a[1].updatedAt - b[1].updatedAt);
       for (const [key] of entries.slice(0, entries.length - MAX_SESSIONS)) {
         this.sessions.delete(key);
       }
@@ -186,9 +184,7 @@ export class PaywayProcessor implements PaymentProcessor {
     // (transferencia, QR) no pasan por la pasarela, asi que no se les pide un
     // formulario ni una API Key que no van a usar.
     if (!req.cardForm) {
-      throw new Error(
-        "Ese metodo de pago todavia no esta disponible. Usa una tarjeta para pagar.",
-      );
+      throw new Error("Ese metodo de pago todavia no esta disponible. Usa una tarjeta para pagar.");
     }
 
     const api = backendUrl();
@@ -299,7 +295,8 @@ export class PaywayProcessor implements PaymentProcessor {
       estado: String(data.status ?? "approved"),
       monto: typeof data.amount === "number" ? data.amount : undefined,
       paywayPaymentId: data.paywayPaymentId != null ? String(data.paywayPaymentId) : undefined,
-      siteTransactionId: data.siteTransactionId != null ? String(data.siteTransactionId) : undefined,
+      siteTransactionId:
+        data.siteTransactionId != null ? String(data.siteTransactionId) : undefined,
     };
   }
 
@@ -352,7 +349,8 @@ export class PaywayProcessor implements PaymentProcessor {
       estado: String(data.status ?? "approved"),
       monto: typeof data.amount === "number" ? data.amount : undefined,
       paywayPaymentId: data.paywayPaymentId != null ? String(data.paywayPaymentId) : undefined,
-      siteTransactionId: data.siteTransactionId != null ? String(data.siteTransactionId) : undefined,
+      siteTransactionId:
+        data.siteTransactionId != null ? String(data.siteTransactionId) : undefined,
       simulated: true,
     };
   }
@@ -388,9 +386,7 @@ function createSiteTransactionId(linkCode: string): string {
 
   // El separador cuenta 1, y el sufijo RAND_CHARS. Lo que sobra es el prefijo.
   const roomForPrefix = PAYWAY_SITE_TXN_MAX - rand.length - 1;
-  const prefix = linkCode
-    .replace(/[^A-Za-z0-9_-]/g, "")
-    .slice(0, roomForPrefix);
+  const prefix = linkCode.replace(/[^A-Za-z0-9_-]/g, "").slice(0, roomForPrefix);
 
   // Un link vacio no deberia existir, pero si pasa, sin prefijo el id empieza con
   // "-", que es feo y podria pisar alguna validacion de formato de la pasarela.

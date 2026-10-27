@@ -21,7 +21,9 @@ function Page() {
     <>
       {/* Breadcrumb */}
       <nav className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
-        <Link to="/app" className="hover:text-foreground transition">Inicio</Link>
+        <Link to="/app" className="hover:text-foreground transition">
+          Inicio
+        </Link>
         <span>/</span>
         <span className="text-foreground font-semibold">Configuracion de APIs Externas</span>
       </nav>

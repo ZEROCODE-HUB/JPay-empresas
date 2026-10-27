@@ -37,7 +37,8 @@ const MIX = {
   900: ["black", 0.46],
 };
 const PALETTES = ["primary", "secondary", "highlight"];
-const HEADER = "ARCHIVO GENERADO por scripts/brand-sync.mjs desde src/brand/brand.json. No editar a mano.";
+const HEADER =
+  "ARCHIVO GENERADO por scripts/brand-sync.mjs desde src/brand/brand.json. No editar a mano.";
 
 // ── Color helpers (sRGB <-> OKLab) ──────────────────────────────────────────
 
@@ -52,7 +53,11 @@ function rgbToHex(rgb) {
   return (
     "#" +
     rgb
-      .map((c) => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, "0"))
+      .map((c) =>
+        Math.round(Math.min(1, Math.max(0, c)) * 255)
+          .toString(16)
+          .padStart(2, "0"),
+      )
       .join("")
       .toUpperCase()
   );
@@ -136,7 +141,8 @@ colors.navigation ??= colors.secondary["800"];
 // Si el principal no contrasta sobre blanco (p. ej. un verde claro), apuntar a un paso oscuro.
 const ink = brand.colors.primaryInk ?? "500";
 colors.primaryInk = /^#/.test(ink) ? hex(ink) : colors.primary[ink];
-if (!colors.primaryInk) throw new Error(`colors.primaryInk "${ink}" no es un paso de la escala primary`);
+if (!colors.primaryInk)
+  throw new Error(`colors.primaryInk "${ink}" no es un paso de la escala primary`);
 
 /** "Satoshi" → `"Satoshi", system-ui, sans-serif` (comillas para nombres con espacios). */
 const fontStack = (family, fallback) => `"${family}", ${fallback}`;
@@ -153,8 +159,10 @@ if (colors.surface) cssLines.push(`  --brand-surface: ${colors.surface};`);
 cssLines.push(`  --brand-on-primary: ${colors.onPrimary};`);
 cssLines.push(`  --brand-on-secondary: ${colors.onSecondary};`);
 cssLines.push(`  --brand-on-highlight: ${colors.onHighlight};`);
-if (fonts.body) cssLines.push("", `  --brand-font-body: ${fontStack(fonts.body, "system-ui, sans-serif")};`);
-if (fonts.display) cssLines.push(`  --brand-font-display: ${fontStack(fonts.display, "system-ui, sans-serif")};`);
+if (fonts.body)
+  cssLines.push("", `  --brand-font-body: ${fontStack(fonts.body, "system-ui, sans-serif")};`);
+if (fonts.display)
+  cssLines.push(`  --brand-font-display: ${fontStack(fonts.display, "system-ui, sans-serif")};`);
 if (fonts.displayWeight) cssLines.push(`  --brand-font-display-weight: ${fonts.displayWeight};`);
 cssLines.push("}", "");
 const css = cssLines.join("\n");

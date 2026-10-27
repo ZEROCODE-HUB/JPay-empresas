@@ -17,7 +17,9 @@ Deno.serve(async (req) => {
   const anon = Deno.env.get("SUPABASE_ANON_KEY")!;
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  const userSb = createClient(url, anon, { auth: { autoRefreshToken: false, persistSession: false } });
+  const userSb = createClient(url, anon, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
   const { data: u } = await userSb.auth.getUser(auth);
   const email = u.user?.email;
   if (!email) return new Response(JSON.stringify({ error: "invalid" }), { status: 401, headers });
@@ -33,19 +35,27 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "missing paths" }), { status: 400, headers });
   }
 
-  const admin = createClient(url, service, { auth: { autoRefreshToken: false, persistSession: false } });
+  const admin = createClient(url, service, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
   // PENDIENTE (ver PENDIENTES.md): decidir por rol, no por dominio de email.
   const isAdmin = email.endsWith(`@${brand.web.domain}`);
 
   // Batch: traer todos los documentos de una vez para evitar N+1
   const strPaths = (paths as unknown[]).filter((p): p is string => typeof p === "string");
-  const { data: docs } = await admin.from("documentos").select("url, cliente_legajo").in("url", strPaths);
+  const { data: docs } = await admin
+    .from("documentos")
+    .select("url, cliente_legajo")
+    .in("url", strPaths);
   const docMap = new Map<string, string>();
   for (const d of (docs ?? []) as any[]) docMap.set(d.url, d.cliente_legajo);
   const legajos = [...new Set([...docMap.values()])];
   const clienteMap = new Map<string, string>();
   if (legajos.length > 0) {
-    const { data: clientes } = await admin.from("clientes").select("legajo, correo").in("legajo", legajos);
+    const { data: clientes } = await admin
+      .from("clientes")
+      .select("legajo, correo")
+      .in("legajo", legajos);
     for (const c of (clientes ?? []) as any[]) clienteMap.set(c.legajo, c.correo);
   }
 
@@ -67,10 +77,12 @@ Deno.serve(async (req) => {
     toSign.push(p);
   }
   // Firmar en paralelo
-  const signed = await Promise.all(toSign.map(async (p) => {
-    const { data: s } = await admin.storage.from("kyc").createSignedUrl(p, 3600);
-    return [p, s?.signedUrl ?? null] as const;
-  }));
+  const signed = await Promise.all(
+    toSign.map(async (p) => {
+      const { data: s } = await admin.storage.from("kyc").createSignedUrl(p, 3600);
+      return [p, s?.signedUrl ?? null] as const;
+    }),
+  );
   for (const [p, url] of signed) out[p] = url;
 
   return new Response(JSON.stringify({ urls: out }), { headers });

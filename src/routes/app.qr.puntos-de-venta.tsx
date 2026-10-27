@@ -1,7 +1,26 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Search, Eye, Edit3, Trash2, Info, X, Download, Printer, ScanLine } from "lucide-react";
-import { Card, Input, Label, BtnPrimary, BtnOutline, Badge, PageHeader } from "@/components/portal-shell";
+import {
+  Plus,
+  Search,
+  Eye,
+  Edit3,
+  Trash2,
+  Info,
+  X,
+  Download,
+  Printer,
+  ScanLine,
+} from "lucide-react";
+import {
+  Card,
+  Input,
+  Label,
+  BtnPrimary,
+  BtnOutline,
+  Badge,
+  PageHeader,
+} from "@/components/portal-shell";
 import { toast } from "sonner";
 import { FormDialog } from "@/components/form-dialog";
 import { requireSupabase } from "@/lib/supabase";
@@ -54,7 +73,9 @@ function Page() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  async function resolverComercio(s: ReturnType<typeof requireSupabase>): Promise<{ id: string | null; error?: string }> {
+  async function resolverComercio(
+    s: ReturnType<typeof requireSupabase>,
+  ): Promise<{ id: string | null; error?: string }> {
     const { data: u } = await s.auth.getUser();
     const mail = u.user?.email;
     if (!mail) return { id: null, error: "No se pudo obtener el correo del usuario" };
@@ -67,7 +88,8 @@ function Page() {
       console.error("Error buscando cliente:", cliErr);
       return { id: null, error: "Error al buscar el cliente asociado" };
     }
-    if (!cli?.legajo) return { id: null, error: "No se encontró un cliente asociado a este usuario" };
+    if (!cli?.legajo)
+      return { id: null, error: "No se encontró un cliente asociado a este usuario" };
 
     const { data: com, error: comErr } = await s
       .from("comercios")
@@ -88,7 +110,10 @@ function Page() {
       .single();
     if (error) {
       console.error("Error creando comercio:", error);
-      return { id: null, error: "No se pudo crear el comercio. Verificá tu cuenta o contactá soporte." };
+      return {
+        id: null,
+        error: "No se pudo crear el comercio. Verificá tu cuenta o contactá soporte.",
+      };
     }
     return { id: nuevo?.id ?? null };
   }
@@ -192,7 +217,11 @@ function Page() {
       } else {
         const { error } = await s
           .from("puntos_venta")
-          .insert({ comercio_id: comercioId, nombre: form.nombre.trim(), estado: "Pendiente de aprobación" });
+          .insert({
+            comercio_id: comercioId,
+            nombre: form.nombre.trim(),
+            estado: "Pendiente de aprobación",
+          });
         if (error) throw error;
         toast.success("Punto de venta creado (Pendiente de aprobación — Payway lo activará)");
       }
@@ -254,7 +283,8 @@ function Page() {
         <div className="flex-1 min-w-0">
           <div className="font-semibold">Escaneo de codigos</div>
           <div className="text-xs text-muted-foreground">
-            Para realizar pagos en comercios, profesionales, etc. Escanea el codigo de barras o QR desde tu camara.
+            Para realizar pagos en comercios, profesionales, etc. Escanea el codigo de barras o QR
+            desde tu camara.
           </div>
         </div>
         <BtnPrimary className="h-9 px-4 text-xs" onClick={() => setScan(true)}>
@@ -284,11 +314,12 @@ function Page() {
         <div>
           <p className="text-sm font-semibold text-blue-800">Información sobre Puntos de Venta</p>
           <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-            Los puntos de venta permiten identificar y gestionar los cobros realizados dentro de una misma entidad.
+            Los puntos de venta permiten identificar y gestionar los cobros realizados dentro de una
+            misma entidad.
           </p>
           <p className="text-xs text-blue-700 mt-1 leading-relaxed">
-            Si necesita separar la operación por una unidad de negocio distinta, se recomienda crear una subcuenta y
-            habilitar el cobro con QR en dicha subcuenta.
+            Si necesita separar la operación por una unidad de negocio distinta, se recomienda crear
+            una subcuenta y habilitar el cobro con QR en dicha subcuenta.
           </p>
         </div>
       </div>
@@ -299,12 +330,18 @@ function Page() {
           <div>
             <Label>Nombre</Label>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
               <Input
                 className="pl-8"
                 placeholder="Buscar por nombre..."
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
               />
             </div>
           </div>
@@ -313,7 +350,10 @@ function Page() {
             <select
               className="w-full h-10 px-3 rounded-md border bg-card text-sm"
               value={estadoFilter}
-              onChange={(e) => { setEstadoFilter(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setEstadoFilter(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="Todos">Todos</option>
               <option value="Activado">Activado</option>
@@ -322,11 +362,25 @@ function Page() {
           </div>
           <div>
             <Label>Fecha inicio</Label>
-            <Input type="date" value={fechaInicio} onChange={(e) => { setFechaInicio(e.target.value); setPage(1); }} />
+            <Input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => {
+                setFechaInicio(e.target.value);
+                setPage(1);
+              }}
+            />
           </div>
           <div>
             <Label>Fecha fin</Label>
-            <Input type="date" value={fechaFin} onChange={(e) => { setFechaFin(e.target.value); setPage(1); }} />
+            <Input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => {
+                setFechaFin(e.target.value);
+                setPage(1);
+              }}
+            />
           </div>
         </div>
         {(search || estadoFilter !== "Todos" || fechaInicio || fechaFin) && (
@@ -393,10 +447,15 @@ function Page() {
             <select
               className="h-8 px-2 rounded border bg-card text-xs"
               value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
             >
               {ROWS_OPTIONS.map((n) => (
-                <option key={n} value={n}>{n}</option>
+                <option key={n} value={n}>
+                  {n}
+                </option>
               ))}
             </select>
             <span>
@@ -406,7 +465,11 @@ function Page() {
             </span>
           </div>
           <div className="flex gap-1">
-            <BtnOutline className="h-8 px-3 text-xs" disabled={page <= 1} onClick={() => setPage(1)}>
+            <BtnOutline
+              className="h-8 px-3 text-xs"
+              disabled={page <= 1}
+              onClick={() => setPage(1)}
+            >
               Primero
             </BtnOutline>
             <BtnOutline
@@ -488,7 +551,9 @@ function Page() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Estado</span>
-                  <Badge tone={detallePd.estado === "Activado" ? "success" : "warn"}>{detallePd.estado}</Badge>
+                  <Badge tone={detallePd.estado === "Activado" ? "success" : "warn"}>
+                    {detallePd.estado}
+                  </Badge>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Fecha de creación</span>
@@ -506,7 +571,8 @@ function Page() {
                   )}
                 </div>
                 <span className="text-[10px] text-muted-foreground text-center leading-tight">
-                  Escaneá para pagar en<br />
+                  Escaneá para pagar en
+                  <br />
                   {detallePd.nombre}
                 </span>
               </div>
@@ -563,7 +629,12 @@ function Page() {
           <div className="relative bg-card rounded-xl max-w-md w-full shadow-2xl">
             <div className="sticky top-0 bg-card border-b px-6 py-4 flex justify-between items-center rounded-t-xl">
               <div className="font-semibold">Escanear codigo</div>
-              <button onClick={() => setScan(false)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-accent transition"><X size={16} /></button>
+              <button
+                onClick={() => setScan(false)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-accent transition"
+              >
+                <X size={16} />
+              </button>
             </div>
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-center w-full h-48 rounded-lg bg-muted/40 border border-dashed">
@@ -572,15 +643,23 @@ function Page() {
               <p className="text-sm text-muted-foreground text-center">
                 Apunta la camara al codigo de barras o QR del comercio para iniciar el pago.
               </p>
-              <BtnPrimary className="w-full" onClick={() => {
-                if (navigator.mediaDevices?.getUserMedia) {
-                  navigator.mediaDevices.getUserMedia({ video: true })
-                    .then((stream) => { stream.getTracks().forEach((t) => t.stop()); toast.success("Camara lista para escanear"); setScan(false); })
-                    .catch(() => toast.error("No se pudo acceder a la camara"));
-                } else {
-                  toast.error("Este dispositivo no soporta camara");
-                }
-              }}>
+              <BtnPrimary
+                className="w-full"
+                onClick={() => {
+                  if (navigator.mediaDevices?.getUserMedia) {
+                    navigator.mediaDevices
+                      .getUserMedia({ video: true })
+                      .then((stream) => {
+                        stream.getTracks().forEach((t) => t.stop());
+                        toast.success("Camara lista para escanear");
+                        setScan(false);
+                      })
+                      .catch(() => toast.error("No se pudo acceder a la camara"));
+                  } else {
+                    toast.error("Este dispositivo no soporta camara");
+                  }
+                }}
+              >
                 <ScanLine size={15} /> Abrir camara
               </BtnPrimary>
             </div>
@@ -598,10 +677,7 @@ function Page() {
             <p className="text-sm text-muted-foreground mb-6">Esta acción no se puede deshacer.</p>
             <div className="flex gap-3 justify-center">
               <BtnOutline onClick={() => setEliminarOpen(false)}>Cancelar</BtnOutline>
-              <BtnPrimary
-                className="bg-danger-600 hover:bg-danger-700"
-                onClick={ejecutarEliminar}
-              >
+              <BtnPrimary className="bg-danger-600 hover:bg-danger-700" onClick={ejecutarEliminar}>
                 Eliminar
               </BtnPrimary>
             </div>

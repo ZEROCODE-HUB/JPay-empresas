@@ -1,15 +1,19 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AuthShell, PasswordField, PrimaryButton, SuccessCard, FormTitle, validatePassword } from "@/components/onboarding";
+import {
+  AuthShell,
+  PasswordField,
+  PrimaryButton,
+  SuccessCard,
+  FormTitle,
+  validatePassword,
+} from "@/components/onboarding";
 import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
 import { brand, pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Restablecer contraseña") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Restablecer contraseña") }, { name: "robots", content: "noindex" }],
   }),
   component: ResetPassword,
 });
@@ -45,7 +49,9 @@ function ResetPassword() {
         } else if (access) {
           // El cliente procesa el hash al inicializar (detectSessionInUrl); getSession espera a que termine.
           const r = await sb.auth.getSession();
-          err = r.error ?? (r.data.session ? null : new Error("No pudimos validar el enlace de recuperación."));
+          err =
+            r.error ??
+            (r.data.session ? null : new Error("No pudimos validar el enlace de recuperación."));
         } else {
           setMode("error");
           setErrMsg("El enlace de recuperación no es válido o le faltan parámetros.");
@@ -56,7 +62,11 @@ function ResetPassword() {
       }
       if (err) {
         setMode("error");
-        setErrMsg(getAuthErrorMessage(err instanceof Error ? err.message : "No pudimos validar el enlace de recuperación."));
+        setErrMsg(
+          getAuthErrorMessage(
+            err instanceof Error ? err.message : "No pudimos validar el enlace de recuperación.",
+          ),
+        );
         return;
       }
       setMode("set");
@@ -90,7 +100,11 @@ function ResetPassword() {
       leftBody={`${brand.name} opera bajo normativa BCRA. Tus datos viajan cifrados y se almacenan bajo los estándares del sistema financiero argentino.`}
     >
       {mode === "loading" && (
-        <SuccessCard variant="loading" title="Validando tu enlace…" body={<p>Un momento por favor.</p>} />
+        <SuccessCard
+          variant="loading"
+          title="Validando tu enlace…"
+          body={<p>Un momento por favor.</p>}
+        />
       )}
 
       {mode === "error" && (
@@ -99,7 +113,9 @@ function ResetPassword() {
           title="Enlace no válido"
           body={<p>{errMsg} Solicitá uno nuevo para continuar.</p>}
         >
-          <PrimaryButton onClick={() => nav({ to: "/recuperar" })}>Solicitar nuevo enlace</PrimaryButton>
+          <PrimaryButton onClick={() => nav({ to: "/recuperar" })}>
+            Solicitar nuevo enlace
+          </PrimaryButton>
         </SuccessCard>
       )}
 
@@ -108,9 +124,7 @@ function ResetPassword() {
           title="Contraseña actualizada"
           body={<p>Tu contraseña se cambió correctamente. Ya podés iniciar sesión con la nueva.</p>}
         >
-          <PrimaryButton onClick={() => nav({ to: "/login" })}>
-            Iniciar sesión
-          </PrimaryButton>
+          <PrimaryButton onClick={() => nav({ to: "/login" })}>Iniciar sesión</PrimaryButton>
         </SuccessCard>
       )}
 

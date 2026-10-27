@@ -78,9 +78,7 @@ export async function getPaywayConfig(backendUrl: string): Promise<PaywayConfig>
   if (!data.sdkUrl) missing.push("sdkUrl");
   if (!data.sdkApiUrl) missing.push("sdkApiUrl");
   if (missing.length) {
-    throw new Error(
-      `La pasarela de pago no esta disponible (faltan: ${missing.join(", ")})`,
-    );
+    throw new Error(`La pasarela de pago no esta disponible (faltan: ${missing.join(", ")})`);
   }
 
   // Los tres campos ya se validaron arriba, asi que el narrowing alcanza.
@@ -97,7 +95,10 @@ export async function getPaywayConfig(backendUrl: string): Promise<PaywayConfig>
  * La URL y la API Key vienen del backend, asi que rotarlas no exige recompilar.
  */
 type DecidirInstance = {
-  createToken: (form: HTMLFormElement, cb: (status: number, data: SdkTokenResponse) => void) => void;
+  createToken: (
+    form: HTMLFormElement,
+    cb: (status: number, data: SdkTokenResponse) => void,
+  ) => void;
   setPublishableKey?: (key: string) => void;
   setTimeout?: (ms: number) => void;
   getBin?: (cardNumber: string | number) => string;

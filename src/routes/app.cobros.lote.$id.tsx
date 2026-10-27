@@ -93,20 +93,27 @@ function DetalleLote() {
       setErrorCarga(null);
       try {
         const [l, r] = await Promise.all([getLoteByIdDB(id), getRegistrosByLoteIdDB(id)]);
-        if (!cancelled) { setLote(l); setRegistros(r); }
+        if (!cancelled) {
+          setLote(l);
+          setRegistros(r);
+        }
       } catch (e) {
         if (!cancelled) setErrorCarga(String(e));
       } finally {
         if (!cancelled) setCargando(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, refresh]);
 
   const registrosPaginados = registros.slice((page - 1) * pageSize, page * pageSize);
   const totalPages = Math.max(1, Math.ceil(registros.length / pageSize));
 
-  useEffect(() => { setPage(1); }, [registros.length]);
+  useEffect(() => {
+    setPage(1);
+  }, [registros.length]);
 
   const trigger = () => setRefresh((r) => r + 1);
 
@@ -151,7 +158,10 @@ function DetalleLote() {
 
   const handleIniciar = async () => {
     const legajo = await getLegajoUsuario();
-    if (!legajo) { toast.error("No se pudo identificar el usuario"); return; }
+    if (!legajo) {
+      toast.error("No se pudo identificar el usuario");
+      return;
+    }
     setGenerandoLinks(true);
     try {
       const result = await iniciarLoteDB(id, legajo);
@@ -168,7 +178,10 @@ function DetalleLote() {
 
   const handleRegenerarLinks = async () => {
     const legajo = await getLegajoUsuario();
-    if (!legajo) { toast.error("No se pudo identificar el usuario"); return; }
+    if (!legajo) {
+      toast.error("No se pudo identificar el usuario");
+      return;
+    }
     setGenerandoLinks(true);
     try {
       const result = await iniciarLoteDB(id, legajo, true);
@@ -185,19 +198,26 @@ function DetalleLote() {
 
   const handlePausar = async () => {
     const result = await pausarLoteDB(id);
-    if (result.ok) { toast.success("Lote pausado"); trigger(); }
-    else toast.error(result.error ?? "No se pudo pausar el lote");
+    if (result.ok) {
+      toast.success("Lote pausado");
+      trigger();
+    } else toast.error(result.error ?? "No se pudo pausar el lote");
   };
 
   const handleReanudar = async () => {
     const result = await reanudarLoteDB(id);
-    if (result.ok) { toast.success("Lote reanudado"); trigger(); }
-    else toast.error(result.error ?? "No se pudo reanudar el lote");
+    if (result.ok) {
+      toast.success("Lote reanudado");
+      trigger();
+    } else toast.error(result.error ?? "No se pudo reanudar el lote");
   };
 
   const handleEliminar = async () => {
     const result = await eliminarLoteDB(id);
-    if (result.ok) { toast.success("Lote eliminado"); navigate({ to: "/app/cobros/gestion" }); }
+    if (result.ok) {
+      toast.success("Lote eliminado");
+      navigate({ to: "/app/cobros/gestion" });
+    }
   };
 
   const copyLink = (url: string) => {
@@ -321,16 +341,24 @@ function DetalleLote() {
           const Comp = a.variant === "primary" ? BtnPrimary : BtnOutline;
           const extraClass =
             a.variant === "danger" ? "border-danger-200 text-danger-700 hover:bg-danger-50" : "";
-          const isLoading = generandoLinks && (a.label === "Iniciar lote" || a.label === "Regenerar links");
+          const isLoading =
+            generandoLinks && (a.label === "Iniciar lote" || a.label === "Regenerar links");
           return (
-            <Comp key={a.label} className={`h-9 px-3 text-xs ${extraClass}`} onClick={a.onClick} disabled={isLoading}>
+            <Comp
+              key={a.label}
+              className={`h-9 px-3 text-xs ${extraClass}`}
+              onClick={a.onClick}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <span className="inline-flex items-center gap-1.5">
                   <span className="animate-spin inline-block w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full" />
                   Generando…
                 </span>
               ) : (
-                <>{a.icon} {a.label}</>
+                <>
+                  {a.icon} {a.label}
+                </>
               )}
             </Comp>
           );
@@ -462,11 +490,15 @@ function DetalleLote() {
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Total</span>
-              <span className="font-display tabular-nums font-semibold text-lg">{formatARS(montoTotal)}</span>
+              <span className="font-display tabular-nums font-semibold text-lg">
+                {formatARS(montoTotal)}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Cobrado</span>
-              <span className="font-display tabular-nums font-semibold text-emerald-600">{formatARS(montoCobrado)}</span>
+              <span className="font-display tabular-nums font-semibold text-emerald-600">
+                {formatARS(montoCobrado)}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Pendiente</span>
@@ -627,8 +659,20 @@ function DetalleLote() {
           <div className="flex items-center justify-between px-5 py-3 border-t text-xs text-muted-foreground">
             <span>{`${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, registros.length)} de ${registros.length}`}</span>
             <div className="flex gap-1">
-              <BtnOutline className="h-7 px-2 text-[11px]" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</BtnOutline>
-              <BtnOutline className="h-7 px-2 text-[11px]" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Siguiente</BtnOutline>
+              <BtnOutline
+                className="h-7 px-2 text-[11px]"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
+                Anterior
+              </BtnOutline>
+              <BtnOutline
+                className="h-7 px-2 text-[11px]"
+                disabled={page >= totalPages}
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              >
+                Siguiente
+              </BtnOutline>
             </div>
           </div>
         )}

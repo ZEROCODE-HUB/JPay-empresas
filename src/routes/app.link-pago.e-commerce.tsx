@@ -1,8 +1,19 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import {
-  RefreshCw, Pause, Play, Key, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Server, Webhook, ShieldCheck, Globe, X,
+  RefreshCw,
+  Pause,
+  Play,
+  Key,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Server,
+  Webhook,
+  ShieldCheck,
+  Globe,
+  X,
 } from "lucide-react";
 import { Card, Badge, BtnOutline, Input, Label, PageHeader } from "@/components/portal-shell";
 import { toast } from "sonner";
@@ -24,7 +35,12 @@ const ecoms: Ecom[] = [
   { id: "prestashop", name: "PrestaShop", estado: "Habilitado", created: "20 ene 2025, 08:45" },
   { id: "vtiger", name: "VTiger", estado: "Deshabilitado", created: "15 dic 2024, 14:00" },
   { id: "tiendanube", name: "Tiendanube", estado: "Habilitado", created: "05 nov 2024, 10:30" },
-  { id: "mercadoshops", name: "Mercado Shops", estado: "Habilitado", created: "22 oct 2024, 11:20" },
+  {
+    id: "mercadoshops",
+    name: "Mercado Shops",
+    estado: "Habilitado",
+    created: "22 oct 2024, 11:20",
+  },
   { id: "sellix", name: "Sellix", estado: "Deshabilitado", created: "08 sep 2024, 09:00" },
   { id: "bigcommerce", name: "BigCommerce", estado: "Habilitado", created: "01 ago 2024, 15:10" },
   { id: "opencart", name: "OpenCart", estado: "Deshabilitado", created: "14 jul 2024, 12:25" },
@@ -89,9 +105,7 @@ function Page() {
         return {
           ...e,
           estado: (r.estado ?? e.estado) as Ecom["estado"],
-          created: r.created_at
-            ? new Date(r.created_at).toLocaleString("es-AR")
-            : e.created,
+          created: r.created_at ? new Date(r.created_at).toLocaleString("es-AR") : e.created,
         };
       }),
     );
@@ -150,12 +164,7 @@ function Page() {
     }
   };
 
-  const connectIntegration = async (
-    id: string,
-    name: string,
-    apiKey: string,
-    webhook: string,
-  ) => {
+  const connectIntegration = async (id: string, name: string, apiKey: string, webhook: string) => {
     if (!apiKey.trim()) {
       toast.error("La API Key es requerida");
       return;
@@ -170,8 +179,6 @@ function Page() {
 
   return (
     <>
-
-
       <PageHeader
         title="E-commerce"
         description="Gestiona las integraciones de pago para tu tienda online."
@@ -224,11 +231,7 @@ function Page() {
       <Card className="p-0 overflow-hidden">
         <div className="px-5 py-4 border-b flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold">Integraciones de E-commerce</h2>
-          <BtnOutline
-            className="h-8 px-3 text-[11px]"
-            onClick={refreshList}
-            disabled={refreshing}
-          >
+          <BtnOutline className="h-8 px-3 text-[11px]" onClick={refreshList} disabled={refreshing}>
             <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} /> ACTUALIZAR
           </BtnOutline>
         </div>
@@ -248,7 +251,9 @@ function Page() {
                 <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-5 py-3 font-semibold">{e.name}</td>
                   <td className="px-5 py-3">
-                    <Badge tone={e.estado === "Habilitado" ? "success" : "neutral"}>{e.estado}</Badge>
+                    <Badge tone={e.estado === "Habilitado" ? "success" : "neutral"}>
+                      {e.estado}
+                    </Badge>
                   </td>
                   <td className="px-5 py-3 text-sm text-muted-foreground">{e.created}</td>
                   <td className="px-5 py-3 text-right">
@@ -284,13 +289,21 @@ function Page() {
             <span>Items per page:</span>
             <select
               value={pageSize}
-              onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(0);
+              }}
               className="h-8 px-2 rounded border bg-card text-xs"
             >
-              {PAGE_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {PAGE_SIZES.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
             </select>
             <span>
-              {list.length === 0 ? "0" : page * pageSize + 1}–{Math.min((page + 1) * pageSize, list.length)} of {list.length}
+              {list.length === 0 ? "0" : page * pageSize + 1}–
+              {Math.min((page + 1) * pageSize, list.length)} of {list.length}
             </span>
           </div>
           <div className="flex gap-1">
@@ -330,10 +343,16 @@ function Page() {
       {claveModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setClaveModal(null)} />
-          <div className="relative bg-card rounded-lg max-w-md w-full p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative bg-card rounded-lg max-w-md w-full p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold">Conectar {claveModal.name}</h3>
-              <button onClick={() => setClaveModal(null)} className="text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => setClaveModal(null)}
+                className="text-muted-foreground hover:text-foreground"
+              >
                 <X size={16} />
               </button>
             </div>
@@ -357,7 +376,8 @@ function Page() {
                 />
               </div>
               <div className="text-xs text-muted-foreground pt-1 leading-relaxed">
-                Las credenciales se cifran y almacenan de forma segura. Podes actualizarlas en cualquier momento.
+                Las credenciales se cifran y almacenan de forma segura. Podes actualizarlas en
+                cualquier momento.
               </div>
               <BtnOutline
                 className="w-full mt-2"

@@ -47,23 +47,156 @@ type Item = {
 };
 
 const servicios: Item[] = [
-  { n: "Edesur", c: "Cuenta 8821-039", v: "$ 64.320,00", venc: "05/07/2026", icon: Zap, cat: "Servicios publicos", e: "Pendiente", suscrito: false },
-  { n: "Metrogas", c: "Cuenta 4421-128", v: "$ 22.180,00", venc: "08/07/2026", icon: Flame, cat: "Servicios publicos", e: "Pendiente", suscrito: false },
-  { n: "AySA", c: "Cuenta 9990-2211", v: "$ 18.450,00", venc: "12/07/2026", icon: Droplet, cat: "Servicios publicos", e: "Proximo", suscrito: false },
-  { n: "Telecom", c: "Linea 011-4444-5555", v: "$ 14.800,00", venc: "10/07/2026", icon: Phone, cat: "Telefonia e internet", e: "Proximo", suscrito: false },
-  { n: "Fibertel", c: "Cuenta 4488-1102", v: "$ 32.500,00", venc: "14/07/2026", icon: Wifi, cat: "Telefonia e internet", e: "Proximo", suscrito: false },
-  { n: "Claro", c: "Linea 011-5555-6666", v: "$ 11.200,00", venc: "18/07/2026", icon: Phone, cat: "Telefonia e internet", e: "Proximo", suscrito: false },
-  { n: "ARBA", c: "Cuenta 88.123-4", v: "$ 88.230,00", venc: "20/07/2026", icon: FileText, cat: "Impuestos", e: "Proximo", suscrito: false },
-  { n: "AFIP", c: "CUIT 30-71234567-9", v: "$ 125.000,00", venc: "22/07/2026", icon: FileText, cat: "Impuestos", e: "Proximo", suscrito: false },
-  { n: "ABL CABA", c: "Partida 12.345.678", v: "$ 45.900,00", venc: "15/07/2026", icon: Building2, cat: "Impuestos", e: "Proximo", suscrito: false },
-  { n: "Naranja", c: "Tarjeta **** 4521", v: "$ 78.500,00", venc: "25/07/2026", icon: CreditCard, cat: "Tarjetas de credito", e: "Proximo", suscrito: false },
-  { n: "Visa Premium", c: "Tarjeta **** 8832", v: "$ 142.000,00", venc: "28/07/2026", icon: CreditCard, cat: "Tarjetas de credito", e: "Proximo", suscrito: false },
-  { n: "Mastercard Gold", c: "Tarjeta **** 6677", v: "$ 96.300,00", venc: "30/07/2026", icon: CreditCard, cat: "Tarjetas de credito", e: "Proximo", suscrito: false },
-  { n: "Cuota24 - Club Atletico", c: "Socio Nro 4521", v: "$ 8.500,00", venc: "05/07/2026", icon: GraduationCap, cat: "Cuotas escolares", e: "Pendiente", suscrito: false },
-  { n: "Mutual San Martin", c: "Legajo 11234", v: "$ 12.000,00", venc: "15/07/2026", icon: GraduationCap, cat: "Cuotas escolares", e: "Proximo", suscrito: false },
+  {
+    n: "Edesur",
+    c: "Cuenta 8821-039",
+    v: "$ 64.320,00",
+    venc: "05/07/2026",
+    icon: Zap,
+    cat: "Servicios publicos",
+    e: "Pendiente",
+    suscrito: false,
+  },
+  {
+    n: "Metrogas",
+    c: "Cuenta 4421-128",
+    v: "$ 22.180,00",
+    venc: "08/07/2026",
+    icon: Flame,
+    cat: "Servicios publicos",
+    e: "Pendiente",
+    suscrito: false,
+  },
+  {
+    n: "AySA",
+    c: "Cuenta 9990-2211",
+    v: "$ 18.450,00",
+    venc: "12/07/2026",
+    icon: Droplet,
+    cat: "Servicios publicos",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Telecom",
+    c: "Linea 011-4444-5555",
+    v: "$ 14.800,00",
+    venc: "10/07/2026",
+    icon: Phone,
+    cat: "Telefonia e internet",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Fibertel",
+    c: "Cuenta 4488-1102",
+    v: "$ 32.500,00",
+    venc: "14/07/2026",
+    icon: Wifi,
+    cat: "Telefonia e internet",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Claro",
+    c: "Linea 011-5555-6666",
+    v: "$ 11.200,00",
+    venc: "18/07/2026",
+    icon: Phone,
+    cat: "Telefonia e internet",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "ARBA",
+    c: "Cuenta 88.123-4",
+    v: "$ 88.230,00",
+    venc: "20/07/2026",
+    icon: FileText,
+    cat: "Impuestos",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "AFIP",
+    c: "CUIT 30-71234567-9",
+    v: "$ 125.000,00",
+    venc: "22/07/2026",
+    icon: FileText,
+    cat: "Impuestos",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "ABL CABA",
+    c: "Partida 12.345.678",
+    v: "$ 45.900,00",
+    venc: "15/07/2026",
+    icon: Building2,
+    cat: "Impuestos",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Naranja",
+    c: "Tarjeta **** 4521",
+    v: "$ 78.500,00",
+    venc: "25/07/2026",
+    icon: CreditCard,
+    cat: "Tarjetas de credito",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Visa Premium",
+    c: "Tarjeta **** 8832",
+    v: "$ 142.000,00",
+    venc: "28/07/2026",
+    icon: CreditCard,
+    cat: "Tarjetas de credito",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Mastercard Gold",
+    c: "Tarjeta **** 6677",
+    v: "$ 96.300,00",
+    venc: "30/07/2026",
+    icon: CreditCard,
+    cat: "Tarjetas de credito",
+    e: "Proximo",
+    suscrito: false,
+  },
+  {
+    n: "Cuota24 - Club Atletico",
+    c: "Socio Nro 4521",
+    v: "$ 8.500,00",
+    venc: "05/07/2026",
+    icon: GraduationCap,
+    cat: "Cuotas escolares",
+    e: "Pendiente",
+    suscrito: false,
+  },
+  {
+    n: "Mutual San Martin",
+    c: "Legajo 11234",
+    v: "$ 12.000,00",
+    venc: "15/07/2026",
+    icon: GraduationCap,
+    cat: "Cuotas escolares",
+    e: "Proximo",
+    suscrito: false,
+  },
 ];
 
-const cats = ["Todos", "Servicios publicos", "Telefonia e internet", "Impuestos", "Tarjetas de credito", "Cuotas escolares"];
+const cats = [
+  "Todos",
+  "Servicios publicos",
+  "Telefonia e internet",
+  "Impuestos",
+  "Tarjetas de credito",
+  "Cuotas escolares",
+];
 
 type TxHist = {
   f: string;
@@ -244,24 +377,32 @@ function Page() {
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Servicios adheridos
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">{totalAdheridos}</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            {totalAdheridos}
+          </div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             A pagar este mes
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">{formatARS(totalPagarMes)}</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            {formatARS(totalPagarMes)}
+          </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">{prox.length} factura(s)</div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Vencidos</div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">{totalVencidos}</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            {totalVencidos}
+          </div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Disponibles para suscribir
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">{disponibles.length}</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            {disponibles.length}
+          </div>
         </div>
       </div>
 
@@ -289,12 +430,14 @@ function Page() {
       {tab === "servicios" && (
         <>
           <div className="flex gap-1 mb-5 bg-muted/50 p-1 rounded-lg">
-            {([
-              ["proximos", `Proximos pagos (${prox.length})`],
-              ["suscritos", `Suscritos (${suscritos.length})`],
-              ["disponibles", `Disponibles (${disponibles.length})`],
-              ["historial", `Historial (${hFiltrados.length})`],
-            ] as Array<[SectionTab, string]>).map(([k, l]) => (
+            {(
+              [
+                ["proximos", `Proximos pagos (${prox.length})`],
+                ["suscritos", `Suscritos (${suscritos.length})`],
+                ["disponibles", `Disponibles (${disponibles.length})`],
+                ["historial", `Historial (${hFiltrados.length})`],
+              ] as Array<[SectionTab, string]>
+            ).map(([k, l]) => (
               <button
                 key={k}
                 onClick={() => setSectionTab(k)}
@@ -338,10 +481,14 @@ function Page() {
                           <div className="text-sm font-semibold">{s.v}</div>
                           <div className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
                             <Clock size={10} />
-                            {isVencido ? `Vencido hace ${Math.abs(dd)} dias` : `Vence en ${dd} dias`}
+                            {isVencido
+                              ? `Vencido hace ${Math.abs(dd)} dias`
+                              : `Vence en ${dd} dias`}
                           </div>
                         </div>
-                        <Badge tone={isVencido ? "danger" : s.e === "Pendiente" ? "warn" : "neutral"}>
+                        <Badge
+                          tone={isVencido ? "danger" : s.e === "Pendiente" ? "warn" : "neutral"}
+                        >
                           {isVencido ? "Vencido" : s.e}
                         </Badge>
                         <BtnPrimary className="h-9 px-4" onClick={() => setPagar(s)}>
@@ -370,10 +517,17 @@ function Page() {
               </div>
               <div className="flex flex-wrap gap-2 mb-4">
                 <div className="relative w-full sm:flex-1 sm:min-w-[200px]">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Search
+                    size={14}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
                   <Input placeholder="Buscar servicio o numero de cuenta..." className="pl-9" />
                 </div>
-                <select className="h-10 px-3 rounded-md border bg-card text-sm" value={sort} onChange={(e) => setSort(e.target.value)}>
+                <select
+                  className="h-10 px-3 rounded-md border bg-card text-sm"
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                >
                   <option value="vencimiento">Orden: vencimiento</option>
                   <option value="monto">Monto</option>
                   <option value="alfabetico">Alfabetico</option>
@@ -381,7 +535,13 @@ function Page() {
               </div>
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {cats.map((c) => (
-                  <button key={c} onClick={() => setCatFilt(c)} className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${catFilt === c ? "bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)] border-transparent" : "bg-card hover:bg-muted"}`}>{c}</button>
+                  <button
+                    key={c}
+                    onClick={() => setCatFilt(c)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${catFilt === c ? "bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)] border-transparent" : "bg-card hover:bg-muted"}`}
+                  >
+                    {c}
+                  </button>
                 ))}
               </div>
               <div className="divide-y">
@@ -394,25 +554,46 @@ function Page() {
                           <Icon size={18} className="text-[color:var(--brand-primary-700)]" />
                         </div>
                         <div className="min-w-0">
-                          <div className="font-semibold text-sm truncate">{s.n} <span className="text-muted-foreground font-normal">· {s.cat}</span></div>
+                          <div className="font-semibold text-sm truncate">
+                            {s.n}{" "}
+                            <span className="text-muted-foreground font-normal">· {s.cat}</span>
+                          </div>
                           <div className="text-xs text-muted-foreground truncate">{s.c}</div>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right hidden sm:block">
                           <div className="text-sm font-semibold">{s.v}</div>
-                          <div className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end"><Clock size={10} /> Vence {s.venc}</div>
+                          <div className="text-[11px] text-muted-foreground flex items-center gap-1 justify-end">
+                            <Clock size={10} /> Vence {s.venc}
+                          </div>
                         </div>
-                        <Badge tone={s.e === "Vencido" ? "danger" : s.e === "Pendiente" ? "warn" : "neutral"}>{s.e}</Badge>
-                        <BtnOutline className="h-9 px-2.5 text-xs" onClick={() => setEditarServicio(s)}>Editar</BtnOutline>
-                        <BtnPrimary className="h-9 px-4" onClick={() => setPagar(s)}>Pagar</BtnPrimary>
+                        <Badge
+                          tone={
+                            s.e === "Vencido" ? "danger" : s.e === "Pendiente" ? "warn" : "neutral"
+                          }
+                        >
+                          {s.e}
+                        </Badge>
+                        <BtnOutline
+                          className="h-9 px-2.5 text-xs"
+                          onClick={() => setEditarServicio(s)}
+                        >
+                          Editar
+                        </BtnOutline>
+                        <BtnPrimary className="h-9 px-4" onClick={() => setPagar(s)}>
+                          Pagar
+                        </BtnPrimary>
                       </div>
                     </div>
                   );
                 })}
               </div>
               {suscritos.length > PREVIEW_LIMIT && (
-                <button onClick={() => setSuscAll(!suscAll)} className="w-full text-center text-xs font-semibold text-primary-ink pt-3 pb-1 hover:opacity-80 transition border-t border-border mt-1">
+                <button
+                  onClick={() => setSuscAll(!suscAll)}
+                  className="w-full text-center text-xs font-semibold text-primary-ink pt-3 pb-1 hover:opacity-80 transition border-t border-border mt-1"
+                >
                   {suscAll ? "Mostrar menos" : `Ver todos (${suscritos.length})`}
                 </button>
               )}
@@ -465,7 +646,11 @@ function Page() {
                   <BtnOutline className="h-10" onClick={() => setScanOpen(true)}>
                     <ScanLine size={14} /> Escanear codigo
                   </BtnOutline>
-                  <BtnPrimary className="h-10" disabled={!numeroNuevo.trim()} onClick={addSuscripcion}>
+                  <BtnPrimary
+                    className="h-10"
+                    disabled={!numeroNuevo.trim()}
+                    onClick={addSuscripcion}
+                  >
                     Suscribir
                   </BtnPrimary>
                 </div>
@@ -473,31 +658,49 @@ function Page() {
 
               <Card className="mb-6">
                 <h3 className="font-semibold text-sm mb-4">Servicios disponibles para suscribir</h3>
-              <div className="divide-y">
-                {(dispAll ? disponibles : disponibles.slice(0, PREVIEW_LIMIT)).map((s) => {
-                  const Icon = s.icon;
-                  return (
-                    <div key={s.n + s.c} className="flex items-center justify-between gap-3 py-3.5">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0">
-                          <Icon size={18} className="text-muted-foreground" />
+                <div className="divide-y">
+                  {(dispAll ? disponibles : disponibles.slice(0, PREVIEW_LIMIT)).map((s) => {
+                    const Icon = s.icon;
+                    return (
+                      <div
+                        key={s.n + s.c}
+                        className="flex items-center justify-between gap-3 py-3.5"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center shrink-0">
+                            <Icon size={18} className="text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-sm truncate">
+                              {s.n}{" "}
+                              <span className="text-muted-foreground font-normal">· {s.cat}</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate">
+                              No suscrito
+                            </div>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-sm truncate">{s.n} <span className="text-muted-foreground font-normal">· {s.cat}</span></div>
-                          <div className="text-xs text-muted-foreground truncate">No suscrito</div>
-                        </div>
+                        <BtnPrimary
+                          className="h-9 px-4 shrink-0"
+                          onClick={() => {
+                            toast.success("Suscripcion a " + s.n + " iniciada");
+                          }}
+                        >
+                          Suscribir
+                        </BtnPrimary>
                       </div>
-                      <BtnPrimary className="h-9 px-4 shrink-0" onClick={() => { toast.success("Suscripcion a " + s.n + " iniciada"); }}>Suscribir</BtnPrimary>
-                    </div>
-                  );
-                })}
-              </div>
-              {disponibles.length > PREVIEW_LIMIT && (
-                <button onClick={() => setDispAll(!dispAll)} className="w-full text-center text-xs font-semibold text-primary-ink pt-3 pb-1 hover:opacity-80 transition border-t border-border mt-1">
-                  {dispAll ? "Mostrar menos" : `Ver todos (${disponibles.length})`}
-                </button>
-              )}
-            </Card>
+                    );
+                  })}
+                </div>
+                {disponibles.length > PREVIEW_LIMIT && (
+                  <button
+                    onClick={() => setDispAll(!dispAll)}
+                    className="w-full text-center text-xs font-semibold text-primary-ink pt-3 pb-1 hover:opacity-80 transition border-t border-border mt-1"
+                  >
+                    {dispAll ? "Mostrar menos" : `Ver todos (${disponibles.length})`}
+                  </button>
+                )}
+              </Card>
             </>
           )}
 
@@ -571,7 +774,9 @@ function Page() {
                         <td className="px-5 py-3 text-xs text-muted-foreground">{t.f}</td>
                         <td className="px-5 py-3 font-semibold text-sm">{t.s}</td>
                         <td className="px-5 py-3 text-xs text-muted-foreground">{t.cat}</td>
-                        <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">{t.m}</td>
+                        <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
+                          {t.m}
+                        </td>
                         <td className="px-5 py-3 text-right">
                           <Badge
                             tone={
@@ -610,27 +815,35 @@ function Page() {
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Enviadas este mes
               </div>
-              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">12</div>
+              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+                12
+              </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">$ 18,4M ARS</div>
             </div>
             <div className="bg-card border rounded-lg p-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Paises destino
               </div>
-              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">6</div>
+              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+                6
+              </div>
             </div>
             <div className="bg-card border rounded-lg p-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 TC promedio
               </div>
-              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">MORE rate</div>
+              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+                MORE rate
+              </div>
               <div className="text-[10px] text-muted-foreground mt-0.5">Bonos · Cripto · P2P</div>
             </div>
             <div className="bg-card border rounded-lg p-3">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 En proceso
               </div>
-              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">2</div>
+              <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+                2
+              </div>
             </div>
           </div>
           <div className="grid lg:grid-cols-[1fr_1.4fr] gap-6">
@@ -679,7 +892,9 @@ function Page() {
                           {r.banco} · {r.tc}
                         </div>
                       </td>
-                      <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">{r.mARS}</td>
+                      <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
+                        {r.mARS}
+                      </td>
                       <td className="px-5 py-3 font-mono tabular-nums text-right">{r.mDest}</td>
                       <td className="px-5 py-3 text-right">
                         <Badge
@@ -709,14 +924,30 @@ function Page() {
         title={editarServicio ? `Editar ${editarServicio.n}` : "Editar servicio"}
         description="Modifica la configuracion del servicio."
         submitLabel="Guardar cambios"
-        onSubmit={() => { setEditarServicio(null); toast.success("Servicio actualizado"); }}
+        onSubmit={() => {
+          setEditarServicio(null);
+          toast.success("Servicio actualizado");
+        }}
       >
         {editarServicio && (
           <>
-            <div><Label>Numero de cuenta / referencia</Label><Input defaultValue={editarServicio.c} /></div>
-            <div><Label>Categoria</Label>
-              <select className="w-full h-10 px-3 rounded-md border bg-card text-sm" defaultValue={editarServicio.cat}>
-                {cats.filter((c) => c !== "Todos").map((c) => <option key={c} value={c}>{c}</option>)}
+            <div>
+              <Label>Numero de cuenta / referencia</Label>
+              <Input defaultValue={editarServicio.c} />
+            </div>
+            <div>
+              <Label>Categoria</Label>
+              <select
+                className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+                defaultValue={editarServicio.cat}
+              >
+                {cats
+                  .filter((c) => c !== "Todos")
+                  .map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
               </select>
             </div>
           </>
@@ -847,7 +1078,13 @@ function BarcodeScanModal({
           videoRef.current.srcObject = stream;
           await videoRef.current.play().catch(() => {});
         }
-        const BD = (window as unknown as { BarcodeDetector?: new () => { detect: (s: CanvasImageSource) => Promise<Array<{ rawValue: string }>> } }).BarcodeDetector;
+        const BD = (
+          window as unknown as {
+            BarcodeDetector?: new () => {
+              detect: (s: CanvasImageSource) => Promise<Array<{ rawValue: string }>>;
+            };
+          }
+        ).BarcodeDetector;
         if (BD) {
           const detector = new BD();
           const tick = async () => {
@@ -884,7 +1121,12 @@ function BarcodeScanModal({
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div className="relative bg-card rounded-xl max-w-md w-full p-4 shadow-2xl space-y-3">
         <div className="font-semibold">Escanear codigo de barra</div>
-        <video ref={videoRef} className="w-full rounded-md bg-black aspect-video" muted playsInline />
+        <video
+          ref={videoRef}
+          className="w-full rounded-md bg-black aspect-video"
+          muted
+          playsInline
+        />
         <p className="text-xs text-muted-foreground">
           Apunta la camara al codigo. Si no se detecta, ingresa el numero manualmente.
         </p>

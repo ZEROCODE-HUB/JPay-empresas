@@ -85,10 +85,24 @@ function Dashboard() {
   const [customDesde, setCustomDesde] = useState("");
   const [customHasta, setCustomHasta] = useState("");
 
-  const [kpi, setKpi] = useState<DashboardKPI>({ totalLotes: 0, enProceso: 0, finalizados: 0, conError: 0, montoTotal: 0, montoCobrado: 0, montoPendiente: 0 });
+  const [kpi, setKpi] = useState<DashboardKPI>({
+    totalLotes: 0,
+    enProceso: 0,
+    finalizados: 0,
+    conError: 0,
+    montoTotal: 0,
+    montoCobrado: 0,
+    montoPendiente: 0,
+  });
   const [porMedio, setPorMedio] = useState<MedioPagoData[]>([]);
   const [porVencimiento, setPorVencimiento] = useState<VencimientoData[]>([]);
-  const [noCobradas, setNoCobradas] = useState<NoCobradasData>({ totalOperaciones: 0, vencidas: 0, vigentes: 0, montoNoCobrado: 0, porcentajeNoCobrado: 0 });
+  const [noCobradas, setNoCobradas] = useState<NoCobradasData>({
+    totalOperaciones: 0,
+    vencidas: 0,
+    vigentes: 0,
+    montoNoCobrado: 0,
+    porcentajeNoCobrado: 0,
+  });
   const [evolucion, setEvolucion] = useState<EvolucionData[]>([]);
   const [lotesRecientes, setLotesRecientes] = useState<LoteResumen[]>([]);
 
@@ -96,12 +110,25 @@ function Dashboard() {
     let cancelled = false;
     (async () => {
       const [k, pm, pv, nc, ev, lr] = await Promise.all([
-        computeDashboardKPI(filter), computePorMedio(filter), computePorVencimiento(filter),
-        computeNoCobradas(filter), computeEvolucion(filter), computeLotesRecientes(filter),
+        computeDashboardKPI(filter),
+        computePorMedio(filter),
+        computePorVencimiento(filter),
+        computeNoCobradas(filter),
+        computeEvolucion(filter),
+        computeLotesRecientes(filter),
       ]);
-      if (!cancelled) { setKpi(k); setPorMedio(pm); setPorVencimiento(pv); setNoCobradas(nc); setEvolucion(ev); setLotesRecientes(lr); }
+      if (!cancelled) {
+        setKpi(k);
+        setPorMedio(pm);
+        setPorVencimiento(pv);
+        setNoCobradas(nc);
+        setEvolucion(ev);
+        setLotesRecientes(lr);
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [filter]);
 
   const exportExcel = () => {
@@ -180,7 +207,14 @@ function Dashboard() {
               onChange={(e) => {
                 setCustomDesde(e.target.value);
                 if (e.target.value && customHasta) {
-                  setFilter(periodFilter("Personalizado", undefined, new Date(e.target.value), new Date(customHasta)));
+                  setFilter(
+                    periodFilter(
+                      "Personalizado",
+                      undefined,
+                      new Date(e.target.value),
+                      new Date(customHasta),
+                    ),
+                  );
                 }
               }}
               className="h-9 w-36 text-xs"
@@ -194,7 +228,14 @@ function Dashboard() {
               onChange={(e) => {
                 setCustomHasta(e.target.value);
                 if (customDesde && e.target.value) {
-                  setFilter(periodFilter("Personalizado", undefined, new Date(customDesde), new Date(e.target.value)));
+                  setFilter(
+                    periodFilter(
+                      "Personalizado",
+                      undefined,
+                      new Date(customDesde),
+                      new Date(e.target.value),
+                    ),
+                  );
                 }
               }}
               className="h-9 w-36 text-xs"
@@ -215,7 +256,9 @@ function Dashboard() {
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Total de lotes
           </div>
-          <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5">{kpi.totalLotes}</div>
+          <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5">
+            {kpi.totalLotes}
+          </div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -341,15 +384,21 @@ function Dashboard() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center pt-2">
               <div>
-                <div className="font-display tabular-nums text-lg font-semibold">{noCobradas.totalOperaciones}</div>
+                <div className="font-display tabular-nums text-lg font-semibold">
+                  {noCobradas.totalOperaciones}
+                </div>
                 <div className="text-[10px] text-muted-foreground">Total ops</div>
               </div>
               <div>
-                <div className="font-display tabular-nums text-lg font-semibold text-danger-600">{noCobradas.vencidas}</div>
+                <div className="font-display tabular-nums text-lg font-semibold text-danger-600">
+                  {noCobradas.vencidas}
+                </div>
                 <div className="text-[10px] text-muted-foreground">Vencidas</div>
               </div>
               <div>
-                <div className="font-display tabular-nums text-lg font-semibold text-amber-600">{noCobradas.vigentes}</div>
+                <div className="font-display tabular-nums text-lg font-semibold text-amber-600">
+                  {noCobradas.vigentes}
+                </div>
                 <div className="text-[10px] text-muted-foreground">Vigentes</div>
               </div>
             </div>
@@ -456,7 +505,9 @@ function Dashboard() {
                       <span className="text-xs font-semibold min-w-[3rem]">{l.progreso}%</span>
                     </div>
                   </td>
-                  <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">{formatARS(l.montoTotal)}</td>
+                  <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
+                    {formatARS(l.montoTotal)}
+                  </td>
                   <td className="px-5 py-3 font-mono tabular-nums text-right text-emerald-600 font-semibold">
                     {formatARS(l.montoCobrado)}
                   </td>
@@ -465,9 +516,7 @@ function Dashboard() {
                   </td>
                   <td className="px-5 py-3 text-center">
                     <button
-                      onClick={() =>
-                         navigate({ to: "/app/cobros/lote/$id", params: { id: l.id } })
-                      }
+                      onClick={() => navigate({ to: "/app/cobros/lote/$id", params: { id: l.id } })}
                       className="inline-flex items-center justify-center w-8 h-8 rounded-md hover:bg-muted transition"
                       title="Ver detalle"
                     >

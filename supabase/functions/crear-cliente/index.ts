@@ -41,37 +41,46 @@ Deno.serve(async (req) => {
   const cuitNorm = String(cuit).replace(/\D/g, "");
   let legajo: string;
   let clienteId: string | null = null;
-  const { data: existente } = await sb.from("clientes").select("legajo, cuit, estado, id").eq("correo", email).maybeSingle();
+  const { data: existente } = await sb
+    .from("clientes")
+    .select("legajo, cuit, estado, id")
+    .eq("correo", email)
+    .maybeSingle();
   const esAltaNueva = !existente;
 
   if (existente) {
     const isPlaceholder = existente.cuit.startsWith("99");
     // Si el registro previo es placeholder, permitimos actualizar CUIT/legajo al real
-    const { data: upd, error: updErr } = await sb.from("clientes").update({
-      tipo_persona: tipoPersona,
-      nombre,
-      cuit: cuitNorm,
-      genero: perfil.genero ?? null,
-      cuit_cuil: perfil.cuitCuil ?? null,
-      fecha_nacimiento: perfil.fechaNacimiento ?? null,
-      ocupacion: perfil.ocupacion ?? null,
-      origen_fondos: perfil.origenFondos ?? null,
-      es_pep: !!perfil.esPEP,
-      tipo_sociedad: perfil.tipoSociedad ?? null,
-      nombre_legal: perfil.nombreLegal ?? null,
-      nombre_fantasia: perfil.nombreFantasia ?? null,
-      fecha_inscripcion: perfil.fechaInscripcion ?? null,
-      direccion: perfil.direccion ?? null,
-      direccion2: perfil.direccion2 ?? null,
-      ciudad: perfil.ciudad ?? null,
-      provincia: perfil.provincia ?? null,
-      cp: perfil.cp ?? null,
-      estado_onboarding: "pendiente",
-      // Transición homologada: si venía de pendiente_verificacion pasa a registrado tras completar KYC
-      estado: existente.estado === "pendiente_verificacion" ? "registrado" : existente.estado,
-      email_verificado: true,
-      onboarding_completo: true,
-    }).eq("correo", email).select("legajo, id").single();
+    const { data: upd, error: updErr } = await sb
+      .from("clientes")
+      .update({
+        tipo_persona: tipoPersona,
+        nombre,
+        cuit: cuitNorm,
+        genero: perfil.genero ?? null,
+        cuit_cuil: perfil.cuitCuil ?? null,
+        fecha_nacimiento: perfil.fechaNacimiento ?? null,
+        ocupacion: perfil.ocupacion ?? null,
+        origen_fondos: perfil.origenFondos ?? null,
+        es_pep: !!perfil.esPEP,
+        tipo_sociedad: perfil.tipoSociedad ?? null,
+        nombre_legal: perfil.nombreLegal ?? null,
+        nombre_fantasia: perfil.nombreFantasia ?? null,
+        fecha_inscripcion: perfil.fechaInscripcion ?? null,
+        direccion: perfil.direccion ?? null,
+        direccion2: perfil.direccion2 ?? null,
+        ciudad: perfil.ciudad ?? null,
+        provincia: perfil.provincia ?? null,
+        cp: perfil.cp ?? null,
+        estado_onboarding: "pendiente",
+        // Transición homologada: si venía de pendiente_verificacion pasa a registrado tras completar KYC
+        estado: existente.estado === "pendiente_verificacion" ? "registrado" : existente.estado,
+        email_verificado: true,
+        onboarding_completo: true,
+      })
+      .eq("correo", email)
+      .select("legajo, id")
+      .single();
     if (updErr || !upd) {
       const msg = updErr?.message ?? "";
       const dupLegajo = msg.includes("clientes_legajo_key") || msg.includes("clientes_cuit_key");

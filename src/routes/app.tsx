@@ -72,7 +72,9 @@ function AppLayout() {
     (async () => {
       try {
         const sb = requireSupabase();
-        const { data: { user } } = await sb.auth.getUser();
+        const {
+          data: { user },
+        } = await sb.auth.getUser();
         if (!user?.email) return;
         setUserEmail(user.email);
         const { data: cli } = await sb

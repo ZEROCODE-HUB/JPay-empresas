@@ -26,10 +26,14 @@ function projectRef() {
   for (const file of [".env.local", ".env"]) {
     const path = resolve(root, file);
     if (!existsSync(path)) continue;
-    const m = readFileSync(path, "utf8").match(/^VITE_SUPABASE_URL\s*=\s*"?https:\/\/([a-z0-9]+)\.supabase\.co/m);
+    const m = readFileSync(path, "utf8").match(
+      /^VITE_SUPABASE_URL\s*=\s*"?https:\/\/([a-z0-9]+)\.supabase\.co/m,
+    );
     if (m) return m[1];
   }
-  console.error("gen-types: no se encontró el proyecto. Definí SUPABASE_PROJECT_REF o VITE_SUPABASE_URL en .env.local.");
+  console.error(
+    "gen-types: no se encontró el proyecto. Definí SUPABASE_PROJECT_REF o VITE_SUPABASE_URL en .env.local.",
+  );
   process.exit(1);
 }
 

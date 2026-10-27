@@ -43,10 +43,19 @@ Deno.serve(async (req) => {
   });
   if (authErr || !authData.user) {
     const raw = (authErr?.message ?? "").toLowerCase();
-    const isDup = (raw.includes("already") && raw.includes("registered")) ||
-      raw.includes("already exists") || raw.includes("duplicate") || raw.includes("already been");
+    const isDup =
+      (raw.includes("already") && raw.includes("registered")) ||
+      raw.includes("already exists") ||
+      raw.includes("duplicate") ||
+      raw.includes("already been");
     if (isDup) {
-      return json({ error: "Ya existe una cuenta con ese correo. Si ya te registraste, iniciá sesión. Si no verificaste tu correo, revisá tu bandeja/spam o usá '¿No te llegó el email de verificación?' en el login para reenviarlo. Si olvidaste la contraseña, usá '¿Olvidaste tu contraseña?'." }, 400);
+      return json(
+        {
+          error:
+            "Ya existe una cuenta con ese correo. Si ya te registraste, iniciá sesión. Si no verificaste tu correo, revisá tu bandeja/spam o usá '¿No te llegó el email de verificación?' en el login para reenviarlo. Si olvidaste la contraseña, usá '¿Olvidaste tu contraseña?'.",
+        },
+        400,
+      );
     }
     return json({ error: authErr?.message ?? "No se pudo crear el usuario" }, 400);
   }
@@ -69,49 +78,18 @@ Deno.serve(async (req) => {
     const tipoPersona = tipoCuenta === "juridica" ? "juridica" : "fisica";
     const nombreCompleto = `${nombre} ${apellido}`.trim();
     let clienteLegajo: string | null = null;
-    const { data: existente } = await sb.from("clientes").select("legajo").eq("correo", email).maybeSingle();
+    const { data: existente } = await sb
+      .from("clientes")
+      .select("legajo")
+      .eq("correo", email)
+      .maybeSingle();
     if (existente) {
       let lastUpdErr: any = null;
       for (let attempt = 0; attempt < 3; attempt++) {
         const placeholderCuit = generatePlaceholderCuit(authId, email, attempt);
-        const { data: updRow, error: updErr } = await sb.from("clientes").update({
-          tipo_persona: tipoPersona,
-          nombre: nombreCompleto,
-          cuit: placeholderCuit,
-          estado: "pendiente_verificacion",
-          estado_onboarding: "pendiente",
-          email_verificado: false,
-          onboarding_completo: false,
-        }).eq("correo", email).select("legajo").single();
-        if (!updErr && updRow) { clienteLegajo = updRow.legajo; lastUpdErr = null; break; }
-        lastUpdErr = updErr;
-        const msg = updErr?.message ?? "";
-        const isDup = msg.includes("clientes_cuit_key") || msg.includes("clientes_legajo_key") || msg.includes("duplicate");
-        if (!isDup) break;
-      }
-      if (lastUpdErr) throw lastUpdErr;
-    } else {
-      let lastInsertErr: any = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const placeholderCuit = generatePlaceholderCuit(authId, email, attempt);
-        const { data: cliRow, error: cliInsErr } = await sb.from("clientes").insert({
-          tipo_persona: tipoPersona,
-          correo: email,
-          nombre: nombreCompleto,
-          cuit: placeholderCuit,
-          estado: "pendiente_verificacion",
-          estado_onboarding: "pendiente",
-          email_verificado: false,
-          onboarding_completo: false,
-        }).select("legajo").single();
-        if (!cliInsErr && cliRow) { clienteLegajo = cliRow.legajo; lastInsertErr = null; break; }
-        lastInsertErr = cliInsErr;
-        const msg = cliInsErr?.message ?? "";
-        const isDupCuit = msg.includes("clientes_cuit_key") || msg.includes("clientes_legajo_key") || msg.includes("duplicate");
-        const isDupCorreo = msg.includes("clientes_correo_key");
-        if (isDupCorreo) {
-          // Carrera: otro proceso insertó entre el select y el insert; reintentar como update
-          const { data: retryUpd, error: retryErr } = await sb.from("clientes").update({
+        const { data: updRow, error: updErr } = await sb
+          .from("clientes")
+          .update({
             tipo_persona: tipoPersona,
             nombre: nombreCompleto,
             cuit: placeholderCuit,
@@ -119,8 +97,75 @@ Deno.serve(async (req) => {
             estado_onboarding: "pendiente",
             email_verificado: false,
             onboarding_completo: false,
-          }).eq("correo", email).select("legajo").single();
-          if (!retryErr && retryUpd) { clienteLegajo = retryUpd.legajo; lastInsertErr = null; break; }
+          })
+          .eq("correo", email)
+          .select("legajo")
+          .single();
+        if (!updErr && updRow) {
+          clienteLegajo = updRow.legajo;
+          lastUpdErr = null;
+          break;
+        }
+        lastUpdErr = updErr;
+        const msg = updErr?.message ?? "";
+        const isDup =
+          msg.includes("clientes_cuit_key") ||
+          msg.includes("clientes_legajo_key") ||
+          msg.includes("duplicate");
+        if (!isDup) break;
+      }
+      if (lastUpdErr) throw lastUpdErr;
+    } else {
+      let lastInsertErr: any = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const placeholderCuit = generatePlaceholderCuit(authId, email, attempt);
+        const { data: cliRow, error: cliInsErr } = await sb
+          .from("clientes")
+          .insert({
+            tipo_persona: tipoPersona,
+            correo: email,
+            nombre: nombreCompleto,
+            cuit: placeholderCuit,
+            estado: "pendiente_verificacion",
+            estado_onboarding: "pendiente",
+            email_verificado: false,
+            onboarding_completo: false,
+          })
+          .select("legajo")
+          .single();
+        if (!cliInsErr && cliRow) {
+          clienteLegajo = cliRow.legajo;
+          lastInsertErr = null;
+          break;
+        }
+        lastInsertErr = cliInsErr;
+        const msg = cliInsErr?.message ?? "";
+        const isDupCuit =
+          msg.includes("clientes_cuit_key") ||
+          msg.includes("clientes_legajo_key") ||
+          msg.includes("duplicate");
+        const isDupCorreo = msg.includes("clientes_correo_key");
+        if (isDupCorreo) {
+          // Carrera: otro proceso insertó entre el select y el insert; reintentar como update
+          const { data: retryUpd, error: retryErr } = await sb
+            .from("clientes")
+            .update({
+              tipo_persona: tipoPersona,
+              nombre: nombreCompleto,
+              cuit: placeholderCuit,
+              estado: "pendiente_verificacion",
+              estado_onboarding: "pendiente",
+              email_verificado: false,
+              onboarding_completo: false,
+            })
+            .eq("correo", email)
+            .select("legajo")
+            .single();
+          if (!retryErr && retryUpd) {
+            clienteLegajo = retryUpd.legajo;
+            lastInsertErr = null;
+            break;
+          }
           lastInsertErr = retryErr;
           break;
         }
@@ -133,8 +178,16 @@ Deno.serve(async (req) => {
     return json({ ok: true, email, legajo: clienteLegajo, ...(sent ? {} : { demo_token: token }) });
   } catch (e: any) {
     // Rollback coordinado: borrar cliente placeholder, token y usuario para permitir reintento limpio
-    try { await sb.from("clientes").delete().eq("correo", email); } catch { /* ignore */ }
-    try { await sb.from("verificaciones_correo").delete().eq("user_id", authId); } catch { /* ignore */ }
+    try {
+      await sb.from("clientes").delete().eq("correo", email);
+    } catch {
+      /* ignore */
+    }
+    try {
+      await sb.from("verificaciones_correo").delete().eq("user_id", authId);
+    } catch {
+      /* ignore */
+    }
     await sb.auth.admin.deleteUser(authId);
     return json({ error: e?.message ?? "No se pudo enviar el correo de verificación" }, 400);
   }
@@ -142,10 +195,15 @@ Deno.serve(async (req) => {
 
 // Devuelve false si no hay RESEND_API_KEY (modo demo): el correo no se envía y el portal
 // muestra el link de verificación en pantalla.
-async function sendVerificationEmail(email: string, nombre: string, token: string): Promise<boolean> {
+async function sendVerificationEmail(
+  email: string,
+  nombre: string,
+  token: string,
+): Promise<boolean> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const appUrl = Deno.env.get("APP_URL") || "http://localhost:5173";
-  const from = Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
+  const from =
+    Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
   if (!apiKey) return false;
 
   const link = `${appUrl}/verificar-correo?token=${token}`;

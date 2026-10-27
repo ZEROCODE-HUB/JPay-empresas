@@ -9,7 +9,13 @@ export type DocPreviewData = {
   kind: "image" | "pdf" | "file";
 };
 
-export function DocPreviewModal({ doc, onClose }: { doc: DocPreviewData | null; onClose: () => void }) {
+export function DocPreviewModal({
+  doc,
+  onClose,
+}: {
+  doc: DocPreviewData | null;
+  onClose: () => void;
+}) {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -29,7 +35,10 @@ export function DocPreviewModal({ doc, onClose }: { doc: DocPreviewData | null; 
           </div>
           <div className="flex gap-1 items-center shrink-0">
             {doc.signedUrl && (
-              <BtnOutline className="h-9 px-3 text-xs" onClick={() => window.open(doc.signedUrl!, "_blank")}>
+              <BtnOutline
+                className="h-9 px-3 text-xs"
+                onClick={() => window.open(doc.signedUrl!, "_blank")}
+              >
                 <Download size={12} /> Descargar
               </BtnOutline>
             )}
@@ -40,10 +49,14 @@ export function DocPreviewModal({ doc, onClose }: { doc: DocPreviewData | null; 
         </div>
         <div className="relative h-[60vh] flex items-center justify-center bg-neutral-800 p-2">
           {!doc.signedUrl ? (
-            <p className="text-neutral-300 text-sm text-center px-6">No se pudo generar la vista previa.</p>
+            <p className="text-neutral-300 text-sm text-center px-6">
+              No se pudo generar la vista previa.
+            </p>
           ) : doc.kind === "image" ? (
             <>
-              {!loaded && <div className="absolute w-40 h-52 rounded-md bg-neutral-700 animate-pulse" />}
+              {!loaded && (
+                <div className="absolute w-40 h-52 rounded-md bg-neutral-700 animate-pulse" />
+              )}
               <img
                 src={doc.signedUrl}
                 alt={doc.label}
@@ -53,7 +66,9 @@ export function DocPreviewModal({ doc, onClose }: { doc: DocPreviewData | null; 
             </>
           ) : doc.kind === "pdf" ? (
             <>
-              {!loaded && <div className="absolute w-40 h-52 rounded-md bg-neutral-700 animate-pulse" />}
+              {!loaded && (
+                <div className="absolute w-40 h-52 rounded-md bg-neutral-700 animate-pulse" />
+              )}
               <iframe
                 src={doc.signedUrl}
                 title={doc.label}
@@ -62,7 +77,12 @@ export function DocPreviewModal({ doc, onClose }: { doc: DocPreviewData | null; 
               />
             </>
           ) : (
-            <a href={doc.signedUrl} target="_blank" rel="noreferrer" className="text-neutral-200 underline">
+            <a
+              href={doc.signedUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-neutral-200 underline"
+            >
               Abrir archivo
             </a>
           )}

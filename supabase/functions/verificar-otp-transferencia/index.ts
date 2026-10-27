@@ -69,7 +69,10 @@ Deno.serve(async (req) => {
   }
 
   if (row.codigo !== codigoRaw) {
-    await sbAdmin.from("otp_transferencias").update({ intentos: (row.intentos ?? 0) + 1 }).eq("id", row.id);
+    await sbAdmin
+      .from("otp_transferencias")
+      .update({ intentos: (row.intentos ?? 0) + 1 })
+      .eq("id", row.id);
     return json({ error: "Código incorrecto" }, 400);
   }
 

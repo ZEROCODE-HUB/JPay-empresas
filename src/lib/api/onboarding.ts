@@ -23,13 +23,18 @@ export function rememberDemoToken(email: string, token: string | undefined) {
   if (typeof window === "undefined" || !token) return;
   try {
     sessionStorage.setItem(DEMO_TOKEN_KEY, JSON.stringify({ email, token }));
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 export function readDemoVerifyUrl(email: string | null | undefined): string | null {
   if (typeof window === "undefined" || !email) return null;
   try {
-    const saved = JSON.parse(sessionStorage.getItem(DEMO_TOKEN_KEY) ?? "null") as { email: string; token: string } | null;
+    const saved = JSON.parse(sessionStorage.getItem(DEMO_TOKEN_KEY) ?? "null") as {
+      email: string;
+      token: string;
+    } | null;
     if (!saved || saved.email !== email) return null;
     return `${window.location.origin}/verificar-correo?token=${encodeURIComponent(saved.token)}`;
   } catch {
@@ -50,14 +55,18 @@ export async function registerClient(payload: RegisterPayload): Promise<Verifica
   const supabase = requireSupabase();
   const { data, error } = await supabase.functions.invoke("registrar-cliente", { body: payload });
   if (error) {
-    let message = (error as unknown as { message?: string })?.message || "No se pudo registrar la cuenta";
+    let message =
+      (error as unknown as { message?: string })?.message || "No se pudo registrar la cuenta";
     // Supabase FunctionsHttpError pone el body real en error.context.json()
     try {
-      const ctx = (error as unknown as { context?: unknown }).context as { json?: () => Promise<{ error?: string }> } | undefined;
+      const ctx = (error as unknown as { context?: unknown }).context as
+        { json?: () => Promise<{ error?: string }> } | undefined;
       if (ctx && typeof ctx.json === "function") {
         const body = await ctx.json();
         if (body?.error) message = body.error;
-      } else if (typeof (error as unknown as { context?: { body?: string } }).context?.body === "string") {
+      } else if (
+        typeof (error as unknown as { context?: { body?: string } }).context?.body === "string"
+      ) {
         const parsed = JSON.parse((error as unknown as { context: { body: string } }).context.body);
         if (parsed?.error) message = parsed.error;
       }
@@ -81,12 +90,15 @@ export async function verifyEmail(token: string): Promise<{ ok: boolean }> {
   if (error) {
     let msg = error.message || "No se pudo verificar el correo";
     try {
-      const ctx = (error as unknown as { context?: unknown }).context as { json?: () => Promise<{ error?: string }> } | undefined;
+      const ctx = (error as unknown as { context?: unknown }).context as
+        { json?: () => Promise<{ error?: string }> } | undefined;
       if (ctx && typeof ctx.json === "function") {
         const b = await ctx.json();
         if (b?.error) msg = b.error;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     throw new Error(msg);
   }
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
@@ -95,16 +107,21 @@ export async function verifyEmail(token: string): Promise<{ ok: boolean }> {
 
 export async function resendVerification(email: string): Promise<VerificationResult> {
   const supabase = requireSupabase();
-  const { data, error } = await supabase.functions.invoke("reenviar-verificacion", { body: { email } });
+  const { data, error } = await supabase.functions.invoke("reenviar-verificacion", {
+    body: { email },
+  });
   if (error) {
     let msg = error.message || "No se pudo reenviar el correo";
     try {
-      const ctx = (error as unknown as { context?: unknown }).context as { json?: () => Promise<{ error?: string }> } | undefined;
+      const ctx = (error as unknown as { context?: unknown }).context as
+        { json?: () => Promise<{ error?: string }> } | undefined;
       if (ctx && typeof ctx.json === "function") {
         const b = await ctx.json();
         if (b?.error) msg = b.error;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     throw new Error(msg);
   }
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error);
@@ -113,9 +130,7 @@ export async function resendVerification(email: string): Promise<VerificationRes
   return result;
 }
 
-export async function submitOnboarding(
-  payload: OnboardingPayload,
-): Promise<OnboardingResult> {
+export async function submitOnboarding(payload: OnboardingPayload): Promise<OnboardingResult> {
   const supabase = requireSupabase();
   const { data, error } = await supabase.functions.invoke("crear-cliente", {
     body: payload,

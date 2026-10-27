@@ -9,10 +9,7 @@ export const Route = createFileRoute("/recuperar")({
     email: search.email,
   }),
   head: () => ({
-    meta: [
-      { title: pageTitle("Recuperar contraseña") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Recuperar contraseña") }, { name: "robots", content: "noindex" }],
   }),
   component: Recuperar,
 });
@@ -53,8 +50,8 @@ function Recuperar() {
           body={
             <p>
               Enviamos un enlace de recuperación a{" "}
-              <span className="font-semibold text-black-700">{email}</span>. Hacé clic en él para crear una
-              nueva contraseña. Si no lo encontrás, revisá la carpeta de spam.
+              <span className="font-semibold text-black-700">{email}</span>. Hacé clic en él para
+              crear una nueva contraseña. Si no lo encontrás, revisá la carpeta de spam.
             </p>
           }
         >

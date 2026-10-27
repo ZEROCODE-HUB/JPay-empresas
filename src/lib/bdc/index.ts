@@ -11,13 +11,6 @@
  * (sandbox / homologacion / produccion) is defined ONLY in the backend `.env`
  * (`BDC_MODE`); the browser never sees it nor can change it.
  */
-export {
-  createBdcClient,
-  type BdcAccountInfoData,
-} from "./client.ts";
+export { createBdcClient, type BdcAccountInfoData } from "./client.ts";
 
-export {
-  canQueryBdc,
-  canTransferBdc,
-  type BdcAccount,
-} from "./config.ts";
+export { canQueryBdc, canTransferBdc, type BdcAccount } from "./config.ts";

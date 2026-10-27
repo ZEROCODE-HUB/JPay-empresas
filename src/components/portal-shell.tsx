@@ -1,5 +1,13 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { Menu, LogOut, MoreHorizontal, ChevronDown, ChevronLeft, ChevronRight, type LucideIcon } from "lucide-react";
+import {
+  Menu,
+  LogOut,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { BrandLogo } from "./brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
@@ -8,8 +16,7 @@ export type NavLeaf = { to: string; label: string; icon: LucideIcon };
 export type NavGroup = { label: string; icon: LucideIcon; items: NavLeaf[] };
 export type NavItem = NavLeaf | NavGroup;
 
-const isGroup = (item: NavItem): item is NavGroup =>
-  (item as NavGroup).items !== undefined;
+const isGroup = (item: NavItem): item is NavGroup => (item as NavGroup).items !== undefined;
 
 const flattenLeaves = (nav: NavItem[]): NavLeaf[] =>
   nav.flatMap((i) => (isGroup(i) ? i.items : [i]));
@@ -64,7 +71,14 @@ export function PortalShell({
             <span className="text-sm font-semibold text-black-700">{userName ?? "Usuario"}</span>
           </div>
           <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold bg-primary-50 text-primary-ink">
-            {userName ? userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() : "U"}
+            {userName
+              ? userName
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()
+              : "U"}
           </div>
           <button
             onClick={onLogout}
@@ -189,7 +203,7 @@ function SidebarNav({
               onNavigate={onNavigate}
               collapsed
             />
-          )
+          ),
         )}
       </>
     );
@@ -199,10 +213,20 @@ function SidebarNav({
     <>
       {nav.map((item, idx) =>
         isGroup(item) ? (
-          <SidebarGroup key={`g-${idx}-${item.label}`} group={item} path={path} onNavigate={onNavigate} />
+          <SidebarGroup
+            key={`g-${idx}-${item.label}`}
+            group={item}
+            path={path}
+            onNavigate={onNavigate}
+          />
         ) : (
-          <SidebarLink key={item.to} item={item} active={path === item.to} onNavigate={onNavigate} />
-        )
+          <SidebarLink
+            key={item.to}
+            item={item}
+            active={path === item.to}
+            onNavigate={onNavigate}
+          />
+        ),
       )}
     </>
   );
@@ -291,10 +315,7 @@ function SidebarGroup({
       >
         <Icon size={18} strokeWidth={1.75} />
         <span className="flex-1 text-left">{group.label}</span>
-        <ChevronDown
-          size={14}
-          className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-        />
+        <ChevronDown size={14} className={`transition-transform ${expanded ? "rotate-180" : ""}`} />
       </button>
       {expanded && (
         <div className="mt-0.5">
@@ -315,11 +336,21 @@ function SidebarGroup({
 
 /* Utility primitives used by pages */
 
-export function PageHeader({ title, description, action }: { title: string; description?: string; action?: ReactNode }) {
+export function PageHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <h1 className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-black-800">{title}</h1>
+        <h1 className="font-display text-2xl md:text-3xl font-semibold tracking-tight text-black-800">
+          {title}
+        </h1>
         {description && <p className="text-sm text-black-400 mt-1">{description}</p>}
       </div>
       {action}
@@ -328,14 +359,18 @@ export function PageHeader({ title, description, action }: { title: string; desc
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`bg-white border border-black-100 rounded-md p-6 ${className}`}>{children}</div>;
+  return (
+    <div className={`bg-white border border-black-100 rounded-md p-6 ${className}`}>{children}</div>
+  );
 }
 
 export function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <Card>
       <div className="text-xs uppercase tracking-wide text-black-400">{label}</div>
-      <div className="font-display text-2xl md:text-3xl font-semibold mt-1 text-black-800 tabular-nums">{value}</div>
+      <div className="font-display text-2xl md:text-3xl font-semibold mt-1 text-black-800 tabular-nums">
+        {value}
+      </div>
       {sub && <div className="text-xs text-black-400 mt-1">{sub}</div>}
     </Card>
   );
@@ -380,7 +415,13 @@ export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: st
   );
 }
 
-export function Badge({ children, tone = "neutral" }: { children: ReactNode; tone?: "neutral" | "success" | "warn" | "danger" }) {
+export function Badge({
+  children,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  tone?: "neutral" | "success" | "warn" | "danger";
+}) {
   const styles: Record<string, string> = {
     neutral: "bg-plata-200 text-black-600",
     success: "bg-success-bg text-success",
@@ -388,7 +429,9 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
     danger: "bg-error-bg text-error",
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${styles[tone]}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${styles[tone]}`}
+    >
       {children}
     </span>
   );

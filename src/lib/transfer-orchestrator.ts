@@ -25,7 +25,11 @@ export type TransferRequest = {
 };
 
 export type TransferResult =
-  | { ok: true; validation: RecipientValidationResult; txn: { id_txn: string; comision: number; impuesto: number; total_debitado: number } }
+  | {
+      ok: true;
+      validation: RecipientValidationResult;
+      txn: { id_txn: string; comision: number; impuesto: number; total_debitado: number };
+    }
   | { ok: false; validation: RecipientValidationResult; error?: string };
 
 export type TransferOrchestratorDeps = {
@@ -67,9 +71,17 @@ export async function executeTransfer(
     p_concepto: req.concepto ?? undefined,
   });
   if (error) throw error;
-  const txn = data as { ok: boolean; id_txn: string; comision: number; impuesto: number; total_debitado: number; motivo?: string };
+  const txn = data as {
+    ok: boolean;
+    id_txn: string;
+    comision: number;
+    impuesto: number;
+    total_debitado: number;
+    motivo?: string;
+  };
   // Rechazada por bloqueo, saldo o controles: queda registrada sin mover dinero.
-  if (txn.ok === false) return { ok: false, validation, error: txn.motivo ?? "La transferencia fue rechazada" };
+  if (txn.ok === false)
+    return { ok: false, validation, error: txn.motivo ?? "La transferencia fue rechazada" };
   return { ok: true, validation, txn };
 }
 
@@ -78,5 +90,8 @@ export async function validateRecipientOnly(
   identifier: string,
   validator: RecipientValidator = recipientValidator,
 ): Promise<RecipientValidationResult> {
-  return validator.validate({ identifier: identifier.trim(), kind: detectIdentifierKind(identifier) });
+  return validator.validate({
+    identifier: identifier.trim(),
+    kind: detectIdentifierKind(identifier),
+  });
 }

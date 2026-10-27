@@ -11,10 +11,7 @@ export const Route = createFileRoute("/verificar-correo")({
     token: (search.token as string) ?? "",
   }),
   head: () => ({
-    meta: [
-      { title: pageTitle("Verificar correo") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Verificar correo") }, { name: "robots", content: "noindex" }],
   }),
   component: VerificarCorreo,
 });
@@ -41,7 +38,9 @@ function VerificarCorreo() {
       })
       .catch((e) => {
         setEstado("error");
-        setMsg(getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo verificar el correo."));
+        setMsg(
+          getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo verificar el correo."),
+        );
       });
   }, [token]);
 
@@ -53,13 +52,22 @@ function VerificarCorreo() {
       step="Correo verificado"
     >
       {estado === "loading" && (
-        <SuccessCard variant="loading" title="Verificando tu correo…" body={<p>Estamos confirmando el enlace que nos enviaste. Esto solo toma un instante.</p>} />
+        <SuccessCard
+          variant="loading"
+          title="Verificando tu correo…"
+          body={<p>Estamos confirmando el enlace que nos enviaste. Esto solo toma un instante.</p>}
+        />
       )}
 
       {estado === "ok" && (
         <SuccessCard
           title="¡Correo verificado!"
-          body={<p>Tu dirección de correo fue confirmada correctamente. Ahora podés iniciar sesión y continuar con el onboarding.</p>}
+          body={
+            <p>
+              Tu dirección de correo fue confirmada correctamente. Ahora podés iniciar sesión y
+              continuar con el onboarding.
+            </p>
+          }
         >
           <PrimaryButton onClick={() => nav({ to: "/login" })}>
             Volver al inicio de sesión

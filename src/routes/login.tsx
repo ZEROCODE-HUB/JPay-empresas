@@ -3,7 +3,15 @@ import { useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
 import { useOnboarding, type TipoCuenta } from "@/lib/onboarding-store";
-import { AuthShell, DemoVerifyBox, Field, PasswordField, PrimaryButton, SuccessCard, validatePassword } from "@/components/onboarding";
+import {
+  AuthShell,
+  DemoVerifyBox,
+  Field,
+  PasswordField,
+  PrimaryButton,
+  SuccessCard,
+  validatePassword,
+} from "@/components/onboarding";
 import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
 import { readDemoVerifyUrl, registerClient, resendVerification } from "@/lib/api/onboarding";
 import { brand, pageTitle, mailto } from "@/brand/brand";
@@ -15,13 +23,20 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: pageTitle("Ingresar") },
-      { name: "description", content: `Accede al portal de ${brand.name}. Plataforma de pagos digitales bajo normativa BCRA.` },
+      {
+        name: "description",
+        content: `Accede al portal de ${brand.name}. Plataforma de pagos digitales bajo normativa BCRA.`,
+      },
     ],
   }),
   component: LoginPage,
 });
 
-function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente" | "rechazado", email: string) => void }) {
+function LoginForm({
+  onSuccess,
+}: {
+  onSuccess: (estado: "aprobado" | "pendiente" | "rechazado", email: string) => void;
+}) {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,10 +59,14 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
         setDemoUrl(readDemoVerifyUrl(destino));
         setResendMsg(null);
       } else {
-        setResendMsg(`Te enviamos el mail de verificación a ${destino}. Revisá tu bandeja y la carpeta de spam.`);
+        setResendMsg(
+          `Te enviamos el mail de verificación a ${destino}. Revisá tu bandeja y la carpeta de spam.`,
+        );
       }
     } catch (e) {
-      setResendMsg(e instanceof Error ? getAuthErrorMessage(e.message) : "No se pudo reenviar el correo.");
+      setResendMsg(
+        e instanceof Error ? getAuthErrorMessage(e.message) : "No se pudo reenviar el correo.",
+      );
     } finally {
       setResendLoading(false);
     }
@@ -61,10 +80,19 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
         title="Pendiente de verificación de email"
         body={
           <>
-            <p>Tu correo aún no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace para activar tu cuenta.</p>
+            <p>
+              Tu correo aún no está verificado. Revisá tu bandeja de entrada y hacé clic en el
+              enlace para activar tu cuenta.
+            </p>
             <p className="mt-3 text-xs text-black-400">
               Si no lo recibís, revisá spam o reenviá el correo. Si tenés algún problema,{" "}
-              <a href={mailto(brand.contact.support)} className="underline underline-offset-2 hover:text-primary-ink">¿Necesitas ayuda? Soporte</a>.
+              <a
+                href={mailto(brand.contact.support)}
+                className="underline underline-offset-2 hover:text-primary-ink"
+              >
+                ¿Necesitas ayuda? Soporte
+              </a>
+              .
             </p>
             {demoUrl && <DemoVerifyBox url={demoUrl} />}
             {resendMsg && <p className="mt-3 text-xs text-green-600">{resendMsg}</p>}
@@ -74,7 +102,17 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
         <PrimaryButton onClick={reenviarVerificacion} disabled={resendLoading}>
           {resendLoading ? "Reenviando…" : "Reenviar correo de verificación"}
         </PrimaryButton>
-        <button type="button" onClick={() => { setPendingEmail(null); setResendMsg(null); setDemoUrl(null); }} className="mt-2 w-full text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver al inicio de sesión</button>
+        <button
+          type="button"
+          onClick={() => {
+            setPendingEmail(null);
+            setResendMsg(null);
+            setDemoUrl(null);
+          }}
+          className="mt-2 w-full text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+        >
+          Volver al inicio de sesión
+        </button>
       </SuccessCard>
     );
   }
@@ -88,7 +126,10 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
         setError(null);
         try {
           const sb = requireSupabase();
-          const { data, error: authErr } = await sb.auth.signInWithPassword({ email, password: pw });
+          const { data, error: authErr } = await sb.auth.signInWithPassword({
+            email,
+            password: pw,
+          });
           if (authErr || !data.user) {
             const raw = authErr?.message ?? "";
             if (/email not confirmed/i.test(raw)) {
@@ -109,20 +150,29 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
             const raw = (cli?.estado as string) ?? "pendiente_verificacion";
             // homologado: mapear nuevo flujo a compatibilidad con onSuccess existente
             if (raw === "activado" || raw === "activo") estado = "aprobado";
-            else if (raw === "deshabilitado" || raw === "eliminado" || raw === "rechazado") estado = "rechazado";
+            else if (raw === "deshabilitado" || raw === "eliminado" || raw === "rechazado")
+              estado = "rechazado";
             else estado = "pendiente";
           } catch {
             // si no se puede consultar el estado, seguimos igual con "pendiente"
           }
           onSuccess(estado, data.user.email ?? email);
         } catch (e) {
-          setError(getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo iniciar sesión"));
+          setError(
+            getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo iniciar sesión"),
+          );
         } finally {
           setLoading(false);
         }
       }}
     >
-      <Field label="Correo electrónico" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hola@empresa.com" />
+      <Field
+        label="Correo electrónico"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="hola@empresa.com"
+      />
       <PasswordField label="Contraseña" value={pw} onChange={setPw} />
       <div className="flex justify-end">
         <Link
@@ -134,12 +184,18 @@ function LoginForm({ onSuccess }: { onSuccess: (estado: "aprobado" | "pendiente"
       </div>
       {error && <p className="text-sm text-danger-600">{error}</p>}
       <div className="pt-1">
-        <PrimaryButton type="submit" disabled={loading}>{loading ? "Ingresando..." : "Iniciar sesión"}</PrimaryButton>
+        <PrimaryButton type="submit" disabled={loading}>
+          {loading ? "Ingresando..." : "Iniciar sesión"}
+        </PrimaryButton>
       </div>
       <div className="text-center text-xs text-black-400 space-y-2 pt-2">
         <p>
           ¿No tienes una cuenta?{" "}
-          <Link to="/login" search={{ register: "pf" }} className="text-primary-ink underline underline-offset-2 hover:opacity-80">
+          <Link
+            to="/login"
+            search={{ register: "pf" }}
+            className="text-primary-ink underline underline-offset-2 hover:opacity-80"
+          >
             Registrate
           </Link>
         </p>
@@ -164,12 +220,25 @@ function RegisterForm({
   error,
 }: {
   tipo: TipoCuenta;
-  onSuccess: (data: { nombre: string; apellido: string; fechaNac: string; email: string; password: string }) => void;
+  onSuccess: (data: {
+    nombre: string;
+    apellido: string;
+    fechaNac: string;
+    email: string;
+    password: string;
+  }) => void;
   onSwitchToLogin?: () => void;
   submitting?: boolean;
   error?: string | null;
 }) {
-  const [f, setF] = useState({ nombre: "", apellido: "", fechaNac: "", email: "", pw: "", pw2: "" });
+  const [f, setF] = useState({
+    nombre: "",
+    apellido: "",
+    fechaNac: "",
+    email: "",
+    pw: "",
+    pw2: "",
+  });
   const [terms, setTerms] = useState(false);
   const [touched, setTouched] = useState(false);
 
@@ -186,25 +255,74 @@ function RegisterForm({
         e.preventDefault();
         setTouched(true);
         if (!valid) return;
-        onSuccess({ nombre: f.nombre, apellido: f.apellido, fechaNac: f.fechaNac, email: f.email, password: f.pw });
+        onSuccess({
+          nombre: f.nombre,
+          apellido: f.apellido,
+          fechaNac: f.fechaNac,
+          email: f.email,
+          password: f.pw,
+        });
       }}
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Nombre" value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} error={touched && !f.nombre ? "Requerido" : undefined} />
-        <Field label="Apellido" value={f.apellido} onChange={(e) => setF({ ...f, apellido: e.target.value })} error={touched && !f.apellido ? "Requerido" : undefined} />
+        <Field
+          label="Nombre"
+          value={f.nombre}
+          onChange={(e) => setF({ ...f, nombre: e.target.value })}
+          error={touched && !f.nombre ? "Requerido" : undefined}
+        />
+        <Field
+          label="Apellido"
+          value={f.apellido}
+          onChange={(e) => setF({ ...f, apellido: e.target.value })}
+          error={touched && !f.apellido ? "Requerido" : undefined}
+        />
       </div>
-      <Field label="Fecha de nacimiento" type="date" value={f.fechaNac} onChange={(e) => setF({ ...f, fechaNac: e.target.value })} error={touched && !f.fechaNac ? "Requerido" : undefined} />
-      <Field label="Correo electrónico" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} placeholder="nombre@dominio.com" error={touched && !emailOk ? "Ingresá un email válido" : undefined} />
-      <PasswordField label="Contraseña" value={f.pw} onChange={(v) => setF({ ...f, pw: v })} showRules error={touched && !pwOk ? "La contraseña no cumple los requisitos" : undefined} />
-      <PasswordField label="Confirmar contraseña" value={f.pw2} onChange={(v) => setF({ ...f, pw2: v })} error={touched && !pwMatch ? "Las contraseñas no coinciden" : undefined} />
+      <Field
+        label="Fecha de nacimiento"
+        type="date"
+        value={f.fechaNac}
+        onChange={(e) => setF({ ...f, fechaNac: e.target.value })}
+        error={touched && !f.fechaNac ? "Requerido" : undefined}
+      />
+      <Field
+        label="Correo electrónico"
+        type="email"
+        value={f.email}
+        onChange={(e) => setF({ ...f, email: e.target.value })}
+        placeholder="nombre@dominio.com"
+        error={touched && !emailOk ? "Ingresá un email válido" : undefined}
+      />
+      <PasswordField
+        label="Contraseña"
+        value={f.pw}
+        onChange={(v) => setF({ ...f, pw: v })}
+        showRules
+        error={touched && !pwOk ? "La contraseña no cumple los requisitos" : undefined}
+      />
+      <PasswordField
+        label="Confirmar contraseña"
+        value={f.pw2}
+        onChange={(v) => setF({ ...f, pw2: v })}
+        error={touched && !pwMatch ? "Las contraseñas no coinciden" : undefined}
+      />
 
       <label className="flex items-start gap-2.5 text-xs text-black-500 pt-1">
-        <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)} className="mt-0.5 accent-primary-500" />
+        <input
+          type="checkbox"
+          checked={terms}
+          onChange={(e) => setTerms(e.target.checked)}
+          className="mt-0.5 accent-primary-500"
+        />
         <span>
           He leído y acepto los{" "}
-          <a href="/legales/terminos" className="underline underline-offset-2 hover:text-primary-ink">
+          <a
+            href="/legales/terminos"
+            className="underline underline-offset-2 hover:text-primary-ink"
+          >
             Términos y Condiciones
-          </a>.
+          </a>
+          .
         </span>
       </label>
 
@@ -218,17 +336,29 @@ function RegisterForm({
       <div className="text-center text-xs text-black-400 space-y-2 pt-2">
         <p>
           ¿Ya tenés una cuenta?{" "}
-          <button type="button" onClick={onSwitchToLogin} className="text-primary-ink underline underline-offset-2 hover:opacity-80">
+          <button
+            type="button"
+            onClick={onSwitchToLogin}
+            className="text-primary-ink underline underline-offset-2 hover:opacity-80"
+          >
             Iniciá sesión
           </button>
         </p>
         <p>
           {tipo === "juridica" ? (
-            <Link to="/login" search={{ register: "pf" }} className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors">
+            <Link
+              to="/login"
+              search={{ register: "pf" }}
+              className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors"
+            >
               ¿Sos persona física? Registrate como persona física
             </Link>
           ) : (
-            <Link to="/login" search={{ register: "pj" }} className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors">
+            <Link
+              to="/login"
+              search={{ register: "pj" }}
+              className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors"
+            >
               ¿Querés registrar tu empresa? Registrar empresa
             </Link>
           )}
@@ -242,14 +372,22 @@ function LoginPage() {
   const search = Route.useSearch();
   const register = search.register;
   const [tab, setTab] = useState<"login" | "register">(register ? "register" : "login");
-  const [tipoCuenta, setTipoCuenta] = useState<TipoCuenta>(register === "pj" ? "juridica" : "fisica");
+  const [tipoCuenta, setTipoCuenta] = useState<TipoCuenta>(
+    register === "pj" ? "juridica" : "fisica",
+  );
   const { setRole } = useDemoMode();
   const store = useOnboarding();
   const navigate = useNavigate();
   const [registering, setRegistering] = useState(false);
   const [registerError, setRegisterError] = useState<string | null>(null);
 
-  const handleRegisterSuccess = async (data: { nombre: string; apellido: string; fechaNac: string; email: string; password: string }) => {
+  const handleRegisterSuccess = async (data: {
+    nombre: string;
+    apellido: string;
+    fechaNac: string;
+    email: string;
+    password: string;
+  }) => {
     store.reset();
     store.setTipo(tipoCuenta);
     store.setRegistro(data);
@@ -272,7 +410,10 @@ function LoginPage() {
     }
   };
 
-  const handleLoginSuccess = async (estado: "aprobado" | "pendiente" | "rechazado", email: string) => {
+  const handleLoginSuccess = async (
+    estado: "aprobado" | "pendiente" | "rechazado",
+    email: string,
+  ) => {
     // El store persiste en localStorage y es compartido por todo el browser.
     // Si el email almacenado no coincide con el que está iniciando sesión, lo reiniciamos
     // para no heredar datos (incluido el CUIT) de otro usuario/sesión.
@@ -308,11 +449,22 @@ function LoginPage() {
       }
       if (raw === "registrado") {
         // Registrado: si aún no envió documentación -> onboarding, si ya envió -> recuadro en revisión
-        const incompleto = (cli as any).onboarding_completo === false || (cli as any).onboarding_completo === null;
+        const incompleto =
+          (cli as any).onboarding_completo === false || (cli as any).onboarding_completo === null;
         if (incompleto) {
           try {
-            const { data: val } = await sb.from("validaciones").select("id").eq("cliente_legajo", (cli as any).legajo).limit(1).maybeSingle();
-            const { data: doc } = await sb.from("documentos").select("id").eq("cliente_legajo", (cli as any).legajo).limit(1).maybeSingle();
+            const { data: val } = await sb
+              .from("validaciones")
+              .select("id")
+              .eq("cliente_legajo", (cli as any).legajo)
+              .limit(1)
+              .maybeSingle();
+            const { data: doc } = await sb
+              .from("documentos")
+              .select("id")
+              .eq("cliente_legajo", (cli as any).legajo)
+              .limit(1)
+              .maybeSingle();
             if (!val && !doc) {
               navigate({ to: "/onboarding/datos-personales" });
               return;
@@ -402,7 +554,6 @@ function LoginPage() {
           )}
         </div>
       </div>
-
     </AuthShell>
   );
 }

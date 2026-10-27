@@ -52,7 +52,9 @@ export const ESTADO_TONE: Record<EstadoClienteNuevo, "neutral" | "warn" | "succe
 };
 
 // Para filtros desplegables (§7) — Eliminado NO es un estado almacenado, es borrado físico; se excluye del filtro
-export const FILTRO_ESTADOS_OPCIONES: string[] = ESTADOS_CLIENTE.filter((e) => e !== "eliminado").map((e) => ESTADO_LABEL[e]);
+export const FILTRO_ESTADOS_OPCIONES: string[] = ESTADOS_CLIENTE.filter(
+  (e) => e !== "eliminado",
+).map((e) => ESTADO_LABEL[e]);
 
 // Reverse lookup label -> estado
 export const LABEL_A_ESTADO: Record<string, EstadoClienteNuevo> = Object.fromEntries(
@@ -144,7 +146,10 @@ const TRANSICIONES: Transicion[] = [
   },
 ];
 
-function esTransicionValida(from: EstadoClienteNuevo, to: EstadoClienteNuevo): Transicion | undefined {
+function esTransicionValida(
+  from: EstadoClienteNuevo,
+  to: EstadoClienteNuevo,
+): Transicion | undefined {
   return TRANSICIONES.find((t) => t.from === from && t.to === to);
 }
 
@@ -161,7 +166,11 @@ export function puedeTransicionar(
   // Eliminación: guard estricto hasMovimientos
   if (to === "eliminado") {
     if (ctx.hasMovimientos) {
-      return { ok: false, motivo: "No se puede eliminar: el usuario tiene movimientos. Solo puede deshabilitarse (BCRA auditoría)." };
+      return {
+        ok: false,
+        motivo:
+          "No se puede eliminar: el usuario tiene movimientos. Solo puede deshabilitarse (BCRA auditoría).",
+      };
     }
     if (from === "eliminado" || from === "deshabilitado") {
       return { ok: false, motivo: "El usuario ya está deshabilitado/eliminado." };
@@ -175,7 +184,11 @@ export function puedeTransicionar(
   }
 
   const t = esTransicionValida(from, to);
-  if (!t) return { ok: false, motivo: `Transición no permitida: ${ESTADO_LABEL[from]} → ${ESTADO_LABEL[to]}.` };
+  if (!t)
+    return {
+      ok: false,
+      motivo: `Transición no permitida: ${ESTADO_LABEL[from]} → ${ESTADO_LABEL[to]}.`,
+    };
 
   if (t.requiere && !t.requiere(ctx)) {
     if (to === "activado") {
@@ -198,10 +211,7 @@ export type AccionDisponible = {
 };
 
 // Acciones que el admin puede ejecutar según estado actual
-export function accionesParaEstado(
-  estadoRaw: string,
-  ctx: TransicionContext,
-): AccionDisponible[] {
+export function accionesParaEstado(estadoRaw: string, ctx: TransicionContext): AccionDisponible[] {
   const estado = normalizarEstado(estadoRaw);
   const acciones: AccionDisponible[] = [];
 
@@ -211,7 +221,11 @@ export function accionesParaEstado(
   }
 
   if (estado === "registrado") {
-    acciones.push({ key: "aprobar_documentacion", label: "Preactivar (aprobar documentación)", target: "preactivado" });
+    acciones.push({
+      key: "aprobar_documentacion",
+      label: "Preactivar (aprobar documentación)",
+      target: "preactivado",
+    });
   }
 
   if (estado === "preactivado") {
@@ -224,7 +238,12 @@ export function accionesParaEstado(
   }
 
   if (estado === "activado") {
-    acciones.push({ key: "suspender", label: "Suspender", target: "suspendido", variant: "danger" });
+    acciones.push({
+      key: "suspender",
+      label: "Suspender",
+      target: "suspendido",
+      variant: "danger",
+    });
   }
 
   if (estado === "suspendido") {
@@ -232,7 +251,12 @@ export function accionesParaEstado(
   }
 
   // Deshabilitar: disponible desde cualquier estado no terminal (los terminales ya retornaron arriba)
-  acciones.push({ key: "deshabilitar", label: "Deshabilitar", target: "deshabilitado", variant: "danger" });
+  acciones.push({
+    key: "deshabilitar",
+    label: "Deshabilitar",
+    target: "deshabilitado",
+    variant: "danger",
+  });
 
   // Eliminar: solo si no tiene movimientos
   if (!ctx.hasMovimientos) {

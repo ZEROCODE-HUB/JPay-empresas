@@ -12,6 +12,7 @@ Ordenados por prioridad. Ver también `PENDIENTES.md` en `JPay-admin`.
   al llamador.
 
 **Qué hacer**
+
 - [ ] Exigir y validar el JWT del llamador en cada función (`auth.getUser(token)`), y en las de
       administración verificar su rol en la base antes de operar.
 - [ ] En el alta de clientes, no permitir que una llamada anónima modifique un cliente existente.
@@ -27,6 +28,7 @@ email (`brand.web.domain`). Ser admin **no puede depender del email**: cualquier
 de ese dominio quedaría como admin.
 
 **Qué hacer**
+
 - [ ] Definir el rol en la base (tabla de administradores con rol, o `app_metadata.role`
       asignado solo desde el backend con service role), nunca editable por el propio usuario.
 - [ ] En `doc-url`, reemplazar el chequeo por dominio por un chequeo de ese rol.
@@ -38,6 +40,7 @@ de ese dominio quedaría como admin.
 (`TRF${Date.now()}`).
 
 **Qué hacer**
+
 - [ ] Generar el ID en el backend, con un prefijo configurable.
 - [ ] No usar `Date.now()` como única fuente de unicidad (dos transferencias en el mismo
       milisegundo chocan).
@@ -49,6 +52,7 @@ Algunas columnas y campos de la base todavía tienen nombres heredados: `tasa_mo
 El código los lee y escribe tal cual porque deben coincidir con la base.
 
 **Qué hacer**
+
 - [ ] Migración de base que renombre esas columnas (y las funciones/vistas que las devuelven) a
       nombres neutros (p. ej. `tasa_plataforma_pct`), y actualizar el código en el mismo cambio.
 

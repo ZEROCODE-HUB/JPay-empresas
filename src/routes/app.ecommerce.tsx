@@ -64,21 +64,27 @@ function Page() {
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Transacciones (mes)
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">1.842</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            1.842
+          </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">+12% vs mes anterior</div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Volumen (mes)
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">$ 8.4M</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            $ 8.4M
+          </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">Ticket promedio $ 4.560</div>
         </div>
         <div className="bg-card border rounded-lg p-3">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
             Aprobacion
           </div>
-          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">96.2%</div>
+          <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
+            96.2%
+          </div>
           <div className="text-[10px] text-muted-foreground mt-0.5">Tasa de conversion</div>
         </div>
       </div>
@@ -147,9 +153,7 @@ function Page() {
                 />
                 <BtnOutline
                   className="shrink-0"
-                  onClick={() =>
-                    copy(`${brand.web.apiBase}/v2/webhooks/empresa-demo`, "Webhook")
-                  }
+                  onClick={() => copy(`${brand.web.apiBase}/v2/webhooks/empresa-demo`, "Webhook")}
                 >
                   <Copy size={14} />
                 </BtnOutline>
@@ -196,7 +200,9 @@ function Page() {
                 <tr key={t.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-5 py-3 text-xs text-muted-foreground">{t.f}</td>
                   <td className="px-5 py-3 font-mono text-xs">{t.id}</td>
-                  <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">{t.m}</td>
+                  <td className="px-5 py-3 font-mono tabular-nums text-right font-semibold">
+                    {t.m}
+                  </td>
                   <td className="px-5 py-3 text-right">
                     <Badge tone={t.e === "Aprobado" ? "success" : "danger"}>{t.e}</Badge>
                   </td>

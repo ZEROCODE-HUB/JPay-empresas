@@ -1,7 +1,26 @@
 ﻿import { createFileRoute } from "@tanstack/react-router";
 import { brand } from "@/brand/brand";
-import { RefreshCw, Copy, Plus, Webhook, BookOpen, CheckCircle2, Circle, Activity, Code2 } from "lucide-react";
-import { PageHeader, Card, BtnPrimary, BtnOutline, Badge, Stat, Input, Label } from "@/components/portal-shell";
+import {
+  RefreshCw,
+  Copy,
+  Plus,
+  Webhook,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  Activity,
+  Code2,
+} from "lucide-react";
+import {
+  PageHeader,
+  Card,
+  BtnPrimary,
+  BtnOutline,
+  Badge,
+  Stat,
+  Input,
+  Label,
+} from "@/components/portal-shell";
 
 export const Route = createFileRoute("/app/api")({ component: Page });
 
@@ -17,9 +36,24 @@ const endpoints: [string, string, string][] = [
 ];
 
 const webhooks = [
-  { url: `https://api.empresademo.com/webhooks/${brand.name.toLowerCase()}`, e: "payment.completed", s: "OK", last: "Hoy 10:42" },
-  { url: `https://api.empresademo.com/webhooks/${brand.name.toLowerCase()}`, e: "transfer.failed", s: "OK", last: "Ayer" },
-  { url: "https://staging.empresademo.com/hooks", e: "batch.completed", s: "Reintentando", last: "30/05" },
+  {
+    url: `https://api.empresademo.com/webhooks/${brand.name.toLowerCase()}`,
+    e: "payment.completed",
+    s: "OK",
+    last: "Hoy 10:42",
+  },
+  {
+    url: `https://api.empresademo.com/webhooks/${brand.name.toLowerCase()}`,
+    e: "transfer.failed",
+    s: "OK",
+    last: "Ayer",
+  },
+  {
+    url: "https://staging.empresademo.com/hooks",
+    e: "batch.completed",
+    s: "Reintentando",
+    last: "30/05",
+  },
 ];
 
 const requests = [
@@ -36,7 +70,11 @@ function Page() {
       <PageHeader
         title="API e integraciones"
         description="Credenciales, webhooks, sandbox y documentacion tecnica."
-        action={<BtnPrimary><BookOpen size={14} /> Ver documentacion</BtnPrimary>}
+        action={
+          <BtnPrimary>
+            <BookOpen size={14} /> Ver documentacion
+          </BtnPrimary>
+        }
       />
 
       <div className="grid md:grid-cols-4 gap-4 mb-6">
@@ -49,7 +87,9 @@ function Page() {
       <div className="grid lg:grid-cols-[1fr_1fr] gap-6 mb-6">
         <Card>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold flex items-center gap-2"><Code2 size={16} /> Credenciales</h3>
+            <h3 className="font-semibold flex items-center gap-2">
+              <Code2 size={16} /> Credenciales
+            </h3>
             <Badge tone="success">Produccion</Badge>
           </div>
           <div className="space-y-3">
@@ -58,7 +98,9 @@ function Page() {
             <Cred label="Webhook secret" value="whk_demo_99a8b7c6d5e4f3a2b1c0d9e8f7a6" />
           </div>
           <div className="flex gap-2 mt-5">
-            <BtnOutline><RefreshCw size={14} /> Rotar claves</BtnOutline>
+            <BtnOutline>
+              <RefreshCw size={14} /> Rotar claves
+            </BtnOutline>
             <BtnOutline>Modo sandbox</BtnOutline>
           </div>
           <div className="mt-4 p-3 bg-muted rounded text-xs text-muted-foreground">
@@ -68,7 +110,9 @@ function Page() {
         </Card>
 
         <Card>
-          <h3 className="font-semibold mb-4 flex items-center gap-2"><Activity size={16} /> Estado de servicios</h3>
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Activity size={16} /> Estado de servicios
+          </h3>
           <div className="space-y-2.5">
             {[
               ["API REST", "Operativo", "100%"],
@@ -76,12 +120,17 @@ function Page() {
               ["Procesamiento de cobros", "Operativo", "99,9%"],
               ["Sandbox", "Operativo", "100%"],
             ].map(([s, e, u]) => (
-              <div key={s} className="flex items-center justify-between text-sm py-1.5 border-b last:border-0">
+              <div
+                key={s}
+                className="flex items-center justify-between text-sm py-1.5 border-b last:border-0"
+              >
                 <div className="flex items-center gap-2">
                   <Circle size={8} className="fill-emerald-500 text-emerald-500" />
                   <span>{s}</span>
                 </div>
-                <div className="text-xs text-muted-foreground">{e} · {u}</div>
+                <div className="text-xs text-muted-foreground">
+                  {e} · {u}
+                </div>
               </div>
             ))}
           </div>
@@ -97,9 +146,13 @@ function Page() {
           <div className="divide-y">
             {endpoints.map(([m, p, d]) => (
               <div key={p} className="flex items-center gap-3 py-2.5">
-                <span className={`inline-flex w-14 justify-center px-2 py-0.5 rounded text-[10px] font-bold ${
-                  m === "GET" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
-                }`}>{m}</span>
+                <span
+                  className={`inline-flex w-14 justify-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                    m === "GET" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                  }`}
+                >
+                  {m}
+                </span>
                 <span className="font-mono text-xs flex-1">{p}</span>
                 <span className="text-xs text-muted-foreground hidden md:block">{d}</span>
               </div>
@@ -110,8 +163,12 @@ function Page() {
         <div className="space-y-6">
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold flex items-center gap-2"><Webhook size={16} /> Webhooks</h3>
-              <BtnOutline className="h-9 px-3 text-xs"><Plus size={12} /> Agregar</BtnOutline>
+              <h3 className="font-semibold flex items-center gap-2">
+                <Webhook size={16} /> Webhooks
+              </h3>
+              <BtnOutline className="h-9 px-3 text-xs">
+                <Plus size={12} /> Agregar
+              </BtnOutline>
             </div>
             <div className="divide-y">
               {webhooks.map((w, i) => (
@@ -134,11 +191,19 @@ function Page() {
             <div className="divide-y text-xs">
               {requests.map((r, i) => (
                 <div key={i} className="flex items-center gap-2 py-2">
-                  <span className={`w-12 text-center font-bold ${
-                    r.m === "GET" ? "text-blue-700" : "text-emerald-700"
-                  }`}>{r.m}</span>
+                  <span
+                    className={`w-12 text-center font-bold ${
+                      r.m === "GET" ? "text-blue-700" : "text-emerald-700"
+                    }`}
+                  >
+                    {r.m}
+                  </span>
                   <span className="font-mono flex-1 truncate">{r.p}</span>
-                  <span className={`font-mono font-semibold ${r.c.startsWith("2") ? "text-emerald-700" : "text-danger-700"}`}>{r.c}</span>
+                  <span
+                    className={`font-mono font-semibold ${r.c.startsWith("2") ? "text-emerald-700" : "text-danger-700"}`}
+                  >
+                    {r.c}
+                  </span>
                   <span className="font-mono text-muted-foreground w-16 text-right">{r.t}</span>
                 </div>
               ))}
@@ -156,7 +221,9 @@ function Cred({ label, value }: { label: string; value: string }) {
       <Label>{label}</Label>
       <div className="flex items-center gap-2 border rounded-md bg-muted p-2">
         <code className="text-xs flex-1 truncate">{value}</code>
-        <button className="p-1 hover:opacity-70"><Copy size={14} /></button>
+        <button className="p-1 hover:opacity-70">
+          <Copy size={14} />
+        </button>
       </div>
     </div>
   );

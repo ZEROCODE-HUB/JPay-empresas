@@ -63,7 +63,11 @@ async function handleSend(sb: any, email: string) {
   }
 
   // Invalidar OTPs previos no usados del mismo correo para que solo el último sea válido
-  await sb.from("otp_transferencias").update({ usado: true }).eq("correo", normalizedEmail).eq("usado", false);
+  await sb
+    .from("otp_transferencias")
+    .update({ usado: true })
+    .eq("correo", normalizedEmail)
+    .eq("usado", false);
 
   const codigo = String(Math.floor(100000 + Math.random() * 900000));
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -91,7 +95,8 @@ async function handleSend(sb: any, email: string) {
 // Devuelve false si no hay RESEND_API_KEY (modo demo): el código se muestra en pantalla.
 async function sendOtpEmail(email: string, codigo: string): Promise<boolean> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
-  const from = Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
+  const from =
+    Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
   if (!apiKey) return false;
   const primary = brand.colors.primary["500"];
   const cardBg = "#ffffff";

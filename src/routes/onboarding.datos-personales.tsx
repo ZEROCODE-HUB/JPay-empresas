@@ -53,7 +53,11 @@ function DatosPersonales() {
           st.reset();
           setF({ genero: "", cuitCuil: "", ocupacion: "", origenFondos: "", esPEP: false });
         }
-        const { data: cli } = await sb.from("clientes").select("genero, cuit_cuil, ocupacion, origen_fondos, es_pep").eq("correo", mail).maybeSingle();
+        const { data: cli } = await sb
+          .from("clientes")
+          .select("genero, cuit_cuil, ocupacion, origen_fondos, es_pep")
+          .eq("correo", mail)
+          .maybeSingle();
         if (!cli) return;
         setF((prev) => ({
           genero: prev.genero || (cli as any).genero || "",
@@ -62,7 +66,9 @@ function DatosPersonales() {
           origenFondos: prev.origenFondos || (cli as any).origen_fondos || "",
           esPEP: prev.esPEP || !!(cli as any).es_pep,
         }));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     })();
   }, []);
 
@@ -73,7 +79,8 @@ function DatosPersonales() {
     if (!f.genero) e.genero = "El genero es requerido";
     if (!f.cuitCuil.trim()) e.cuitCuil = "Ingresa tu CUIT/CUIL";
     else if (cuitExcede) e.cuitCuil = "Máximo 11 dígitos permitidos. Quita los excedentes.";
-    else if (cuitDigits.length !== 11) e.cuitCuil = "El CUIT/CUIL debe tener exactamente 11 dígitos.";
+    else if (cuitDigits.length !== 11)
+      e.cuitCuil = "El CUIT/CUIL debe tener exactamente 11 dígitos.";
     if (!f.ocupacion) e.ocupacion = "Selecciona una ocupacion";
     setErr(e);
     return Object.keys(e).length === 0;
@@ -100,7 +107,11 @@ function DatosPersonales() {
   return (
     <AuthShell
       leftEyebrow="Paso 3 · Datos personales"
-      leftTitle={tipoCuenta === "juridica" ? "Datos del representante legal." : "Completa tu perfil regulatorio."}
+      leftTitle={
+        tipoCuenta === "juridica"
+          ? "Datos del representante legal."
+          : "Completa tu perfil regulatorio."
+      }
       leftBody="Estos datos son requeridos por normativa antilavado (UIF) y solo se comparten con las autoridades competentes."
       step={`Paso ${step + 1} de 3`}
     >
@@ -152,14 +163,16 @@ function DatosPersonales() {
       {step === 2 && (
         <div className="space-y-5">
           <div className="p-5 text-xs leading-relaxed text-black-500 bg-black-50 border border-black-100 rounded-sm">
-            Se consideran <strong>PEPs</strong> a los Funcionarios Públicos Nacionales, Provinciales y Municipales (tanto
-            Nacionales como Extranjeros) de los Poderes Ejecutivo, Legislativo y Judicial, que ocupan o que ocuparon
-            altos cargos jerárquicos, así como también a sus familiares hasta el segundo grado de consanguinidad. Los
-            funcionarios calificados como PEPs continúan siéndolo hasta dos años después de haber cesado en sus
-            funciones.
+            Se consideran <strong>PEPs</strong> a los Funcionarios Públicos Nacionales, Provinciales
+            y Municipales (tanto Nacionales como Extranjeros) de los Poderes Ejecutivo, Legislativo
+            y Judicial, que ocupan o que ocuparon altos cargos jerárquicos, así como también a sus
+            familiares hasta el segundo grado de consanguinidad. Los funcionarios calificados como
+            PEPs continúan siéndolo hasta dos años después de haber cesado en sus funciones.
           </div>
           <label className="flex items-center justify-between gap-4 py-2">
-            <span className="text-sm font-semibold text-black-800">¿Es persona políticamente expuesta?</span>
+            <span className="text-sm font-semibold text-black-800">
+              ¿Es persona políticamente expuesta?
+            </span>
             <button
               type="button"
               onClick={() => setF({ ...f, esPEP: !f.esPEP })}
@@ -185,7 +198,12 @@ function DatosPersonales() {
         </div>
       )}
       <div className="text-center pt-4">
-        <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+        <Link
+          to="/login"
+          className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+        >
+          Volver a inicio de sesión
+        </Link>
       </div>
     </AuthShell>
   );

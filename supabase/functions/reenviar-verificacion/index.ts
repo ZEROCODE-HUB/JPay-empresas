@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
     return json({ error: "No existe una cuenta con ese correo" }, 400);
   }
   const user = userRes.user;
-  const nombre: string = `${user.user_metadata?.nombre || ""} ${user.user_metadata?.apellido || ""}`.trim();
+  const nombre: string =
+    `${user.user_metadata?.nombre || ""} ${user.user_metadata?.apellido || ""}`.trim();
 
   const token = crypto.randomUUID();
   const expires = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
@@ -53,10 +54,15 @@ Deno.serve(async (req) => {
 
 // Devuelve false si no hay RESEND_API_KEY (modo demo): el correo no se envía y el portal
 // muestra el link de verificación en pantalla.
-async function sendVerificationEmail(email: string, nombre: string, token: string): Promise<boolean> {
+async function sendVerificationEmail(
+  email: string,
+  nombre: string,
+  token: string,
+): Promise<boolean> {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   const appUrl = Deno.env.get("APP_URL") || "http://localhost:5173";
-  const from = Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
+  const from =
+    Deno.env.get("RESEND_FROM") || `${brand.email.fromName} <${brand.email.fromAddress}>`;
   if (!apiKey) return false;
 
   const link = `${appUrl}/verificar-correo?token=${token}`;

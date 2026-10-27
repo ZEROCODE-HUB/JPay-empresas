@@ -2,10 +2,30 @@
 import { brand } from "@/brand/brand";
 import { useState, useEffect } from "react";
 import {
-  Building2, Upload, FileText, CheckCircle2, CreditCard, SlidersHorizontal,
-  Download, Landmark, User, Shield, Activity, TrendingUp, Eye, X,
+  Building2,
+  Upload,
+  FileText,
+  CheckCircle2,
+  CreditCard,
+  SlidersHorizontal,
+  Download,
+  Landmark,
+  User,
+  Shield,
+  Activity,
+  TrendingUp,
+  Eye,
+  X,
 } from "lucide-react";
-import { PageHeader, Card, Input, Label, BtnPrimary, BtnOutline, Badge } from "@/components/portal-shell";
+import {
+  PageHeader,
+  Card,
+  Input,
+  Label,
+  BtnPrimary,
+  BtnOutline,
+  Badge,
+} from "@/components/portal-shell";
 import { toast } from "sonner";
 import { BrandLogo } from "@/components/brand-logo";
 import { useOnboarding } from "@/lib/onboarding-store";
@@ -32,7 +52,21 @@ const TIPO_LABEL: Record<string, string> = {
   selfie: "Selfie con DNI",
 };
 
-const IMG_EXT = ["png", "jpg", "jpeg", "jpe", "jfif", "jif", "webp", "gif", "bmp", "heic", "avif", "tiff", "tif"];
+const IMG_EXT = [
+  "png",
+  "jpg",
+  "jpeg",
+  "jpe",
+  "jfif",
+  "jif",
+  "webp",
+  "gif",
+  "bmp",
+  "heic",
+  "avif",
+  "tiff",
+  "tif",
+];
 
 function kindOf(label: string, url: string): DocReal["kind"] {
   const ext = (label || url).split(".").pop()?.toLowerCase() ?? "";
@@ -43,12 +77,20 @@ function kindOf(label: string, url: string): DocReal["kind"] {
 
 function fmtFechaDoc(iso?: string) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(iso).toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function fmtArs(v: any) {
   if (v == null || v === "") return "—";
-  return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(Number(v));
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  }).format(Number(v));
 }
 
 const planEmpresa = {
@@ -76,20 +118,18 @@ function Page() {
   const [movCount, setMovCount] = useState(0);
   const [form, setForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
-  const {
-    tipoCuenta,
-    registro,
-    datosPersonales,
-    datosEmpresa,
-    kyc,
-    emailValidado,
-  } = useOnboarding();
+  const { tipoCuenta, registro, datosPersonales, datosEmpresa, kyc, emailValidado } =
+    useOnboarding();
 
   const isPJ = cliente?.tipo_persona
     ? cliente.tipo_persona === "juridica"
     : tipoCuenta === "juridica";
   const plan = isPJ ? planEmpresa : planPersona;
-  const estadoNorm = cliente?.estado ? normalizarEstado(cliente.estado as string) : (emailValidado ? "registrado" as const : "pendiente_verificacion" as const);
+  const estadoNorm = cliente?.estado
+    ? normalizarEstado(cliente.estado as string)
+    : emailValidado
+      ? ("registrado" as const)
+      : ("pendiente_verificacion" as const);
   const estadoLabel = ESTADO_LABEL[estadoNorm];
   const aprobado = estadoNorm === "activado";
 
@@ -239,15 +279,22 @@ function Page() {
   }, []);
 
   const antiguedad = (() => {
-    const base = cliente?.fecha_alta ? new Date(cliente.fecha_alta) : cliente?.created_at ? new Date(cliente.created_at) : null;
+    const base = cliente?.fecha_alta
+      ? new Date(cliente.fecha_alta)
+      : cliente?.created_at
+        ? new Date(cliente.created_at)
+        : null;
     if (!base) return "—";
     const now = new Date();
-    const months = (now.getFullYear() - base.getFullYear()) * 12 + (now.getMonth() - base.getMonth());
+    const months =
+      (now.getFullYear() - base.getFullYear()) * 12 + (now.getMonth() - base.getMonth());
     if (months < 1) return "Reciente";
     if (months < 12) return `${months} meses`;
     const years = Math.floor(months / 12);
     const rem = months % 12;
-    return rem ? `${years} año${years > 1 ? "s" : ""} ${rem} mes${rem > 1 ? "es" : ""}` : `${years} año${years > 1 ? "s" : ""}`;
+    return rem
+      ? `${years} año${years > 1 ? "s" : ""} ${rem} mes${rem > 1 ? "es" : ""}`
+      : `${years} año${years > 1 ? "s" : ""}`;
   })();
 
   const score = (() => {
@@ -261,19 +308,37 @@ function Page() {
   })();
 
   const stats = [
-    { icon: Shield, label: "Estado KYC", value: aprobado ? "Validado" : cliente?.estado_onboarding === "pendiente" ? "Pendiente" : cliente?.estado_onboarding === "rechazado" ? "Rechazado" : "Pendiente", sub: aprobado ? "Verificado" : "En revisión" },
+    {
+      icon: Shield,
+      label: "Estado KYC",
+      value: aprobado
+        ? "Validado"
+        : cliente?.estado_onboarding === "pendiente"
+          ? "Pendiente"
+          : cliente?.estado_onboarding === "rechazado"
+            ? "Rechazado"
+            : "Pendiente",
+      sub: aprobado ? "Verificado" : "En revisión",
+    },
     { icon: Activity, label: "Transacciones mes", value: movCount.toLocaleString() },
     { icon: User, label: "Antigüedad", value: antiguedad },
-    { icon: TrendingUp, label: "Score de seguridad", value: `${score} / 100`, sub: "Recomendado: 80+" },
+    {
+      icon: TrendingUp,
+      label: "Score de seguridad",
+      value: `${score} / 100`,
+      sub: "Recomendado: 80+",
+    },
   ];
 
   return (
     <>
       <PageHeader
         title="Mi cuenta"
-        description={isPJ
-          ? "Datos del titular, documentacion societaria, facturacion y plan."
-          : "Datos personales, documentacion KYC, facturacion y plan."}
+        description={
+          isPJ
+            ? "Datos del titular, documentacion societaria, facturacion y plan."
+            : "Datos personales, documentacion KYC, facturacion y plan."
+        }
       />
 
       {/* Stats */}
@@ -298,14 +363,43 @@ function Page() {
               <User size={16} /> Informacion del Usuario
             </h3>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div><Label>Nombre</Label><Input value={form.nombre ?? userNombre} onChange={(e) => setF("nombre", e.target.value)} /></div>
-              <div><Label>Apellido</Label><Input value={form.apellido ?? userApellido} onChange={(e) => setF("apellido", e.target.value)} /></div>
-              <div><Label>Email</Label><Input value={userEmail} readOnly /></div>
+              <div>
+                <Label>Nombre</Label>
+                <Input
+                  value={form.nombre ?? userNombre}
+                  onChange={(e) => setF("nombre", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Apellido</Label>
+                <Input
+                  value={form.apellido ?? userApellido}
+                  onChange={(e) => setF("apellido", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input value={userEmail} readOnly />
+              </div>
               <div>
                 <Label>Estado</Label>
                 <div className="pt-1.5 flex flex-col gap-1">
-                  <Badge tone={estadoNorm === "activado" ? "success" : estadoNorm === "suspendido" || estadoNorm === "eliminado" ? "danger" : estadoNorm === "deshabilitado" ? "neutral" : "warn"}>{estadoLabel}</Badge>
-                  <span className="text-[10px] text-muted-foreground">{siguientePasoOnboarding(estadoNorm)}</span>
+                  <Badge
+                    tone={
+                      estadoNorm === "activado"
+                        ? "success"
+                        : estadoNorm === "suspendido" || estadoNorm === "eliminado"
+                          ? "danger"
+                          : estadoNorm === "deshabilitado"
+                            ? "neutral"
+                            : "warn"
+                    }
+                  >
+                    {estadoLabel}
+                  </Badge>
+                  <span className="text-[10px] text-muted-foreground">
+                    {siguientePasoOnboarding(estadoNorm)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -314,19 +408,49 @@ function Page() {
               <FileText size={14} /> Datos personales
             </h4>
             <div className="grid sm:grid-cols-2 gap-4">
-              <div><Label>CUIL / CUIT</Label><Input value={form.cuit_cuil ?? dp.cuitCuil} onChange={(e) => setF("cuit_cuil", e.target.value)} /></div>
-              <div><Label>DNI</Label><Input defaultValue={isPJ ? "30.123.456" : "32.123.456"} /></div>
+              <div>
+                <Label>CUIL / CUIT</Label>
+                <Input
+                  value={form.cuit_cuil ?? dp.cuitCuil}
+                  onChange={(e) => setF("cuit_cuil", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>DNI</Label>
+                <Input defaultValue={isPJ ? "30.123.456" : "32.123.456"} />
+              </div>
               <div>
                 <Label>Genero</Label>
-                <select className="w-full h-10 px-3 rounded-md border bg-card text-sm" value={form.genero ?? dp.genero} onChange={(e) => setF("genero", e.target.value)}>
+                <select
+                  className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+                  value={form.genero ?? dp.genero}
+                  onChange={(e) => setF("genero", e.target.value)}
+                >
                   <option>{form.genero ?? dp.genero}</option>
                 </select>
               </div>
-              <div><Label>Nacimiento</Label><Input type="date" value={form.fecha_nacimiento ?? userNac} onChange={(e) => setF("fecha_nacimiento", e.target.value)} /></div>
-              <div><Label>Ocupacion</Label><Input value={form.ocupacion ?? dp.ocupacion} onChange={(e) => setF("ocupacion", e.target.value)} /></div>
+              <div>
+                <Label>Nacimiento</Label>
+                <Input
+                  type="date"
+                  value={form.fecha_nacimiento ?? userNac}
+                  onChange={(e) => setF("fecha_nacimiento", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Ocupacion</Label>
+                <Input
+                  value={form.ocupacion ?? dp.ocupacion}
+                  onChange={(e) => setF("ocupacion", e.target.value)}
+                />
+              </div>
               <div>
                 <Label>Fuente de Fondos</Label>
-                <select className="w-full h-10 px-3 rounded-md border bg-card text-sm" value={form.origen_fondos ?? dp.origenFondos} onChange={(e) => setF("origen_fondos", e.target.value)}>
+                <select
+                  className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+                  value={form.origen_fondos ?? dp.origenFondos}
+                  onChange={(e) => setF("origen_fondos", e.target.value)}
+                >
                   <option>{form.origen_fondos ?? dp.origenFondos}</option>
                 </select>
               </div>
@@ -336,8 +460,15 @@ function Page() {
               </div>
             </div>
             <div className="flex gap-2 justify-end mt-4">
-              <BtnOutline disabled={saving} onClick={() => cliente && setForm(clienteToForm(cliente))}>Cancelar</BtnOutline>
-              <BtnPrimary disabled={saving} onClick={guardar}>{saving ? "Guardando…" : "Guardar cambios"}</BtnPrimary>
+              <BtnOutline
+                disabled={saving}
+                onClick={() => cliente && setForm(clienteToForm(cliente))}
+              >
+                Cancelar
+              </BtnOutline>
+              <BtnPrimary disabled={saving} onClick={guardar}>
+                {saving ? "Guardando…" : "Guardar cambios"}
+              </BtnPrimary>
             </div>
           </Card>
 
@@ -349,14 +480,39 @@ function Page() {
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="sm:col-span-2">
                 <Label>Direccion</Label>
-                <Input value={form.direccion ?? dir.direccion} onChange={(e) => setF("direccion", e.target.value)} />
+                <Input
+                  value={form.direccion ?? dir.direccion}
+                  onChange={(e) => setF("direccion", e.target.value)}
+                />
               </div>
-              <div><Label>Ciudad</Label><Input value={form.ciudad ?? dir.ciudad} onChange={(e) => setF("ciudad", e.target.value)} /></div>
-              <div><Label>Provincia</Label><Input value={form.provincia ?? dir.provincia} onChange={(e) => setF("provincia", e.target.value)} /></div>
-              <div><Label>Codigo Postal</Label><Input value={form.cp ?? dir.cp} onChange={(e) => setF("cp", e.target.value)} /></div>
+              <div>
+                <Label>Ciudad</Label>
+                <Input
+                  value={form.ciudad ?? dir.ciudad}
+                  onChange={(e) => setF("ciudad", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Provincia</Label>
+                <Input
+                  value={form.provincia ?? dir.provincia}
+                  onChange={(e) => setF("provincia", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Codigo Postal</Label>
+                <Input value={form.cp ?? dir.cp} onChange={(e) => setF("cp", e.target.value)} />
+              </div>
               <div className="sm:col-span-2 flex gap-2 justify-end">
-                <BtnOutline disabled={saving} onClick={() => cliente && setForm(clienteToForm(cliente))}>Cancelar</BtnOutline>
-                <BtnPrimary disabled={saving} onClick={guardar}>{saving ? "Guardando…" : "Guardar cambios"}</BtnPrimary>
+                <BtnOutline
+                  disabled={saving}
+                  onClick={() => cliente && setForm(clienteToForm(cliente))}
+                >
+                  Cancelar
+                </BtnOutline>
+                <BtnPrimary disabled={saving} onClick={guardar}>
+                  {saving ? "Guardando…" : "Guardar cambios"}
+                </BtnPrimary>
               </div>
             </div>
           </Card>
@@ -368,21 +524,69 @@ function Page() {
                 <Building2 size={16} /> Informacion de la Empresa
               </h3>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div><Label>Nombre Legal</Label><Input value={form.nombreLegal ?? empresaInfo.nombreLegal} onChange={(e) => setF("nombreLegal", e.target.value)} /></div>
-                <div><Label>Nombre Comercial</Label><Input value={form.nombreFantasia ?? empresaInfo.nombreFantasia} onChange={(e) => setF("nombreFantasia", e.target.value)} /></div>
-                <div><Label>CUIT</Label><Input value={form.cuit ?? empresaInfo.cuit} onChange={(e) => setF("cuit", e.target.value)} /></div>
+                <div>
+                  <Label>Nombre Legal</Label>
+                  <Input
+                    value={form.nombreLegal ?? empresaInfo.nombreLegal}
+                    onChange={(e) => setF("nombreLegal", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Nombre Comercial</Label>
+                  <Input
+                    value={form.nombreFantasia ?? empresaInfo.nombreFantasia}
+                    onChange={(e) => setF("nombreFantasia", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>CUIT</Label>
+                  <Input
+                    value={form.cuit ?? empresaInfo.cuit}
+                    onChange={(e) => setF("cuit", e.target.value)}
+                  />
+                </div>
                 <div>
                   <Label>Tipo de sociedad</Label>
-                  <select className="w-full h-10 px-3 rounded-md border bg-card text-sm" value={form.tipo_sociedad ?? empresaInfo.tipoId} onChange={(e) => setF("tipo_sociedad", e.target.value)}>
+                  <select
+                    className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+                    value={form.tipo_sociedad ?? empresaInfo.tipoId}
+                    onChange={(e) => setF("tipo_sociedad", e.target.value)}
+                  >
                     <option>{form.tipo_sociedad ?? empresaInfo.tipoId}</option>
                   </select>
                 </div>
-                <div><Label>Actividad principal</Label><Input value={form.actividad ?? "Servicios financieros"} onChange={(e) => setF("actividad", e.target.value)} /></div>
-                <div><Label>Fecha de inscripcion</Label><Input type="date" value={form.fecha_inscripcion ?? empresaInfo.fechaInscripcion} onChange={(e) => setF("fecha_inscripcion", e.target.value)} /></div>
-                <div><Label>Telefono</Label><Input value={form.telefono ?? ""} onChange={(e) => setF("telefono", e.target.value)} /></div>
+                <div>
+                  <Label>Actividad principal</Label>
+                  <Input
+                    value={form.actividad ?? "Servicios financieros"}
+                    onChange={(e) => setF("actividad", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Fecha de inscripcion</Label>
+                  <Input
+                    type="date"
+                    value={form.fecha_inscripcion ?? empresaInfo.fechaInscripcion}
+                    onChange={(e) => setF("fecha_inscripcion", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Telefono</Label>
+                  <Input
+                    value={form.telefono ?? ""}
+                    onChange={(e) => setF("telefono", e.target.value)}
+                  />
+                </div>
                 <div className="sm:col-span-2 flex gap-2 justify-end">
-                  <BtnOutline disabled={saving} onClick={() => cliente && setForm(clienteToForm(cliente))}>Cancelar</BtnOutline>
-                  <BtnPrimary disabled={saving} onClick={guardar}>{saving ? "Guardando…" : "Guardar cambios"}</BtnPrimary>
+                  <BtnOutline
+                    disabled={saving}
+                    onClick={() => cliente && setForm(clienteToForm(cliente))}
+                  >
+                    Cancelar
+                  </BtnOutline>
+                  <BtnPrimary disabled={saving} onClick={guardar}>
+                    {saving ? "Guardando…" : "Guardar cambios"}
+                  </BtnPrimary>
                 </div>
               </div>
             </Card>
@@ -396,7 +600,9 @@ function Page() {
             {loadingDocs ? (
               <p className="text-sm text-muted-foreground">Cargando documentos…</p>
             ) : kycDocs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aun no cargaste documentos en tu onboarding.</p>
+              <p className="text-sm text-muted-foreground">
+                Aun no cargaste documentos en tu onboarding.
+              </p>
             ) : (
               <div className="divide-y">
                 {kycDocs.map((d) => (
@@ -405,12 +611,18 @@ function Page() {
                       <CheckCircle2 size={16} className="text-emerald-600" />
                       <div>
                         <div className="text-sm font-semibold">{d.tipo}</div>
-                        <div className="text-xs text-muted-foreground">Subido el {fmtFechaDoc(d.date)}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Subido el {fmtFechaDoc(d.date)}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <BtnOutline className="h-9 px-2.5 text-xs" onClick={() => setDocPreview(d)}><Eye size={13} /></BtnOutline>
-                      <BtnOutline className="h-9 px-3 text-xs"><Upload size={12} /> Reemplazar</BtnOutline>
+                      <BtnOutline className="h-9 px-2.5 text-xs" onClick={() => setDocPreview(d)}>
+                        <Eye size={13} />
+                      </BtnOutline>
+                      <BtnOutline className="h-9 px-3 text-xs">
+                        <Upload size={12} /> Reemplazar
+                      </BtnOutline>
                     </div>
                   </div>
                 ))}
@@ -450,10 +662,15 @@ function Page() {
             <div className="mt-4">
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-muted-foreground">Consumo del mes</span>
-                <span className="font-semibold">{plan.used.toLocaleString()} / {plan.total.toLocaleString()}</span>
+                <span className="font-semibold">
+                  {plan.used.toLocaleString()} / {plan.total.toLocaleString()}
+                </span>
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
-                <div className="h-full bg-primary rounded-full" style={{ width: `${(plan.used / plan.total) * 100}%` }} />
+                <div
+                  className="h-full bg-primary rounded-full"
+                  style={{ width: `${(plan.used / plan.total) * 100}%` }}
+                />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
@@ -507,12 +724,18 @@ function Page() {
               <h3 className="font-semibold text-sm mb-3">Representantes legales</h3>
               <div className="space-y-3 text-sm">
                 <div>
-                  <div className="font-semibold">{userNombre} {userApellido}</div>
-                  <div className="text-xs text-muted-foreground">{dp.cuitCuil} &middot; Presidenta</div>
+                  <div className="font-semibold">
+                    {userNombre} {userApellido}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {dp.cuitCuil} &middot; Presidenta
+                  </div>
                 </div>
                 <div>
                   <div className="font-semibold">Diego Mendez</div>
-                  <div className="text-xs text-muted-foreground">20-29888777-3 &middot; Apoderado</div>
+                  <div className="text-xs text-muted-foreground">
+                    20-29888777-3 &middot; Apoderado
+                  </div>
                 </div>
               </div>
             </Card>
@@ -558,7 +781,9 @@ function Page() {
           <div className="relative bg-card rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl">
             <div className="sticky top-0 bg-card border-b px-6 py-4 flex justify-between items-center z-10">
               <div className="font-semibold">Vista previa &mdash; Constancia de CBU</div>
-              <BtnOutline className="h-8 px-3 text-xs" onClick={() => setCbuPreview(false)}>Cerrar</BtnOutline>
+              <BtnOutline className="h-8 px-3 text-xs" onClick={() => setCbuPreview(false)}>
+                Cerrar
+              </BtnOutline>
             </div>
             <div className="p-8 space-y-5">
               <div className="flex items-center justify-between border-b pb-4">
@@ -575,7 +800,9 @@ function Page() {
               <Card className="bg-muted/30">
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between gap-3">
-                    <span className="text-muted-foreground">{isPJ ? "Razon social" : "Titular"}</span>
+                    <span className="text-muted-foreground">
+                      {isPJ ? "Razon social" : "Titular"}
+                    </span>
                     <span className="font-semibold text-right">
                       {isPJ ? empresaInfo.nombreLegal : `${userNombre} ${userApellido}`}
                     </span>
@@ -595,11 +822,20 @@ function Page() {
                 </div>
               </Card>
               <div className="text-[11px] text-muted-foreground border-t pt-3">
-                Documento firmado digitalmente por {brand.company.legalName}. Valido como constancia oficial de cuenta.
+                Documento firmado digitalmente por {brand.company.legalName}. Valido como constancia
+                oficial de cuenta.
               </div>
               <div className="flex gap-2 pt-1">
-                <BtnOutline className="flex-1" onClick={() => setCbuPreview(false)}>Cancelar</BtnOutline>
-                <BtnPrimary className="flex-1" onClick={() => { setCbuPreview(false); toast.success("Constancia de CBU descargada"); }}>
+                <BtnOutline className="flex-1" onClick={() => setCbuPreview(false)}>
+                  Cancelar
+                </BtnOutline>
+                <BtnPrimary
+                  className="flex-1"
+                  onClick={() => {
+                    setCbuPreview(false);
+                    toast.success("Constancia de CBU descargada");
+                  }}
+                >
                   <Download size={14} /> Descargar PDF
                 </BtnPrimary>
               </div>

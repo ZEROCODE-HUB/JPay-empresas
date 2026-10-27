@@ -1,9 +1,11 @@
 # CONTRATO_DATOS.md — Estado confirmado del esquema (JPay, staging)
+
 Generado tras correr completo el runbook de backend. Esta es la fuente de verdad para los Prompts A (admin) y B (empresas). Si el código de cualquiera de las dos apps contradice esto, **el código se ajusta al contrato**, no al revés.
 
 ## ✅ Aplicado y confirmado
 
 ### Vistas y tablas nuevas
+
 - `public.v_lotes_venta` (vista): agregación de `movimientos` por `comercio_id, bandera, fecha` — representa el "lote de venta", independiente de `lotes_acreditacion`.
 - `public.parametros_globales (clave PK, valor, descripcion, updated_at)`: contiene la fila `comision_cierre_lote_pct = 0.45`. Editable con `UPDATE`, sin migración.
 - `public.banderas (id, nombre UNIQUE, dias_habiles_acreditacion, estado)`: catálogo de banderas. Cargado con Amex (30 días), Mastercard (20), Visa (20).
@@ -12,6 +14,7 @@ Generado tras correr completo el runbook de backend. Esta es la fuente de verdad
 - `public.roles`: nueva fila `administrador_maestro`, con permiso `puede_leer/crear/modificar = true`, `puede_borrar = false` sobre el recurso `adelantos`.
 
 ### Columnas nuevas en tablas existentes
+
 - `comercios.ejecutivo_responsable_id uuid REFERENCES admin_users(id)` — sin asignar todavía en ningún comercio.
 - `impuestos.ambito text DEFAULT 'Externo' CHECK (Interno|Externo)`, `impuestos.periodicidad_dias integer`.
 - `dc_excepciones.archivo_certificado text`, `dc_excepciones.impuesto_id uuid REFERENCES impuestos(id)`.
@@ -19,9 +22,11 @@ Generado tras correr completo el runbook de backend. Esta es la fuente de verdad
 - `lotes_acreditacion.comision_cierre_lote_pct numeric(7,4)`, `comision_cierre_lote_monto numeric(14,2)` — **snapshot por lote**, no se auto-completan; `admin` debe calcularlos leyendo `parametros_globales` al crear/recalcular un lote.
 
 ### Automatizaciones
+
 - Job `reactivar_excepciones_vencidas` agendado vía `pg_cron`, corre diario 3 AM, desactiva excepciones con `vigencia_hasta < CURRENT_DATE`.
 
 ### Verificación del workaround de `ambito`
+
 No había impuestos con el prefijo `[Interno]`/`[Externo]` en `descripcion` — no hizo falta migración de datos. El workaround del frontend (`isAmbitoColumnError`, `persistAmbitoLocal`, localStorage) **debe eliminarse igual** en el Prompt A, aunque no haya datos que migrar, porque ya existe la columna real.
 
 ## ✅ Decisiones de negocio — RESUELTAS
@@ -37,5 +42,6 @@ No había impuestos con el prefijo `[Interno]`/`[Externo]` en `descripcion` — 
 **RPC `ingresar_adelanto`** — no se creó vía SQL manual a propósito, porque tiene una pieza de lógica de aplicación (resolver `comercio_id` desde el usuario autenticado vía `auth.uid() → clientes → comercios`) que no debe completarse a ciegas. Se confirmó que no existía previamente (`SELECT proname FROM pg_proc WHERE proname ILIKE '%adelanto%'` no devolvió filas). **Este es un entregable del Prompt B (empresas)**, idealmente con ayuda puntual de una IA de código que revise cómo `empresas` resuelve hoy el comercio del usuario logueado en otras partes del código, para no inventar un criterio nuevo.
 
 ## Resumen para los Prompts A y B
+
 - Todo lo de "✅ Aplicado y confirmado" y "✅ Decisiones — RESUELTAS" ya está en staging: implementar directo, sin condicionales.
 - Todo lo de "⏸ Pendiente" no se toca todavía en este ciclo de trabajo, salvo el RPC de adelantos que es tarea explícita del Prompt B.

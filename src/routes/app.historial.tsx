@@ -3,8 +3,18 @@ import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
 import { useState, useEffect, useCallback } from "react";
 import {
-  Download, Filter, FileText, ArrowDownLeft, ArrowUpRight,
-  ChevronRight, ChevronDown, Wallet, X, Eye, FileSpreadsheet, Share2,
+  Download,
+  Filter,
+  FileText,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ChevronRight,
+  ChevronDown,
+  Wallet,
+  X,
+  Eye,
+  FileSpreadsheet,
+  Share2,
 } from "lucide-react";
 import { PageHeader, Card, Input, BtnOutline, BtnPrimary, Badge } from "@/components/portal-shell";
 import { toast } from "sonner";
@@ -20,7 +30,8 @@ import "jspdf-autotable";
 // `?subcuenta=<nombre>` llega desde Subcuentas ("Ver historial") y preselecciona el filtro.
 export const Route = createFileRoute("/app/historial")({
   validateSearch: (search: Record<string, unknown>): { subcuenta?: string } => ({
-    subcuenta: typeof search.subcuenta === "string" && search.subcuenta ? search.subcuenta : undefined,
+    subcuenta:
+      typeof search.subcuenta === "string" && search.subcuenta ? search.subcuenta : undefined,
   }),
   component: Page,
 });
@@ -32,10 +43,23 @@ const formatFecha = (f: string | null) => {
   if (!f) return "—";
   const d = new Date(f);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleString("es-AR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
-type Categoria = "Ingresos" | "Egresos" | "Transferencias" | "Comisiones" | "Cobros con Tarjeta" | "Pagos con QR" | "Cobros con QR";
+type Categoria =
+  | "Ingresos"
+  | "Egresos"
+  | "Transferencias"
+  | "Comisiones"
+  | "Cobros con Tarjeta"
+  | "Pagos con QR"
+  | "Cobros con QR";
 
 type Mov = {
   txid: string;
@@ -121,7 +145,9 @@ function estadoVisible(nombreOCodigo: string | null | undefined): Mov["estado"] 
 }
 
 function mapMov(r: MovRow): Mov {
-  const tipo = /cobro|deposito|ingreso|liquidacion|acreditacion|adelanto/.test(r.tipo) ? "ingreso" : "egreso";
+  const tipo = /cobro|deposito|ingreso|liquidacion|acreditacion|adelanto/.test(r.tipo)
+    ? "ingreso"
+    : "egreso";
   const categoria = prettyTipo(r.tipo);
   const estado = estadoVisible(r.estado_nombre ?? r.estado_codigo);
   return {
@@ -146,10 +172,10 @@ function mapMov(r: MovRow): Mov {
     senderName: tipo === "ingreso" ? r.legajo : brand.name,
     senderCuit: "—",
     senderCbu: r.cvu ?? "—",
-    receiverName: tipo === "ingreso" ? brand.name : r.destinatario_nombre ?? "",
-    receiverCuit: tipo === "ingreso" ? "—" : r.destinatario_cuit ?? "",
+    receiverName: tipo === "ingreso" ? brand.name : (r.destinatario_nombre ?? ""),
+    receiverCuit: tipo === "ingreso" ? "—" : (r.destinatario_cuit ?? ""),
     receiverCbu: r.cvu ?? "—",
-    receiverBanco: tipo === "ingreso" ? "" : r.destinatario_banco ?? "",
+    receiverBanco: tipo === "ingreso" ? "" : (r.destinatario_banco ?? ""),
     // Mismo dato sin importar el sentido: el comprobante lo usa para la contraparte.
     contraparteNombre: r.destinatario_nombre ?? "",
     contraparteCuit: r.destinatario_cuit ?? "",
@@ -165,7 +191,10 @@ function mapMov(r: MovRow): Mov {
  * transferencia (nombre y CUIT del destinatario) no se guarda en `movimientos`,
  * así que va vacía — nunca se inventa.
  */
-function comprobanteDeMov(m: Mov, cliente: { nombre: string; cuit: string; cbu: string }): DatosComprobante {
+function comprobanteDeMov(
+  m: Mov,
+  cliente: { nombre: string; cuit: string; cbu: string },
+): DatosComprobante {
   const esEgreso = m.tipo === "egreso";
   // La cuenta propia sale del movimiento (migracion 1020); si es viejo y no la
   // tiene, se usa el CBU del cliente que se pudo resolver.
@@ -285,7 +314,9 @@ function Page() {
   const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
 
   const [lineas, setLineas] = useState<Linea[]>([]);
-  const [subcuentas, setSubcuentas] = useState<{ id: string; nombre: string; cbu: string | null }[]>([]);
+  const [subcuentas, setSubcuentas] = useState<
+    { id: string; nombre: string; cbu: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [sinSubcuentas, setSinSubcuentas] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
@@ -298,7 +329,9 @@ function Page() {
     setLoading(true);
     try {
       const sb = requireSupabase();
-      const { data: { user } } = await sb.auth.getUser();
+      const {
+        data: { user },
+      } = await sb.auth.getUser();
       const { data: cli } = await sb
         .from("clientes")
         .select("legajo, tipo_persona, nombre, cuit, cuit_cuil, correo")
@@ -320,7 +353,11 @@ function Page() {
         .select("id, nombre, cbu")
         .eq("cliente_legajo", legajo)
         .order("nombre", { ascending: true });
-      const lista = (subs ?? []).map((s: any) => ({ id: s.id as string, nombre: s.nombre || "Sin nombre", cbu: s.cbu ?? null }));
+      const lista = (subs ?? []).map((s: any) => ({
+        id: s.id as string,
+        nombre: s.nombre || "Sin nombre",
+        cbu: s.cbu ?? null,
+      }));
       setSubcuentas(lista);
       setSinSubcuentas(lista.length === 0);
       // CBU para el comprobante: si el cliente tiene una sola cuenta (o todas con
@@ -343,7 +380,8 @@ function Page() {
       if (hasta) q = q.lte("fecha", new Date(hasta + "T23:59:59").toISOString());
 
       const tipos = OPERACIONES.find((o) => o.k === categoria)?.tipos ?? null;
-      if (tipos) q = tipos.length === 1 ? q.eq("tipo_operacion", tipos[0]) : q.in("tipo_operacion", tipos);
+      if (tipos)
+        q = tipos.length === 1 ? q.eq("tipo_operacion", tipos[0]) : q.in("tipo_operacion", tipos);
       if (tipoLinea !== "Todos") q = q.eq("tipo_linea", tipoLinea);
 
       if (subFiltro !== "Todas") {
@@ -351,7 +389,8 @@ function Page() {
         if (match) q = q.eq("subaccount_id", match.id);
       }
 
-      if (buscarCbu.trim()) q = q.or(`cvu.ilike.${like(buscarCbu)},cvu_propio.ilike.${like(buscarCbu)}`);
+      if (buscarCbu.trim())
+        q = q.or(`cvu.ilike.${like(buscarCbu)},cvu_propio.ilike.${like(buscarCbu)}`);
       if (buscarTxid.trim()) q = q.ilike("id_txn", like(buscarTxid));
       if (buscarTitular.trim()) q = q.ilike("nombre_destino", like(buscarTitular));
       const cuitDigitos = buscarCuit.replace(/\D/g, "");
@@ -392,13 +431,39 @@ function Page() {
     } finally {
       setLoading(false);
     }
-  }, [page, desde, hasta, categoria, tipoLinea, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular, sub]);
+  }, [
+    page,
+    desde,
+    hasta,
+    categoria,
+    tipoLinea,
+    subFiltro,
+    buscarCbu,
+    buscarCuit,
+    buscarTxid,
+    buscarTitular,
+    sub,
+  ]);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
-  useEffect(() => { setPage(1); }, [desde, hasta, categoria, tipoLinea, subFiltro, buscarCbu, buscarCuit, buscarTxid, buscarTitular]);
+  useEffect(() => {
+    setPage(1);
+  }, [
+    desde,
+    hasta,
+    categoria,
+    tipoLinea,
+    subFiltro,
+    buscarCbu,
+    buscarCuit,
+    buscarTxid,
+    buscarTitular,
+  ]);
 
   // Agrupacion por TXID dentro de la pagina: la primera linea de cada operacion
   // encabeza el grupo y el resto (comision, impuesto, ...) se despliega.
@@ -411,7 +476,8 @@ function Page() {
       const esCabeza = !vistos.has(l.idTxn);
       vistos.add(l.idTxn);
       if (!agrupar) out.push({ ...l, esCabeza: false, hijas: 0 });
-      else if (esCabeza) out.push({ ...l, esCabeza: true, hijas: (cantidad.get(l.idTxn) ?? 1) - 1 });
+      else if (esCabeza)
+        out.push({ ...l, esCabeza: true, hijas: (cantidad.get(l.idTxn) ?? 1) - 1 });
       else if (abiertos.has(l.idTxn)) out.push({ ...l, esCabeza: false, hijas: 0 });
     }
     return out;
@@ -436,7 +502,11 @@ function Page() {
   const cargarOperacion = async (l: Linea): Promise<Mov | null> => {
     try {
       const sb = requireSupabase();
-      const { data: m, error } = await sb.from("transactions").select(COLS_OPERACION).eq("id", l.transactionId).maybeSingle();
+      const { data: m, error } = await sb
+        .from("transactions")
+        .select(COLS_OPERACION)
+        .eq("id", l.transactionId)
+        .maybeSingle();
       if (error || !m) throw error ?? new Error("no encontrada");
       const r = m as any;
       return mapMov({
@@ -470,22 +540,34 @@ function Page() {
   const descargarComprobante = async (l: Linea) => {
     const m = await cargarOperacion(l);
     if (!m) return;
-    descargarComprobantePdf(comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+    descargarComprobantePdf(
+      comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }),
+    );
     toast.success("Comprobante descargado");
   };
 
   const compartir = async (l: Linea) => {
     const m = await cargarOperacion(l);
     if (!m) return;
-    const res = await compartirComprobante(comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+    const res = await compartirComprobante(
+      comprobanteDeMov(m, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }),
+    );
     if (res === "compartido") toast.success("Comprobante compartido");
-    else if (res === "descargado") toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
+    else if (res === "descargado")
+      toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
     else if (res === "error") toast.error("No se pudo compartir el comprobante");
   };
 
   function limpiarFiltros() {
-    setDesde(""); setHasta(""); setCategoria("Todas"); setTipoLinea("Todos"); setSubFiltro("Todas");
-    setBuscarCbu(""); setBuscarCuit(""); setBuscarTxid(""); setBuscarTitular("");
+    setDesde("");
+    setHasta("");
+    setCategoria("Todas");
+    setTipoLinea("Todos");
+    setSubFiltro("Todas");
+    setBuscarCbu("");
+    setBuscarCuit("");
+    setBuscarTxid("");
+    setBuscarTitular("");
   }
 
   const exportExcel = () => {
@@ -535,15 +617,28 @@ function Page() {
     (doc as any).autoTable({
       startY: 34,
       head: [["Ingresos", "Egresos", "Neto", "Pendientes/Rechazados"]],
-      body: [[formatARS(totalIngresos), formatARS(totalEgresos), formatARS(totalIngresos - totalEgresos), String(totalPendientes)]],
+      body: [
+        [
+          formatARS(totalIngresos),
+          formatARS(totalEgresos),
+          formatARS(totalIngresos - totalEgresos),
+          String(totalPendientes),
+        ],
+      ],
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (doc as any).autoTable({
       startY: 52,
       head: [["TXID", "Fecha", "Tipo", "Operacion", "Nombre destino", "CUIT", "Monto", "Estado"]],
       body: lineas.map((l) => [
-        l.idTxn, formatFechaLinea(l.fecha), TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea, prettyTipo(l.tipoOperacion),
-        l.nombreDestino ?? "-", l.cuit ?? "-", l.monto.toFixed(2), l.estado,
+        l.idTxn,
+        formatFechaLinea(l.fecha),
+        TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea,
+        prettyTipo(l.tipoOperacion),
+        l.nombreDestino ?? "-",
+        l.cuit ?? "-",
+        l.monto.toFixed(2),
+        l.estado,
       ]),
       styles: { fontSize: 7 },
     });
@@ -558,8 +653,12 @@ function Page() {
         description="Auditoria completa de movimientos con filtros, exportacion y detalle de transacciones."
         action={
           <div className="flex gap-2">
-            <BtnOutline onClick={exportExcel}><FileSpreadsheet size={14} /> Excel</BtnOutline>
-            <BtnPrimary onClick={exportPDF}><Download size={14} /> PDF</BtnPrimary>
+            <BtnOutline onClick={exportExcel}>
+              <FileSpreadsheet size={14} /> Excel
+            </BtnOutline>
+            <BtnPrimary onClick={exportPDF}>
+              <Download size={14} /> PDF
+            </BtnPrimary>
           </div>
         }
       />
@@ -572,7 +671,12 @@ function Page() {
             <span className="font-semibold">Vista:</span>
           </div>
           <div className="flex gap-1.5">
-            {([["principal", "Cuenta principal"], ["sub", "Por subcuenta"]] as const).map(([k, l]) => (
+            {(
+              [
+                ["principal", "Cuenta principal"],
+                ["sub", "Por subcuenta"],
+              ] as const
+            ).map(([k, l]) => (
               <button
                 key={k}
                 onClick={() => setVista(k)}
@@ -586,17 +690,26 @@ function Page() {
               </button>
             ))}
           </div>
-          {vista === "sub" && (
-            sinSubcuentas ? (
+          {vista === "sub" &&
+            (sinSubcuentas ? (
               <span className="text-xs text-muted-foreground">Sin subcuentas asociadas</span>
             ) : (
-              <select value={sub} onChange={(e) => setSub(e.target.value)} className="h-9 px-3 rounded-md border bg-card text-sm">
-                {subcuentas.map((s) => <option key={s.nombre}>{s.nombre}</option>)}
+              <select
+                value={sub}
+                onChange={(e) => setSub(e.target.value)}
+                className="h-9 px-3 rounded-md border bg-card text-sm"
+              >
+                {subcuentas.map((s) => (
+                  <option key={s.nombre}>{s.nombre}</option>
+                ))}
               </select>
-            )
-          )}
+            ))}
           <span className="ml-auto text-xs text-muted-foreground">
-            {vista === "principal" ? "Mostrando consolidado de cuenta madre" : (sinSubcuentas ? "Sin subcuentas asociadas" : `Filtrando movimientos de ${sub}`)}
+            {vista === "principal"
+              ? "Mostrando consolidado de cuenta madre"
+              : sinSubcuentas
+                ? "Sin subcuentas asociadas"
+                : `Filtrando movimientos de ${sub}`}
           </span>
         </div>
       </Card>
@@ -605,24 +718,39 @@ function Page() {
       <div className="grid md:grid-cols-4 gap-5 mb-6">
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Ingresos del periodo</div>
-          <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">{formatARS(totalIngresos)}</div>
-          <div className="text-xs text-muted-foreground mt-1">{lineas.filter((l) => l.monto > 0).length} líneas</div>
+          <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
+            {formatARS(totalIngresos)}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {lineas.filter((l) => l.monto > 0).length} líneas
+          </div>
         </Card>
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Egresos del periodo</div>
-          <div className="text-xl md:text-2xl font-bold text-foreground">{formatARS(totalEgresos)}</div>
-          <div className="text-xs text-muted-foreground mt-1">{lineas.filter((l) => l.monto < 0).length} líneas (incluye comisiones e impuestos)</div>
+          <div className="text-xl md:text-2xl font-bold text-foreground">
+            {formatARS(totalEgresos)}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {lineas.filter((l) => l.monto < 0).length} líneas (incluye comisiones e impuestos)
+          </div>
         </Card>
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Neto</div>
-          <div className={`font-display tabular-nums text-xl md:text-2xl font-bold ${totalIngresos - totalEgresos >= 0 ? "text-emerald-700" : "text-danger-600"}`}>
-            {totalIngresos - totalEgresos >= 0 ? "+ " : "- "}{formatARS(Math.abs(totalIngresos - totalEgresos))}
+          <div
+            className={`font-display tabular-nums text-xl md:text-2xl font-bold ${totalIngresos - totalEgresos >= 0 ? "text-emerald-700" : "text-danger-600"}`}
+          >
+            {totalIngresos - totalEgresos >= 0 ? "+ " : "- "}
+            {formatARS(Math.abs(totalIngresos - totalEgresos))}
           </div>
         </Card>
         <Card className="p-5">
           <div className="text-xs text-muted-foreground mb-1">Pendientes / Rechazados</div>
-          <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-foreground">{totalPendientes}</div>
-          <div className="text-xs text-muted-foreground mt-1">{txPendientes.size} pendientes, {txRechazadas.size} rechazadas</div>
+          <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-foreground">
+            {totalPendientes}
+          </div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {txPendientes.size} pendientes, {txRechazadas.size} rechazadas
+          </div>
         </Card>
       </div>
 
@@ -630,56 +758,115 @@ function Page() {
       <Card className="mb-6">
         <div className="flex flex-wrap items-end gap-4 mb-5">
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Fecha de inicio</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+              Fecha de inicio
+            </label>
             <Input type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
           </div>
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Fecha de fin</label>
-            <Input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} min={desde || undefined} />
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+              Fecha de fin
+            </label>
+            <Input
+              type="date"
+              value={hasta}
+              onChange={(e) => setHasta(e.target.value)}
+              min={desde || undefined}
+            />
           </div>
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Tipo de movimiento</label>
-            <select value={tipoLinea} onChange={(e) => setTipoLinea(e.target.value as TipoLinea | "Todos")} className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[150px]">
-              {TIPOS_LINEA.map(({ k, l }) => <option key={k} value={k}>{l}</option>)}
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+              Tipo de movimiento
+            </label>
+            <select
+              value={tipoLinea}
+              onChange={(e) => setTipoLinea(e.target.value as TipoLinea | "Todos")}
+              className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[150px]"
+            >
+              {TIPOS_LINEA.map(({ k, l }) => (
+                <option key={k} value={k}>
+                  {l}
+                </option>
+              ))}
             </select>
           </div>
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Operación</label>
-            <select value={categoria} onChange={(e) => setCategoria(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[170px]">
-              {OPERACIONES.map(({ k, l }) => <option key={k} value={k}>{l}</option>)}
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+              Operación
+            </label>
+            <select
+              value={categoria}
+              onChange={(e) => setCategoria(e.target.value)}
+              className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[170px]"
+            >
+              {OPERACIONES.map(({ k, l }) => (
+                <option key={k} value={k}>
+                  {l}
+                </option>
+              ))}
             </select>
           </div>
           <div className="min-w-0">
-            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">Subcuenta</label>
+            <label className="block text-xs font-semibold text-muted-foreground mb-1.5">
+              Subcuenta
+            </label>
             {sinSubcuentas ? (
-              <span className="inline-flex h-10 items-center text-xs text-muted-foreground">Sin subcuentas asociadas</span>
+              <span className="inline-flex h-10 items-center text-xs text-muted-foreground">
+                Sin subcuentas asociadas
+              </span>
             ) : (
-              <select value={subFiltro} onChange={(e) => setSubFiltro(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[150px]">
+              <select
+                value={subFiltro}
+                onChange={(e) => setSubFiltro(e.target.value)}
+                className="h-10 px-3 rounded-md border bg-card text-sm w-full sm:w-auto sm:min-w-[150px]"
+              >
                 <option value="Todas">Todas</option>
-                {subcuentas.map((s) => <option key={s.nombre}>{s.nombre}</option>)}
+                {subcuentas.map((s) => (
+                  <option key={s.nombre}>{s.nombre}</option>
+                ))}
               </select>
             )}
           </div>
         </div>
 
         <div className="border-t pt-4 mb-4">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Busquedas especificas</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Busquedas especificas
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-xs text-muted-foreground mb-1">CBU / CVU</label>
-              <Input placeholder="Buscar por CBU/CVU..." value={buscarCbu} onChange={(e) => setBuscarCbu(e.target.value)} />
+              <Input
+                placeholder="Buscar por CBU/CVU..."
+                value={buscarCbu}
+                onChange={(e) => setBuscarCbu(e.target.value)}
+              />
             </div>
             <div>
               <label className="block text-xs text-muted-foreground mb-1">CUIT</label>
-              <Input placeholder="Buscar por CUIT..." value={buscarCuit} onChange={(e) => setBuscarCuit(e.target.value)} />
+              <Input
+                placeholder="Buscar por CUIT..."
+                value={buscarCuit}
+                onChange={(e) => setBuscarCuit(e.target.value)}
+              />
             </div>
             <div>
-              <label className="block text-xs text-muted-foreground mb-1">TXID / N° Operacion</label>
-              <Input placeholder="Buscar por TXID..." value={buscarTxid} onChange={(e) => setBuscarTxid(e.target.value)} />
+              <label className="block text-xs text-muted-foreground mb-1">
+                TXID / N° Operacion
+              </label>
+              <Input
+                placeholder="Buscar por TXID..."
+                value={buscarTxid}
+                onChange={(e) => setBuscarTxid(e.target.value)}
+              />
             </div>
             <div>
               <label className="block text-xs text-muted-foreground mb-1">Nombre destino</label>
-              <Input placeholder="Buscar por nombre destino..." value={buscarTitular} onChange={(e) => setBuscarTitular(e.target.value)} />
+              <Input
+                placeholder="Buscar por nombre destino..."
+                value={buscarTitular}
+                onChange={(e) => setBuscarTitular(e.target.value)}
+              />
             </div>
           </div>
         </div>
@@ -688,7 +875,11 @@ function Page() {
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
             <span>{loading ? "Cargando..." : `${totalCount} líneas`}</span>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={agrupar}
+                onChange={(e) => setAgrupar(e.target.checked)}
+              />
               Agrupar desglose por TXID
             </label>
           </div>
@@ -736,93 +927,155 @@ function Page() {
               )}
               {loading && (
                 <tr>
-                  <td colSpan={12} className="text-center py-12 text-sm text-muted-foreground">Cargando movimientos...</td>
+                  <td colSpan={12} className="text-center py-12 text-sm text-muted-foreground">
+                    Cargando movimientos...
+                  </td>
                 </tr>
               )}
-              {!loading && filas.map((l) => {
-                const hija = agrupar && !l.esCabeza;
-                return (
-                  <tr key={`${l.lineId}:${l.lineNo}`} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${hija ? "bg-muted/20" : ""}`}>
-                    <td className="px-4 py-3 text-xs font-mono tabular-nums whitespace-nowrap">{l.legajo}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        type="button"
-                        onClick={() => setBuscarTxid(l.idTxn)}
-                        className="text-xs font-mono text-muted-foreground hover:text-foreground hover:underline underline-offset-2 text-left"
-                        title="Ver todas las líneas de esta operación"
-                      >
-                        {l.idTxn}
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="flex items-center gap-1.5">
-                        {l.esCabeza && l.hijas > 0 ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleGrupo(l.idTxn)}
-                            className="h-5 w-5 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground"
-                            title={abiertos.has(l.idTxn) ? "Ocultar desglose" : `Ver desglose (${l.hijas})`}
+              {!loading &&
+                filas.map((l) => {
+                  const hija = agrupar && !l.esCabeza;
+                  return (
+                    <tr
+                      key={`${l.lineId}:${l.lineNo}`}
+                      className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${hija ? "bg-muted/20" : ""}`}
+                    >
+                      <td className="px-4 py-3 text-xs font-mono tabular-nums whitespace-nowrap">
+                        {l.legajo}
+                      </td>
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setBuscarTxid(l.idTxn)}
+                          className="text-xs font-mono text-muted-foreground hover:text-foreground hover:underline underline-offset-2 text-left"
+                          title="Ver todas las líneas de esta operación"
+                        >
+                          {l.idTxn}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          {l.esCabeza && l.hijas > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => toggleGrupo(l.idTxn)}
+                              className="h-5 w-5 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground"
+                              title={
+                                abiertos.has(l.idTxn)
+                                  ? "Ocultar desglose"
+                                  : `Ver desglose (${l.hijas})`
+                              }
+                            >
+                              {abiertos.has(l.idTxn) ? (
+                                <ChevronDown size={14} />
+                              ) : (
+                                <ChevronRight size={14} />
+                              )}
+                            </button>
+                          ) : (
+                            <span
+                              className={hija ? "w-5 h-5 ml-2 border-l-2 border-muted" : "w-5"}
+                            />
+                          )}
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${TIPO_LINEA_STYLE[l.tipoLinea]}`}
                           >
-                            {abiertos.has(l.idTxn) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                            {TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5 ml-6">
+                          {prettyTipo(l.tipoOperacion)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                        {l.cvu || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[200px]">
+                        {l.email || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm truncate max-w-[180px]">
+                        {l.nombre || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium truncate max-w-[200px]">
+                        {l.nombreDestino || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono text-muted-foreground">
+                        {l.cuit || "-"}
+                      </td>
+                      <td
+                        className={`px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${l.monto >= 0 ? "text-emerald-700" : "text-danger-700"}`}
+                      >
+                        {formatMonto(l.monto)}
+                      </td>
+                      <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">
+                        {formatFechaLinea(l.fecha)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge
+                          tone={
+                            l.estado === "Acreditado"
+                              ? "success"
+                              : l.estado === "Pendiente"
+                                ? "warn"
+                                : "danger"
+                          }
+                        >
+                          {l.estado}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex gap-1.5 justify-end">
+                          <button
+                            title="Ver detalle de la operación"
+                            onClick={() => void verDetalle(l)}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                          >
+                            <Eye size={14} />
                           </button>
-                        ) : (
-                          <span className={hija ? "w-5 h-5 ml-2 border-l-2 border-muted" : "w-5"} />
-                        )}
-                        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${TIPO_LINEA_STYLE[l.tipoLinea]}`}>
-                          {TIPO_LINEA_LABEL.get(l.tipoLinea) ?? l.tipoLinea}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-muted-foreground mt-0.5 ml-6">{prettyTipo(l.tipoOperacion)}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">{l.cvu || "-"}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground truncate max-w-[200px]">{l.email || "-"}</td>
-                    <td className="px-4 py-3 text-sm truncate max-w-[180px]">{l.nombre || "-"}</td>
-                    <td className="px-4 py-3 text-sm font-medium truncate max-w-[200px]">{l.nombreDestino || "-"}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground">{l.cuit || "-"}</td>
-                    <td className={`px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${l.monto >= 0 ? "text-emerald-700" : "text-danger-700"}`}>
-                      {formatMonto(l.monto)}
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">{formatFechaLinea(l.fecha)}</td>
-                    <td className="px-4 py-3">
-                      <Badge tone={l.estado === "Acreditado" ? "success" : l.estado === "Pendiente" ? "warn" : "danger"}>{l.estado}</Badge>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-1.5 justify-end">
-                        <button
-                          title="Ver detalle de la operación"
-                          onClick={() => void verDetalle(l)}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                        >
-                          <Eye size={14} />
-                        </button>
-                        <button
-                          title="Descargar comprobante"
-                          onClick={() => void descargarComprobante(l)}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                        >
-                          <FileText size={14} />
-                        </button>
-                        <button
-                          title="Compartir comprobante"
-                          onClick={() => void compartir(l)}
-                          className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
-                        >
-                          <Share2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
+                          <button
+                            title="Descargar comprobante"
+                            onClick={() => void descargarComprobante(l)}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                          >
+                            <FileText size={14} />
+                          </button>
+                          <button
+                            title="Compartir comprobante"
+                            onClick={() => void compartir(l)}
+                            className="h-8 w-8 inline-flex items-center justify-center rounded-lg border bg-card hover:bg-accent hover:border-primary/40 transition"
+                          >
+                            <Share2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
 
         <div className="flex items-center justify-between px-5 py-4 border-t text-xs text-muted-foreground">
-          <div>{totalCount === 0 ? "0 registros" : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} de ${totalCount}`}</div>
+          <div>
+            {totalCount === 0
+              ? "0 registros"
+              : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, totalCount)} de ${totalCount}`}
+          </div>
           <div className="flex gap-2">
-            <BtnOutline className="h-8 px-4 text-xs" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</BtnOutline>
-            <BtnOutline className="h-8 px-4 text-xs" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Siguiente</BtnOutline>
+            <BtnOutline
+              className="h-8 px-4 text-xs"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              Anterior
+            </BtnOutline>
+            <BtnOutline
+              className="h-8 px-4 text-xs"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              Siguiente
+            </BtnOutline>
           </div>
         </div>
       </Card>
@@ -834,17 +1087,28 @@ function Page() {
           <div className="relative bg-card rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-card border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-xl">
               <div className="font-semibold">Comprobante de transaccion</div>
-              <button onClick={() => setDetalle(null)} className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-accent transition">
+              <button
+                onClick={() => setDetalle(null)}
+                className="h-8 w-8 inline-flex items-center justify-center rounded-lg hover:bg-accent transition"
+              >
                 <X size={16} />
               </button>
             </div>
 
             <div className="p-6 space-y-6">
               <div className="flex items-center gap-4 pb-5 border-b">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
-                  detalle.tipo === "ingreso" ? "bg-emerald-50 text-emerald-600" : "bg-danger-50 text-danger-600"
-                }`}>
-                  {detalle.tipo === "ingreso" ? <ArrowDownLeft size={26} /> : <ArrowUpRight size={26} />}
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                    detalle.tipo === "ingreso"
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-danger-50 text-danger-600"
+                  }`}
+                >
+                  {detalle.tipo === "ingreso" ? (
+                    <ArrowDownLeft size={26} />
+                  ) : (
+                    <ArrowUpRight size={26} />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xl font-bold">
@@ -861,17 +1125,30 @@ function Page() {
               <div className="flex items-end justify-between pb-5 border-b">
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Monto</div>
-                  <div className={`font-display tabular-nums text-2xl font-bold ${detalle.tipo === "ingreso" ? "text-emerald-700" : ""}`}>
+                  <div
+                    className={`font-display tabular-nums text-2xl font-bold ${detalle.tipo === "ingreso" ? "text-emerald-700" : ""}`}
+                  >
                     {detalle.tipo === "ingreso"
                       ? "+ " + formatARS(detalle.monto)
-                      : (detalle.categoria === "Transferencias" || detalle.categoria === "Egresos")
-                        ? "- " + formatARS(detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0))
+                      : detalle.categoria === "Transferencias" || detalle.categoria === "Egresos"
+                        ? "- " +
+                          formatARS(
+                            detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0),
+                          )
                         : "- " + formatARS(detalle.monto)}
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-xs text-muted-foreground mb-1">Estado</div>
-                  <Badge tone={detalle.estado === "Acreditado" ? "success" : detalle.estado === "Pendiente" ? "warn" : "danger"}>
+                  <Badge
+                    tone={
+                      detalle.estado === "Acreditado"
+                        ? "success"
+                        : detalle.estado === "Pendiente"
+                          ? "warn"
+                          : "danger"
+                    }
+                  >
                     {detalle.estado}
                   </Badge>
                 </div>
@@ -885,40 +1162,96 @@ function Page() {
               <div className="pb-5 border-b">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Desde</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Desde
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                  <div><div className="text-xs text-muted-foreground">Nombre</div><div className="font-medium truncate">{detalle.senderName}</div></div>
-                  <div><div className="text-xs text-muted-foreground">CUIT</div><div className="font-mono text-xs">{detalle.senderCuit}</div></div>
-                  <div><div className="text-xs text-muted-foreground">CBU / CVU</div><div className="font-mono text-xs truncate">{detalle.senderCbu}</div></div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Nombre</div>
+                    <div className="font-medium truncate">{detalle.senderName}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">CUIT</div>
+                    <div className="font-mono text-xs">{detalle.senderCuit}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">CBU / CVU</div>
+                    <div className="font-mono text-xs truncate">{detalle.senderCbu}</div>
+                  </div>
                 </div>
               </div>
 
               <div className="pb-5 border-b">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Hacia</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Hacia
+                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
-                  <div><div className="text-xs text-muted-foreground">Nombre</div><div className="font-medium truncate">{detalle.receiverName}</div></div>
-                  <div><div className="text-xs text-muted-foreground">CUIT</div><div className="font-mono text-xs">{detalle.receiverCuit}</div></div>
-                  <div><div className="text-xs text-muted-foreground">CBU / CVU</div><div className="font-mono text-xs truncate">{detalle.receiverCbu}</div></div>
-                  <div><div className="text-xs text-muted-foreground">Banco</div><div className="font-medium truncate">{detalle.receiverBanco || "—"}</div></div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Nombre</div>
+                    <div className="font-medium truncate">{detalle.receiverName}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">CUIT</div>
+                    <div className="font-mono text-xs">{detalle.receiverCuit}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">CBU / CVU</div>
+                    <div className="font-mono text-xs truncate">{detalle.receiverCbu}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Banco</div>
+                    <div className="font-medium truncate">{detalle.receiverBanco || "—"}</div>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm pb-2">
-                <div><div className="text-xs text-muted-foreground">N° de operacion</div><div className="font-medium">{detalle.numeroOp}</div></div>
-                <div><div className="text-xs text-muted-foreground">Referencia</div><div className="font-mono text-xs">{detalle.referencia}</div></div>
-                <div><div className="text-xs text-muted-foreground">Canal de origen</div><div>{detalle.canal}</div></div>
-                <div><div className="text-xs text-muted-foreground">Usuario</div><div>{detalle.usuario}</div></div>
-                <div><div className="text-xs text-muted-foreground">Subcuenta</div><div>{detalle.subcuenta}</div></div>
-                <div><div className="text-xs text-muted-foreground">Categoria</div><div>{detalle.categoria}</div></div>
+                <div>
+                  <div className="text-xs text-muted-foreground">N° de operacion</div>
+                  <div className="font-medium">{detalle.numeroOp}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Referencia</div>
+                  <div className="font-mono text-xs">{detalle.referencia}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Canal de origen</div>
+                  <div>{detalle.canal}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Usuario</div>
+                  <div>{detalle.usuario}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Subcuenta</div>
+                  <div>{detalle.subcuenta}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Categoria</div>
+                  <div>{detalle.categoria}</div>
+                </div>
                 {(detalle.categoria === "Transferencias" || detalle.categoria === "Egresos") && (
                   <>
-                    <div><div className="text-xs text-muted-foreground">Comisión</div><div className="font-mono">{formatARS(detalle.comision)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">IVA</div><div className="font-mono">{formatARS(detalle.impuesto)}</div></div>
-                    <div><div className="text-xs text-muted-foreground">Monto debitado</div><div className="font-mono font-semibold">{formatARS(detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0))}</div></div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Comisión</div>
+                      <div className="font-mono">{formatARS(detalle.comision)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">IVA</div>
+                      <div className="font-mono">{formatARS(detalle.impuesto)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Monto debitado</div>
+                      <div className="font-mono font-semibold">
+                        {formatARS(
+                          detalle.monto + (detalle.comision || 0) + (detalle.impuesto || 0),
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
@@ -927,7 +1260,13 @@ function Page() {
                 <BtnPrimary
                   className="flex-1"
                   onClick={() => {
-                    descargarComprobantePdf(comprobanteDeMov(detalle, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+                    descargarComprobantePdf(
+                      comprobanteDeMov(detalle, {
+                        nombre: clienteNombre,
+                        cuit: clienteCuit,
+                        cbu: clienteCbu,
+                      }),
+                    );
                     toast.success("Comprobante descargado");
                   }}
                 >
@@ -936,10 +1275,18 @@ function Page() {
                 <BtnOutline
                   className="flex-1"
                   onClick={async () => {
-                    const res = await compartirComprobante(comprobanteDeMov(detalle, { nombre: clienteNombre, cuit: clienteCuit, cbu: clienteCbu }));
+                    const res = await compartirComprobante(
+                      comprobanteDeMov(detalle, {
+                        nombre: clienteNombre,
+                        cuit: clienteCuit,
+                        cbu: clienteCbu,
+                      }),
+                    );
                     if (res === "compartido") toast.success("Comprobante compartido");
                     else if (res === "descargado")
-                      toast.info("Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.");
+                      toast.info(
+                        "Tu navegador no comparte archivos: se descargó el comprobante para adjuntarlo.",
+                      );
                     else if (res === "error") toast.error("No se pudo compartir el comprobante");
                   }}
                 >
@@ -958,7 +1305,9 @@ function Page() {
           <div className="relative bg-card rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="sticky top-0 bg-card border-b px-6 py-4 flex justify-between items-center z-10 rounded-t-xl">
               <div className="font-semibold">Vista previa del reporte</div>
-              <BtnOutline className="h-8 px-4 text-xs" onClick={() => setPreview(false)}>Cerrar</BtnOutline>
+              <BtnOutline className="h-8 px-4 text-xs" onClick={() => setPreview(false)}>
+                Cerrar
+              </BtnOutline>
             </div>
             <div className="p-8 space-y-5">
               <div className="flex items-center justify-between border-b pb-5">
@@ -970,24 +1319,56 @@ function Page() {
               </div>
               <h2 className="text-xl font-semibold">Reporte de movimientos</h2>
               <div className="text-sm text-muted-foreground">
-                {vista === "principal" ? "Cuenta principal (consolidado)" : (sinSubcuentas ? "Sin subcuentas asociadas" : `Subcuenta: ${sub}`)}
+                {vista === "principal"
+                  ? "Cuenta principal (consolidado)"
+                  : sinSubcuentas
+                    ? "Sin subcuentas asociadas"
+                    : `Subcuenta: ${sub}`}
                 {categoria !== "Todas" && ` · Categoria: ${categoria}`}
               </div>
               <Card className="bg-muted/30 p-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                  <div><div className="text-xs text-muted-foreground">Ingresos</div><div className="font-display tabular-nums font-semibold">{formatARS(totalIngresos)}</div></div>
-                  <div><div className="text-xs text-muted-foreground">Egresos</div><div className="font-display tabular-nums font-semibold">{formatARS(totalEgresos)}</div></div>
-                  <div><div className="text-xs text-muted-foreground">Neto</div><div className="font-display tabular-nums font-semibold text-emerald-700">{totalIngresos - totalEgresos >= 0 ? "+ " : "- "}{formatARS(Math.abs(totalIngresos - totalEgresos))}</div></div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Ingresos</div>
+                    <div className="font-display tabular-nums font-semibold">
+                      {formatARS(totalIngresos)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Egresos</div>
+                    <div className="font-display tabular-nums font-semibold">
+                      {formatARS(totalEgresos)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Neto</div>
+                    <div className="font-display tabular-nums font-semibold text-emerald-700">
+                      {totalIngresos - totalEgresos >= 0 ? "+ " : "- "}
+                      {formatARS(Math.abs(totalIngresos - totalEgresos))}
+                    </div>
+                  </div>
                 </div>
               </Card>
               <div className="text-xs text-muted-foreground border-t pt-4">
                 Documento firmado digitalmente por {brand.name} · Serie {serie}
               </div>
               <div className="flex gap-3 pt-2">
-                <BtnOutline className="flex-1" onClick={() => { setPreview(false); exportExcel(); }}>
+                <BtnOutline
+                  className="flex-1"
+                  onClick={() => {
+                    setPreview(false);
+                    exportExcel();
+                  }}
+                >
                   <FileSpreadsheet size={14} /> Excel (.xlsx)
                 </BtnOutline>
-                <BtnPrimary className="flex-1" onClick={() => { setPreview(false); exportPDF(); }}>
+                <BtnPrimary
+                  className="flex-1"
+                  onClick={() => {
+                    setPreview(false);
+                    exportPDF();
+                  }}
+                >
                   <Download size={14} /> PDF
                 </BtnPrimary>
               </div>

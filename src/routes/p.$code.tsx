@@ -61,7 +61,12 @@ const LOTE_CATEGORY_TO_METHODS: Record<string, string[]> = {
   QR: ["qr"],
 };
 
-const EXTRA_METHODS: Array<{ id: string; label: string; category: "credit" | "debit" | "other"; enabled: boolean }> = [
+const EXTRA_METHODS: Array<{
+  id: string;
+  label: string;
+  category: "credit" | "debit" | "other";
+  enabled: boolean;
+}> = [
   { id: "transferencia", label: "Transferencia", category: "other", enabled: true },
   { id: "qr", label: "Código QR", category: "other", enabled: true },
 ];
@@ -73,27 +78,27 @@ const EXTRA_METHODS: Array<{ id: string; label: string; category: "credit" | "de
  * UUID de la bandera que corresponde al metodo elegido.
  */
 const BANDERA_TO_METHODS: Record<string, string[]> = {
-  "visa": ["visa-cred", "visa-deb"],
-  "visa_débito": ["visa-deb"],
-  "visa_crédito": ["visa-cred"],
-  "visa_prepaga": ["visa-deb"],
-  "mastercard": ["mc-cred", "mc-deb"],
-  "mastercard_débito": ["mc-deb"],
-  "mastercard_crédito": ["mc-cred"],
-  "mastercard_prepaga": ["mc-deb"],
-  "amex": ["amex"],
-  "american_express": ["amex"],
-  "cabal": ["cabal-cred", "cabal-deb"],
-  "cabal_débito": ["cabal-deb"],
-  "cabal_crédito": ["cabal-cred"],
-  "naranja": ["naranja"],
-  "naranja_x": ["naranja"],
-  "diners": ["diners"],
-  "maestro": ["maestro"],
-  "transferencia": ["transferencia"],
-  "qr": ["qr"],
-  "pago_fácil": ["transferencia"],
-  "rapipago": ["transferencia"],
+  visa: ["visa-cred", "visa-deb"],
+  visa_débito: ["visa-deb"],
+  visa_crédito: ["visa-cred"],
+  visa_prepaga: ["visa-deb"],
+  mastercard: ["mc-cred", "mc-deb"],
+  mastercard_débito: ["mc-deb"],
+  mastercard_crédito: ["mc-cred"],
+  mastercard_prepaga: ["mc-deb"],
+  amex: ["amex"],
+  american_express: ["amex"],
+  cabal: ["cabal-cred", "cabal-deb"],
+  cabal_débito: ["cabal-deb"],
+  cabal_crédito: ["cabal-cred"],
+  naranja: ["naranja"],
+  naranja_x: ["naranja"],
+  diners: ["diners"],
+  maestro: ["maestro"],
+  transferencia: ["transferencia"],
+  qr: ["qr"],
+  pago_fácil: ["transferencia"],
+  rapipago: ["transferencia"],
 };
 
 function variantsDeBandera(flag: string): string[] {
@@ -110,38 +115,51 @@ function expandMethods(raw: string[] | null | undefined): string[] {
 function getMethodIdFromBandera(bandera: string): string {
   const lower = bandera.toLowerCase();
   const BANDERA_TO_METHODS: Record<string, string> = {
-    "visa": "visa-cred",
-    "visa_débito": "visa-deb",
-    "visa_crédito": "visa-cred",
-    "visa_prepaga": "visa-deb",
-    "mastercard": "mc-cred",
-    "mastercard_débito": "mc-deb",
-    "mastercard_crédito": "mc-cred",
-    "mastercard_prepaga": "mc-deb",
-    "amex": "amex",
-    "american_express": "amex",
-    "cabal": "cabal-cred",
-    "cabal_débito": "cabal-deb",
-    "cabal_crédito": "cabal-cred",
-    "naranja": "naranja",
-    "naranja_x": "naranja",
-    "diners": "diners",
-    "maestro": "maestro",
-    "transferencia": "transferencia",
-    "qr": "qr",
-    "pago_fácil": "transferencia",
-    "rapipago": "transferencia",
+    visa: "visa-cred",
+    visa_débito: "visa-deb",
+    visa_crédito: "visa-cred",
+    visa_prepaga: "visa-deb",
+    mastercard: "mc-cred",
+    mastercard_débito: "mc-deb",
+    mastercard_crédito: "mc-cred",
+    mastercard_prepaga: "mc-deb",
+    amex: "amex",
+    american_express: "amex",
+    cabal: "cabal-cred",
+    cabal_débito: "cabal-deb",
+    cabal_crédito: "cabal-cred",
+    naranja: "naranja",
+    naranja_x: "naranja",
+    diners: "diners",
+    maestro: "maestro",
+    transferencia: "transferencia",
+    qr: "qr",
+    pago_fácil: "transferencia",
+    rapipago: "transferencia",
   };
   return BANDERA_TO_METHODS[lower] || BANDERA_TO_METHODS[lower.split("_")[0]] || lower;
 }
 
 function isCardMethod(id: string) {
-  return ["visa-cred", "mc-cred", "amex", "cabal-cred", "naranja", "diners", "visa-deb", "mc-deb", "cabal-deb", "maestro"].includes(id);
+  return [
+    "visa-cred",
+    "mc-cred",
+    "amex",
+    "cabal-cred",
+    "naranja",
+    "diners",
+    "visa-deb",
+    "mc-deb",
+    "cabal-deb",
+    "maestro",
+  ].includes(id);
 }
 
 function Checkout() {
   const { code } = Route.useParams();
-  const [status, setStatus] = useState<"loading" | "ready" | "notfound" | "inactive" | "expired" | "success" | "error">("loading");
+  const [status, setStatus] = useState<
+    "loading" | "ready" | "notfound" | "inactive" | "expired" | "success" | "error"
+  >("loading");
   const [data, setData] = useState<LinkData | null>(null);
   const [method, setMethod] = useState<string>("");
   const [montoPagar, setMontoPagar] = useState<string>("");
@@ -229,7 +247,9 @@ function Checkout() {
             .eq("estado", "Activo");
           console.log("[Checkout] bandas:", bandas);
           setBanderasRows((bandas ?? []) as Array<{ id: string; bandera: string }>);
-          const flags = (bandas ?? []).map((b: { bandera: string }) => b.bandera.toLowerCase().replace(/\s+/g, "_"));
+          const flags = (bandas ?? []).map((b: { bandera: string }) =>
+            b.bandera.toLowerCase().replace(/\s+/g, "_"),
+          );
           console.log("[Checkout] flags:", flags);
           setComercioBanderas(flags);
           if (flags.length > 0) {
@@ -418,7 +438,9 @@ function Checkout() {
         // El SDK de Payway lee la tarjeta del DOM, no de este objeto: necesita
         // el `<form>` con los atributos `data-decidir`.
         cardForm: isCardMethod(method) ? cardFormRef.current : null,
-        ...(documento.trim() ? { documento: { type: "dni" as const, number: documento.trim() } } : {}),
+        ...(documento.trim()
+          ? { documento: { type: "dni" as const, number: documento.trim() } }
+          : {}),
       });
 
       // El monto que se muestra es el que confirmo el backend, no el que se
@@ -484,7 +506,9 @@ function Checkout() {
         monto: mp,
         pagadorNombre: titular.trim() || "Pago simulado",
         pagadorEmail: email.trim(),
-        ...(documento.trim() ? { documento: { type: "dni" as const, number: documento.trim() } } : {}),
+        ...(documento.trim()
+          ? { documento: { type: "dni" as const, number: documento.trim() } }
+          : {}),
       });
 
       setResult({
@@ -528,7 +552,9 @@ function Checkout() {
             <CenterCard>
               <AlertCircle className="text-muted-foreground" size={28} />
               <p className="font-semibold mt-3">Link no encontrado</p>
-              <p className="text-xs text-muted-foreground mt-1">El enlace no existe o fue removido.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                El enlace no existe o fue removido.
+              </p>
             </CenterCard>
           )}
 
@@ -536,7 +562,9 @@ function Checkout() {
             <CenterCard>
               <AlertCircle className="text-amber-500" size={28} />
               <p className="font-semibold mt-3">Link inactivo</p>
-              <p className="text-xs text-muted-foreground mt-1">Este cobro no esta disponible en este momento.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Este cobro no esta disponible en este momento.
+              </p>
             </CenterCard>
           )}
 
@@ -613,7 +641,9 @@ function Checkout() {
                 {result.metodo && (
                   <Row
                     label="Metodo de pago"
-                    value={result.cuotas ? `${result.metodo} - ${result.cuotas} cuota` : result.metodo}
+                    value={
+                      result.cuotas ? `${result.metodo} - ${result.cuotas} cuota` : result.metodo
+                    }
                   />
                 )}
                 <Row label="Referencia" value={result.ref || "—"} />
@@ -626,8 +656,8 @@ function Checkout() {
               </div>
 
               <p className="text-[11px] text-muted-foreground mt-4 text-left">
-                Guardá el comprobante y el codigo de operacion. Con esos dos datos se puede
-                rastrear el pago.
+                Guardá el comprobante y el codigo de operacion. Con esos dos datos se puede rastrear
+                el pago.
               </p>
             </CenterCard>
           )}
@@ -637,7 +667,8 @@ function Checkout() {
               {/* Resumen del cobro */}
               <Card className="p-6 shadow-xl border-0">
                 <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground mb-1">
-                  <ShieldCheck size={14} className="text-emerald-600" /> {data.comercio_nombre || brand.name}
+                  <ShieldCheck size={14} className="text-emerald-600" />{" "}
+                  {data.comercio_nombre || brand.name}
                 </div>
                 <div className="text-3xl font-black tracking-tight text-[color:var(--brand-primary-700)]">
                   {formatARS(parseFloat(montoPagar.replace(",", ".")))}
@@ -647,7 +678,10 @@ function Checkout() {
                 {data.detalle?.length > 0 && (
                   <div className="mt-4 border rounded-lg divide-y">
                     {data.detalle.map((p, i) => (
-                      <div key={i} className="flex items-center justify-between px-3 py-2.5 text-sm">
+                      <div
+                        key={i}
+                        className="flex items-center justify-between px-3 py-2.5 text-sm"
+                      >
                         <div className="min-w-0">
                           <div className="font-semibold truncate">{p.producto_nombre}</div>
                           <div className="text-[11px] text-muted-foreground">
@@ -664,7 +698,8 @@ function Checkout() {
 
                 {data.referencia && (
                   <div className="mt-4 text-xs text-muted-foreground">
-                    Referencia: <span className="font-semibold text-foreground">{data.referencia}</span>
+                    Referencia:{" "}
+                    <span className="font-semibold text-foreground">{data.referencia}</span>
                   </div>
                 )}
                 {data.notas && (
@@ -696,21 +731,21 @@ function Checkout() {
                       No hay metodos de pago habilitados para este link. Contacta al comercio.
                     </p>
                   ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
-                    {metodosDisponibles.map((m) => (
-                      <button
-                        key={m.id}
-                        onClick={() => chooseMethod(m.id)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition ${
-                          method === m.id
-                            ? "border-[color:var(--brand-primary-700)] bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)]"
-                            : "bg-card hover:bg-muted"
-                        }`}
-                      >
-                        <CreditCard size={15} /> {m.label}
-                      </button>
-                    ))}
-                  </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1.5">
+                      {metodosDisponibles.map((m) => (
+                        <button
+                          key={m.id}
+                          onClick={() => chooseMethod(m.id)}
+                          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold transition ${
+                            method === m.id
+                              ? "border-[color:var(--brand-primary-700)] bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)]"
+                              : "bg-card hover:bg-muted"
+                          }`}
+                        >
+                          <CreditCard size={15} /> {m.label}
+                        </button>
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -768,8 +803,18 @@ function Checkout() {
                         `data-decidir`: los valores que el SDK lee salen de los
                         dos inputs ocultos de abajo, derivados del mismo estado.
                       */}
-                      <input type="hidden" readOnly data-decidir="card_expiration_month" value={vencMes} />
-                      <input type="hidden" readOnly data-decidir="card_expiration_year" value={vencAnio} />
+                      <input
+                        type="hidden"
+                        readOnly
+                        data-decidir="card_expiration_month"
+                        value={vencMes}
+                      />
+                      <input
+                        type="hidden"
+                        readOnly
+                        data-decidir="card_expiration_year"
+                        value={vencAnio}
+                      />
                       <div className="grid grid-cols-2 gap-3">
                         <div>
                           <Label>Vencimiento</Label>
@@ -799,7 +844,9 @@ function Checkout() {
                             autoComplete="cc-csc"
                             maxLength={cvvMax}
                             value={cvv}
-                            onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, cvvMax))}
+                            onChange={(e) =>
+                              setCvv(e.target.value.replace(/\D/g, "").slice(0, cvvMax))
+                            }
                             placeholder={isAmex ? "1234" : "123"}
                             name="cvv"
                           />
@@ -814,14 +861,21 @@ function Checkout() {
                           eso el tipo va fijo en hidden y solo el numero es
                           editable.
                         */}
-                        <input type="hidden" readOnly data-decidir="card_holder_doc_type" value="dni" />
+                        <input
+                          type="hidden"
+                          readOnly
+                          data-decidir="card_holder_doc_type"
+                          value="dni"
+                        />
                         <Input
                           className="mt-1 bg-card font-mono"
                           inputMode="numeric"
                           autoComplete="off"
                           maxLength={12}
                           value={documento}
-                          onChange={(e) => setDocumento(e.target.value.replace(/\D/g, "").slice(0, 12))}
+                          onChange={(e) =>
+                            setDocumento(e.target.value.replace(/\D/g, "").slice(0, 12))
+                          }
                           placeholder="12345678"
                           data-decidir="card_holder_doc_number"
                         />
@@ -844,10 +898,20 @@ function Checkout() {
 
                 <div className="mt-4">
                   <Label>Email para el comprobante</Label>
-                  <Input className="mt-1" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@email.com" />
+                  <Input
+                    className="mt-1"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                  />
                 </div>
 
-                <BtnPrimary className="w-full mt-6 h-12 text-sm" onClick={pagar} disabled={processing || metodosDisponibles.length === 0}>
+                <BtnPrimary
+                  className="w-full mt-6 h-12 text-sm"
+                  onClick={pagar}
+                  disabled={processing || metodosDisponibles.length === 0}
+                >
                   {processing ? (
                     <>
                       <Loader2 size={16} className="animate-spin" /> Procesando…

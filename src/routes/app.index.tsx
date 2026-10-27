@@ -3,12 +3,20 @@ import { resolveColor } from "@/brand/colors";
 import { brand } from "@/brand/brand";
 import { useMemo, useState, useEffect } from "react";
 import {
-  Wallet, ArrowDownLeft, ArrowUpRight, Users, Link2, QrCode,
-  Smartphone, TrendingUp, Clock, Download, FileSpreadsheet, FileText,
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Users,
+  Link2,
+  QrCode,
+  Smartphone,
+  TrendingUp,
+  Clock,
+  Download,
+  FileSpreadsheet,
+  FileText,
 } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PageHeader, Card, BtnOutline } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
@@ -42,10 +50,16 @@ function fmtKey(d: Date) {
 }
 function eachDay(start: Date, end: Date): Date[] {
   const out: Date[] = [];
-  const s = new Date(start); s.setHours(0, 0, 0, 0);
-  const e = new Date(end); e.setHours(0, 0, 0, 0);
+  const s = new Date(start);
+  s.setHours(0, 0, 0, 0);
+  const e = new Date(end);
+  e.setHours(0, 0, 0, 0);
   let guard = 0;
-  while (s <= e && guard < 366) { out.push(new Date(s)); s.setDate(s.getDate() + 1); guard++; }
+  while (s <= e && guard < 366) {
+    out.push(new Date(s));
+    s.setDate(s.getDate() + 1);
+    guard++;
+  }
   return out;
 }
 
@@ -61,19 +75,27 @@ function Dashboard() {
   const [cbuLabel, setCbuLabel] = useState("");
 
   const range = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     if (period === "day") {
       const d = new Date(day + "T00:00:00");
-      return { start: d, end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999) };
+      return {
+        start: d,
+        end: new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999),
+      };
     }
     if (period === "range") {
       const s = desde ? new Date(desde + "T00:00:00") : today;
-      const e = hasta ? new Date(hasta + "T23:59:59") : new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      const e = hasta
+        ? new Date(hasta + "T23:59:59")
+        : new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
       return { start: s, end: e };
     }
     const days = QUICK.find((p) => p.k === period)?.days ?? 30;
-    const s = new Date(today); s.setDate(today.getDate() - (days - 1));
-    const e = new Date(today); e.setHours(23, 59, 59, 999);
+    const s = new Date(today);
+    s.setDate(today.getDate() - (days - 1));
+    const e = new Date(today);
+    e.setHours(23, 59, 59, 999);
     return { start: s, end: e };
   }, [period, day, desde, hasta]);
 
@@ -85,7 +107,11 @@ function Dashboard() {
         const { data: u } = await s.auth.getUser();
         const mail = u.user?.email;
         if (!mail) return;
-        const { data: cli } = await s.from("clientes").select("legajo, cbu, alias").eq("correo", mail).maybeSingle();
+        const { data: cli } = await s
+          .from("clientes")
+          .select("legajo, cbu, alias")
+          .eq("correo", mail)
+          .maybeSingle();
         if (!cli) return;
         setCbuLabel(cli.alias ? `CVU ${cli.alias}` : cli.cbu ? `CBU ${cli.cbu}` : "");
         const { data: m } = await s
@@ -96,19 +122,27 @@ function Dashboard() {
           .lte("fecha", range.end.toISOString());
         if (cancelled) return;
         setMovs(m ?? []);
-        const { data: subs } = await s.from("subaccounts").select(SALDOS_EMBED).eq("cliente_legajo", cli.legajo);
+        const { data: subs } = await s
+          .from("subaccounts")
+          .select(SALDOS_EMBED)
+          .eq("cliente_legajo", cli.legajo);
         if (cancelled) return;
-        const saldo = (subs ?? []).map(conSaldos).reduce(
-          (a: number, x: any) => a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0),
-          0
-        );
+        const saldo = (subs ?? [])
+          .map(conSaldos)
+          .reduce(
+            (a: number, x: any) =>
+              a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0),
+            0,
+          );
         setSaldoTotal(saldo);
         setCuentas((subs ?? []).length + 1);
       } catch {
         // silencioso
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [range.start, range.end]);
 
   const data = useMemo(() => {
@@ -133,7 +167,9 @@ function Dashboard() {
 
   const kpis = useMemo(() => {
     const sum = (t: string) =>
-      movs.filter((x) => x.tipo === t).reduce((a, x) => a + Math.abs(Number(x.monto_operacion ?? 0)), 0);
+      movs
+        .filter((x) => x.tipo === t)
+        .reduce((a, x) => a + Math.abs(Number(x.monto_operacion ?? 0)), 0);
     const count = (t: string) => movs.filter((x) => x.tipo === t).length;
     return {
       saldo: saldoTotal,
@@ -309,7 +345,9 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Saldo total de la cuenta</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.saldo)}</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.saldo)}
+              </div>
               <div className="text-xs text-black-400 mt-0.5">{cbuLabel || "Sin CVU asignada"}</div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-secondary-50 flex items-center justify-center text-secondary-500 shrink-0">
@@ -321,7 +359,9 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Depósitos del período</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.depositos)}</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.depositos)}
+              </div>
               <div className="text-xs text-black-400 mt-0.5">{kpis.opsDep} operaciones</div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-success-bg flex items-center justify-center text-success shrink-0">
@@ -333,7 +373,9 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Retiros del período</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.retiros)}</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.retiros)}
+              </div>
               <div className="text-xs text-black-400 mt-0.5">{kpis.opsRet} operaciones</div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-error-bg flex items-center justify-center text-error shrink-0">
@@ -345,8 +387,12 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Total de cuentas</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{kpis.cuentas}</div>
-              <div className="text-xs text-black-400 mt-0.5">1 principal + {kpis.cuentas - 1} subcuentas</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {kpis.cuentas}
+              </div>
+              <div className="text-xs text-black-400 mt-0.5">
+                1 principal + {kpis.cuentas - 1} subcuentas
+              </div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-info-bg flex items-center justify-center text-info shrink-0">
               <Users size={18} />
@@ -359,8 +405,12 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Cobros mediante Link de Pago</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.cobrosLink)}</div>
-              <div className="text-xs text-black-400 mt-0.5">{Math.round(kpis.cobrosLink / 85000)} transacciones</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.cobrosLink)}
+              </div>
+              <div className="text-xs text-black-400 mt-0.5">
+                {Math.round(kpis.cobrosLink / 85000)} transacciones
+              </div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-secondary-50 flex items-center justify-center text-secondary-500 shrink-0">
               <Link2 size={18} />
@@ -371,8 +421,12 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Cobros mediante Código QR</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.cobrosQR)}</div>
-              <div className="text-xs text-black-400 mt-0.5">{Math.round(kpis.cobrosQR / 32000)} transacciones</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.cobrosQR)}
+              </div>
+              <div className="text-xs text-black-400 mt-0.5">
+                {Math.round(kpis.cobrosQR / 32000)} transacciones
+              </div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-warning-bg flex items-center justify-center text-warning shrink-0">
               <QrCode size={18} />
@@ -383,8 +437,12 @@ function Dashboard() {
           <div className="flex items-start justify-between">
             <div>
               <div className="text-xs text-black-400 mb-1">Pagos realizados mediante QR</div>
-              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">{formatARS(kpis.pagosQR)}</div>
-              <div className="text-xs text-black-400 mt-0.5">{Math.round(kpis.pagosQR / 18000)} transacciones</div>
+              <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
+                {formatARS(kpis.pagosQR)}
+              </div>
+              <div className="text-xs text-black-400 mt-0.5">
+                {Math.round(kpis.pagosQR / 18000)} transacciones
+              </div>
             </div>
             <div className="w-9 h-9 rounded-sm bg-plata-200 flex items-center justify-center text-black-600 shrink-0">
               <Smartphone size={18} />
@@ -417,7 +475,12 @@ function Dashboard() {
         <div className="w-full" style={{ height: Math.max(200, Math.min(360, 40 * data.length)) }}>
           {data.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 4, right: 4, left: -8, bottom: 0 }} barGap={2} barCategoryGap={data.length > 30 ? 4 : 8}>
+              <BarChart
+                data={data}
+                margin={{ top: 4, right: 4, left: -8, bottom: 0 }}
+                barGap={2}
+                barCategoryGap={data.length > 30 ? 4 : 8}
+              >
                 <CartesianGrid strokeDasharray="3 3" stroke="#D4D4D4" vertical={false} />
                 <XAxis
                   dataKey="date"
@@ -451,9 +514,19 @@ function Dashboard() {
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="depositos" fill="var(--brand-primary-500)" radius={[2, 2, 0, 0]} maxBarSize={32} />
+                <Bar
+                  dataKey="depositos"
+                  fill="var(--brand-primary-500)"
+                  radius={[2, 2, 0, 0]}
+                  maxBarSize={32}
+                />
                 <Bar dataKey="cobrosQR" fill="#000000" radius={[2, 2, 0, 0]} maxBarSize={32} />
-                <Bar dataKey="linkPago" fill="var(--brand-secondary-500)" radius={[2, 2, 0, 0]} maxBarSize={32} />
+                <Bar
+                  dataKey="linkPago"
+                  fill="var(--brand-secondary-500)"
+                  radius={[2, 2, 0, 0]}
+                  maxBarSize={32}
+                />
                 <Bar dataKey="total" fill="var(--warning)" radius={[2, 2, 0, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>

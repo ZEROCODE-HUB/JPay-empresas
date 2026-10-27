@@ -28,7 +28,13 @@ type Bloque =
   | { t: "pie"; texto: string };
 
 const ALTO: Record<Bloque["t"], number> = {
-  encabezado: 46, monto: 44, seccion: 29, fila: 26, linea: 1, espacio: 0, pie: 30,
+  encabezado: 46,
+  monto: 44,
+  seccion: 29,
+  fila: 26,
+  linea: 1,
+  espacio: 0,
+  pie: 30,
 };
 
 function soloDigitos(v?: string | null): string {
@@ -40,28 +46,36 @@ function bloques(d: DatosComprobante): Bloque[] {
     { t: "encabezado", titulo: "Enviaste dinero", fecha: formatearFechaComprobante(d.fecha) },
     { t: "espacio", h: 12 },
     { t: "monto", texto: formatearMonto(d.monto) },
-    { t: "espacio", h: 12 }, { t: "linea" }, { t: "espacio", h: 20 },
+    { t: "espacio", h: 12 },
+    { t: "linea" },
+    { t: "espacio", h: 20 },
     { t: "seccion", texto: "Desde:" },
     { t: "fila", label: "Nombre:", valor: d.desde.nombre || "—" },
     { t: "fila", label: "CUIT:", valor: soloDigitos(d.desde.cuit) || "—", mono: true },
     { t: "fila", label: "CBU/CVU:", valor: d.desde.cbu || "—", mono: true },
-    { t: "espacio", h: 20 }, { t: "linea" }, { t: "espacio", h: 20 },
+    { t: "espacio", h: 20 },
+    { t: "linea" },
+    { t: "espacio", h: 20 },
     { t: "seccion", texto: "Hacia:" },
     { t: "fila", label: "Nombre:", valor: d.hacia.nombre || "—" },
     { t: "fila", label: "CUIT:", valor: soloDigitos(d.hacia.cuit) || "—", mono: true },
     { t: "fila", label: "CBU/CVU:", valor: d.hacia.cbu || "—", mono: true },
     ...(d.hacia.banco ? [{ t: "fila" as const, label: "Banco:", valor: d.hacia.banco }] : []),
-    { t: "espacio", h: 20 }, { t: "linea" }, { t: "espacio", h: 18 },
+    { t: "espacio", h: 20 },
+    { t: "linea" },
+    { t: "espacio", h: 18 },
     { t: "fila", label: "Estado:", valor: d.estado || "—" },
     { t: "fila", label: "ID de transacción:", valor: d.txid, mono: true },
-    { t: "espacio", h: 26 }, { t: "pie", texto: "Comprobante no válido como factura" },
+    { t: "espacio", h: 26 },
+    { t: "pie", texto: "Comprobante no válido como factura" },
   ];
 }
 
 function recortar(ctx: CanvasRenderingContext2D, texto: string, maxAncho: number): string {
   if (ctx.measureText(texto).width <= maxAncho) return texto;
   let corte = texto;
-  while (corte.length > 1 && ctx.measureText(corte + "…").width > maxAncho) corte = corte.slice(0, -1);
+  while (corte.length > 1 && ctx.measureText(corte + "…").width > maxAncho)
+    corte = corte.slice(0, -1);
   return corte + "…";
 }
 
@@ -145,7 +159,10 @@ function dibujar(d: DatosComprobante): HTMLCanvasElement {
 export function generarComprobantePng(d: DatosComprobante): Promise<Blob> {
   return new Promise((resolve, reject) => {
     try {
-      dibujar(d).toBlob((blob) => (blob ? resolve(blob) : reject(new Error("No se pudo generar la imagen"))), "image/png");
+      dibujar(d).toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo generar la imagen"))),
+        "image/png",
+      );
     } catch (e) {
       reject(e as Error);
     }
@@ -169,7 +186,9 @@ export type ResultadoCompartir = "compartido" | "descargado" | "cancelado" | "er
 export async function compartirComprobante(d: DatosComprobante): Promise<ResultadoCompartir> {
   let archivo: File;
   try {
-    archivo = new File([await generarComprobantePng(d)], nombreArchivoComprobante(d, "png"), { type: "image/png" });
+    archivo = new File([await generarComprobantePng(d)], nombreArchivoComprobante(d, "png"), {
+      type: "image/png",
+    });
   } catch {
     return "error";
   }
@@ -177,9 +196,16 @@ export async function compartirComprobante(d: DatosComprobante): Promise<Resulta
     canShare?: (data: { files?: File[] }) => boolean;
     share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
   };
-  if (typeof nav.share === "function" && (typeof nav.canShare !== "function" || nav.canShare({ files: [archivo] }))) {
+  if (
+    typeof nav.share === "function" &&
+    (typeof nav.canShare !== "function" || nav.canShare({ files: [archivo] }))
+  ) {
     try {
-      await nav.share({ files: [archivo], title: "Comprobante de transferencia", text: "Comprobante de la transferencia " + d.txid });
+      await nav.share({
+        files: [archivo],
+        title: "Comprobante de transferencia",
+        text: "Comprobante de la transferencia " + d.txid,
+      });
       return "compartido";
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") return "cancelado";

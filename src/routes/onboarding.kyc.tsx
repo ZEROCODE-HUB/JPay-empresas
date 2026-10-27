@@ -17,10 +17,7 @@ import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/onboarding/kyc")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Validacion KYC") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("Validacion KYC") }, { name: "robots", content: "noindex" }],
   }),
   component: KycWizard,
 });
@@ -32,7 +29,12 @@ function KycWizard() {
   const store = useOnboarding();
   const { kyc, setKyc } = store;
   const [step, setStep] = useState(0);
-  const [files, setFiles] = useState<{ dniFrente: FileRef; dniDorso: FileRef; servicio: FileRef; selfie: FileRef }>({
+  const [files, setFiles] = useState<{
+    dniFrente: FileRef;
+    dniDorso: FileRef;
+    servicio: FileRef;
+    selfie: FileRef;
+  }>({
     dniFrente: null,
     dniDorso: null,
     servicio: null,
@@ -57,25 +59,71 @@ function KycWizard() {
         const sb = requireSupabase();
         const { data: u } = await sb.auth.getUser();
         const mail = u.user?.email;
-        if (!mail) { setLoadingDocs(false); return; }
-        const { data: cli } = await sb.from("clientes").select("legajo, direccion, direccion2, ciudad, provincia, cp").eq("correo", mail).maybeSingle();
-        if (!cli) { setLoadingDocs(false); return; }
+        if (!mail) {
+          setLoadingDocs(false);
+          return;
+        }
+        const { data: cli } = await sb
+          .from("clientes")
+          .select("legajo, direccion, direccion2, ciudad, provincia, cp")
+          .eq("correo", mail)
+          .maybeSingle();
+        if (!cli) {
+          setLoadingDocs(false);
+          return;
+        }
         // Prefill dirección desde DB si existe
-        if ((cli as any).direccion) setAddr((a) => ({ ...a, direccion: (cli as any).direccion ?? a.direccion, direccion2: (cli as any).direccion2 ?? a.direccion2, ciudad: (cli as any).ciudad ?? a.ciudad, provincia: (cli as any).provincia ?? a.provincia, cp: (cli as any).cp ?? a.cp }));
-        const { data: docs } = await sb.from("documentos").select("tipo, url, label").eq("cliente_legajo", (cli as any).legajo);
-        if (!docs || docs.length === 0) { setLoadingDocs(false); return; }
+        if ((cli as any).direccion)
+          setAddr((a) => ({
+            ...a,
+            direccion: (cli as any).direccion ?? a.direccion,
+            direccion2: (cli as any).direccion2 ?? a.direccion2,
+            ciudad: (cli as any).ciudad ?? a.ciudad,
+            provincia: (cli as any).provincia ?? a.provincia,
+            cp: (cli as any).cp ?? a.cp,
+          }));
+        const { data: docs } = await sb
+          .from("documentos")
+          .select("tipo, url, label")
+          .eq("cliente_legajo", (cli as any).legajo);
+        if (!docs || docs.length === 0) {
+          setLoadingDocs(false);
+          return;
+        }
         const urls = await getSignedDocUrls(docs.map((d: any) => d.url));
-        const tipoMap: Record<string, keyof typeof files> = { id_frente: "dniFrente", id_dorso: "dniDorso", servicio: "servicio", selfie: "selfie" };
-        const next: typeof files = { dniFrente: null, dniDorso: null, servicio: null, selfie: null };
+        const tipoMap: Record<string, keyof typeof files> = {
+          id_frente: "dniFrente",
+          id_dorso: "dniDorso",
+          servicio: "servicio",
+          selfie: "selfie",
+        };
+        const next: typeof files = {
+          dniFrente: null,
+          dniDorso: null,
+          servicio: null,
+          selfie: null,
+        };
         for (const d of docs as any[]) {
           const key = tipoMap[d.tipo];
           if (!key) continue;
           const signed = urls[d.url];
           // FileUpload espera {name, url}; sin file significa ya cargado
-          next[key] = { name: d.label || d.url.split("/").pop() || d.tipo, url: signed ?? undefined } as FileRef;
+          next[key] = {
+            name: d.label || d.url.split("/").pop() || d.tipo,
+            url: signed ?? undefined,
+          } as FileRef;
         }
-        setFiles((prev) => ({ dniFrente: next.dniFrente ?? prev.dniFrente, dniDorso: next.dniDorso ?? prev.dniDorso, servicio: next.servicio ?? prev.servicio, selfie: next.selfie ?? prev.selfie }));
-      } catch { /* ignore */ } finally { setLoadingDocs(false); }
+        setFiles((prev) => ({
+          dniFrente: next.dniFrente ?? prev.dniFrente,
+          dniDorso: next.dniDorso ?? prev.dniDorso,
+          servicio: next.servicio ?? prev.servicio,
+          selfie: next.selfie ?? prev.selfie,
+        }));
+      } catch {
+        /* ignore */
+      } finally {
+        setLoadingDocs(false);
+      }
     })();
   }, []);
 
@@ -109,11 +157,18 @@ function KycWizard() {
           const metaTipo = (u.user?.user_metadata as any)?.tipoCuenta as string | undefined;
           if (metaTipo === "juridica" || metaTipo === "fisica") tipoCuenta = metaTipo as any;
           else {
-            const { data: cli } = await sb.from("clientes").select("tipo_persona").eq("correo", mail).maybeSingle();
-            if ((cli as any)?.tipo_persona) tipoCuenta = (cli as any).tipo_persona === "juridica" ? "juridica" : "fisica";
+            const { data: cli } = await sb
+              .from("clientes")
+              .select("tipo_persona")
+              .eq("correo", mail)
+              .maybeSingle();
+            if ((cli as any)?.tipo_persona)
+              tipoCuenta = (cli as any).tipo_persona === "juridica" ? "juridica" : "fisica";
           }
         }
-      } catch { /* ignore fallback */ }
+      } catch {
+        /* ignore fallback */
+      }
     }
     const perfil: Record<string, unknown> = {
       direccion: addr.direccion,
@@ -205,7 +260,12 @@ function KycWizard() {
             value={files.servicio}
             onChange={(v) => setFiles({ ...files, servicio: v })}
           />
-          <WizardNav onBack={() => setStep(0)} onNext={() => setStep(2)} nextDisabled={!canNext} nextLabel="Siguiente" />
+          <WizardNav
+            onBack={() => setStep(0)}
+            onNext={() => setStep(2)}
+            nextDisabled={!canNext}
+            nextLabel="Siguiente"
+          />
         </div>
       )}
 
@@ -219,7 +279,12 @@ function KycWizard() {
             onChange={(v) => setFiles({ ...files, selfie: v })}
             accept="image/*"
           />
-          <WizardNav onBack={() => setStep(1)} onNext={() => setStep(3)} nextDisabled={!canNext} nextLabel="Siguiente" />
+          <WizardNav
+            onBack={() => setStep(1)}
+            onNext={() => setStep(3)}
+            nextDisabled={!canNext}
+            nextLabel="Siguiente"
+          />
         </div>
       )}
 
@@ -259,18 +324,31 @@ function KycWizard() {
             onChange={(e) => setAddr({ ...addr, cp: e.target.value })}
             error={err.cp}
           />
-          {submitError && (
-            <p className="text-sm text-danger-600">{submitError}</p>
-          )}
-          <WizardNav onBack={() => setStep(2)} onNext={finish} nextLabel={submitting ? "Enviando..." : "Finalizar"} nextDisabled={submitting} />
+          {submitError && <p className="text-sm text-danger-600">{submitError}</p>}
+          <WizardNav
+            onBack={() => setStep(2)}
+            onNext={finish}
+            nextLabel={submitting ? "Enviando..." : "Finalizar"}
+            nextDisabled={submitting}
+          />
           <div className="text-center pt-2">
-            <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+            <Link
+              to="/login"
+              className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+            >
+              Volver a inicio de sesión
+            </Link>
           </div>
         </div>
       )}
       {(step < 3 || loadingDocs) && (
         <div className="text-center pt-4">
-          <Link to="/login" className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2">Volver a inicio de sesión</Link>
+          <Link
+            to="/login"
+            className="text-xs text-black-400 hover:text-primary-ink underline underline-offset-2"
+          >
+            Volver a inicio de sesión
+          </Link>
         </div>
       )}
     </AuthShell>

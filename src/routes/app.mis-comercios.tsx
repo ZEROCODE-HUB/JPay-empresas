@@ -36,7 +36,13 @@ const mapComercios = (rows: ComercioRow[] | null): Comercio[] =>
 const estadoTone = (estado: string): "neutral" | "success" | "warn" | "danger" => {
   const e = estado.toLowerCase();
   if (e.includes("activ") || e.includes("activo") || e.includes("aprob")) return "success";
-  if (e.includes("desactiv") || e.includes("rechaz") || e.includes("elimin") || e.includes("cancel")) return "danger";
+  if (
+    e.includes("desactiv") ||
+    e.includes("rechaz") ||
+    e.includes("elimin") ||
+    e.includes("cancel")
+  )
+    return "danger";
   if (e.includes("pendiente") || e.includes("suspend")) return "warn";
   return "neutral";
 };
@@ -131,16 +137,32 @@ function Page() {
       <Card className="mb-4 p-3">
         <div className="flex flex-wrap gap-2">
           <div className="relative w-full sm:flex-1 sm:min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nombre, legajo o email..." className="pl-9" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por nombre, legajo o email..."
+              className="pl-9"
+            />
           </div>
-          <select value={nivel} onChange={(e) => setNivel(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm">
+          <select
+            value={nivel}
+            onChange={(e) => setNivel(e.target.value)}
+            className="h-10 px-3 rounded-md border bg-card text-sm"
+          >
             <option>Todos</option>
             {niveles.map((n) => (
               <option key={n}>{n}</option>
             ))}
           </select>
-          <select value={estado} onChange={(e) => setEstado(e.target.value)} className="h-10 px-3 rounded-md border bg-card text-sm">
+          <select
+            value={estado}
+            onChange={(e) => setEstado(e.target.value)}
+            className="h-10 px-3 rounded-md border bg-card text-sm"
+          >
             <option>Todos</option>
             {estados.map((e) => (
               <option key={e}>{e}</option>
@@ -176,7 +198,9 @@ function Page() {
                         <span className="font-semibold">{c.nombre}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{c.legajo}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
+                      {c.legajo}
+                    </td>
                     <td className="px-4 py-3">{c.nivel}</td>
                     <td className="px-4 py-3">
                       <Badge tone={estadoTone(c.estado)}>{c.estado}</Badge>
@@ -202,7 +226,11 @@ function Page() {
                 : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, filtradas.length)} de ${filtradas.length}`}
             </span>
             <div className="flex gap-1">
-              <BtnOutline className="h-7 px-2 text-[11px]" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
+              <BtnOutline
+                className="h-7 px-2 text-[11px]"
+                disabled={page <= 1}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+              >
                 Anterior
               </BtnOutline>
               <BtnOutline

@@ -7,39 +7,39 @@ La marca de la app (nombre, empresa, contactos, dominios, colores, tipografías 
 > Este archivo es igual en `JPay-empresas` y `JPay-admin`. `src/brand/brand.json` también debe
 > ser idéntico en ambos repos.
 >
-> Identidad visual: *Manual de identidad y lineamientos gráficos JPay* (semifinal, 12/10/2026).
+> Identidad visual: _Manual de identidad y lineamientos gráficos JPay_ (semifinal, 12/10/2026).
 
 ## Qué hay en `src/brand/`
 
-| Archivo | Qué es | ¿Se edita? |
-|---|---|---|
-| `brand.json` | Nombre, razón social, CUIT, emails, dominios, tipografías y colores | **Sí: es la fuente de verdad** |
-| `assets/` | Logos, imagen para redes (og:image), fondos e imágenes | **Sí: reemplazar archivos** |
-| `brand.ts` | Expone `brand`, `pageTitle()`, `copyright()`, `mailto()` al código | Solo si cambia la lista de assets |
-| `colors.ts` | `resolveColor()` para canvas/PDF (lee los colores del tema en runtime) | No |
-| `brand.generated.css` | Variables `--brand-*` | **No: es generado** |
+| Archivo               | Qué es                                                                 | ¿Se edita?                        |
+| --------------------- | ---------------------------------------------------------------------- | --------------------------------- |
+| `brand.json`          | Nombre, razón social, CUIT, emails, dominios, tipografías y colores    | **Sí: es la fuente de verdad**    |
+| `assets/`             | Logos, imagen para redes (og:image), fondos e imágenes                 | **Sí: reemplazar archivos**       |
+| `brand.ts`            | Expone `brand`, `pageTitle()`, `copyright()`, `mailto()` al código     | Solo si cambia la lista de assets |
+| `colors.ts`           | `resolveColor()` para canvas/PDF (lee los colores del tema en runtime) | No                                |
+| `brand.generated.css` | Variables `--brand-*`                                                  | **No: es generado**               |
 
 `supabase/functions/_shared/brand.ts` también es **generado** (las Edge Functions de Deno no pueden
 importar archivos de `src/`).
 
 ## `brand.json`
 
-| Campo | Para qué |
-|---|---|
-| `name`, `shortName`, `tagline`, `description`, `regulatoryNote` | Textos de marca en toda la UI, títulos de pestaña, correos |
-| `previousNames` | *(opcional)* nombres anteriores de la marca: el verificador falla si alguno queda en el código |
-| `company.*` | Razón social, nombre corto de la empresa, CUIT, país (textos legales, footer) |
-| `contact.*`, `web.*`, `email.*` | Emails, dominios, links de pago, remitente de correos |
-| `fonts.display` / `fonts.body` | Tipografía de títulos y de cuerpo; `displayWeight` = peso de los títulos |
-| `fonts.stylesheets` | Hojas de estilo que cargan esas tipografías (se insertan en `<head>`) |
-| `colors.primary` | Color principal: botones, acentos, links activos |
-| `colors.primaryInk` | Tono del principal para **texto** sobre fondo claro: un paso (`"700"`) o un hex. Usar uno que dé contraste ≥ 4,5:1 sobre blanco |
-| `colors.secondary` | Color institucional: foco, información, navegación activa |
-| `colors.highlight` | Acento de apoyo: menú activo del portal, badges |
-| `colors.neutral` | *(opcional)* tinte de los grises de la UI (textos, bordes). Sin él: grises neutros |
-| `colors.navigation` | Fondo del menú lateral oscuro (si se omite: `secondary-800`) |
-| `colors.surface` | *(opcional)* fondo de las pantallas. Sin él: el fondo neutro de cada app |
-| `colors.onPrimary` / `onSecondary` / `onHighlight` | Color del texto sobre esos fondos (contraste) |
+| Campo                                                           | Para qué                                                                                                                        |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `name`, `shortName`, `tagline`, `description`, `regulatoryNote` | Textos de marca en toda la UI, títulos de pestaña, correos                                                                      |
+| `previousNames`                                                 | _(opcional)_ nombres anteriores de la marca: el verificador falla si alguno queda en el código                                  |
+| `company.*`                                                     | Razón social, nombre corto de la empresa, CUIT, país (textos legales, footer)                                                   |
+| `contact.*`, `web.*`, `email.*`                                 | Emails, dominios, links de pago, remitente de correos                                                                           |
+| `fonts.display` / `fonts.body`                                  | Tipografía de títulos y de cuerpo; `displayWeight` = peso de los títulos                                                        |
+| `fonts.stylesheets`                                             | Hojas de estilo que cargan esas tipografías (se insertan en `<head>`)                                                           |
+| `colors.primary`                                                | Color principal: botones, acentos, links activos                                                                                |
+| `colors.primaryInk`                                             | Tono del principal para **texto** sobre fondo claro: un paso (`"700"`) o un hex. Usar uno que dé contraste ≥ 4,5:1 sobre blanco |
+| `colors.secondary`                                              | Color institucional: foco, información, navegación activa                                                                       |
+| `colors.highlight`                                              | Acento de apoyo: menú activo del portal, badges                                                                                 |
+| `colors.neutral`                                                | _(opcional)_ tinte de los grises de la UI (textos, bordes). Sin él: grises neutros                                              |
+| `colors.navigation`                                             | Fondo del menú lateral oscuro (si se omite: `secondary-800`)                                                                    |
+| `colors.surface`                                                | _(opcional)_ fondo de las pantallas. Sin él: el fondo neutro de cada app                                                        |
+| `colors.onPrimary` / `onSecondary` / `onHighlight`              | Color del texto sobre esos fondos (contraste)                                                                                   |
 
 Cada escala de color va de `50` (más claro) a `900` (más oscuro); `500` es el color base. Si solo
 hay algunos pasos, `brand:sync` deriva el resto (mezcla con blanco/negro en OKLab).
@@ -64,12 +64,14 @@ hay algunos pasos, `brand:sync` deriva el resto (mezcla con blanco/negro en OKLa
 ### Assets
 
 **Ambas apps** (`src/brand/assets/`)
+
 - `logo.svg`: imagotipo para fondos claros.
 - `logo-light.svg`: imagotipo en negativo (texto claro) para fondos oscuros.
 - `isotipo.svg`: símbolo solo; se usa como favicon.
 - `og-image.png` (1200×630) y `hero.webp` (2560×1440): generados con `npm run brand:assets`.
 
 **Solo JPay-empresas**
+
 - `landing-dashboard.png`: captura del panel que se muestra en la landing (conviene rehacerla
   con datos reales).
 - `login-hero.jpg`: foto lateral de login/onboarding.

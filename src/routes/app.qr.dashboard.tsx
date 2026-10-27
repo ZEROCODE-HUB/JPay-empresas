@@ -15,7 +15,15 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Download, FileSpreadsheet, TrendingUp, QrCode, DollarSign, Activity, Store } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  TrendingUp,
+  QrCode,
+  DollarSign,
+  Activity,
+  Store,
+} from "lucide-react";
 import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
 import { toast } from "sonner";
 import { requireSupabase } from "@/lib/supabase";
@@ -35,7 +43,18 @@ const PRESETS = [
 ];
 
 const MESES = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-const PALETTE = ["#2563eb", "#7c3aed", "#059669", "#dc2626", "#d97706", "#0891b2", "#4f46e5", "#9333ea", "#16a34a", "#ca8a04"];
+const PALETTE = [
+  "#2563eb",
+  "#7c3aed",
+  "#059669",
+  "#dc2626",
+  "#d97706",
+  "#0891b2",
+  "#4f46e5",
+  "#9333ea",
+  "#16a34a",
+  "#ca8a04",
+];
 const STATUS_COLOR: Record<string, string> = {
   Aprobado: "#22c55e",
   Pendiente: "#f59e0b",
@@ -123,7 +142,11 @@ function Dashboard() {
         }
       }
 
-      const lista = (movs ?? []) as { monto_operacion: number; estado_id: number | null; fecha: string }[];
+      const lista = (movs ?? []) as {
+        monto_operacion: number;
+        estado_id: number | null;
+        fecha: string;
+      }[];
       const total = lista.length;
       const montoTotal = lista.reduce((a, m) => a + Number(m.monto_operacion ?? 0), 0);
       const aprobados = lista.filter(
@@ -202,7 +225,8 @@ function Dashboard() {
     doc.save("qr-dashboard-" + presetLabel + ".pdf");
   };
 
-  const statusColor = (name: string, i: number) => STATUS_COLOR[name] ?? PALETTE[i % PALETTE.length];
+  const statusColor = (name: string, i: number) =>
+    STATUS_COLOR[name] ?? PALETTE[i % PALETTE.length];
   const pdvColor = (name: string) =>
     name === "Activado" ? "#22c55e" : name === "Desactivado" ? "#f59e0b" : PALETTE[2];
 
@@ -248,9 +272,13 @@ function Dashboard() {
               <div key={k.label} className="bg-card border rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <k.icon size={14} className="text-muted-foreground" />
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{k.label}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    {k.label}
+                  </div>
                 </div>
-                <div className="font-display tabular-nums text-sm md:text-base font-semibold">{k.value}</div>
+                <div className="font-display tabular-nums text-sm md:text-base font-semibold">
+                  {k.value}
+                </div>
               </div>
             ))}
           </div>

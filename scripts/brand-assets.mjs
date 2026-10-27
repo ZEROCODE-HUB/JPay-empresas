@@ -25,7 +25,9 @@ let sharp;
 try {
   sharp = (await import("sharp")).default;
 } catch {
-  console.error("brand-assets: falta `sharp`. Instalalo temporalmente con `npm i --no-save sharp`.");
+  console.error(
+    "brand-assets: falta `sharp`. Instalalo temporalmente con `npm i --no-save sharp`.",
+  );
   process.exit(1);
 }
 
@@ -37,7 +39,8 @@ const subtitle = arg("subtitle", brand.tagline);
 
 const color = (name) => {
   const m = new RegExp(`--brand-${name}: (#[0-9A-Fa-f]{6})`).exec(css);
-  if (!m) throw new Error(`Falta --brand-${name} en brand.generated.css (corré npm run brand:sync)`);
+  if (!m)
+    throw new Error(`Falta --brand-${name} en brand.generated.css (corré npm run brand:sync)`);
   return m[1];
 };
 const BG = color("navigation");
@@ -144,6 +147,8 @@ function background(w, h) {
   <text x="80" y="384" fill="#FFFFFF" fill-opacity="0.7" font-family="Inter, 'Segoe UI', Arial, sans-serif" font-size="24">${descLines}</text>
   <rect x="80" y="520" width="56" height="6" rx="3" fill="${C1}"/><rect x="144" y="520" width="28" height="6" rx="3" fill="${C3}"/>
 </svg>`;
-  await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(resolve(assets, "og-image.png"));
+  await sharp(Buffer.from(svg))
+    .png({ compressionLevel: 9 })
+    .toFile(resolve(assets, "og-image.png"));
   console.log("brand-assets: src/brand/assets/og-image.png");
 }

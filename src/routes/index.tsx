@@ -24,9 +24,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: `${brand.name} — Soluciones financieras digitales` },
-      { name: "description", content: `${brand.name} integra pagos, cobros y remesas para empresas y particulares en América Latina. Plataforma regulada bajo marco normativo BCRA.` },
+      {
+        name: "description",
+        content: `${brand.name} integra pagos, cobros y remesas para empresas y particulares en América Latina. Plataforma regulada bajo marco normativo BCRA.`,
+      },
       { property: "og:title", content: `${brand.name} — Soluciones financieras digitales` },
-      { property: "og:description", content: "Cuenta de pago, Crossborder, CVU Collect y Billetera. Plataforma tecnológica escalable y regulada." },
+      {
+        property: "og:description",
+        content:
+          "Cuenta de pago, Crossborder, CVU Collect y Billetera. Plataforma tecnológica escalable y regulada.",
+      },
       { property: "og:image", content: brand.assets.ogImage.src },
       { property: "og:image:width", content: String(brand.assets.ogImage.width) },
       { property: "og:image:height", content: String(brand.assets.ogImage.height) },
@@ -37,14 +44,40 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-function Eyebrow({ children, tone = "muted" }: { children: React.ReactNode; tone?: "muted" | "accent" | "light" }) {
-  const color = tone === "accent" ? "var(--brand-primary-500)" : tone === "light" ? "rgba(255,255,255,0.7)" : "#909090";
-  return <div className="font-sans text-[0.72rem] tracking-[0.14em] uppercase font-medium" style={{ color }}>{children}</div>;
+function Eyebrow({
+  children,
+  tone = "muted",
+}: {
+  children: React.ReactNode;
+  tone?: "muted" | "accent" | "light";
+}) {
+  const color =
+    tone === "accent"
+      ? "var(--brand-primary-500)"
+      : tone === "light"
+        ? "rgba(255,255,255,0.7)"
+        : "#909090";
+  return (
+    <div
+      className="font-sans text-[0.72rem] tracking-[0.14em] uppercase font-medium"
+      style={{ color }}
+    >
+      {children}
+    </div>
+  );
 }
 
-function GlassCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function GlassCard({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={`transition-all duration-300 hover:-translate-y-0.5 bg-white border border-black-100 rounded-md shadow-sm ${className}`}>
+    <div
+      className={`transition-all duration-300 hover:-translate-y-0.5 bg-white border border-black-100 rounded-md shadow-sm ${className}`}
+    >
       {children}
     </div>
   );
@@ -76,18 +109,30 @@ function SiteHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const solid = scrolled ? "bg-white/85 backdrop-blur-[12px] border-b border-black-100" : "bg-transparent";
+  const solid = scrolled
+    ? "bg-white/85 backdrop-blur-[12px] border-b border-black-100"
+    : "bg-transparent";
   const text = scrolled ? "text-black-800" : "text-white/90";
-  const outline = scrolled ? "border-black-200 text-black-700 hover:bg-black-50" : "border-white/40 text-white hover:bg-white/10";
+  const outline = scrolled
+    ? "border-black-200 text-black-700 hover:bg-black-50"
+    : "border-white/40 text-white hover:bg-white/10";
 
   return (
     <header className={`sticky top-0 z-40 transition-colors duration-300 ${solid}`}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 md:h-20 flex items-center justify-between gap-3">
         <BrandLogo variant={scrolled ? "dark" : "light"} />
-        <nav className={`hidden md:flex items-center gap-8 lg:gap-10 font-sans text-[0.975rem] font-medium ${text}`}>
-          <a href="#servicios" className="hover:text-primary-400 transition-colors">Servicios</a>
-          <a href="#nosotros" className="hover:text-primary-400 transition-colors">Nosotros</a>
-          <a href="#contacto" className="hover:text-primary-400 transition-colors">Contacto</a>
+        <nav
+          className={`hidden md:flex items-center gap-8 lg:gap-10 font-sans text-[0.975rem] font-medium ${text}`}
+        >
+          <a href="#servicios" className="hover:text-primary-400 transition-colors">
+            Servicios
+          </a>
+          <a href="#nosotros" className="hover:text-primary-400 transition-colors">
+            Nosotros
+          </a>
+          <a href="#contacto" className="hover:text-primary-400 transition-colors">
+            Contacto
+          </a>
         </nav>
         <div className="flex items-center gap-2 shrink-0">
           <Link
@@ -120,7 +165,11 @@ function SiteHeader() {
 function DashboardMockup() {
   return (
     <div className="bg-white/5 backdrop-blur-[20px] border border-white/10 rounded-xl p-1 shadow-2xl hero-dashboard-float">
-      <img src={brand.assets.landingDashboard} alt={`Panel de control ${brand.name}`} className="block w-full h-auto rounded-lg" />
+      <img
+        src={brand.assets.landingDashboard}
+        alt={`Panel de control ${brand.name}`}
+        className="block w-full h-auto rounded-lg"
+      />
     </div>
   );
 }
@@ -136,9 +185,18 @@ function Hero() {
         />
       </div>
       <div aria-hidden className="absolute inset-0 bg-black/55 pointer-events-none" />
-      <div aria-hidden className="hero-vignette absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.05),rgba(0,0,0,0.4))] pointer-events-none" />
-      <div aria-hidden className="absolute -top-[15%] right-[5%] w-[500px] h-[500px] rounded-full bg-primary-500/10 blur-[60px] pointer-events-none" />
-      <div aria-hidden className="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full bg-secondary-500/10 blur-[60px] pointer-events-none" />
+      <div
+        aria-hidden
+        className="hero-vignette absolute inset-0 bg-[linear-gradient(to_bottom,rgba(0,0,0,0.05),rgba(0,0,0,0.4))] pointer-events-none"
+      />
+      <div
+        aria-hidden
+        className="absolute -top-[15%] right-[5%] w-[500px] h-[500px] rounded-full bg-primary-500/10 blur-[60px] pointer-events-none"
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-[10%] -left-[5%] w-[400px] h-[400px] rounded-full bg-secondary-500/10 blur-[60px] pointer-events-none"
+      />
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 flex flex-col justify-center min-h-[80vh] md:min-h-[90vh] pt-24 md:pt-40 pb-16 sm:pb-20 lg:pb-24">
         <div className="grid lg:grid-cols-2 lg:gap-14 items-center">
@@ -148,7 +206,8 @@ function Hero() {
               Soluciones financieras para todos
             </h1>
             <p className="mt-6 max-w-lg text-white/70 text-base leading-relaxed">
-              Integramos en una sola plataforma servicios de pagos y cobros para individuos, PyMEs y empresas.
+              Integramos en una sola plataforma servicios de pagos y cobros para individuos, PyMEs y
+              empresas.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
@@ -186,9 +245,16 @@ function LedgerStrip() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {items.map(([label, value], i) => (
-            <div key={label} className={`py-3 md:py-7 px-2 md:px-6 ${i > 0 ? "border-l border-white/10" : ""}`}>
-              <div className="font-sans text-[0.6rem] tracking-[0.14em] uppercase text-primary-400">{label}</div>
-              <div className="mt-1 md:mt-2 font-sans text-[clamp(0.7rem,2.5vw,0.875rem)] tracking-wider text-white">{value}</div>
+            <div
+              key={label}
+              className={`py-3 md:py-7 px-2 md:px-6 ${i > 0 ? "border-l border-white/10" : ""}`}
+            >
+              <div className="font-sans text-[0.6rem] tracking-[0.14em] uppercase text-primary-400">
+                {label}
+              </div>
+              <div className="mt-1 md:mt-2 font-sans text-[clamp(0.7rem,2.5vw,0.875rem)] tracking-wider text-white">
+                {value}
+              </div>
             </div>
           ))}
         </div>
@@ -199,14 +265,36 @@ function LedgerStrip() {
 
 function Servicios() {
   const items = [
-    { icon: Wallet, t: "Cuenta de Pago", d: "CVU para enviar y recibir dinero de cuentas bancarias y billeteras virtuales de manera ágil y segura." },
-    { icon: Globe2, t: "Crossborder", d: "Servicios de transferencias internacionales y remesas con cobertura en América Latina." },
-    { icon: Building2, t: "CVU Collect", d: "Soluciones de recaudación para desarrolladores inmobiliarios, consorcios e inmobiliarias." },
-    { icon: Smartphone, t: "Billetera", d: "QR, tarjetas prepagas físicas y virtuales, pagos NFC y link de pago para comercios." },
+    {
+      icon: Wallet,
+      t: "Cuenta de Pago",
+      d: "CVU para enviar y recibir dinero de cuentas bancarias y billeteras virtuales de manera ágil y segura.",
+    },
+    {
+      icon: Globe2,
+      t: "Crossborder",
+      d: "Servicios de transferencias internacionales y remesas con cobertura en América Latina.",
+    },
+    {
+      icon: Building2,
+      t: "CVU Collect",
+      d: "Soluciones de recaudación para desarrolladores inmobiliarios, consorcios e inmobiliarias.",
+    },
+    {
+      icon: Smartphone,
+      t: "Billetera",
+      d: "QR, tarjetas prepagas físicas y virtuales, pagos NFC y link de pago para comercios.",
+    },
   ];
   return (
-    <section id="servicios" className="relative overflow-hidden bg-gradient-to-b from-plata-50 to-white border-t border-black-100">
-      <div aria-hidden className="absolute top-[20%] -left-[8%] w-[420px] h-[420px] rounded-full bg-primary-500/5 blur-[40px] pointer-events-none" />
+    <section
+      id="servicios"
+      className="relative overflow-hidden bg-gradient-to-b from-plata-50 to-white border-t border-black-100"
+    >
+      <div
+        aria-hidden
+        className="absolute top-[20%] -left-[8%] w-[420px] h-[420px] rounded-full bg-primary-500/5 blur-[40px] pointer-events-none"
+      />
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 py-20 md:py-32">
         <Eyebrow tone="accent">Servicios</Eyebrow>
         <h2 className="font-semibold text-[clamp(2rem,3.5vw,3rem)] leading-[1.1] mt-4 text-black-800">
@@ -217,7 +305,9 @@ function Servicios() {
             <GlassCard key={t} className="flex flex-col h-full p-5 sm:p-7">
               <div className="h-px bg-primary-500 w-8 mb-6" />
               <Icon size={22} strokeWidth={1.4} className="text-black-800" />
-              <h3 className="font-semibold text-[1.375rem] leading-tight mt-4 text-black-800">{t}</h3>
+              <h3 className="font-semibold text-[1.375rem] leading-tight mt-4 text-black-800">
+                {t}
+              </h3>
               <p className="mt-3 text-sm text-black-400 leading-relaxed">{d}</p>
             </GlassCard>
           ))}
@@ -229,15 +319,41 @@ function Servicios() {
 
 function ContamosCon() {
   const items = [
-    { icon: Cog, t: "Plataforma Tecnológica", d: "Sistema escalable y seguro que garantiza el cumplimiento de normas nacionales y compliance." },
-    { icon: ShieldCheck, t: "Compliance Integral", d: "Políticas y procedimientos personalizados garantizando el cumplimiento normativo." },
-    { icon: FileCheck2, t: "Reporting", d: "Informes y declaraciones obligatorias ante autoridades competentes." },
-    { icon: BarChart3, t: "Administración", d: "Seguimiento y control de gestión de toda la actividad." },
-    { icon: Briefcase, t: "Management", d: "Acompañamiento estratégico para el crecimiento y desarrollo empresarial." },
+    {
+      icon: Cog,
+      t: "Plataforma Tecnológica",
+      d: "Sistema escalable y seguro que garantiza el cumplimiento de normas nacionales y compliance.",
+    },
+    {
+      icon: ShieldCheck,
+      t: "Compliance Integral",
+      d: "Políticas y procedimientos personalizados garantizando el cumplimiento normativo.",
+    },
+    {
+      icon: FileCheck2,
+      t: "Reporting",
+      d: "Informes y declaraciones obligatorias ante autoridades competentes.",
+    },
+    {
+      icon: BarChart3,
+      t: "Administración",
+      d: "Seguimiento y control de gestión de toda la actividad.",
+    },
+    {
+      icon: Briefcase,
+      t: "Management",
+      d: "Acompañamiento estratégico para el crecimiento y desarrollo empresarial.",
+    },
   ];
   return (
-    <section id="nosotros" className="relative overflow-hidden bg-gradient-to-b from-white to-plata-50 border-t border-black-100">
-      <div aria-hidden className="absolute top-[10%] -right-[6%] w-[420px] h-[420px] rounded-full bg-secondary-500/5 blur-[40px] pointer-events-none" />
+    <section
+      id="nosotros"
+      className="relative overflow-hidden bg-gradient-to-b from-white to-plata-50 border-t border-black-100"
+    >
+      <div
+        aria-hidden
+        className="absolute top-[10%] -right-[6%] w-[420px] h-[420px] rounded-full bg-secondary-500/5 blur-[40px] pointer-events-none"
+      />
       <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32">
         <Eyebrow tone="accent">Capacidades</Eyebrow>
         <h2 className="font-semibold text-[clamp(2rem,3.5vw,3rem)] leading-[1.1] mt-4 text-black-800">
@@ -262,13 +378,18 @@ function ContamosCon() {
 function MisionVision() {
   return (
     <section className="relative overflow-hidden bg-black text-white">
-      <div aria-hidden className="absolute -top-[10%] left-[40%] w-[600px] h-[600px] rounded-full bg-primary-500/5 blur-[40px] pointer-events-none" />
+      <div
+        aria-hidden
+        className="absolute -top-[10%] left-[40%] w-[600px] h-[600px] rounded-full bg-primary-500/5 blur-[40px] pointer-events-none"
+      />
       <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32">
         <div className="grid md:grid-cols-2 gap-8">
           <article className="p-8 sm:p-10 bg-white/5 backdrop-blur border border-white/10 rounded-md">
             <div className="flex items-center gap-3">
               <Target size={22} strokeWidth={1.4} className="text-primary-400" />
-              <span className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">01 — Misión</span>
+              <span className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+                01 — Misión
+              </span>
             </div>
             <h3 className="font-semibold text-[clamp(1.75rem,2.4vw,2.15rem)] leading-tight mt-5 text-white">
               Facilitar la gestión digital de cobros y pagos.
@@ -282,7 +403,9 @@ function MisionVision() {
           <article className="p-8 sm:p-10 bg-black-800 border border-primary-400/30 rounded-md">
             <div className="flex items-center gap-3">
               <Compass size={22} strokeWidth={1.4} className="text-primary-400" />
-              <span className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">02 — Visión</span>
+              <span className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+                02 — Visión
+              </span>
             </div>
             <h3 className="font-semibold text-[clamp(1.75rem,2.4vw,2.15rem)] leading-tight mt-5 text-white">
               Ser un referente Fintech en la región.
@@ -300,9 +423,21 @@ function MisionVision() {
 
 function PorQueElegirnos() {
   const items = [
-    { icon: Lock, t: "Tecnología Segura", d: "Plataforma diseñada para ser dinámica, escalable y segura, cumpliendo con todas las normativas vigentes." },
-    { icon: HeartHandshake, t: "Atención Personalizada", d: "Acompañamos a nuestros clientes con una atención cercana, atendiendo todas sus necesidades." },
-    { icon: Plane, t: "Alcance Internacional", d: "Operaciones en múltiples países de América Latina con alianzas estratégicas sólidas." },
+    {
+      icon: Lock,
+      t: "Tecnología Segura",
+      d: "Plataforma diseñada para ser dinámica, escalable y segura, cumpliendo con todas las normativas vigentes.",
+    },
+    {
+      icon: HeartHandshake,
+      t: "Atención Personalizada",
+      d: "Acompañamos a nuestros clientes con una atención cercana, atendiendo todas sus necesidades.",
+    },
+    {
+      icon: Plane,
+      t: "Alcance Internacional",
+      d: "Operaciones en múltiples países de América Latina con alianzas estratégicas sólidas.",
+    },
   ];
   return (
     <section className="relative bg-white border-t border-black-100">
@@ -315,7 +450,8 @@ function PorQueElegirnos() {
             </h2>
           </div>
           <p className="md:max-w-sm text-sm text-black-400 leading-relaxed">
-            Tres pilares que definen la forma en la que trabajamos y nos diferencian del resto del sector.
+            Tres pilares que definen la forma en la que trabajamos y nos diferencian del resto del
+            sector.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-6">
@@ -327,7 +463,9 @@ function PorQueElegirnos() {
               <div className="w-[52px] h-[52px] flex items-center justify-center rounded-full bg-primary-50 border border-primary-200">
                 <Icon size={22} strokeWidth={1.5} className="text-primary-ink" />
               </div>
-              <h3 className="font-semibold text-[1.375rem] mt-6 text-black-800 leading-tight">{t}</h3>
+              <h3 className="font-semibold text-[1.375rem] mt-6 text-black-800 leading-tight">
+                {t}
+              </h3>
               <div className="h-px bg-primary-500 w-8 my-3" />
               <p className="text-sm text-black-400 leading-relaxed">{d}</p>
             </article>
@@ -347,11 +485,20 @@ function RegulatoryStrip() {
             BCRA
           </div>
           <div>
-            <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">Usuarios financieros</div>
-            <div className="mt-1 font-sans text-sm text-white/80">Banco Central de la República Argentina — protección al usuario financiero.</div>
+            <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+              Usuarios financieros
+            </div>
+            <div className="mt-1 font-sans text-sm text-white/80">
+              Banco Central de la República Argentina — protección al usuario financiero.
+            </div>
           </div>
         </div>
-        <a href="https://www.usuariosfinancieros.gob.ar" target="_blank" rel="noreferrer" className="font-sans text-sm text-white border-b border-primary-400 pb-0.5 hover:text-primary-400 transition-colors">
+        <a
+          href="https://www.usuariosfinancieros.gob.ar"
+          target="_blank"
+          rel="noreferrer"
+          className="font-sans text-sm text-white border-b border-primary-400 pb-0.5 hover:text-primary-400 transition-colors"
+        >
           usuariosfinancieros.gob.ar →
         </a>
       </div>
@@ -373,28 +520,74 @@ function SiteFooter() {
           </p>
         </div>
         <div>
-          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">Enlaces útiles</div>
+          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+            Enlaces útiles
+          </div>
           <ul className="mt-5 space-y-3 font-sans text-sm text-white/70">
-            <li><Link to="/legales/privacidad" className="hover:text-white transition-colors">Políticas de privacidad</Link></li>
-            <li><Link to="/legales/terminos" className="hover:text-white transition-colors">Términos y condiciones</Link></li>
-            <li><Link to="/legales/comisiones" className="hover:text-white transition-colors">Comisiones</Link></li>
-            <li><Link to="/legales/arrepentimiento" className="hover:text-white transition-colors">Botón de arrepentimiento</Link></li>
+            <li>
+              <Link to="/legales/privacidad" className="hover:text-white transition-colors">
+                Políticas de privacidad
+              </Link>
+            </li>
+            <li>
+              <Link to="/legales/terminos" className="hover:text-white transition-colors">
+                Términos y condiciones
+              </Link>
+            </li>
+            <li>
+              <Link to="/legales/comisiones" className="hover:text-white transition-colors">
+                Comisiones
+              </Link>
+            </li>
+            <li>
+              <Link to="/legales/arrepentimiento" className="hover:text-white transition-colors">
+                Botón de arrepentimiento
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
-          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">Contactanos</div>
+          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+            Contactanos
+          </div>
           <ul className="mt-5 space-y-3 font-sans text-sm text-white/70">
-            <li><a href={mailto(brand.contact.general)} className="hover:text-white transition-colors">{brand.contact.general}</a></li>
-            <li><a href={mailto(brand.contact.admin)} className="hover:text-white transition-colors">{brand.contact.admin}</a></li>
-            <li><a href={mailto(brand.contact.claims)} className="hover:text-white transition-colors">{brand.contact.claims}</a></li>
+            <li>
+              <a
+                href={mailto(brand.contact.general)}
+                className="hover:text-white transition-colors"
+              >
+                {brand.contact.general}
+              </a>
+            </li>
+            <li>
+              <a href={mailto(brand.contact.admin)} className="hover:text-white transition-colors">
+                {brand.contact.admin}
+              </a>
+            </li>
+            <li>
+              <a href={mailto(brand.contact.claims)} className="hover:text-white transition-colors">
+                {brand.contact.claims}
+              </a>
+            </li>
           </ul>
         </div>
         <div>
-          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">Ente fiscalizador</div>
+          <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
+            Ente fiscalizador
+          </div>
           <div className="mt-5 border border-white/10 p-4 bg-black-800">
-            <div className="font-sans text-[0.6rem] tracking-[0.14em] uppercase text-primary-400">BCRA</div>
-            <div className="mt-1.5 font-sans text-sm text-white/80 leading-relaxed">Banco Central de la República Argentina</div>
-            <a href="https://www.bcra.gob.ar" target="_blank" rel="noreferrer" className="mt-2 inline-block font-sans text-[0.6rem] tracking-[0.14em] uppercase text-white hover:text-primary-400 transition-colors">
+            <div className="font-sans text-[0.6rem] tracking-[0.14em] uppercase text-primary-400">
+              BCRA
+            </div>
+            <div className="mt-1.5 font-sans text-sm text-white/80 leading-relaxed">
+              Banco Central de la República Argentina
+            </div>
+            <a
+              href="https://www.bcra.gob.ar"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block font-sans text-[0.6rem] tracking-[0.14em] uppercase text-white hover:text-primary-400 transition-colors"
+            >
               bcra.gob.ar →
             </a>
           </div>
@@ -402,8 +595,13 @@ function SiteFooter() {
       </div>
       <div className="border-t border-white/5">
         <div className="max-w-6xl mx-auto px-6 py-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between font-sans text-[0.7rem] text-white/40">
-          <div>{brand.name.toUpperCase()} — CUIT {brand.company.cuit}</div>
-          <div>Los fondos depositados no constituyen depósitos en una entidad financiera ni cuentan con la garantía de la Ley 24.485.</div>
+          <div>
+            {brand.name.toUpperCase()} — CUIT {brand.company.cuit}
+          </div>
+          <div>
+            Los fondos depositados no constituyen depósitos en una entidad financiera ni cuentan con
+            la garantía de la Ley 24.485.
+          </div>
         </div>
       </div>
     </footer>

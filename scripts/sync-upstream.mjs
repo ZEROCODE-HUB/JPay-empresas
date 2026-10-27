@@ -27,7 +27,11 @@ const REMOTE = "upstream";
 const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const gitOk = (...args) => spawnSync("git", args, { cwd: root, stdio: "inherit" }).status === 0;
 const npm = (...args) => {
-  const r = spawnSync("npm", args, { cwd: root, stdio: "inherit", shell: process.platform === "win32" });
+  const r = spawnSync("npm", args, {
+    cwd: root,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
   return r.status === 0;
 };
 const fail = (msg) => {
@@ -43,7 +47,9 @@ const tip = git("rev-parse", `${REMOTE}/${config.branch}`);
 
 // 2. Commits pendientes: posteriores al último sincronizado y no aplicados todavía.
 const applied = new Set(
-  [...git("log", "--format=%B", "-n", "500").matchAll(/cherry picked from commit ([0-9a-f]{40})/g)].map((m) => m[1]),
+  [
+    ...git("log", "--format=%B", "-n", "500").matchAll(/cherry picked from commit ([0-9a-f]{40})/g),
+  ].map((m) => m[1]),
 );
 const pending = git("rev-list", "--reverse", "--no-merges", `${config.lastSynced}..${tip}`)
   .split("\n")
@@ -60,14 +66,18 @@ const lockfileTouched = git("diff", "--name-only", `${config.lastSynced}..${tip}
   .some((f) => f === "package.json" || f === "bun.lock");
 
 console.log(`sync-upstream: ${pending.length} commit(s) pendiente(s) de ${config.branch}:`);
-for (const sha of pending) console.log(`  ${git("log", "-1", "--format=%h %ad %s", "--date=short", sha)}`);
+for (const sha of pending)
+  console.log(`  ${git("log", "-1", "--format=%h %ad %s", "--date=short", sha)}`);
 if (dryRun) process.exit(0);
 
 // 3. Rama de trabajo (nunca sobre main) y árbol limpio.
 if (existsSync(resolve(root, ".git/CHERRY_PICK_HEAD"))) {
-  fail("hay un cherry-pick a medias. Resolvelo y corré `git cherry-pick --continue`, después volvé a correr este script.");
+  fail(
+    "hay un cherry-pick a medias. Resolvelo y corré `git cherry-pick --continue`, después volvé a correr este script.",
+  );
 }
-if (git("status", "--porcelain", "--untracked-files=no")) fail("hay cambios sin commitear. Commitealos o descartalos antes.");
+if (git("status", "--porcelain", "--untracked-files=no"))
+  fail("hay cambios sin commitear. Commitealos o descartalos antes.");
 const branch = git("rev-parse", "--abbrev-ref", "HEAD");
 if (branch === "main") {
   const name = `sync/molipay-${new Date().toISOString().slice(0, 10)}`;
@@ -113,13 +123,18 @@ saveMarker(tip);
 // 6. Marca.
 console.log("\nsync-upstream: verificando marca…");
 if (!npm("run", "-s", "brand:check")) {
-  fail("brand:check encontró restos de la marca anterior. Corregilos (ver SYNC_MOLIPAY.md) y commiteá.");
+  fail(
+    "brand:check encontró restos de la marca anterior. Corregilos (ver SYNC_MOLIPAY.md) y commiteá.",
+  );
 }
-console.log("\nsync-upstream: listo. Revisá tipos (npx tsc --noEmit) y build (npx vite build) antes de mergear a main.");
+console.log(
+  "\nsync-upstream: listo. Revisá tipos (npx tsc --noEmit) y build (npx vite build) antes de mergear a main.",
+);
 
 function saveMarker(sha) {
   config.lastSynced = sha;
   writeFileSync(configPath, JSON.stringify(config, null, 2) + "\n");
   git("add", ".upstream-sync.json");
-  if (git("diff", "--cached", "--name-only")) git("commit", "--quiet", "-m", `Sync MoliPay: al día hasta ${sha.slice(0, 7)}`);
+  if (git("diff", "--cached", "--name-only"))
+    git("commit", "--quiet", "-m", `Sync MoliPay: al día hasta ${sha.slice(0, 7)}`);
 }

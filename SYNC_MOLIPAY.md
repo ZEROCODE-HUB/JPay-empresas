@@ -24,15 +24,15 @@ mergearlo (Vercel despliega `main`).
 Casi siempre son bloques que MoliPay reescribió y donde JPay solo había cambiado la marca.
 Regla: **tomar la lógica nueva de MoliPay y volver a aplicar la marca de JPay.**
 
-| En MoliPay | En JPay |
-|---|---|
-| `MoliPay`, `Molipay`, `Molly`, `MoliPlay` en textos | `brand.name` / `brand.shortName` (`@/brand/brand`) |
-| Títulos de página escritos a mano (`"… — Admin Molly"`) | `pageTitle("…")` |
-| `red-*` (era el color de marca) | `danger-*` para errores y alertas |
-| `text-primary` como color de texto | `text-primary-ink` |
-| `text-white` sobre fondo de marca | `text-primary-foreground` |
-| Prefijo `MOLI` en `originId` de BDC | `TRF` |
-| Imports de `@/brand/brand` o `@/brand/colors` que se pierden al tomar un bloque | volver a agregarlos |
+| En MoliPay                                                                      | En JPay                                            |
+| ------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `MoliPay`, `Molipay`, `Molly`, `MoliPlay` en textos                             | `brand.name` / `brand.shortName` (`@/brand/brand`) |
+| Títulos de página escritos a mano (`"… — Admin Molly"`)                         | `pageTitle("…")`                                   |
+| `red-*` (era el color de marca)                                                 | `danger-*` para errores y alertas                  |
+| `text-primary` como color de texto                                              | `text-primary-ink`                                 |
+| `text-white` sobre fondo de marca                                               | `text-primary-foreground`                          |
+| Prefijo `MOLI` en `originId` de BDC                                             | `TRF`                                              |
+| Imports de `@/brand/brand` o `@/brand/colors` que se pierden al tomar un bloque | volver a agregarlos                                |
 
 Lo propio de JPay que no existe en MoliPay se conserva (p. ej. el modo demo de verificación sin
 Resend en el portal empresas).

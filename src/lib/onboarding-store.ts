@@ -41,7 +41,14 @@ export type KYC = {
   cp: string;
 };
 
-export type EstadoOnboarding = "pendiente_verificacion" | "registrado" | "preactivado" | "activado" | "suspendido" | "deshabilitado" | "eliminado";
+export type EstadoOnboarding =
+  | "pendiente_verificacion"
+  | "registrado"
+  | "preactivado"
+  | "activado"
+  | "suspendido"
+  | "deshabilitado"
+  | "eliminado";
 
 type State = {
   tipoCuenta: TipoCuenta | null;
@@ -117,23 +124,59 @@ export const useOnboarding = create<State>()(
 );
 
 export const PROVINCIAS = [
-  "Buenos Aires", "CABA", "Catamarca", "Chaco", "Chubut", "Córdoba", "Corrientes",
-  "Entre Ríos", "Formosa", "Jujuy", "La Pampa", "La Rioja", "Mendoza", "Misiones",
-  "Neuquén", "Río Negro", "Salta", "San Juan", "San Luis", "Santa Cruz", "Santa Fe",
-  "Santiago del Estero", "Tierra del Fuego", "Tucumán",
+  "Buenos Aires",
+  "CABA",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
 ];
 
 export const OCUPACIONES = [
-  "Empleado en relación de dependencia", "Autónomo / Monotributista", "Empresario",
-  "Profesional independiente", "Jubilado / Pensionado", "Estudiante", "Otro",
+  "Empleado en relación de dependencia",
+  "Autónomo / Monotributista",
+  "Empresario",
+  "Profesional independiente",
+  "Jubilado / Pensionado",
+  "Estudiante",
+  "Otro",
 ];
 
 export const ORIGEN_FONDOS = [
-  "Sueldo", "Ahorros", "Venta de activos", "Herencia", "Inversiones", "Actividad comercial", "Otro",
+  "Sueldo",
+  "Ahorros",
+  "Venta de activos",
+  "Herencia",
+  "Inversiones",
+  "Actividad comercial",
+  "Otro",
 ];
 
 export const TIPOS_SOCIEDAD = [
-  "Sociedad Anónima (SA)", "Sociedad de Responsabilidad Limitada (SRL)",
-  "Sociedad por Acciones Simplificada (SAS)", "Sociedad Colectiva",
-  "Sociedad en Comandita", "Cooperativa", "Asociación Civil", "Otro",
+  "Sociedad Anónima (SA)",
+  "Sociedad de Responsabilidad Limitada (SRL)",
+  "Sociedad por Acciones Simplificada (SAS)",
+  "Sociedad Colectiva",
+  "Sociedad en Comandita",
+  "Cooperativa",
+  "Asociación Civil",
+  "Otro",
 ];

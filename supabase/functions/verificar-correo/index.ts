@@ -42,13 +42,22 @@ Deno.serve(async (req) => {
 
   // Transición de negocio: pendiente_verificacion -> registrado (homologado con admin)
   try {
-    const { data: cli } = await sb.from("clientes").select("id, estado, email_verificado").eq("correo", row.correo).maybeSingle();
+    const { data: cli } = await sb
+      .from("clientes")
+      .select("id, estado, email_verificado")
+      .eq("correo", row.correo)
+      .maybeSingle();
     if (cli && cli.estado === "pendiente_verificacion") {
-      await sb.from("clientes").update({ estado: "registrado", email_verificado: true }).eq("correo", row.correo);
+      await sb
+        .from("clientes")
+        .update({ estado: "registrado", email_verificado: true })
+        .eq("correo", row.correo);
     } else if (cli) {
       await sb.from("clientes").update({ email_verificado: true }).eq("correo", row.correo);
     }
-  } catch { /* no bloquear verificación si falla el update de negocio */ }
+  } catch {
+    /* no bloquear verificación si falla el update de negocio */
+  }
 
   return json({ ok: true });
 });

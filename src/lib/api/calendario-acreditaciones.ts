@@ -7,11 +7,7 @@ import type { SupabaseDataError } from "@/lib/supabase";
 
 /** Estado calculado que muestra la UI. */
 export type EstadoCalendario =
-  | "programado"
-  | "pendiente"
-  | "acreditado"
-  | "contracargo"
-  | "cancelado";
+  "programado" | "pendiente" | "acreditado" | "contracargo" | "cancelado";
 
 /** Fila del calendario de un mes. */
 export type CalendarioAcreditacion = {
@@ -105,9 +101,8 @@ function toCalendarioAcreditacion(r: Record<string, unknown>): CalendarioAcredit
     bandera: String(r.bandera ?? "—"),
     fechaVenta: String(r.fecha_venta ?? ""),
     fechaAcreditacion: String(r.fecha_acreditacion ?? ""),
-    diasHabilesAplicados: r.dias_habiles_aplicados != null
-      ? Number(r.dias_habiles_aplicados)
-      : null,
+    diasHabilesAplicados:
+      r.dias_habiles_aplicados != null ? Number(r.dias_habiles_aplicados) : null,
     cantidadOperaciones: parseNumber(r.cantidad_operaciones),
     importeBruto: parseNumber(r.importe_bruto),
     impuestos: parseNumber(r.impuestos),
@@ -129,9 +124,7 @@ function toAdelanto(r: Record<string, unknown>): AdelantoParaCalendario {
   return {
     id: String(r.id),
     montoSolicitado: parseNumber(r.monto_solicitado),
-    montoPorAcreditar: r.monto_por_acreditar != null
-      ? parseNumber(r.monto_por_acreditar)
-      : null,
+    montoPorAcreditar: r.monto_por_acreditar != null ? parseNumber(r.monto_por_acreditar) : null,
     plazoOriginalDias: parseNumber(r.plazo_original_dias),
     plazoAdelantadoDias: parseNumber(r.plazo_adelantado_dias),
     tasaInteresPct: r.tasa_interes_pct != null ? parseNumber(r.tasa_interes_pct) : null,
@@ -170,9 +163,7 @@ function toExportRow(r: Record<string, unknown>): ExportDiaRow {
 // RPCs
 // ============================================================================
 
-export async function getResumenSaldosCalendario(
-  comercioId: string,
-): Promise<ResumenSaldos> {
+export async function getResumenSaldosCalendario(comercioId: string): Promise<ResumenSaldos> {
   const sb = requireSupabase();
   const { data, error } = await sb.rpc("calendario_resumen_saldos", {
     p_comercio_id: comercioId,
@@ -181,9 +172,10 @@ export async function getResumenSaldosCalendario(
   const r = (data ?? {}) as Record<string, unknown>;
   const porAcreditar = parseNumber(r.por_acreditar);
   const adelantosEnCurso = parseNumber(r.adelantos_en_curso);
-  const disponibleReal = r.disponible_real != null
-    ? parseNumber(r.disponible_real)
-    : Math.max(porAcreditar - adelantosEnCurso, 0);
+  const disponibleReal =
+    r.disponible_real != null
+      ? parseNumber(r.disponible_real)
+      : Math.max(porAcreditar - adelantosEnCurso, 0);
   return {
     faltaCobrar: parseNumber(r.falta_cobrar),
     porAcreditar,
@@ -192,15 +184,13 @@ export async function getResumenSaldosCalendario(
   };
 }
 
-export async function listCalendarioAcreditaciones(
-  filters: {
-    mes: number;
-    anio: number;
-    comercioId: string;
-    bandera?: string;
-    estado?: EstadoCalendario;
-  },
-): Promise<CalendarioAcreditacion[]> {
+export async function listCalendarioAcreditaciones(filters: {
+  mes: number;
+  anio: number;
+  comercioId: string;
+  bandera?: string;
+  estado?: EstadoCalendario;
+}): Promise<CalendarioAcreditacion[]> {
   const sb = requireSupabase();
   const { data, error } = await sb.rpc("calendario_acreditaciones_v2", {
     p_mes: filters.mes,
@@ -228,10 +218,7 @@ export async function getAdelantosPorDia(
   return arr.map((r) => toAdelanto(r as Record<string, unknown>));
 }
 
-export async function getExportDia(
-  fecha: string,
-  comercioId: string,
-): Promise<ExportDiaRow[]> {
+export async function getExportDia(fecha: string, comercioId: string): Promise<ExportDiaRow[]> {
   const sb = requireSupabase();
   const { data, error } = await sb.rpc("calendario_exportar_dia", {
     p_fecha: fecha,

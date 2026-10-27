@@ -52,7 +52,9 @@ function NuevoLote() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  useEffect(() => { setPage(1); }, [csvData]);
+  useEffect(() => {
+    setPage(1);
+  }, [csvData]);
 
   // Paso 1 - Parametros generales
   const tomorrow = format(new Date(Date.now() + 86400000), "yyyy-MM-dd");
@@ -219,7 +221,10 @@ function NuevoLote() {
           const wb = XLSX.read(e.target?.result, { type: "array" });
           const ws = wb.Sheets[wb.SheetNames[0]];
           const json = XLSX.utils.sheet_to_json<Record<string, string>>(ws);
-          if (json.length === 0) { onError("El archivo no contiene datos"); return; }
+          if (json.length === 0) {
+            onError("El archivo no contiene datos");
+            return;
+          }
           const rows = parseRows(json);
           if (rows) onSuccess(rows);
         } catch {
@@ -234,13 +239,18 @@ function NuevoLote() {
         try {
           const text = e.target?.result as string;
           const lines = text.split("\n").filter((l) => l.trim());
-          if (lines.length < 2) { onError("El archivo debe contener al menos un encabezado y una fila de datos"); return; }
+          if (lines.length < 2) {
+            onError("El archivo debe contener al menos un encabezado y una fila de datos");
+            return;
+          }
           const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
           const rawRows: Record<string, string>[] = [];
           for (let i = 1; i < lines.length; i++) {
             const values = lines[i].split(",").map((v) => v.trim());
             const row: Record<string, string> = {};
-            headers.forEach((h, idx) => { row[h] = values[idx] ?? ""; });
+            headers.forEach((h, idx) => {
+              row[h] = values[idx] ?? "";
+            });
             rawRows.push(row);
           }
           const rows = parseRows(rawRows);
@@ -373,11 +383,7 @@ function NuevoLote() {
               </div>
               <div>
                 <Label>Periodo</Label>
-                <Input
-                  type="month"
-                  value={periodo}
-                  onChange={(e) => setPeriodo(e.target.value)}
-                />
+                <Input type="month" value={periodo} onChange={(e) => setPeriodo(e.target.value)} />
               </div>
               <div>
                 <Label>Dia de pago</Label>
@@ -623,8 +629,22 @@ function NuevoLote() {
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-2">
                     <span>{`${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, csvData.length)} de ${csvData.length}`}</span>
                     <div className="flex gap-1">
-                      <BtnOutline className="h-7 px-2 text-[11px]" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</BtnOutline>
-                      <BtnOutline className="h-7 px-2 text-[11px]" disabled={page >= Math.ceil(csvData.length / pageSize)} onClick={() => setPage((p) => Math.min(Math.ceil(csvData.length / pageSize), p + 1))}>Siguiente</BtnOutline>
+                      <BtnOutline
+                        className="h-7 px-2 text-[11px]"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      >
+                        Anterior
+                      </BtnOutline>
+                      <BtnOutline
+                        className="h-7 px-2 text-[11px]"
+                        disabled={page >= Math.ceil(csvData.length / pageSize)}
+                        onClick={() =>
+                          setPage((p) => Math.min(Math.ceil(csvData.length / pageSize), p + 1))
+                        }
+                      >
+                        Siguiente
+                      </BtnOutline>
                     </div>
                   </div>
                 )}
@@ -710,7 +730,9 @@ function NuevoLote() {
           <Card>
             <h3 className="font-semibold mb-4">Registros cargados</h3>
             <div className="text-sm">
-              <span className="font-display tabular-nums font-semibold text-lg">{csvData.length}</span>{" "}
+              <span className="font-display tabular-nums font-semibold text-lg">
+                {csvData.length}
+              </span>{" "}
               <span className="text-muted-foreground">registros</span>
             </div>
             <div className="text-xs text-muted-foreground mt-1">

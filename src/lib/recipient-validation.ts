@@ -10,12 +10,7 @@
 export type IdentifierKind = "CBU" | "CVU" | "ALIAS" | "UNKNOWN";
 
 export type ValidationStatus =
-  | "valid"
-  | "invalid_format"
-  | "not_found"
-  | "rejected"
-  | "error"
-  | "timeout";
+  "valid" | "invalid_format" | "not_found" | "rejected" | "error" | "timeout";
 
 export type RecipientValidationRequest = {
   identifier: string; // CBU/CVU (22 dígitos) o Alias (6-20 chars a-z0-9.-)
@@ -83,22 +78,59 @@ export function isValidFormat(kind: IdentifierKind, identifier: string): boolean
 // NO hardcodear "todo válido" dentro de la lógica de transferencia.
 // ---------------------------------------------------------------------------
 const MOCK_TITULARES: RecipientTitular[] = [
-  { nombre: "Proveedor SA", cuit: "30-12345678-9", cbu: "0000003100099887766112", alias: "proveedor.sa", banco: "Banco Galicia" },
-  { nombre: "Estudio Rios", cuit: "30-87654321-0", cbu: "0000003200099887766223", alias: "rios.contable", banco: "Banco Nacion" },
-  { nombre: "Servicios Generales", cuit: "30-11122333-4", cbu: "0000003300099887766334", alias: "serv.generales", banco: "Santander" },
-  { nombre: "Juan Perez", cuit: "20-22333444-5", cbu: "0000003400099887766445", alias: "juanperez.mp", banco: "Mercado Pago" },
-  { nombre: "Maria Lopez", cuit: "27-33444555-6", cbu: "0000003500099887766556", alias: "mlopez.cv", banco: "Brubank" },
+  {
+    nombre: "Proveedor SA",
+    cuit: "30-12345678-9",
+    cbu: "0000003100099887766112",
+    alias: "proveedor.sa",
+    banco: "Banco Galicia",
+  },
+  {
+    nombre: "Estudio Rios",
+    cuit: "30-87654321-0",
+    cbu: "0000003200099887766223",
+    alias: "rios.contable",
+    banco: "Banco Nacion",
+  },
+  {
+    nombre: "Servicios Generales",
+    cuit: "30-11122333-4",
+    cbu: "0000003300099887766334",
+    alias: "serv.generales",
+    banco: "Santander",
+  },
+  {
+    nombre: "Juan Perez",
+    cuit: "20-22333444-5",
+    cbu: "0000003400099887766445",
+    alias: "juanperez.mp",
+    banco: "Mercado Pago",
+  },
+  {
+    nombre: "Maria Lopez",
+    cuit: "27-33444555-6",
+    cbu: "0000003500099887766556",
+    alias: "mlopez.cv",
+    banco: "Brubank",
+  },
 ];
 
 function pickMockTitular(identifier: string, kind: IdentifierKind): RecipientTitular {
   const q = identifier.trim().toLowerCase();
   const found = MOCK_TITULARES.find(
-    (t) => t.cbu === identifier.trim() || t.alias.toLowerCase() === q || t.cuit.replace(/-/g, "") === q.replace(/-/g, ""),
+    (t) =>
+      t.cbu === identifier.trim() ||
+      t.alias.toLowerCase() === q ||
+      t.cuit.replace(/-/g, "") === q.replace(/-/g, ""),
   );
   if (found) return found;
   // Genérico para CBU/CVU/Alias no catalogado: simula respuesta COELSA válida
-  const alias = kind === "ALIAS" ? identifier.trim().toLowerCase() : `usuario.${identifier.slice(-6)}`;
-  const cbu = kind === "ALIAS" ? `0000003${identifier.slice(0, 6).padEnd(16, "0")}`.slice(0, 22) : identifier.trim();
+  const alias =
+    kind === "ALIAS" ? identifier.trim().toLowerCase() : `usuario.${identifier.slice(-6)}`;
+  const cbu =
+    kind === "ALIAS"
+      ? `0000003${identifier.slice(0, 6).padEnd(16, "0")}`.slice(0, 22)
+      : identifier.trim();
   return {
     nombre: kind === "ALIAS" ? `Titular ${alias}` : `Titular CBU ${cbu.slice(-6)}`,
     cuit: "20-00000000-0",

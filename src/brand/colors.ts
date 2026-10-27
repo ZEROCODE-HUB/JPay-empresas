@@ -37,7 +37,13 @@ function cssVar(name: ThemeColor): string {
   const step = /^(primary|secondary)-(\d+)$/.exec(name);
   if (step) return `--brand-${step[1]}-${step[2]}`;
   if (name === "highlight") return "--brand-highlight-500";
-  if (name === "navigation" || name === "on-primary" || name === "on-secondary" || name === "on-highlight") return `--brand-${name}`;
+  if (
+    name === "navigation" ||
+    name === "on-primary" ||
+    name === "on-secondary" ||
+    name === "on-highlight"
+  )
+    return `--brand-${name}`;
   if (name === "danger") return "--danger-500";
   return `--${name}`;
 }
@@ -54,9 +60,7 @@ export function resolveColor(name: ThemeColor): Rgb {
   if (hit) return hit;
   if (typeof document === "undefined") return FALLBACK;
 
-  const value = getComputedStyle(document.documentElement)
-    .getPropertyValue(cssVar(name))
-    .trim();
+  const value = getComputedStyle(document.documentElement).getPropertyValue(cssVar(name)).trim();
   if (!value) return FALLBACK;
 
   const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
@@ -71,5 +75,10 @@ export function resolveColor(name: ThemeColor): Rgb {
 
 /** Mismo color como "#RRGGBB" (para canvas `fillStyle`, jsPDF, etc.). */
 export function resolveColorHex(name: ThemeColor): string {
-  return "#" + resolveColor(name).map((c) => c.toString(16).padStart(2, "0")).join("");
+  return (
+    "#" +
+    resolveColor(name)
+      .map((c) => c.toString(16).padStart(2, "0"))
+      .join("")
+  );
 }

@@ -502,7 +502,7 @@ export async function createTemplate(input: {
       // treats "" the same as NULL (no recipient).
       destinatario_identifier: identifier || "",
       destinatario_kind: identifier ? kindForDb(identifier) : "ALIAS",
-      destinatario_nombre: dest ? (dest.nombre || identifier) || null : null,
+      destinatario_nombre: dest ? dest.nombre || identifier || null : null,
       destinatario_alias: dest?.alias ?? null,
       destinatario_cbu: dest?.cbu ?? null,
       destinatario_cuit: dest?.cuit ?? null,
@@ -600,7 +600,10 @@ export async function reserveBdcTransfer(input: {
 }
 
 /** Paso 2: el banco aceptó la transferencia -> se contabiliza (idempotente). */
-export async function confirmBdcTransfer(originId: string, estadoBdc?: string | null): Promise<void> {
+export async function confirmBdcTransfer(
+  originId: string,
+  estadoBdc?: string | null,
+): Promise<void> {
   const sb = requireSupabase();
   const { error } = await sb.rpc("confirmar_transferencia_bdc", {
     p_origin_id: originId,

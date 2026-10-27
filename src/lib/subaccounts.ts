@@ -4,7 +4,8 @@
 //
 // El cliente solo puede LEER sus saldos: los mueven las RPC del backend.
 
-export const SALDOS_EMBED = "subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)";
+export const SALDOS_EMBED =
+  "subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)";
 
 type Saldos = { saldo_disponible: number; saldo_retenido: number; saldo_conciliado: number };
 

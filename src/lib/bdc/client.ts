@@ -107,7 +107,9 @@ export class BdcClient {
       });
     } catch (err) {
       const mensaje = err instanceof Error ? err.message : String(err);
-      throw new BdcError(`No se pudo conectar con el backend BDC ${url}: ${mensaje}`, { status: null });
+      throw new BdcError(`No se pudo conectar con el backend BDC ${url}: ${mensaje}`, {
+        status: null,
+      });
     }
 
     const texto = await res.text();
@@ -207,7 +209,10 @@ export class BdcClient {
   // 5) GET /movements/transfer-request/{originId}
   async consultarTransferencia(originId: string): Promise<BdcTransferStatus> {
     if (!originId) throw new BdcError("Falta originId para consultar.", { statusCode: -1 });
-    return this.callBackend("GET", `/transfers/${encodeURIComponent(String(originId))}`) as Promise<BdcTransferStatus>;
+    return this.callBackend(
+      "GET",
+      `/transfers/${encodeURIComponent(String(originId))}`,
+    ) as Promise<BdcTransferStatus>;
   }
 }
 

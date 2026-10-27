@@ -1,6 +1,16 @@
 import { useEffect, useRef, useState, type ReactNode, type InputHTMLAttributes } from "react";
 import { Link } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, UploadCloud, Camera, FileText, X, ShieldCheck, Loader2 } from "lucide-react";
+import {
+  Check,
+  Eye,
+  EyeOff,
+  UploadCloud,
+  Camera,
+  FileText,
+  X,
+  ShieldCheck,
+  Loader2,
+} from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { brand, mailto } from "@/brand/brand";
 
@@ -23,7 +33,12 @@ export function AuthShell({
     <div className="min-h-screen grid lg:grid-cols-2 overflow-x-hidden bg-background">
       <aside className="relative hidden lg:flex flex-col justify-between p-10 xl:p-12 overflow-hidden select-none text-white">
         <div className="absolute inset-0">
-          <img src={brand.assets.loginHero} alt="" aria-hidden className="h-full w-full object-cover" />
+          <img
+            src={brand.assets.loginHero}
+            alt=""
+            aria-hidden
+            className="h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-br from-black/85 via-black/70 to-black/50" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
         </div>
@@ -43,9 +58,7 @@ export function AuthShell({
               {leftTitle}
             </h2>
             {leftBody && (
-              <p className="mt-5 max-w-[34ch] text-white/65 leading-relaxed text-sm">
-                {leftBody}
-              </p>
+              <p className="mt-5 max-w-[34ch] text-white/65 leading-relaxed text-sm">{leftBody}</p>
             )}
           </div>
         </div>
@@ -62,7 +75,9 @@ export function AuthShell({
               {step}
             </p>
           )}
-          <p className="text-white/35 text-[11px]">© {new Date().getFullYear()} {brand.name}</p>
+          <p className="text-white/35 text-[11px]">
+            © {new Date().getFullYear()} {brand.name}
+          </p>
         </div>
       </aside>
 
@@ -79,7 +94,10 @@ export function AuthShell({
 
         <footer className="px-6 py-4 text-center text-xs text-black-400">
           ¿Necesitás ayuda?{" "}
-          <a href={mailto(brand.contact.support)} className="underline underline-offset-2 hover:text-primary-ink transition-colors">
+          <a
+            href={mailto(brand.contact.support)}
+            className="underline underline-offset-2 hover:text-primary-ink transition-colors"
+          >
             {brand.contact.support}
           </a>
         </footer>
@@ -103,13 +121,15 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
                 done
                   ? "bg-success text-white"
                   : active
-                  ? "bg-primary-500 text-primary-foreground"
-                  : "bg-transparent text-black-600 border border-black-200"
+                    ? "bg-primary-500 text-primary-foreground"
+                    : "bg-transparent text-black-600 border border-black-200"
               }`}
             >
               {done ? <Check size={14} /> : i + 1}
             </span>
-            <span className={`text-xs ${active ? "font-semibold text-black-800" : "text-black-400"}`}>
+            <span
+              className={`text-xs ${active ? "font-semibold text-black-800" : "text-black-400"}`}
+            >
               {label}
             </span>
             {i < steps.length - 1 && <span className="w-6 h-px bg-black-100" />}
@@ -122,7 +142,15 @@ export function Stepper({ steps, current }: { steps: string[]; current: number }
 
 /* ============ Headings ============ */
 
-export function FormTitle({ eyebrow, title, subtitle }: { eyebrow?: string; title: string; subtitle?: string }) {
+export function FormTitle({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <div className="mb-7">
       {eyebrow && (
@@ -194,7 +222,9 @@ export function SelectField({
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (
-          <option key={o} value={o}>{o}</option>
+          <option key={o} value={o}>
+            {o}
+          </option>
         ))}
       </select>
       {error && <span className="mt-1 block text-xs text-danger-500">{error}</span>}
@@ -229,9 +259,11 @@ export function PasswordField({
     <div>
       <label className="block">
         <span className="block mb-1.5 text-xs font-semibold text-black-700">{label}</span>
-        <div className={`flex items-center bg-white rounded-sm border ${
-          error ? "border-danger-500" : "border-black-100"
-        } focus-within:border-secondary-500 focus-within:ring-2 focus-within:ring-secondary-100`}>
+        <div
+          className={`flex items-center bg-white rounded-sm border ${
+            error ? "border-danger-500" : "border-black-100"
+          } focus-within:border-secondary-500 focus-within:ring-2 focus-within:ring-secondary-100`}
+        >
           <input
             type={show ? "text" : "password"}
             value={value}
@@ -254,7 +286,10 @@ export function PasswordField({
           {rules.map((r) => {
             const ok = r.test(value);
             return (
-              <li key={r.id} className={`flex items-center gap-1.5 text-[11px] ${ok ? "text-success" : "text-black-400"}`}>
+              <li
+                key={r.id}
+                className={`flex items-center gap-1.5 text-[11px] ${ok ? "text-success" : "text-black-400"}`}
+              >
                 <Check size={12} />
                 {r.label}
               </li>
@@ -400,8 +435,13 @@ export function FileUpload({
             <FileText size={18} className="text-black-400 shrink-0" />
           )}
           <div className="flex-1 min-w-0">
-            <p className="text-sm truncate text-black-700">{isImage ? "Imagen cargada" : "Documento cargado"} {isExisting && <span className="text-[10px] text-black-400">(existente)</span>}</p>
-            <p className="text-[11px] text-black-400">{isExisting ? "Se mantendrá si no la reemplazás" : "Listo para enviar"}</p>
+            <p className="text-sm truncate text-black-700">
+              {isImage ? "Imagen cargada" : "Documento cargado"}{" "}
+              {isExisting && <span className="text-[10px] text-black-400">(existente)</span>}
+            </p>
+            <p className="text-[11px] text-black-400">
+              {isExisting ? "Se mantendrá si no la reemplazás" : "Listo para enviar"}
+            </p>
             <p className="text-[11px] text-black-400 truncate">{value.name}</p>
           </div>
           <button
@@ -419,7 +459,13 @@ export function FileUpload({
           >
             <X size={16} />
           </button>
-          <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(e) => handle(e.target.files?.[0] ?? null)} />
+          <input
+            ref={inputRef}
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={(e) => handle(e.target.files?.[0] ?? null)}
+          />
         </div>
       </div>
     );
@@ -431,9 +477,16 @@ export function FileUpload({
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDrag(true);
+        }}
         onDragLeave={() => setDrag(false)}
-        onDrop={(e) => { e.preventDefault(); setDrag(false); handle(e.dataTransfer.files?.[0] ?? null); }}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          handle(e.dataTransfer.files?.[0] ?? null);
+        }}
         className={`w-full flex flex-col items-center justify-center gap-2 py-8 px-4 text-center transition-colors rounded-sm ${
           drag ? "border-primary-500 bg-primary-50/20" : "border-black-200 bg-white"
         } border-dashed border`}
@@ -446,9 +499,17 @@ export function FileUpload({
           Arrastrá o hacé clic para subir
         </span>
         {hint && <span className="text-xs text-black-400">{hint}</span>}
-        <span className="text-[10px] text-black-300 uppercase tracking-wider">JPG · PNG · PDF · máx 8MB</span>
+        <span className="text-[10px] text-black-300 uppercase tracking-wider">
+          JPG · PNG · PDF · máx 8MB
+        </span>
       </button>
-      <input ref={inputRef} type="file" accept={accept} className="hidden" onChange={(e) => handle(e.target.files?.[0] ?? null)} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => handle(e.target.files?.[0] ?? null)}
+      />
     </div>
   );
 }
@@ -464,10 +525,7 @@ export function EmptyRow({
 }) {
   return (
     <tr>
-      <td
-        colSpan={colSpan}
-        className="px-4 py-12 text-center text-sm text-black-500 bg-white"
-      >
+      <td colSpan={colSpan} className="px-4 py-12 text-center text-sm text-black-500 bg-white">
         {message}
       </td>
     </tr>
@@ -507,12 +565,24 @@ export function SuccessCard({
   children?: ReactNode;
   variant?: "success" | "info" | "error" | "loading";
 }) {
-  const color = variant === "success" ? "var(--success)" : variant === "error" ? "#DC2626" : "var(--brand-secondary-500)";
+  const color =
+    variant === "success"
+      ? "var(--success)"
+      : variant === "error"
+        ? "#DC2626"
+        : "var(--brand-secondary-500)";
   const Icon = variant === "error" ? X : variant === "loading" ? Loader2 : Check;
   return (
     <div className="bg-white p-8 sm:p-10 text-center rounded-md border border-black-100">
-      <div className="mx-auto mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full" style={{ background: `color-mix(in srgb, ${color} 8%, transparent)`, color }}>
-        <Icon size={30} strokeWidth={2.5} className={variant === "loading" ? "animate-spin" : undefined} />
+      <div
+        className="mx-auto mb-6 inline-flex items-center justify-center w-16 h-16 rounded-full"
+        style={{ background: `color-mix(in srgb, ${color} 8%, transparent)`, color }}
+      >
+        <Icon
+          size={30}
+          strokeWidth={2.5}
+          className={variant === "loading" ? "animate-spin" : undefined}
+        />
       </div>
       <h1 className="text-[1.75rem] font-semibold text-black-800 leading-tight">{title}</h1>
       {body && <div className="mt-4 text-sm text-black-400 leading-relaxed">{body}</div>}

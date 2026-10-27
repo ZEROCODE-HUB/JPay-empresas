@@ -26,11 +26,9 @@ const generatedCss = readFileSync(resolve(root, "src/brand/brand.generated.css")
 
 const SCAN_DIRS = ["src", "supabase/functions"];
 const EXTENSIONS = /\.(ts|tsx|js|jsx|mjs)$/;
-const SKIP = [
-  "src/brand/",
-  "src/routeTree.gen.ts",
-  "supabase/functions/_shared/brand.ts",
-].map((p) => p.split("/").join(sep));
+const SKIP = ["src/brand/", "src/routeTree.gen.ts", "supabase/functions/_shared/brand.ts"].map(
+  (p) => p.split("/").join(sep),
+);
 const IGNORE_MARK = "brand-check-ignore";
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -38,7 +36,11 @@ const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // 1. Términos de marca: nombres y dominios.
 const hosts = new Set();
 for (const value of [...Object.values(brand.contact), ...Object.values(brand.web)]) {
-  const host = String(value).replace(/^mailto:/, "").replace(/^https?:\/\//, "").split("@").pop();
+  const host = String(value)
+    .replace(/^mailto:/, "")
+    .replace(/^https?:\/\//, "")
+    .split("@")
+    .pop();
   hosts.add(host.split("/")[0]);
 }
 // Incluye los nombres anteriores de la marca (`previousNames`) para que no quede ninguno suelto.
@@ -97,15 +99,24 @@ for (const dir of SCAN_DIRS) {
       if (line.includes(IGNORE_MARK)) return;
       const where = `${rel.split(sep).join("/")}:${i + 1}`;
       const text = line.match(brandText);
-      if (text) problems.push(`${where}  marca escrita a mano "${text[0]}" → usar brand.* de @/brand/brand`);
+      if (text)
+        problems.push(
+          `${where}  marca escrita a mano "${text[0]}" → usar brand.* de @/brand/brand`,
+        );
       const host = line.match(brandHosts);
-      if (host) problems.push(`${where}  dominio de marca "${host[0]}" → usar brand.contact / brand.web`);
+      if (host)
+        problems.push(`${where}  dominio de marca "${host[0]}" → usar brand.contact / brand.web`);
       for (const m of line.matchAll(hexLiteral)) {
         if (brandHex.has(m[0].toUpperCase()))
-          problems.push(`${where}  color de marca ${m[0]} → usar clases primary/secondary/highlight o resolveColor()`);
+          problems.push(
+            `${where}  color de marca ${m[0]} → usar clases primary/secondary/highlight o resolveColor()`,
+          );
       }
       const raw = line.match(rawColor);
-      if (raw) problems.push(`${where}  color sin semántica "${raw[0]}" → usar primary-*/secondary-*/highlight-* o danger-*`);
+      if (raw)
+        problems.push(
+          `${where}  color sin semántica "${raw[0]}" → usar primary-*/secondary-*/highlight-* o danger-*`,
+        );
       const bg = line.match(solidBrandBg);
       if (bg && whiteText.test(line))
         problems.push(`${where}  "text-white" sobre bg-${bg[1]} → usar text-${bg[1]}-foreground`);

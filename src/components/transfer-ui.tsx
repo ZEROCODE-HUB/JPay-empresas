@@ -1,15 +1,28 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Check, CheckCircle2, Copy, Download, Loader2, Share2, ShieldCheck, Star, X } from "lucide-react";
+import {
+  Check,
+  CheckCircle2,
+  Copy,
+  Download,
+  Loader2,
+  Share2,
+  ShieldCheck,
+  Star,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { BtnOutline, BtnPrimary } from "@/components/portal-shell";
 import { cotizarTransferencia, type ComisionConfig, type Cotizacion } from "@/lib/transfer-store";
 
-const fmt = (n: number) => `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n: number) =>
+  `$ ${n.toLocaleString("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtPct = (n: number) => `${n.toLocaleString("es-AR", { maximumFractionDigits: 2 })}%`;
 
 /** "1,5% del monto" o "fijo $ 5,00 por transferencia". */
 const detalleComision = (c: ComisionConfig) =>
-  c.modalidad === "Fijo" ? `fijo ${fmt(c.montoFijo ?? 0)} por transferencia` : `${fmtPct(c.porcentaje ?? 0)} del monto`;
+  c.modalidad === "Fijo"
+    ? `fijo ${fmt(c.montoFijo ?? 0)} por transferencia`
+    : `${fmtPct(c.porcentaje ?? 0)} del monto`;
 
 // ============================================================================
 // Cotizacion en tiempo real
@@ -20,7 +33,12 @@ const detalleComision = (c: ComisionConfig) =>
  * debounce. Mientras llega la respuesta, `estimado` compara el monto contra el
  * disponible local para que la validacion sea inmediata.
  */
-export function useCotizacion(subcuentaOrigen: string, monto: number, destino: string | null | undefined, disponible: number) {
+export function useCotizacion(
+  subcuentaOrigen: string,
+  monto: number,
+  destino: string | null | undefined,
+  disponible: number,
+) {
   const [cotizacion, setCotizacion] = useState<Cotizacion | null>(null);
   const [cargando, setCargando] = useState(false);
   const pedido = useRef(0);
@@ -47,7 +65,8 @@ export function useCotizacion(subcuentaOrigen: string, monto: number, destino: s
   }, [subcuentaOrigen, monto, destino]);
 
   // La cotizacion vieja no vale si cambio el monto u origen.
-  const vigente = cotizacion && cotizacion.monto === Math.round(monto * 100) / 100 ? cotizacion : null;
+  const vigente =
+    cotizacion && cotizacion.monto === Math.round(monto * 100) / 100 ? cotizacion : null;
   const excedeDisponible = monto > 0 && monto > disponible;
   const insuficiente = excedeDisponible || (vigente ? !vigente.alcanza : false);
   const faltante = vigente ? vigente.faltante : Math.max(monto - disponible, 0);
@@ -72,27 +91,47 @@ export function ResumenCotizacion({
   faltante: number;
 }) {
   if (!(monto > 0)) {
-    return <div className="text-xs text-muted-foreground mt-1">Disponible: <span className="font-mono">{fmt(disponible)}</span></div>;
+    return (
+      <div className="text-xs text-muted-foreground mt-1">
+        Disponible: <span className="font-mono">{fmt(disponible)}</span>
+      </div>
+    );
   }
   const cfg = cotizacion?.config ?? null;
   const sinCargo = cotizacion?.interna || !cfg;
   return (
-    <div className={`mt-2 rounded-lg border p-3 text-sm ${insuficiente ? "border-danger-300 bg-danger-50" : "bg-muted/30"}`}>
+    <div
+      className={`mt-2 rounded-lg border p-3 text-sm ${insuficiente ? "border-danger-300 bg-danger-50" : "bg-muted/30"}`}
+    >
       <div className="grid grid-cols-2 gap-y-1">
         <span className="text-muted-foreground">Disponible</span>
-        <span className="text-right font-mono tabular-nums">{fmt(cotizacion?.disponible ?? disponible)}</span>
+        <span className="text-right font-mono tabular-nums">
+          {fmt(cotizacion?.disponible ?? disponible)}
+        </span>
         <span className="text-muted-foreground">
           Comisión
-          {cotizacion && !sinCargo && cfg && <span className="ml-1 text-[11px]">· {detalleComision(cfg)}</span>}
+          {cotizacion && !sinCargo && cfg && (
+            <span className="ml-1 text-[11px]">· {detalleComision(cfg)}</span>
+          )}
         </span>
-        <span className="text-right font-mono tabular-nums">{cotizacion ? fmt(cotizacion.comision) : cargando ? "…" : "—"}</span>
+        <span className="text-right font-mono tabular-nums">
+          {cotizacion ? fmt(cotizacion.comision) : cargando ? "…" : "—"}
+        </span>
         <span className="text-muted-foreground">
           IVA
-          {cotizacion && !sinCargo && cfg && <span className="ml-1 text-[11px]">· {fmtPct(cfg.porcentajeImpuesto)} de la comisión</span>}
+          {cotizacion && !sinCargo && cfg && (
+            <span className="ml-1 text-[11px]">
+              · {fmtPct(cfg.porcentajeImpuesto)} de la comisión
+            </span>
+          )}
         </span>
-        <span className="text-right font-mono tabular-nums">{cotizacion ? fmt(cotizacion.impuesto) : cargando ? "…" : "—"}</span>
+        <span className="text-right font-mono tabular-nums">
+          {cotizacion ? fmt(cotizacion.impuesto) : cargando ? "…" : "—"}
+        </span>
         <span className="font-semibold">Total a debitar</span>
-        <span className="text-right font-mono tabular-nums font-semibold">{cotizacion ? fmt(cotizacion.total) : cargando ? "…" : fmt(monto)}</span>
+        <span className="text-right font-mono tabular-nums font-semibold">
+          {cotizacion ? fmt(cotizacion.total) : cargando ? "…" : fmt(monto)}
+        </span>
       </div>
       {cotizacion && (
         <div className="mt-2 border-t pt-2 text-[11px] text-muted-foreground">
@@ -104,8 +143,12 @@ export function ResumenCotizacion({
         </div>
       )}
       {insuficiente && (
-        <div className="mt-2 border-t border-danger-200 pt-2 text-xs font-semibold text-danger-700" role="alert">
-          Saldo insuficiente: te faltan {fmt(faltante)} para cubrir el monto{cotizacion && cotizacion.comision > 0 ? " más comisión e IVA" : ""}.
+        <div
+          className="mt-2 border-t border-danger-200 pt-2 text-xs font-semibold text-danger-700"
+          role="alert"
+        >
+          Saldo insuficiente: te faltan {fmt(faltante)} para cubrir el monto
+          {cotizacion && cotizacion.comision > 0 ? " más comisión e IVA" : ""}.
         </div>
       )}
     </div>
@@ -124,17 +167,30 @@ const PASOS: { key: PasoTransferencia; label: string }[] = [
   { key: "confirmacion", label: "Confirmando la operación" },
 ];
 
-export function TransferProcessingOverlay({ paso, monto }: { paso: PasoTransferencia; monto?: number }) {
+export function TransferProcessingOverlay({
+  paso,
+  monto,
+}: {
+  paso: PasoTransferencia;
+  monto?: number;
+}) {
   const actual = PASOS.findIndex((p) => p.key === paso);
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" role="alertdialog" aria-live="assertive" aria-busy="true">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      role="alertdialog"
+      aria-live="assertive"
+      aria-busy="true"
+    >
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div className="relative w-full max-w-sm rounded-2xl bg-card p-7 shadow-2xl text-center">
         <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-[color:var(--brand-soft)] flex items-center justify-center">
           <Loader2 size={30} className="animate-spin text-[color:var(--brand-primary)]" />
         </div>
         <div className="text-lg font-semibold">Procesando transferencia</div>
-        {monto != null && <div className="mt-1 font-display tabular-nums text-2xl font-bold">{fmt(monto)}</div>}
+        {monto != null && (
+          <div className="mt-1 font-display tabular-nums text-2xl font-bold">{fmt(monto)}</div>
+        )}
         <ol className="mt-6 space-y-3 text-left">
           {PASOS.map((p, i) => {
             const hecho = i < actual;
@@ -143,12 +199,30 @@ export function TransferProcessingOverlay({ paso, monto }: { paso: PasoTransfere
               <li key={p.key} className="flex items-center gap-3 text-sm">
                 <span
                   className={`h-6 w-6 shrink-0 rounded-full flex items-center justify-center border ${
-                    hecho ? "bg-emerald-500 border-emerald-500 text-white" : enCurso ? "border-[color:var(--brand-primary)]" : "border-muted-foreground/30"
+                    hecho
+                      ? "bg-emerald-500 border-emerald-500 text-white"
+                      : enCurso
+                        ? "border-[color:var(--brand-primary)]"
+                        : "border-muted-foreground/30"
                   }`}
                 >
-                  {hecho ? <Check size={14} /> : enCurso ? <Loader2 size={13} className="animate-spin text-[color:var(--brand-primary)]" /> : null}
+                  {hecho ? (
+                    <Check size={14} />
+                  ) : enCurso ? (
+                    <Loader2 size={13} className="animate-spin text-[color:var(--brand-primary)]" />
+                  ) : null}
                 </span>
-                <span className={hecho ? "text-muted-foreground" : enCurso ? "font-semibold" : "text-muted-foreground/70"}>{p.label}</span>
+                <span
+                  className={
+                    hecho
+                      ? "text-muted-foreground"
+                      : enCurso
+                        ? "font-semibold"
+                        : "text-muted-foreground/70"
+                  }
+                >
+                  {p.label}
+                </span>
               </li>
             );
           })}
@@ -187,7 +261,17 @@ export type ReciboTransferencia = {
   destino: ReciboCuenta;
 };
 
-function Fila({ label, value, mono, copiable }: { label: string; value?: string | null; mono?: boolean; copiable?: boolean }) {
+function Fila({
+  label,
+  value,
+  mono,
+  copiable,
+}: {
+  label: string;
+  value?: string | null;
+  mono?: boolean;
+  copiable?: boolean;
+}) {
   const v = value && value.trim() ? value : "—";
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 text-sm">
@@ -197,7 +281,12 @@ function Fila({ label, value, mono, copiable }: { label: string; value?: string 
         {copiable && v !== "—" && (
           <button
             type="button"
-            onClick={() => void navigator.clipboard.writeText(v).then(() => toast.success(`${label} copiado`), () => {})}
+            onClick={() =>
+              void navigator.clipboard.writeText(v).then(
+                () => toast.success(`${label} copiado`),
+                () => {},
+              )
+            }
             className="ml-1.5 inline-flex align-middle text-muted-foreground hover:text-foreground"
             title={`Copiar ${label}`}
           >
@@ -212,7 +301,9 @@ function Fila({ label, value, mono, copiable }: { label: string; value?: string 
 function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <section className="px-6 py-4">
-      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">{titulo}</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">
+        {titulo}
+      </div>
       {children}
     </section>
   );
@@ -236,7 +327,13 @@ export function TransferReceiptModal({
   const fecha = new Date(recibo.fecha);
   const fechaTxt = Number.isNaN(fecha.getTime())
     ? recibo.fecha
-    : fecha.toLocaleString("es-AR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    : fecha.toLocaleString("es-AR", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
   const total = recibo.monto + (recibo.comision ?? 0) + (recibo.impuesto ?? 0);
 
   return (
@@ -258,7 +355,9 @@ export function TransferReceiptModal({
             <CheckCircle2 size={28} className="text-emerald-600" />
           </div>
           <div className="text-sm font-medium text-muted-foreground">Enviaste</div>
-          <div className="mt-1 font-display tabular-nums text-4xl font-bold tracking-tight">{fmt(recibo.monto)}</div>
+          <div className="mt-1 font-display tabular-nums text-4xl font-bold tracking-tight">
+            {fmt(recibo.monto)}
+          </div>
           <div className="mt-2 text-xs text-muted-foreground">{fechaTxt}</div>
         </header>
 
@@ -282,8 +381,16 @@ export function TransferReceiptModal({
             <Fila label="N° de operación" value={recibo.txid} mono copiable />
             <Fila label="Concepto" value={recibo.concepto} />
             <Fila label="Estado" value={recibo.estado || "Enviada"} />
-            <Fila label="Comisión" value={recibo.comision != null ? fmt(recibo.comision) : undefined} mono />
-            <Fila label="IVA" value={recibo.impuesto != null ? fmt(recibo.impuesto) : undefined} mono />
+            <Fila
+              label="Comisión"
+              value={recibo.comision != null ? fmt(recibo.comision) : undefined}
+              mono
+            />
+            <Fila
+              label="IVA"
+              value={recibo.impuesto != null ? fmt(recibo.impuesto) : undefined}
+              mono
+            />
             <div className="flex justify-between gap-4 pt-2 mt-1 border-t text-sm font-semibold">
               <span>Total debitado</span>
               <span className="font-mono tabular-nums">{fmt(total)}</span>
@@ -302,7 +409,8 @@ export function TransferReceiptModal({
               }}
               className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-dashed py-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-60"
             >
-              <Star size={13} /> {guardado ? "Destinatario agendado" : "Agendar destinatario como frecuente"}
+              <Star size={13} />{" "}
+              {guardado ? "Destinatario agendado" : "Agendar destinatario como frecuente"}
             </button>
           </div>
         )}

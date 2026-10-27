@@ -97,7 +97,11 @@ function generateId(prefix: string): string {
 }
 
 function parseDate(s: string): Date {
-  try { return new Date(s); } catch { return new Date(); }
+  try {
+    return new Date(s);
+  } catch {
+    return new Date();
+  }
 }
 
 // ===== Formateo =====
@@ -151,7 +155,12 @@ export const medioPagoLabels: Record<MedioPago, string> = {
 function parseJsonbArray(val: unknown): unknown[] {
   if (Array.isArray(val)) return val;
   if (typeof val === "string") {
-    try { const p = JSON.parse(val); return Array.isArray(p) ? p : []; } catch { return []; }
+    try {
+      const p = JSON.parse(val);
+      return Array.isArray(p) ? p : [];
+    } catch {
+      return [];
+    }
   }
   return [];
 }
@@ -306,7 +315,9 @@ export async function getLotesGestionDB(): Promise<LoteGestionRow[]> {
       const lr = regs.filter((r) => r.lote_id === l.id);
       const cobrados = lr.filter((r) => r.estado === "pagado_total").length;
       const parciales = lr.filter((r) => r.estado === "pagado_parcial").length;
-      const pendientes = lr.filter((r) => r.estado === "pendiente" || r.estado === "vencido").length;
+      const pendientes = lr.filter(
+        (r) => r.estado === "pendiente" || r.estado === "vencido",
+      ).length;
       const montoTotal = lr.reduce((s, r) => s + Number(r.monto), 0);
       const montoCobrado = lr.reduce((s, r) => s + Number(r.monto_pagado), 0);
       return {
@@ -335,7 +346,10 @@ export async function getLoteByIdDB(id: string): Promise<Lote | null> {
     const s = requireSupabase();
     console.log("[getLoteByIdDB] querying id:", id);
     const { data, error } = await s.from("lotes").select("*").eq("id", id).maybeSingle();
-    if (error) { console.error("[getLoteByIdDB] Supabase error:", error.message, error); return null; }
+    if (error) {
+      console.error("[getLoteByIdDB] Supabase error:", error.message, error);
+      return null;
+    }
     console.log("[getLoteByIdDB] result:", data);
     return data ? rowToLote(data) : null;
   } catch (e) {
@@ -353,7 +367,10 @@ export async function getRegistrosByLoteIdDB(loteId: string): Promise<RegistroDe
       .select("*")
       .eq("lote_id", loteId)
       .order("created_at", { ascending: true });
-    if (error) { console.error("[getRegistrosByLoteIdDB] Supabase error:", error.message, error); return []; }
+    if (error) {
+      console.error("[getRegistrosByLoteIdDB] Supabase error:", error.message, error);
+      return [];
+    }
     console.log("[getRegistrosByLoteIdDB] result count:", (data ?? []).length, "first:", data?.[0]);
     return (data ?? []).map(rowToRegistro);
   } catch (e) {
@@ -377,7 +394,10 @@ export async function iniciarLoteDB(
       .select("medios_pago, pagos_parciales, estado")
       .eq("id", loteId)
       .single();
-    if (loteErr || !lote) { console.error("[iniciarLoteDB] lote query error:", loteErr); return { ok: false, error: loteErr?.message ?? "Lote not found", linksCount: 0 }; }
+    if (loteErr || !lote) {
+      console.error("[iniciarLoteDB] lote query error:", loteErr);
+      return { ok: false, error: loteErr?.message ?? "Lote not found", linksCount: 0 };
+    }
 
     const mediosPago = parseJsonbArray(lote.medios_pago) as string[];
     const pagosParciales = lote.pagos_parciales ?? false;
@@ -387,17 +407,28 @@ export async function iniciarLoteDB(
         p_lote_id: loteId,
         p_estado: "en_proceso",
       });
-      if (e1) { console.error("[iniciarLoteDB] estado error:", e1); return { ok: false, error: e1.message, linksCount: 0 }; }
+      if (e1) {
+        console.error("[iniciarLoteDB] estado error:", e1);
+        return { ok: false, error: e1.message, linksCount: 0 };
+      }
     }
 
     const { data: regs, error: regQueryErr } = await s
       .from("lote_registros")
       .select("id, monto, descripcion, identificacion_usuario, link_de_pago")
       .eq("lote_id", loteId);
-    if (regQueryErr) { console.error("[iniciarLoteDB] regs query error:", regQueryErr); return { ok: false, error: regQueryErr.message, linksCount: 0 }; }
+    if (regQueryErr) {
+      console.error("[iniciarLoteDB] regs query error:", regQueryErr);
+      return { ok: false, error: regQueryErr.message, linksCount: 0 };
+    }
     if (!regs || regs.length === 0) return { ok: true, linksCount: 0 };
 
-    console.log("[iniciarLoteDB] total registros:", regs.length, "estados:", regs.map(r => r.link_de_pago ? "con_link" : "sin_link").join(","));
+    console.log(
+      "[iniciarLoteDB] total registros:",
+      regs.length,
+      "estados:",
+      regs.map((r) => (r.link_de_pago ? "con_link" : "sin_link")).join(","),
+    );
 
     if (force) {
       const regIds = regs.map((r) => r.id);
@@ -408,7 +439,9 @@ export async function iniciarLoteDB(
           .in("id", regIds);
         if (clrErr) console.error("[iniciarLoteDB] force clear error:", clrErr);
         else console.log("[iniciarLoteDB] force cleared:", count, "rows");
-        regs.forEach((r) => { r.link_de_pago = null; });
+        regs.forEach((r) => {
+          r.link_de_pago = null;
+        });
       }
     }
 
@@ -431,14 +464,27 @@ export async function iniciarLoteDB(
       };
     });
 
-    console.log("[iniciarLoteDB] inserting", linkRows.length, "links into cliente_links_pago, legajo:", legajo);
+    console.log(
+      "[iniciarLoteDB] inserting",
+      linkRows.length,
+      "links into cliente_links_pago, legajo:",
+      legajo,
+    );
     const { data: inserted, error: e2 } = await s
       .from("cliente_links_pago")
       .insert(linkRows)
       .select("id, url");
-    if (e2) { console.error("[iniciarLoteDB] links insert error:", JSON.stringify(e2)); return { ok: false, error: e2.message, linksCount: 0 }; }
+    if (e2) {
+      console.error("[iniciarLoteDB] links insert error:", JSON.stringify(e2));
+      return { ok: false, error: e2.message, linksCount: 0 };
+    }
 
-    console.log("[iniciarLoteDB] links creados:", inserted.length, "urls:", inserted.map(i => i.url));
+    console.log(
+      "[iniciarLoteDB] links creados:",
+      inserted.length,
+      "urls:",
+      inserted.map((i) => i.url),
+    );
 
     const { data: verifyRow, error: verifyErr } = await s
       .from("cliente_links_pago")
@@ -464,7 +510,8 @@ export async function iniciarLoteDB(
       const detalleRows = inserted.map((link, idx) => ({
         link_id: link.id,
         producto_id: null,
-        producto_nombre: regsSinLink[idx].descripcion || regsSinLink[idx].identificacion_usuario || "Cobro lote",
+        producto_nombre:
+          regsSinLink[idx].descripcion || regsSinLink[idx].identificacion_usuario || "Cobro lote",
         cantidad: 1,
         precio_unitario: Number(regsSinLink[idx].monto),
       }));
@@ -570,11 +617,28 @@ export async function computeDashboardKPI(filter: PeriodFilter): Promise<Dashboa
     const s = requireSupabase();
     const fromIso = filter.from.toISOString();
     const toIso = filter.to.toISOString();
-    const { data: lotes } = await s.from("lotes").select("id, estado").neq("estado", "eliminado").gte("created_at", fromIso).lte("created_at", toIso);
+    const { data: lotes } = await s
+      .from("lotes")
+      .select("id, estado")
+      .neq("estado", "eliminado")
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso);
     const lotesArr = lotes ?? [];
     const loteIds = lotesArr.map((l) => l.id);
-    if (loteIds.length === 0) return { totalLotes: 0, enProceso: 0, finalizados: 0, conError: 0, montoTotal: 0, montoCobrado: 0, montoPendiente: 0 };
-    const { data: regs } = await s.from("lote_registros").select("lote_id, monto, monto_pagado").in("lote_id", loteIds);
+    if (loteIds.length === 0)
+      return {
+        totalLotes: 0,
+        enProceso: 0,
+        finalizados: 0,
+        conError: 0,
+        montoTotal: 0,
+        montoCobrado: 0,
+        montoPendiente: 0,
+      };
+    const { data: regs } = await s
+      .from("lote_registros")
+      .select("lote_id, monto, monto_pagado")
+      .in("lote_id", loteIds);
     const regsArr = regs ?? [];
     const montoTotal = regsArr.reduce((s, r) => s + Number(r.monto), 0);
     const montoCobrado = regsArr.reduce((s, r) => s + Number(r.monto_pagado), 0);
@@ -588,38 +652,83 @@ export async function computeDashboardKPI(filter: PeriodFilter): Promise<Dashboa
       montoPendiente: montoTotal - montoCobrado,
     };
   } catch {
-    return { totalLotes: 0, enProceso: 0, finalizados: 0, conError: 0, montoTotal: 0, montoCobrado: 0, montoPendiente: 0 };
+    return {
+      totalLotes: 0,
+      enProceso: 0,
+      finalizados: 0,
+      conError: 0,
+      montoTotal: 0,
+      montoCobrado: 0,
+      montoPendiente: 0,
+    };
   }
 }
 
-export interface MedioPagoData { medio: string; monto: number; cantidad: number; porcentaje: number; }
+export interface MedioPagoData {
+  medio: string;
+  monto: number;
+  cantidad: number;
+  porcentaje: number;
+}
 
 export async function computePorMedio(_filter: PeriodFilter): Promise<MedioPagoData[]> {
   // Placeholder: requires pagos table or payment data. Return empty for now.
   return [];
 }
 
-export interface VencimientoData { label: string; cantidad: number; monto: number; }
-
-export async function computePorVencimiento(_filter: PeriodFilter): Promise<VencimientoData[]> {
-  return [{ label: "1er vencimiento", cantidad: 0, monto: 0 }, { label: "2do vencimiento", cantidad: 0, monto: 0 }, { label: "3er vencimiento", cantidad: 0, monto: 0 }];
+export interface VencimientoData {
+  label: string;
+  cantidad: number;
+  monto: number;
 }
 
-export interface NoCobradasData { totalOperaciones: number; vencidas: number; vigentes: number; montoNoCobrado: number; porcentajeNoCobrado: number; }
+export async function computePorVencimiento(_filter: PeriodFilter): Promise<VencimientoData[]> {
+  return [
+    { label: "1er vencimiento", cantidad: 0, monto: 0 },
+    { label: "2do vencimiento", cantidad: 0, monto: 0 },
+    { label: "3er vencimiento", cantidad: 0, monto: 0 },
+  ];
+}
+
+export interface NoCobradasData {
+  totalOperaciones: number;
+  vencidas: number;
+  vigentes: number;
+  montoNoCobrado: number;
+  porcentajeNoCobrado: number;
+}
 
 export async function computeNoCobradas(filter: PeriodFilter): Promise<NoCobradasData> {
   try {
     const s = requireSupabase();
     const fromIso = filter.from.toISOString();
     const toIso = filter.to.toISOString();
-    const { data: lotes } = await s.from("lotes").select("id").neq("estado", "eliminado").gte("created_at", fromIso).lte("created_at", toIso);
+    const { data: lotes } = await s
+      .from("lotes")
+      .select("id")
+      .neq("estado", "eliminado")
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso);
     const loteIds = (lotes ?? []).map((l) => l.id);
-    if (loteIds.length === 0) return { totalOperaciones: 0, vencidas: 0, vigentes: 0, montoNoCobrado: 0, porcentajeNoCobrado: 0 };
-    const { data: regs } = await s.from("lote_registros").select("estado, monto, monto_pagado").in("lote_id", loteIds);
+    if (loteIds.length === 0)
+      return {
+        totalOperaciones: 0,
+        vencidas: 0,
+        vigentes: 0,
+        montoNoCobrado: 0,
+        porcentajeNoCobrado: 0,
+      };
+    const { data: regs } = await s
+      .from("lote_registros")
+      .select("estado, monto, monto_pagado")
+      .in("lote_id", loteIds);
     const regsArr = regs ?? [];
     const noCobradas = regsArr.filter((r) => r.estado !== "pagado_total");
     const montoTotal = regsArr.reduce((s, r) => s + Number(r.monto), 0);
-    const montoNoCobrado = noCobradas.reduce((s, r) => s + (Number(r.monto) - Number(r.monto_pagado)), 0);
+    const montoNoCobrado = noCobradas.reduce(
+      (s, r) => s + (Number(r.monto) - Number(r.monto_pagado)),
+      0,
+    );
     return {
       totalOperaciones: regsArr.length,
       vencidas: noCobradas.filter((r) => r.estado === "vencido").length,
@@ -628,29 +737,59 @@ export async function computeNoCobradas(filter: PeriodFilter): Promise<NoCobrada
       porcentajeNoCobrado: montoTotal > 0 ? Math.round((montoNoCobrado / montoTotal) * 100) : 0,
     };
   } catch {
-    return { totalOperaciones: 0, vencidas: 0, vigentes: 0, montoNoCobrado: 0, porcentajeNoCobrado: 0 };
+    return {
+      totalOperaciones: 0,
+      vencidas: 0,
+      vigentes: 0,
+      montoNoCobrado: 0,
+      porcentajeNoCobrado: 0,
+    };
   }
 }
 
-export interface EvolucionData { fecha: string; monto: number; cantidad: number; }
+export interface EvolucionData {
+  fecha: string;
+  monto: number;
+  cantidad: number;
+}
 
 export async function computeEvolucion(_filter: PeriodFilter): Promise<EvolucionData[]> {
   // Placeholder: requires pagos table with timestamps. Return empty for now.
   return [];
 }
 
-export interface LoteResumen { id: string; nombre: string; estado: LoteEstado; progreso: number; montoTotal: number; montoCobrado: number; cantidadPagos: number; cantidadParciales: number; cantidadPendientes: number; createdAt: string; }
+export interface LoteResumen {
+  id: string;
+  nombre: string;
+  estado: LoteEstado;
+  progreso: number;
+  montoTotal: number;
+  montoCobrado: number;
+  cantidadPagos: number;
+  cantidadParciales: number;
+  cantidadPendientes: number;
+  createdAt: string;
+}
 
 export async function computeLotesRecientes(filter: PeriodFilter): Promise<LoteResumen[]> {
   try {
     const s = requireSupabase();
     const fromIso = filter.from.toISOString();
     const toIso = filter.to.toISOString();
-    const { data: lotes } = await s.from("lotes").select("*").neq("estado", "eliminado").gte("created_at", fromIso).lte("created_at", toIso).order("created_at", { ascending: false });
+    const { data: lotes } = await s
+      .from("lotes")
+      .select("*")
+      .neq("estado", "eliminado")
+      .gte("created_at", fromIso)
+      .lte("created_at", toIso)
+      .order("created_at", { ascending: false });
     const lotesArr = lotes ?? [];
     if (lotesArr.length === 0) return [];
     const loteIds = lotesArr.map((l) => l.id);
-    const { data: regs } = await s.from("lote_registros").select("lote_id, estado, monto, monto_pagado").in("lote_id", loteIds);
+    const { data: regs } = await s
+      .from("lote_registros")
+      .select("lote_id, estado, monto, monto_pagado")
+      .in("lote_id", loteIds);
     const regsArr = regs ?? [];
     return lotesArr.map((l) => {
       const lr = regsArr.filter((r) => r.lote_id === l.id);
@@ -665,7 +804,8 @@ export async function computeLotesRecientes(filter: PeriodFilter): Promise<LoteR
         montoCobrado,
         cantidadPagos: lr.filter((r) => r.estado === "pagado_total").length,
         cantidadParciales: lr.filter((r) => r.estado === "pagado_parcial").length,
-        cantidadPendientes: lr.filter((r) => r.estado === "pendiente" || r.estado === "vencido").length,
+        cantidadPendientes: lr.filter((r) => r.estado === "pendiente" || r.estado === "vencido")
+          .length,
         createdAt: l.created_at,
       };
     });
