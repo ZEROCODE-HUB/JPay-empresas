@@ -19,6 +19,8 @@ import {
   EcartPayCliente,
   EcartPayError,
   leerEventoWebhook,
+  msiAEcart,
+  msiDeEcart,
   leerReferenciaPago,
   resumirOrden,
   unidadesACentavos,
@@ -497,4 +499,66 @@ Deno.test("retiros: cuentas enmascaradas y retiros", () => {
       actualizadoAt: null,
     },
   );
+});
+
+Deno.test("MSI: configuración ida y vuelta, con validaciones", () => {
+  const leida = msiDeEcart({
+    is_active: false,
+    amex_fixed_installments: false,
+    commissions: [
+      { installments: 3, rate: 3.5, minimum_amount: 300, maximum_amount: 50000, is_active: true },
+      {
+        installments: 18,
+        rate: 18.25,
+        minimum_amount: 1800,
+        is_active: false,
+        fixed_installments: true,
+      },
+    ],
+  });
+  assertEquals(leida.habilitado, false);
+  assertEquals(
+    leida.planes.map((p) => p.meses),
+    [3, 6, 9, 12, 18],
+  );
+  assertEquals(leida.planes[0], {
+    meses: 3,
+    activo: true,
+    cuotasFijas: false,
+    minimo: 300,
+    maximo: 50000,
+    tasa: 3.5,
+  });
+  assertEquals(leida.planes[1].activo, false);
+  assertEquals(leida.planes[4].cuotasFijas, true);
+  assertEquals(msiDeEcart({ data: { is_active: true } }).habilitado, true);
+
+  assertEquals(
+    msiAEcart({
+      planes: [{ meses: 3, activo: true, minimo: 300, maximo: "" }],
+      amex_cuotas_fijas: true,
+    }),
+    {
+      commissions: [
+        { installments: 3, is_active: true, fixed_installments: false, minimum_amount: 300 },
+      ],
+      amex_fixed_installments: true,
+    },
+  );
+  const falla = (b: Record<string, unknown>) => {
+    try {
+      msiAEcart(b);
+      return null;
+    } catch (e) {
+      return (e as Error).message;
+    }
+  };
+  assertEquals(falla({}), "Faltan los planes");
+  assertEquals(falla({ planes: [{ meses: 5 }] }), "Plazo inválido: 5");
+  assertEquals(falla({ planes: [{ meses: 3 }, { meses: 3 }] }), "Plazo repetido: 3");
+  assertEquals(
+    falla({ planes: [{ meses: 6, minimo: 900, maximo: 100 }] }),
+    "El máximo es menor que el mínimo en 6 meses",
+  );
+  assertEquals(falla({ planes: [{ meses: 6, minimo: -1 }] }), "Mínimo inválido en 6 meses");
 });

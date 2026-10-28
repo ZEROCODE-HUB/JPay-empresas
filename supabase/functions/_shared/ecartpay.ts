@@ -763,6 +763,91 @@ export function leerEventoWebhook(cuerpo: unknown): {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Meses sin intereses y cuotas fijas (docs: /docs/interest-free-and-fixed-installments). Solo MXN.
+// `GET|POST /api/cards/msi-configuration`: `commissions[]` con `installments` (3, 6, 9, 12, 18),
+// `is_active`, `fixed_installments` (cuotas con interés a cargo del cliente), `minimum_amount` y
+// `maximum_amount` (y `rate`, la comisión); `amex_fixed_installments` e `is_active` (general) aparte.
+// El POST no documenta el interruptor general, pero en sandbox guardar lo deja prendido (probado).
+// ---------------------------------------------------------------------------------------------
+
+export const MESES_MSI = [3, 6, 9, 12, 18] as const;
+
+export type PlanMsi = {
+  meses: number;
+  activo: boolean;
+  /** true = cuotas con interés que paga el cliente; false = sin intereses (los absorbe el comercio). */
+  cuotasFijas: boolean;
+  minimo: number | null;
+  maximo: number | null;
+  /** Comisión de Ecart Pay por el plazo (%; Visa y Mastercard), si la informa. */
+  tasa: number | null;
+};
+
+export type ConfigMsi = {
+  /** Interruptor general de la cuenta (`is_active`): si está apagado, no se ofrecen cuotas. */
+  habilitado: boolean;
+  planes: PlanMsi[];
+  amexCuotasFijas: boolean;
+};
+
+/** Configuración de Ecart Pay → JPay. Siempre devuelve los 5 plazos (los que falten, apagados). */
+export function msiDeEcart(r: unknown): ConfigMsi {
+  const raiz = (r ?? {}) as Record<string, unknown>;
+  const d = (raiz.data && typeof raiz.data === "object" ? raiz.data : raiz) as Record<
+    string,
+    unknown
+  >;
+  const lista = Array.isArray(d.commissions) ? (d.commissions as Record<string, unknown>[]) : [];
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  return {
+    habilitado: d.is_active === true,
+    planes: MESES_MSI.map((meses) => {
+      const c = lista.find((x) => Number(x?.installments) === meses);
+      return {
+        meses,
+        activo: c?.is_active === true,
+        cuotasFijas: c?.fixed_installments === true,
+        minimo: n(c?.minimum_amount),
+        maximo: n(c?.maximum_amount),
+        tasa: n(c?.rate),
+      };
+    }),
+    amexCuotasFijas: d.amex_fixed_installments === true,
+  };
+}
+
+/** Pedido de JPay (`planes`, `amex_cuotas_fijas`) → cuerpo para Ecart Pay. Valida plazos y montos. */
+export function msiAEcart(b: Record<string, unknown>): Record<string, unknown> {
+  if (!Array.isArray(b.planes)) throw new Error("Faltan los planes");
+  const vistos = new Set<number>();
+  const commissions = (b.planes as Record<string, unknown>[]).map((p) => {
+    const meses = Number(p?.meses);
+    if (!(MESES_MSI as readonly number[]).includes(meses))
+      throw new Error(`Plazo inválido: ${p?.meses}`);
+    if (vistos.has(meses)) throw new Error(`Plazo repetido: ${meses}`);
+    vistos.add(meses);
+    const monto = (v: unknown, campo: string) => {
+      if (v === null || v === undefined || v === "") return undefined;
+      const x = Number(v);
+      if (!Number.isInteger(x) || x < 0) throw new Error(`${campo} inválido en ${meses} meses`);
+      return x;
+    };
+    const minimo = monto(p.minimo, "Mínimo");
+    const maximo = monto(p.maximo, "Máximo");
+    if (minimo !== undefined && maximo !== undefined && maximo < minimo)
+      throw new Error(`El máximo es menor que el mínimo en ${meses} meses`);
+    return {
+      installments: meses,
+      is_active: p.activo === true,
+      fixed_installments: p.cuotas_fijas === true,
+      ...(minimo !== undefined ? { minimum_amount: minimo } : {}),
+      ...(maximo !== undefined ? { maximum_amount: maximo } : {}),
+    };
+  });
+  return { commissions, amex_fixed_installments: b.amex_cuotas_fijas === true };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Retiros (docs: /docs/withdrawals). Solo consulta: Ecart Pay no documenta crear retiros por API
 // (se piden desde su panel). `GET /api/withdrawals` (paginado `docs` + `pages`) y las cuentas de
 // retiro `GET /api/payment-methods` (la ruta `/api/accounts/payments/method` ya no existe), cuyos números (tarjeta o CLABE) nunca salen
