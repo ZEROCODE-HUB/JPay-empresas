@@ -9,8 +9,10 @@ import {
   sucursalAEcart,
   sucursalDeEcart,
   terminalDeEcart,
+  transaccionesDePago,
   canjearCodigoOAuth,
   centavosAUnidades,
+  conciliar,
   EcartPayCliente,
   EcartPayError,
   leerEventoWebhook,
@@ -390,4 +392,54 @@ Deno.test("POS: caja y terminal", () => {
       caja_externa: "r1",
     },
   );
+});
+
+Deno.test("conciliación: transacciones de pago y diferencias", () => {
+  // Formato del ejemplo de /docs/summaries.
+  const txs = transaccionesDePago([
+    { id: "t0", type: "charge", reason: "refund", amount: 50, total: 50 },
+    {
+      id: "t1",
+      type: "payment",
+      order_id: "o1",
+      status: "paid",
+      amount: 141.3,
+      fee: 8.7,
+      total: 150,
+    },
+    { id: "t2", type: "payment", order_id: "o2", status: "paid", amount: 90, fee: 10, total: 100 },
+    { id: "t3", type: "payment", order_id: "o3", status: "paid", amount: 46, fee: 4, total: 50 },
+    { id: "t4", type: "payment", order_id: "o4", status: "pending", total: 10 },
+  ]);
+  assertEquals(txs.length, 4);
+  assertEquals(txs[0], {
+    id: "t1",
+    ordenId: "o1",
+    estado: "paid",
+    total: 150,
+    comision: 8.7,
+    neto: 141.3,
+  });
+
+  const { diferencias, coincidencias } = conciliar(txs, [
+    { id: "p1", ordenId: "o1", estado: "pagado", monto: 150 }, // ok
+    { id: "p2", ordenId: "o2", estado: "pagado", monto: 120 }, // monto distinto
+    { id: "p3", ordenId: "o3", estado: "creado", monto: 50 }, // estado distinto
+    { id: "p5", ordenId: "o5", estado: "pagado", monto: 30 }, // falta en proveedor
+    { id: "p6", ordenId: "o6", estado: "creado", monto: 30 }, // abierto sin tx: no es diferencia
+  ]);
+  assertEquals(
+    coincidencias.map((c) => c.pagoId),
+    ["p1", "p2", "p3"],
+  );
+  assertEquals(
+    diferencias.map((d) => `${d.tipo}:${d.pagoId ?? d.ordenId}`),
+    ["monto_distinto:p2", "estado_distinto:p3", "falta_en_proveedor:p5"],
+  );
+  // Una orden cobrada que no es de JPay.
+  const otra = conciliar(
+    transaccionesDePago([{ id: "x", type: "payment", order_id: "zz", status: "paid", total: 1 }]),
+    [],
+  );
+  assertEquals(otra.diferencias[0].tipo, "falta_en_jpay");
 });

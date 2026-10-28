@@ -3,6 +3,8 @@ import {
   desconectarEcartPay,
   getConexionEcartPay,
   iniciarConexionEcartPay,
+  listCobrosEcartPay,
+  reembolsarCobro,
 } from "@/lib/api/integraciones";
 
 const KEY = ["integraciones", "ecartpay"] as const;
@@ -28,4 +30,21 @@ export function useConexionEcartPayMutaciones() {
       onSuccess: () => qc.invalidateQueries({ queryKey: KEY }),
     }),
   };
+}
+
+export function useCobrosEcartPay(habilitado: boolean) {
+  return useQuery({
+    queryKey: ["integraciones", "cobros"],
+    queryFn: () => listCobrosEcartPay(),
+    enabled: habilitado,
+    refetchInterval: 30_000,
+  });
+}
+
+export function useReembolsarCobro() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: reembolsarCobro,
+    onSettled: () => qc.invalidateQueries({ queryKey: ["integraciones", "cobros"] }),
+  });
 }

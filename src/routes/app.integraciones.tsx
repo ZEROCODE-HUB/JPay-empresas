@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Card, PageHeader } from "@/components/portal-shell";
+import { CobrosEcartPayCard } from "@/features/integraciones/components/CobrosEcartPayCard";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { useComerciosCliente } from "@/hooks/useComercios";
 
@@ -64,6 +65,7 @@ function Page() {
             </label>
           )}
           <EcartPayCard comercioId={actual} />
+          <CobrosEcartPayCard />
         </div>
       )}
     </>

@@ -581,6 +581,29 @@ Hacer:
   Listo cuando: un reembolso parcial en sandbox se refleja en el pago, el saldo y el reporte; la
   conciliación del día no muestra diferencias.
 
+**Estado (2026-10-28): HECHA salvo reportes** en las ramas `feature/ecartpay-fase8` (admin y
+empresas).
+
+- Reembolsos (migración 1027): `reembolsos`, `pagos.monto_reembolsado`, `reservar_reembolso`
+  (bloquea el pago y valida el disponible antes de llamar a Ecart Pay) y `finalizar_reembolso`.
+  Edge Function `ecartpay-reembolsos` (dueño del pago o backoffice con `comercios: modificar`).
+  Probado: Ecart Pay respondió "This transaction cannot be refunded" (409) a un SPEI; quedó como
+  `error` y la reserva se liberó. **El reembolso con tarjeta queda por probar** cuando se active la
+  pasarela. En el portal solo se ofrece reembolsar pagos con tarjeta.
+- Conciliación (migración 1028): `conciliaciones_proveedor` y `conciliacion_proveedor_diferencias`
+  (no se tocó la tabla `conciliaciones` del admin), comisión y neto en `pagos`, pg_cron diario
+  (09:00 UTC). Edge Function pública `ecartpay-conciliacion` (una vez cada 20 h; manual solo
+  admins), `conciliar()` con tests. Probado con datos reales: 4 transacciones, 0 diferencias; una
+  diferencia forzada aparece una sola vez y se marca resuelta desde el admin.
+- Contracargos (migración 1029): `contracargos_proveedor`, desde webhooks firmados
+  (`chargebacks.*`; sin firma se ignoran). Visible en admin y en los cobros del comercio con el
+  plazo para presentar pruebas (en el panel de Ecart Pay). Probado con un evento firmado simulado.
+- **OXXO en sandbox (pregunta 2 resuelta):** la referencia se paga sola ~50 s después; llega
+  `orders.update: paid` y el pago queda `pagado` sin intervención.
+- Portal: "Cobros recibidos" en Integraciones (estado, medio, reembolsos, contracargos). Admin:
+  tarjetas "Conciliación con Ecart Pay" y "Contracargos de Ecart Pay".
+- Pendiente: reportes por método/sucursal/comisiones y exportación; CFDI (D4: no por ahora).
+
 ### Fase 9 — Pruebas completas en sandbox y salida a producción
 
 Lista de pruebas (todas en sandbox, con evidencia en una planilla):

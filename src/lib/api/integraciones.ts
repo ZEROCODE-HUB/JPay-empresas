@@ -92,3 +92,85 @@ async function errorDeFuncion(error: unknown): Promise<DataAccessError> {
   const cuerpo = ctx && typeof ctx.json === "function" ? await ctx.json().catch(() => null) : null;
   return new DataAccessError(cuerpo?.error ? new Error(cuerpo.error) : error);
 }
+
+export type CobroProveedor = {
+  id: string;
+  creadoAt: string;
+  pagadoAt: string | null;
+  metodo: string | null;
+  estado: string;
+  monto: number;
+  reembolsado: number;
+  comision: number | null;
+  pagador: string | null;
+  motivo: string | null;
+  /** Contracargo abierto o resuelto sobre este cobro (el más reciente). */
+  contracargo: { estado: string; venceAt: string | null } | null;
+};
+
+/** Cobros del comercio con Ecart Pay (RLS: solo los propios), los más recientes primero. */
+export async function listCobrosEcartPay(limite = 50): Promise<CobroProveedor[]> {
+  const sb = requireSupabase();
+  const { data, error } = await sb
+    .from("pagos")
+    .select(
+      "id, created_at, pagado_at, metodo, estado, monto, monto_reembolsado, comision_proveedor, pagador_nombre, pagador_email, motivo",
+    )
+    .eq("proveedor", "ecartpay")
+    .neq("estado", "error")
+    .order("created_at", { ascending: false })
+    .limit(limite);
+  if (error) throw new DataAccessError(error);
+  const ids = (data ?? []).map((p) => p.id);
+  const { data: cb } = ids.length
+    ? await sb
+        .from("contracargos_proveedor")
+        .select("pago_id, estado, vence_at, updated_at")
+        .in("pago_id", ids)
+        .order("updated_at", { ascending: false })
+    : { data: [] };
+  const contracargo = new Map<string, { estado: string; venceAt: string | null }>();
+  for (const c of cb ?? []) {
+    if (c.pago_id && !contracargo.has(c.pago_id)) {
+      contracargo.set(c.pago_id, { estado: c.estado, venceAt: c.vence_at });
+    }
+  }
+  return (data ?? []).map((p) => ({
+    id: p.id,
+    creadoAt: p.created_at,
+    pagadoAt: p.pagado_at,
+    metodo: p.metodo,
+    estado: p.estado,
+    monto: Number(p.monto),
+    reembolsado: Number(p.monto_reembolsado ?? 0),
+    comision: p.comision_proveedor != null ? Number(p.comision_proveedor) : null,
+    pagador: p.pagador_nombre ?? p.pagador_email,
+    motivo: p.motivo,
+    contracargo: contracargo.get(p.id) ?? null,
+  }));
+}
+
+export type MotivoReembolso = "requested" | "duplicate" | "fraudulent";
+
+/** Pide un reembolso (Edge Function `ecartpay-reembolsos`). */
+export async function reembolsarCobro(v: {
+  pagoId: string;
+  monto: number;
+  motivo: MotivoReembolso;
+  nota?: string;
+}): Promise<{ estado_pago: string | null }> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<{ estado_pago: string | null }>(
+    "ecartpay-reembolsos",
+    { body: { pago_id: v.pagoId, monto: v.monto, motivo: v.motivo, nota: v.nota } },
+  );
+  if (error) throw await errorDeFuncion(error);
+  return data ?? { estado_pago: null };
+}
+
+/** Solo los pagos con tarjeta se reembolsan desde JPay (SPEI no admite y OXXO es efectivo). */
+export const esReembolsable = (c: CobroProveedor) =>
+  (c.estado === "pagado" || c.estado === "parcialmente_reembolsado") &&
+  c.metodo !== "spei" &&
+  c.metodo !== "oxxo" &&
+  c.monto - c.reembolsado > 0;

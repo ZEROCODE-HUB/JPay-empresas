@@ -582,6 +582,116 @@ export async function listarTodo(
 }
 
 // ---------------------------------------------------------------------------------------------
+// Conciliación (docs: /docs/summaries). GET /api/transactions: `type: "payment"` trae el
+// `order_id`, `total` (bruto), `fee` y `amount` (neto); los reembolsos son `type: "charge"`.
+// ---------------------------------------------------------------------------------------------
+
+export type TransaccionPago = {
+  id: string;
+  ordenId: string;
+  estado: string;
+  total: number;
+  comision: number | null;
+  neto: number | null;
+};
+
+/** Transacciones de pago (con orden) del listado de Ecart Pay. */
+export function transaccionesDePago(docs: unknown[]): TransaccionPago[] {
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  return docs
+    .map((d) => (d ?? {}) as Record<string, unknown>)
+    .filter((d) => d.type === "payment" && typeof d.order_id === "string")
+    .map((d) => ({
+      id: String(d.id ?? d.transaction_id ?? ""),
+      ordenId: d.order_id as string,
+      estado: typeof d.status === "string" ? d.status : "desconocido",
+      total: num(d.total) ?? num(d.amount) ?? 0,
+      comision: num(d.fee),
+      neto: num(d.amount),
+    }));
+}
+
+export type PagoAConciliar = {
+  id: string;
+  ordenId: string | null;
+  estado: string;
+  monto: number;
+};
+
+export type Diferencia = {
+  tipo: "falta_en_jpay" | "falta_en_proveedor" | "monto_distinto" | "estado_distinto";
+  pagoId: string | null;
+  ordenId: string | null;
+  transaccionId: string | null;
+  detalle: Record<string, unknown>;
+};
+
+const ESTADOS_COBRADOS = new Set(["pagado", "reembolsado", "parcialmente_reembolsado"]);
+const TX_COBRADA = new Set(["paid", "refunded", "partially_refunded"]);
+
+/**
+ * Compara transacciones del proveedor con los pagos de JPay del mismo período. Devuelve las
+ * diferencias y, para cada pago encontrado, la transacción (para guardar comisión y neto).
+ */
+export function conciliar(
+  txs: TransaccionPago[],
+  pagos: PagoAConciliar[],
+): { diferencias: Diferencia[]; coincidencias: { pagoId: string; tx: TransaccionPago }[] } {
+  const porOrden = new Map(pagos.filter((p) => p.ordenId).map((p) => [p.ordenId as string, p]));
+  const vistas = new Set<string>();
+  const diferencias: Diferencia[] = [];
+  const coincidencias: { pagoId: string; tx: TransaccionPago }[] = [];
+
+  for (const tx of txs) {
+    const p = porOrden.get(tx.ordenId);
+    if (!p) {
+      if (TX_COBRADA.has(tx.estado)) {
+        diferencias.push({
+          tipo: "falta_en_jpay",
+          pagoId: null,
+          ordenId: tx.ordenId,
+          transaccionId: tx.id,
+          detalle: { estado_proveedor: tx.estado, total: tx.total },
+        });
+      }
+      continue;
+    }
+    vistas.add(p.id);
+    coincidencias.push({ pagoId: p.id, tx });
+    if (Math.abs(tx.total - p.monto) > 0.005) {
+      diferencias.push({
+        tipo: "monto_distinto",
+        pagoId: p.id,
+        ordenId: tx.ordenId,
+        transaccionId: tx.id,
+        detalle: { monto_jpay: p.monto, total_proveedor: tx.total },
+      });
+    }
+    if (TX_COBRADA.has(tx.estado) !== ESTADOS_COBRADOS.has(p.estado)) {
+      diferencias.push({
+        tipo: "estado_distinto",
+        pagoId: p.id,
+        ordenId: tx.ordenId,
+        transaccionId: tx.id,
+        detalle: { estado_jpay: p.estado, estado_proveedor: tx.estado },
+      });
+    }
+  }
+  for (const p of pagos) {
+    if (!vistas.has(p.id) && ESTADOS_COBRADOS.has(p.estado)) {
+      diferencias.push({
+        tipo: "falta_en_proveedor",
+        pagoId: p.id,
+        ordenId: p.ordenId,
+        transaccionId: null,
+        detalle: { estado_jpay: p.estado, monto_jpay: p.monto },
+      });
+    }
+  }
+  return { diferencias, coincidencias };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Webhooks (docs: /docs/webhook-authentication)
 // Firma: x-pay-signature = "SHA256=" + hex(HMAC-SHA256(secret,
 //   `${x-pay-timestamp}.${x-pay-webhook-id}.${JSON.stringify(body.data)}`))

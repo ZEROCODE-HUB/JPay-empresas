@@ -2269,6 +2269,76 @@ export type Database = {
           },
         ]
       }
+      conciliacion_proveedor_diferencias: {
+        Row: {
+          conciliacion_id: string
+          conexion_id: string | null
+          created_at: string
+          detalle: Json
+          id: string
+          nota: string | null
+          orden_id: string | null
+          pago_id: string | null
+          resuelta: boolean
+          resuelta_at: string | null
+          resuelta_por: string | null
+          tipo: string
+          transaccion_id: string | null
+        }
+        Insert: {
+          conciliacion_id: string
+          conexion_id?: string | null
+          created_at?: string
+          detalle?: Json
+          id?: string
+          nota?: string | null
+          orden_id?: string | null
+          pago_id?: string | null
+          resuelta?: boolean
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          tipo: string
+          transaccion_id?: string | null
+        }
+        Update: {
+          conciliacion_id?: string
+          conexion_id?: string | null
+          created_at?: string
+          detalle?: Json
+          id?: string
+          nota?: string | null
+          orden_id?: string | null
+          pago_id?: string | null
+          resuelta?: boolean
+          resuelta_at?: string | null
+          resuelta_por?: string | null
+          tipo?: string
+          transaccion_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliacion_proveedor_diferencias_conciliacion_id_fkey"
+            columns: ["conciliacion_id"]
+            isOneToOne: false
+            referencedRelation: "conciliaciones_proveedor"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conciliacion_proveedor_diferencias_conexion_id_fkey"
+            columns: ["conexion_id"]
+            isOneToOne: false
+            referencedRelation: "comercio_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conciliacion_proveedor_diferencias_pago_id_fkey"
+            columns: ["pago_id"]
+            isOneToOne: false
+            referencedRelation: "pagos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conciliaciones: {
         Row: {
           archivo_origen: string | null
@@ -2342,6 +2412,47 @@ export type Database = {
           tipo?: string
         }
         Relationships: []
+      }
+      conciliaciones_proveedor: {
+        Row: {
+          desde: string
+          ejecutada_at: string
+          error: string | null
+          hasta: string
+          id: string
+          origen: string
+          proveedor: string
+          resumen: Json
+        }
+        Insert: {
+          desde: string
+          ejecutada_at?: string
+          error?: string | null
+          hasta: string
+          id?: string
+          origen: string
+          proveedor: string
+          resumen?: Json
+        }
+        Update: {
+          desde?: string
+          ejecutada_at?: string
+          error?: string | null
+          hasta?: string
+          id?: string
+          origen?: string
+          proveedor?: string
+          resumen?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conciliaciones_proveedor_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       configuracion_pagos: {
         Row: {
@@ -2536,6 +2647,75 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "admin_users"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracargos_proveedor: {
+        Row: {
+          cliente_legajo: string | null
+          created_at: string
+          estado: string
+          id: string
+          id_externo: string
+          moneda: string | null
+          monto: number | null
+          motivo: string | null
+          orden_id: string | null
+          pago_id: string | null
+          payload: Json
+          proveedor: string
+          transaccion_id: string | null
+          updated_at: string
+          vence_at: string | null
+        }
+        Insert: {
+          cliente_legajo?: string | null
+          created_at?: string
+          estado: string
+          id?: string
+          id_externo: string
+          moneda?: string | null
+          monto?: number | null
+          motivo?: string | null
+          orden_id?: string | null
+          pago_id?: string | null
+          payload?: Json
+          proveedor: string
+          transaccion_id?: string | null
+          updated_at?: string
+          vence_at?: string | null
+        }
+        Update: {
+          cliente_legajo?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          id_externo?: string
+          moneda?: string | null
+          monto?: number | null
+          motivo?: string | null
+          orden_id?: string | null
+          pago_id?: string | null
+          payload?: Json
+          proveedor?: string
+          transaccion_id?: string | null
+          updated_at?: string
+          vence_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracargos_proveedor_pago_id_fkey"
+            columns: ["pago_id"]
+            isOneToOne: false
+            referencedRelation: "pagos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracargos_proveedor_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
           },
         ]
       }
@@ -4005,6 +4185,8 @@ export type Database = {
         Row: {
           cliente_legajo: string | null
           comercio_id: string | null
+          comision_proveedor: number | null
+          conciliado_at: string | null
           conexion_id: string | null
           created_at: string
           entorno: string
@@ -4017,7 +4199,9 @@ export type Database = {
           metodo: string | null
           moneda: string
           monto: number
+          monto_reembolsado: number
           motivo: string | null
+          neto_proveedor: number | null
           pagado_at: string | null
           pagador_email: string | null
           pagador_nombre: string | null
@@ -4025,6 +4209,7 @@ export type Database = {
           proveedor: string
           proveedor_orden_id: string | null
           proveedor_pago_id: string | null
+          proveedor_transaccion_id: string | null
           referencia: string | null
           referencia_url: string | null
           referencia_vence_at: string | null
@@ -4034,6 +4219,8 @@ export type Database = {
         Insert: {
           cliente_legajo?: string | null
           comercio_id?: string | null
+          comision_proveedor?: number | null
+          conciliado_at?: string | null
           conexion_id?: string | null
           created_at?: string
           entorno: string
@@ -4046,7 +4233,9 @@ export type Database = {
           metodo?: string | null
           moneda: string
           monto: number
+          monto_reembolsado?: number
           motivo?: string | null
+          neto_proveedor?: number | null
           pagado_at?: string | null
           pagador_email?: string | null
           pagador_nombre?: string | null
@@ -4054,6 +4243,7 @@ export type Database = {
           proveedor: string
           proveedor_orden_id?: string | null
           proveedor_pago_id?: string | null
+          proveedor_transaccion_id?: string | null
           referencia?: string | null
           referencia_url?: string | null
           referencia_vence_at?: string | null
@@ -4063,6 +4253,8 @@ export type Database = {
         Update: {
           cliente_legajo?: string | null
           comercio_id?: string | null
+          comision_proveedor?: number | null
+          conciliado_at?: string | null
           conexion_id?: string | null
           created_at?: string
           entorno?: string
@@ -4075,7 +4267,9 @@ export type Database = {
           metodo?: string | null
           moneda?: string
           monto?: number
+          monto_reembolsado?: number
           motivo?: string | null
+          neto_proveedor?: number | null
           pagado_at?: string | null
           pagador_email?: string | null
           pagador_nombre?: string | null
@@ -4083,6 +4277,7 @@ export type Database = {
           proveedor?: string
           proveedor_orden_id?: string | null
           proveedor_pago_id?: string | null
+          proveedor_transaccion_id?: string | null
           referencia?: string | null
           referencia_url?: string | null
           referencia_vence_at?: string | null
@@ -4682,6 +4877,72 @@ export type Database = {
           nombre?: string
         }
         Relationships: []
+      }
+      reembolsos: {
+        Row: {
+          created_at: string
+          error: string | null
+          estado: string
+          finalizado_at: string | null
+          id: string
+          monto: number
+          motivo: string
+          nota: string | null
+          origen: string
+          pago_id: string
+          proveedor: string
+          proveedor_reembolso_id: string | null
+          respuesta: Json
+          solicitado_por: string | null
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          estado?: string
+          finalizado_at?: string | null
+          id?: string
+          monto: number
+          motivo: string
+          nota?: string | null
+          origen: string
+          pago_id: string
+          proveedor: string
+          proveedor_reembolso_id?: string | null
+          respuesta?: Json
+          solicitado_por?: string | null
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          estado?: string
+          finalizado_at?: string | null
+          id?: string
+          monto?: number
+          motivo?: string
+          nota?: string | null
+          origen?: string
+          pago_id?: string
+          proveedor?: string
+          proveedor_reembolso_id?: string | null
+          respuesta?: Json
+          solicitado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reembolsos_pago_id_fkey"
+            columns: ["pago_id"]
+            isOneToOne: false
+            referencedRelation: "pagos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reembolsos_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       resolvers: {
         Row: {
@@ -6190,6 +6451,8 @@ export type Database = {
         Returns: {
           cliente_legajo: string | null
           comercio_id: string | null
+          comision_proveedor: number | null
+          conciliado_at: string | null
           conexion_id: string | null
           created_at: string
           entorno: string
@@ -6202,7 +6465,9 @@ export type Database = {
           metodo: string | null
           moneda: string
           monto: number
+          monto_reembolsado: number
           motivo: string | null
+          neto_proveedor: number | null
           pagado_at: string | null
           pagador_email: string | null
           pagador_nombre: string | null
@@ -6210,6 +6475,7 @@ export type Database = {
           proveedor: string
           proveedor_orden_id: string | null
           proveedor_pago_id: string | null
+          proveedor_transaccion_id: string | null
           referencia: string | null
           referencia_url: string | null
           referencia_vence_at: string | null
@@ -6416,6 +6682,37 @@ export type Database = {
       exigir_permiso: {
         Args: { p_accion: string; p_recurso: string }
         Returns: undefined
+      }
+      finalizar_reembolso: {
+        Args: {
+          p_error?: string
+          p_ok: boolean
+          p_proveedor_reembolso_id?: string
+          p_reembolso_id: string
+          p_respuesta?: Json
+        }
+        Returns: {
+          created_at: string
+          error: string | null
+          estado: string
+          finalizado_at: string | null
+          id: string
+          monto: number
+          motivo: string
+          nota: string | null
+          origen: string
+          pago_id: string
+          proveedor: string
+          proveedor_reembolso_id: string | null
+          respuesta: Json
+          solicitado_por: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reembolsos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       fn_acreditar_adelanto: {
         Args: { p_adelanto_id: string; p_notas?: string }
@@ -6635,6 +6932,17 @@ export type Database = {
           p_subcuenta_origen: string
         }
         Returns: Json
+      }
+      reservar_reembolso: {
+        Args: {
+          p_monto: number
+          p_motivo: string
+          p_nota: string
+          p_origen: string
+          p_pago_id: string
+          p_usuario: string
+        }
+        Returns: string
       }
       reservar_tarea: {
         Args: { p_intervalo: string; p_nombre: string }

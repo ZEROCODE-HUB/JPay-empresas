@@ -120,11 +120,27 @@ export async function procesarEvento(
   let resultado = "ignorado";
   let error: string | null = null;
   let pagoId: string | null = null;
+  const { data: ev } = await sb
+    .from("webhook_eventos")
+    .select("evento, firma_valida, payload")
+    .eq("id", eventoId)
+    .single();
   try {
-    pagoId = idExterno ? await pagoPorOrden(sb, idExterno) : null;
-    if (pagoId) {
-      const p = await confirmarPago(sb, pagoId);
-      resultado = `pago ${p.estado}`;
+    if (ev?.evento?.startsWith("chargebacks.")) {
+      // Contracargos: solo desde avisos firmados (no hay forma documentada de consultarlos).
+      if (ev.firma_valida !== true) {
+        resultado = "ignorado (sin firma)";
+      } else {
+        const r = await registrarContracargo(sb, ev.payload);
+        pagoId = r.pagoId;
+        resultado = `contracargo ${r.estado}`;
+      }
+    } else {
+      pagoId = idExterno ? await pagoPorOrden(sb, idExterno) : null;
+      if (pagoId) {
+        const p = await confirmarPago(sb, pagoId);
+        resultado = `pago ${p.estado}`;
+      }
     }
   } catch (e) {
     resultado = "error";
@@ -145,4 +161,50 @@ export async function procesarEvento(
       procesado_at: new Date().toISOString(),
     })
     .eq("id", eventoId);
+}
+
+/** Alta o actualización de un contracargo a partir del aviso firmado (`data` del webhook). */
+async function registrarContracargo(
+  sb: SupabaseClient,
+  payload: unknown,
+): Promise<{ estado: string; pagoId: string | null }> {
+  const p = (payload ?? {}) as Record<string, unknown>;
+  const d = (p.data && typeof p.data === "object" ? p.data : p) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const id = s(d.id);
+  if (!id) throw new Error("El aviso de contracargo no trae id");
+  const ordenId = s(d.order_id);
+  let pagoId: string | null = null;
+  let legajo: string | null = null;
+  if (ordenId) {
+    const { data: pago } = await sb
+      .from("pagos")
+      .select("id, cliente_legajo")
+      .eq("proveedor", "ecartpay")
+      .eq("proveedor_orden_id", ordenId)
+      .maybeSingle();
+    pagoId = pago?.id ?? null;
+    legajo = pago?.cliente_legajo ?? null;
+  }
+  const estado = s(d.status) ?? "created";
+  const { error } = await sb.from("contracargos_proveedor").upsert(
+    {
+      proveedor: "ecartpay",
+      id_externo: id,
+      pago_id: pagoId,
+      cliente_legajo: legajo,
+      orden_id: ordenId,
+      transaccion_id: s(d.transaction_id),
+      monto: typeof d.amount === "number" ? d.amount : null,
+      moneda: s(d.currency),
+      motivo: s(d.reason),
+      estado,
+      vence_at: s(d.expiration_at),
+      payload: d,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "proveedor,id_externo" },
+  );
+  if (error) throw new Error(error.message);
+  return { estado, pagoId };
 }
