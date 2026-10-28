@@ -7,6 +7,7 @@ import {
   centavosAUnidades,
   EcartPayCliente,
   EcartPayError,
+  resumirOrden,
   unidadesACentavos,
   urlAutorizacionOAuth,
   vencimientoToken,
@@ -182,4 +183,39 @@ Deno.test("OAuth: code vencido devuelve EcartPayError con el mensaje", async () 
   );
   assertEquals(e.status, 401);
   assertEquals(e.message, "The token is not valid");
+});
+
+Deno.test("órdenes: estados de Ecart Pay a estados de JPay", () => {
+  assertEquals(resumirOrden({ status: "paid" }).estado, "pagado");
+  assertEquals(resumirOrden({ status: "created" }).estado, "creado");
+  assertEquals(resumirOrden({ status: "cancelled" }).estado, "cancelado");
+  assertEquals(resumirOrden({ status: "partially_refunded" }).estado, "parcialmente_reembolsado");
+  assertEquals(resumirOrden({ status: "algo_nuevo" }).estado, "pendiente");
+  assertEquals(resumirOrden(null).estadoProveedor, "desconocido");
+});
+
+Deno.test("órdenes: último intento rechazado deja el pago rechazado con motivo", () => {
+  const r = resumirOrden({
+    status: "created",
+    payments: [
+      {
+        id: "p1",
+        status: "declined",
+        status_detail: "Fondos insuficientes",
+        method: { type: "card" },
+      },
+    ],
+  });
+  assertEquals(r, {
+    estado: "rechazado",
+    estadoProveedor: "created",
+    motivo: "Fondos insuficientes",
+    metodo: "card",
+    pagoId: "p1",
+  });
+  // Un reintento aprobado manda sobre el rechazo anterior.
+  assertEquals(
+    resumirOrden({ status: "paid", payments: [{ status: "declined" }, { status: "paid" }] }).estado,
+    "pagado",
+  );
 });

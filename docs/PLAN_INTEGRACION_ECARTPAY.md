@@ -399,6 +399,29 @@ Hacer:
   Listo cuando: con tarjeta 4242 4242 4242 4242 (12/2050) el pago queda `pagado` en la base y en el
   historial del comercio; con 4622 9431 2701 3705 queda `rechazado` con mensaje claro.
 
+**Estado (2026-10-28): EN CURSO** en las ramas `feature/ecartpay-fase4` (admin y empresas).
+Hecho el camino (a), redirección al `pay_link`:
+
+- Migración 1021: tabla `pagos` (genérica, `idempotency_key` única, RLS de lectura para el
+  comercio y el backoffice) y `aplicar_estado_pago` (único punto que cambia el estado;
+  idempotente; al quedar `pagado` registra el cobro en `cliente_links_pago_pagos` y suma el
+  contador del link; no toca saldos ni ledger porque en `directo` el dinero queda en Ecart Pay).
+- Edge Function `ecartpay-checkout` (acciones `info`, `crear`, `confirmar`): la orden se crea
+  con las claves del comercio (Vault); `confirmar` siempre consulta `GET /api/orders/{id}`.
+- Cliente compartido: `resumirOrden` (estado de la orden → estado JPay; intento fallido =
+  `rechazado` con motivo), con tests.
+- Checkout `/p/$code`: si el comercio tiene Ecart Pay conectado, pide nombre y email y redirige a
+  Ecart Pay; al volver (`?pago=`) consulta el estado cada 3 s mientras siga abierto. Sin Ecart
+  Pay, el checkout de Payway sigue igual.
+- Probado: la orden se crea en la cuenta conectada y redirige a `checkoutdev.ecartpay.com`.
+  Ecart Pay valida el email (`@jpay.example` → 422; ahora se muestra el motivo).
+- **Bloqueado por Ecart Pay:** el checkout responde "The account has not active payment methods":
+  la pasarela "EcartPay México" de la cuenta figura `Inactivo` hasta que Ecart Pay revise la
+  "Documentación empresarial requerida" (el panel pide contactar al agente de ventas). Falta la
+  prueba con 4242… / 4622… y el formato real de los intentos rechazados en la orden.
+- Pendiente de la fase: links de pago sincronizados como templates de Ecart Pay, MSI por
+  comercio y checkout embebido (camino b).
+
 ### Fase 5 — Avisos automáticos (webhooks) y estados
 
 Hacer:

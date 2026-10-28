@@ -1,18 +1,33 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { CheckoutEstado } from "@/features/checkout/components/CheckoutEstado";
+import { EcartPayPagoCard } from "@/features/checkout/components/EcartPayPagoCard";
+import { EcartPayResultado } from "@/features/checkout/components/EcartPayResultado";
 import { PagoCard } from "@/features/checkout/components/PagoCard";
 import { PagoExitoso } from "@/features/checkout/components/PagoExitoso";
 import { ResumenCobro } from "@/features/checkout/components/ResumenCobro";
+import { useEcartPayDisponible } from "@/features/checkout/hooks/useCheckoutEcartPay";
 import { useCheckoutPago } from "@/features/checkout/hooks/useCheckoutPago";
 
-export const Route = createFileRoute("/p/$code")({ component: Checkout });
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export const Route = createFileRoute("/p/$code")({
+  // ?pago=<id>: vuelta desde Ecart Pay.
+  validateSearch: (s: Record<string, unknown>): { pago?: string } => ({
+    pago: typeof s.pago === "string" && UUID.test(s.pago) ? s.pago : undefined,
+  }),
+  component: Checkout,
+});
 
 function Checkout() {
   const { code } = Route.useParams();
+  const { pago: pagoId } = Route.useSearch();
+  const navigate = useNavigate();
   const pago = useCheckoutPago(code);
+  const ecart = useEcartPayDisponible(code);
   const { status, data, result } = pago;
+  const conEcartPay = ecart.data?.disponible === true;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(120%_120%_at_50%_0%,#fff_40%,var(--brand-primary-50)_100%)] flex flex-col">
@@ -26,22 +41,37 @@ function Checkout() {
 
       <main className="flex-1 px-4 pb-10">
         <div className="w-full max-w-4xl mx-auto">
-          <CheckoutEstado status={status} />
+          {pagoId ? (
+            <EcartPayResultado
+              pagoId={pagoId}
+              data={data}
+              onReintentar={() => void navigate({ to: "/p/$code", params: { code }, search: {} })}
+            />
+          ) : (
+            <>
+              {/* Mientras se consulta si el comercio cobra con Ecart Pay, sigue "cargando". */}
+              <CheckoutEstado status={status === "ready" && ecart.isLoading ? "loading" : status} />
 
-          {status === "success" && result && <PagoExitoso result={result} data={data} />}
+              {status === "success" && result && <PagoExitoso result={result} data={data} />}
 
-          {status === "ready" && data && (
-            <div className="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 items-start">
-              {/* Resumen del cobro */}
-              <ResumenCobro
-                data={data}
-                montoPagar={pago.montoPagar}
-                onMontoPagar={pago.setMontoPagar}
-                total={pago.total}
-              />
-              {/* Pago */}
-              <PagoCard pago={pago} />
-            </div>
+              {status === "ready" && data && !ecart.isLoading && (
+                <div className="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 items-start">
+                  {/* Resumen del cobro */}
+                  <ResumenCobro
+                    data={data}
+                    montoPagar={pago.montoPagar}
+                    onMontoPagar={pago.setMontoPagar}
+                    total={pago.total}
+                  />
+                  {/* Pago: con Ecart Pay si el comercio lo tiene conectado */}
+                  {conEcartPay ? (
+                    <EcartPayPagoCard code={code} montoPagar={pago.montoPagar} total={pago.total} />
+                  ) : (
+                    <PagoCard pago={pago} />
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

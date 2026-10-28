@@ -3929,6 +3929,130 @@ export type Database = {
         }
         Relationships: []
       }
+      pagos: {
+        Row: {
+          cliente_legajo: string | null
+          comercio_id: string | null
+          conexion_id: string | null
+          created_at: string
+          entorno: string
+          estado: string
+          estado_proveedor: string | null
+          id: string
+          idempotency_key: string
+          link_id: string | null
+          link_pago_id: string | null
+          metodo: string | null
+          moneda: string
+          monto: number
+          motivo: string | null
+          pagado_at: string | null
+          pagador_email: string | null
+          pagador_nombre: string | null
+          pay_link: string | null
+          proveedor: string
+          proveedor_orden_id: string | null
+          proveedor_pago_id: string | null
+          respuesta: Json
+          updated_at: string
+        }
+        Insert: {
+          cliente_legajo?: string | null
+          comercio_id?: string | null
+          conexion_id?: string | null
+          created_at?: string
+          entorno: string
+          estado?: string
+          estado_proveedor?: string | null
+          id?: string
+          idempotency_key: string
+          link_id?: string | null
+          link_pago_id?: string | null
+          metodo?: string | null
+          moneda: string
+          monto: number
+          motivo?: string | null
+          pagado_at?: string | null
+          pagador_email?: string | null
+          pagador_nombre?: string | null
+          pay_link?: string | null
+          proveedor: string
+          proveedor_orden_id?: string | null
+          proveedor_pago_id?: string | null
+          respuesta?: Json
+          updated_at?: string
+        }
+        Update: {
+          cliente_legajo?: string | null
+          comercio_id?: string | null
+          conexion_id?: string | null
+          created_at?: string
+          entorno?: string
+          estado?: string
+          estado_proveedor?: string | null
+          id?: string
+          idempotency_key?: string
+          link_id?: string | null
+          link_pago_id?: string | null
+          metodo?: string | null
+          moneda?: string
+          monto?: number
+          motivo?: string | null
+          pagado_at?: string | null
+          pagador_email?: string | null
+          pagador_nombre?: string | null
+          pay_link?: string | null
+          proveedor?: string
+          proveedor_orden_id?: string | null
+          proveedor_pago_id?: string | null
+          respuesta?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "pagos_conexion_id_fkey"
+            columns: ["conexion_id"]
+            isOneToOne: false
+            referencedRelation: "comercio_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_link_id_fkey"
+            columns: ["link_id"]
+            isOneToOne: false
+            referencedRelation: "cliente_links_pago"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_link_pago_id_fkey"
+            columns: ["link_pago_id"]
+            isOneToOne: false
+            referencedRelation: "cliente_links_pago_pagos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagos_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
       pagos_intentos_payway: {
         Row: {
           completed_at: string | null
@@ -5729,6 +5853,49 @@ export type Database = {
       aplicar_contracargo_retenido: {
         Args: { p_contracargo_id: string; p_lote_id: string }
         Returns: Json
+      }
+      aplicar_estado_pago: {
+        Args: {
+          p_estado: string
+          p_estado_proveedor?: string
+          p_metodo?: string
+          p_motivo?: string
+          p_pago_id: string
+          p_proveedor_pago_id?: string
+          p_respuesta?: Json
+        }
+        Returns: {
+          cliente_legajo: string | null
+          comercio_id: string | null
+          conexion_id: string | null
+          created_at: string
+          entorno: string
+          estado: string
+          estado_proveedor: string | null
+          id: string
+          idempotency_key: string
+          link_id: string | null
+          link_pago_id: string | null
+          metodo: string | null
+          moneda: string
+          monto: number
+          motivo: string | null
+          pagado_at: string | null
+          pagador_email: string | null
+          pagador_nombre: string | null
+          pay_link: string | null
+          proveedor: string
+          proveedor_orden_id: string | null
+          proveedor_pago_id: string | null
+          respuesta: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pagos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       aplicar_liquidacion_lote: {
         Args: {

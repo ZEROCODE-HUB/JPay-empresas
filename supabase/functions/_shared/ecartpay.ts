@@ -294,6 +294,73 @@ export async function canjearCodigoOAuth(o: {
   return cred;
 }
 
+// ---------------------------------------------------------------------------------------------
+// Órdenes (docs: /docs/orders). `totals` viene en unidades; `payments[].amount` en centavos.
+// ---------------------------------------------------------------------------------------------
+
+export type EstadoPago =
+  | "creado"
+  | "pendiente"
+  | "pagado"
+  | "rechazado"
+  | "cancelado"
+  | "reembolsado"
+  | "parcialmente_reembolsado";
+
+const POR_ESTADO_ORDEN: Record<string, EstadoPago> = {
+  created: "creado",
+  pending: "pendiente",
+  processing: "pendiente",
+  paid: "pagado",
+  cancelled: "cancelado",
+  canceled: "cancelado",
+  refunded: "reembolsado",
+  partially_refunded: "parcialmente_reembolsado",
+};
+
+const PAGO_FALLIDO = new Set(["declined", "failed", "rejected", "error", "denied"]);
+
+export type ResumenOrden = {
+  estado: EstadoPago;
+  estadoProveedor: string;
+  motivo: string | null;
+  metodo: string | null;
+  pagoId: string | null;
+};
+
+/**
+ * Estado de JPay a partir de una orden de Ecart Pay. Si la orden sigue abierta pero el último
+ * intento de pago falló, el pago se considera `rechazado` (el pagador puede reintentar en la
+ * misma orden: un intento posterior aprobado la deja `paid`).
+ */
+export function resumirOrden(orden: unknown): ResumenOrden {
+  const o = (orden ?? {}) as Record<string, unknown>;
+  const estadoProveedor = typeof o.status === "string" ? o.status : "desconocido";
+  let estado: EstadoPago = POR_ESTADO_ORDEN[estadoProveedor] ?? "pendiente";
+  const pagos = Array.isArray(o.payments) ? (o.payments as Record<string, unknown>[]) : [];
+  const ultimo = pagos.at(-1) ?? null;
+  const texto = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
+  const metodoObj = (ultimo?.method ?? null) as Record<string, unknown> | null;
+  const metodo =
+    texto(ultimo?.payment_method) ?? texto(metodoObj?.type) ?? texto(ultimo?.type) ?? null;
+  let motivo: string | null = null;
+  const estadoUltimo = texto(ultimo?.status)?.toLowerCase() ?? null;
+  if (
+    (estado === "creado" || estado === "pendiente") &&
+    estadoUltimo &&
+    PAGO_FALLIDO.has(estadoUltimo)
+  ) {
+    estado = "rechazado";
+    motivo =
+      texto(ultimo?.status_detail) ??
+      texto(ultimo?.message) ??
+      texto(ultimo?.error) ??
+      texto(ultimo?.decline_reason) ??
+      "El banco rechazó el pago";
+  }
+  return { estado, estadoProveedor, motivo, metodo, pagoId: texto(ultimo?.id) };
+}
+
 /** Solo para tests: limpia la caché de tokens y el modo de autorización. */
 export function _reiniciarEstado(): void {
   tokens.clear();
