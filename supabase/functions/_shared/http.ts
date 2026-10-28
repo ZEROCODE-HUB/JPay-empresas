@@ -75,6 +75,39 @@ export function bearerToken(req: Request): string | null {
   return t || null;
 }
 
+export type AccionPermiso = "leer" | "crear" | "modificar" | "borrar";
+
+/**
+ * Exige que quien llama sea un usuario del backoffice con ese permiso (RPC `rls_tiene_permiso`,
+ * que da todo al rol admin). La anon key también pasa `verify_jwt`, así que toda función que
+ * use el service role tiene que llamar a esto (o a `esAdmin`) antes de hacer nada.
+ */
+export async function exigirPermiso(
+  req: Request,
+  recurso: string,
+  accion: AccionPermiso,
+): Promise<void> {
+  if (!bearerToken(req)) throw new HttpError(401, "Falta el token de sesión");
+  const { data, error } = await userClient(req).rpc("rls_tiene_permiso", {
+    p_recurso_codigo: recurso,
+    p_accion: accion,
+  });
+  if (error || data !== true) throw new HttpError(403, "No tenés permiso para esta operación");
+}
+
+/** True si quien llama es un admin activo con rol "admin" (RPC `is_admin`). */
+export async function esAdmin(req: Request): Promise<boolean> {
+  if (!bearerToken(req)) return false;
+  const { data, error } = await userClient(req).rpc("is_admin");
+  return !error && data === true;
+}
+
+/** True si el request trae la service role key (tareas programadas del servidor). */
+export function esServiceRole(req: Request): boolean {
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  return !!key && bearerToken(req) === key;
+}
+
 /** Body JSON del request; 400 si no es JSON válido. */
 export async function readJson<T = Record<string, unknown>>(req: Request): Promise<T> {
   try {
