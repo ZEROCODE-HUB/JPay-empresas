@@ -358,6 +358,25 @@ Hacer:
   listado general de comercios conectados / pendientes.
   Listo cuando: un comercio de prueba conecta su cuenta sandbox y el admin lo ve.
 
+**Estado (2026-10-28): HECHA** en las ramas `feature/ecartpay-fase3` (admin y empresas).
+
+- Migraciones 1019 (`oauth_estados`, `revocado_at`/`ultimo_error`, `proveedor_*_secreto` con
+  Vault, solo service role) y 1020 (el state vence a los 60 min: el KYC puede tardar).
+- Edge Functions (repo empresas): `ecartpay-oauth-inicio`, `ecartpay-oauth-callback` (pública,
+  `--no-verify-jwt`; consume el state de forma atómica, canjea el code, verifica las claves
+  pidiendo un token, guarda `private_id` en Vault y vuelve al portal con `?ecartpay=`),
+  `ecartpay-oauth-desconectar` (dueño o admin). `_shared/conexiones.ts`: comercio de la sesión y
+  URL de vuelta solo a `APP_URL` o localhost (sin redirector abierto).
+- El redirect es la Edge Function (no una ruta del portal), así no depende del dominio final.
+- Empresas: nueva sección "Integraciones" (`/app/integraciones`) con la tarjeta Ecart Pay.
+  Admin: tarjeta "Comercios conectados" en País y proveedores.
+- Prueba real: "Comercio Demo MX" (creado para `empresa.mx@jpay.example`) quedó conectado en
+  sandbox con 66 permisos y la clave en Vault. La desconexión no se probó de punta a punta.
+- **Error del sandbox de Ecart Pay (reportar):** si el comercio tiene que hacer el KYC dentro del
+  flujo, al terminar lo manda a `https://appdev.ecartpay.com/api/oauth/complete?...` (host del
+  panel, que devuelve la SPA en blanco) en vez del host de la API. Reintentar el flujo con la
+  cuenta ya verificada funciona.
+
 ### Fase 4 — Cobros online (links de pago y checkout con tarjeta)
 
 Hacer:

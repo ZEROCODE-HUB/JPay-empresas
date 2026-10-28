@@ -24,6 +24,7 @@ import { Route as AppCuentaRouteImport } from './routes/app.cuenta'
 import { Route as AppDestinatariosRouteImport } from './routes/app.destinatarios'
 import { Route as AppEcommerceRouteImport } from './routes/app.ecommerce'
 import { Route as AppHistorialRouteImport } from './routes/app.historial'
+import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones'
 import { Route as AppLinkPagoRouteImport } from './routes/app.link-pago'
 import { Route as AppLiquidacionesRouteImport } from './routes/app.liquidaciones'
 import { Route as AppMisComerciosRouteImport } from './routes/app.mis-comercios'
@@ -128,6 +129,11 @@ const AppEcommerceRoute = AppEcommerceRouteImport.update({
 const AppHistorialRoute = AppHistorialRouteImport.update({
   id: '/historial',
   path: '/historial',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppIntegracionesRoute = AppIntegracionesRouteImport.update({
+  id: '/integraciones',
+  path: '/integraciones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLinkPagoRoute = AppLinkPagoRouteImport.update({
@@ -298,6 +304,7 @@ export interface FileRoutesByFullPath {
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
+  '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByTo {
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
+  '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
+  '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
@@ -440,6 +449,7 @@ export interface FileRouteTypes {
     | '/app/destinatarios'
     | '/app/ecommerce'
     | '/app/historial'
+    | '/app/integraciones'
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/destinatarios'
     | '/app/ecommerce'
     | '/app/historial'
+    | '/app/integraciones'
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
@@ -532,6 +543,7 @@ export interface FileRouteTypes {
     | '/app/destinatarios'
     | '/app/ecommerce'
     | '/app/historial'
+    | '/app/integraciones'
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
@@ -689,6 +701,13 @@ declare module '@tanstack/react-router' {
       path: '/historial'
       fullPath: '/app/historial'
       preLoaderRoute: typeof AppHistorialRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/integraciones': {
+      id: '/app/integraciones'
+      path: '/integraciones'
+      fullPath: '/app/integraciones'
+      preLoaderRoute: typeof AppIntegracionesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/link-pago': {
@@ -958,6 +977,7 @@ interface AppRouteChildren {
   AppDestinatariosRoute: typeof AppDestinatariosRoute
   AppEcommerceRoute: typeof AppEcommerceRoute
   AppHistorialRoute: typeof AppHistorialRoute
+  AppIntegracionesRoute: typeof AppIntegracionesRoute
   AppLinkPagoRoute: typeof AppLinkPagoRouteWithChildren
   AppLiquidacionesRoute: typeof AppLiquidacionesRoute
   AppMisComerciosRoute: typeof AppMisComerciosRoute
@@ -977,6 +997,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDestinatariosRoute: AppDestinatariosRoute,
   AppEcommerceRoute: AppEcommerceRoute,
   AppHistorialRoute: AppHistorialRoute,
+  AppIntegracionesRoute: AppIntegracionesRoute,
   AppLinkPagoRoute: AppLinkPagoRouteWithChildren,
   AppLiquidacionesRoute: AppLiquidacionesRoute,
   AppMisComerciosRoute: AppMisComerciosRoute,

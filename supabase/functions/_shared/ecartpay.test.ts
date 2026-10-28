@@ -3,10 +3,12 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
   _reiniciarEstado,
+  canjearCodigoOAuth,
   centavosAUnidades,
   EcartPayCliente,
   EcartPayError,
   unidadesACentavos,
+  urlAutorizacionOAuth,
   vencimientoToken,
 } from "./ecartpay.ts";
 
@@ -115,4 +117,69 @@ Deno.test("error al pedir el token", async () => {
     Promise.resolve(Response.json({ message: "bad keys" }, { status: 400 }))) as typeof fetch;
   const e = await assertRejects(() => nuevo(f).token(), EcartPayError);
   assertEquals(e.status, 400);
+});
+
+Deno.test("OAuth: URL de autorización con client_id, redirect_uri y state", () => {
+  const u = new URL(urlAutorizacionOAuth(BASE, "oauth_x", "https://x.co/cb?a=1", "st-1"));
+  assertEquals(u.origin + u.pathname, `${BASE}/oauth`);
+  assertEquals(u.searchParams.get("client_id"), "oauth_x");
+  assertEquals(u.searchParams.get("redirect_uri"), "https://x.co/cb?a=1");
+  assertEquals(u.searchParams.get("state"), "st-1");
+});
+
+Deno.test("OAuth: canje del code con Authorization y x-secret", async () => {
+  let visto: { url: string; h: Headers; body: unknown } | null = null;
+  const f = ((input: string | URL | Request, init?: RequestInit) => {
+    visto = {
+      url: String(input),
+      h: new Headers(init?.headers),
+      body: JSON.parse(String(init?.body)),
+    };
+    return Promise.resolve(
+      Response.json({
+        account_id: "acc1",
+        public_id: "pub1",
+        private_id: "prv1",
+        scope: "read_orders,write_orders read_credentials",
+      }),
+    );
+  }) as typeof fetch;
+  const r = await canjearCodigoOAuth({
+    baseUrl: BASE,
+    app: { clientId: "oauth_x", clientSecret: "sec" },
+    code: "COD",
+    redirectUri: "https://x.co/cb",
+    fetch: f,
+  });
+  assertEquals(r, {
+    accountId: "acc1",
+    publicId: "pub1",
+    privateId: "prv1",
+    scopes: ["read_orders", "write_orders", "read_credentials"],
+  });
+  const v = visto!;
+  assertEquals(v.url, `${BASE}/api/oauth/token?client_id=oauth_x`);
+  assertEquals(v.h.get("authorization"), "COD");
+  assertEquals(v.h.get("x-secret"), "sec");
+  assertEquals(v.body, { grant_type: "authorization_code", redirect_url: "https://x.co/cb" });
+});
+
+Deno.test("OAuth: code vencido devuelve EcartPayError con el mensaje", async () => {
+  const f = (() =>
+    Promise.resolve(
+      Response.json({ message: "The token is not valid" }, { status: 401 }),
+    )) as typeof fetch;
+  const e = await assertRejects(
+    () =>
+      canjearCodigoOAuth({
+        baseUrl: BASE,
+        app: { clientId: "a", clientSecret: "b" },
+        code: "viejo",
+        redirectUri: "https://x.co/cb",
+        fetch: f,
+      }),
+    EcartPayError,
+  );
+  assertEquals(e.status, 401);
+  assertEquals(e.message, "The token is not valid");
 });

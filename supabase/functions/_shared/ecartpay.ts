@@ -208,6 +208,92 @@ function mensajeError(cuerpo: unknown, status: number): string {
 const esperar = (intento: number) =>
   new Promise((r) => setTimeout(r, 300 * 2 ** intento + Math.random() * 100));
 
+// ---------------------------------------------------------------------------------------------
+// OAuth: el comercio conecta su cuenta (docs: /docs/oauth-ecart-pay)
+// ---------------------------------------------------------------------------------------------
+
+export type AppOAuth = { clientId: string; clientSecret: string };
+
+/** Credenciales de la aplicación OAuth de la plataforma, o null si faltan. */
+export function appOAuth(): AppOAuth | null {
+  const clientId = Deno.env.get("ECARTPAY_OAUTH_CLIENT_ID")?.trim();
+  const clientSecret = Deno.env.get("ECARTPAY_OAUTH_CLIENT_SECRET")?.trim();
+  return clientId && clientSecret ? { clientId, clientSecret } : null;
+}
+
+/**
+ * URL de retorno registrada en la app OAuth (debe coincidir exactamente). Por defecto la Edge
+ * Function `ecartpay-oauth-callback` del proyecto; `ECARTPAY_OAUTH_REDIRECT_URI` la fuerza.
+ */
+export function redirectUriOAuth(): string {
+  const forzada = Deno.env.get("ECARTPAY_OAUTH_REDIRECT_URI")?.trim();
+  if (forzada) return forzada;
+  const base = (Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "");
+  return `${base}/functions/v1/ecartpay-oauth-callback`;
+}
+
+/** URL a la que se manda al comercio para iniciar sesión en Ecart Pay y aceptar. */
+export function urlAutorizacionOAuth(
+  baseUrl: string,
+  clientId: string,
+  redirectUri: string,
+  state: string,
+): string {
+  const u = new URL("/oauth", baseUrl);
+  u.searchParams.set("client_id", clientId);
+  u.searchParams.set("redirect_uri", redirectUri);
+  u.searchParams.set("state", state);
+  return u.toString();
+}
+
+export type CredencialesComercio = {
+  accountId: string;
+  publicId: string;
+  privateId: string;
+  scopes: string[];
+};
+
+/**
+ * Canjea el `code` (un solo uso, vence en 5 minutos) por las claves del comercio.
+ * El code va en `Authorization` (sin "Bearer") y el secreto de la app en `x-secret`.
+ */
+export async function canjearCodigoOAuth(o: {
+  baseUrl: string;
+  app: AppOAuth;
+  code: string;
+  redirectUri: string;
+  fetch?: typeof fetch;
+}): Promise<CredencialesComercio> {
+  const url = new URL("/api/oauth/token", o.baseUrl);
+  url.searchParams.set("client_id", o.app.clientId);
+  const res = await (o.fetch ?? fetch)(url, {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      authorization: o.code,
+      "x-secret": o.app.clientSecret,
+    },
+    body: JSON.stringify({ grant_type: "authorization_code", redirect_url: o.redirectUri }),
+  });
+  const cuerpo = await leerCuerpo(res);
+  if (!res.ok) throw new EcartPayError(res.status, mensajeError(cuerpo, res.status), cuerpo);
+  const c = (cuerpo ?? {}) as Record<string, unknown>;
+  const str = (k: string) => (typeof c[k] === "string" ? (c[k] as string) : "");
+  const cred = {
+    accountId: str("account_id"),
+    publicId: str("public_id"),
+    privateId: str("private_id"),
+    scopes: str("scope")
+      .split(/[,\s]+/)
+      .filter(Boolean),
+  };
+  if (!cred.publicId || !cred.privateId) {
+    throw new EcartPayError(502, "La respuesta de OAuth no trae public_id y private_id");
+  }
+  return cred;
+}
+
 /** Solo para tests: limpia la caché de tokens y el modo de autorización. */
 export function _reiniciarEstado(): void {
   tokens.clear();

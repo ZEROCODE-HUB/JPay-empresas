@@ -1969,8 +1969,10 @@ export type Database = {
           modelo_fondos: string | null
           proveedor: string
           public_id: string | null
+          revocado_at: string | null
           scopes: string[]
           secreto_ref: string | null
+          ultimo_error: string | null
           updated_at: string
         }
         Insert: {
@@ -1987,8 +1989,10 @@ export type Database = {
           modelo_fondos?: string | null
           proveedor: string
           public_id?: string | null
+          revocado_at?: string | null
           scopes?: string[]
           secreto_ref?: string | null
+          ultimo_error?: string | null
           updated_at?: string
         }
         Update: {
@@ -2005,8 +2009,10 @@ export type Database = {
           modelo_fondos?: string | null
           proveedor?: string
           public_id?: string | null
+          revocado_at?: string | null
           scopes?: string[]
           secreto_ref?: string | null
+          ultimo_error?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3835,6 +3841,64 @@ export type Database = {
           },
         ]
       }
+      oauth_estados: {
+        Row: {
+          comercio_id: string
+          creado_at: string
+          entorno: string
+          proveedor: string
+          state: string
+          usado_at: string | null
+          usuario_id: string
+          vence_at: string
+          volver_a: string
+        }
+        Insert: {
+          comercio_id: string
+          creado_at?: string
+          entorno: string
+          proveedor: string
+          state?: string
+          usado_at?: string | null
+          usuario_id: string
+          vence_at?: string
+          volver_a: string
+        }
+        Update: {
+          comercio_id?: string
+          creado_at?: string
+          entorno?: string
+          proveedor?: string
+          state?: string
+          usado_at?: string | null
+          usuario_id?: string
+          vence_at?: string
+          volver_a?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oauth_estados_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oauth_estados_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "oauth_estados_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
       otp_transferencias: {
         Row: {
           codigo: string
@@ -5562,6 +5626,7 @@ export type Database = {
         Args: { p_bucket: string; p_subaccount_id: string }
         Returns: string
       }
+      _llamada_confiable: { Args: never; Returns: boolean }
       _lock_cliente_reglas: {
         Args: { p_client_id: string }
         Returns: undefined
@@ -5848,6 +5913,17 @@ export type Database = {
         Args: { p_operacion: string; p_transaction_id: string }
         Returns: Json
       }
+      exigir_acceso_comercio: {
+        Args: { p_comercio_id: string }
+        Returns: undefined
+      }
+      exigir_acceso_legajo: { Args: { p_legajo: string }; Returns: undefined }
+      exigir_acceso_lote: { Args: { p_lote_id: string }; Returns: undefined }
+      exigir_backoffice: { Args: never; Returns: undefined }
+      exigir_permiso: {
+        Args: { p_accion: string; p_recurso: string }
+        Returns: undefined
+      }
       fn_acreditar_adelanto: {
         Args: { p_adelanto_id: string; p_notas?: string }
         Returns: Json
@@ -5958,6 +6034,18 @@ export type Database = {
       }
       obtener_link_pago: { Args: { p_codigo: string }; Returns: Json }
       pais_predeterminado: { Args: never; Returns: string }
+      proveedor_borrar_secreto: {
+        Args: { p_conexion_id: string }
+        Returns: undefined
+      }
+      proveedor_guardar_secreto: {
+        Args: { p_conexion_id: string; p_secreto: string }
+        Returns: string
+      }
+      proveedor_leer_secreto: {
+        Args: { p_conexion_id: string }
+        Returns: string
+      }
       registrar_deposito_entrante: {
         Args: {
           p_cbu_destino: string
