@@ -15,6 +15,8 @@
 //
 // Archivo compartido: es idéntico en los repos del panel admin y del portal empresas (`npm run shared:check`).
 
+import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
+
 type Obj = Record<string, unknown>;
 
 export interface AlmacenSim {
@@ -46,20 +48,8 @@ export class AlmacenMemoria implements AlmacenSim {
   }
 }
 
-/** Cliente mínimo de Supabase que usa el almacén (evita depender de supabase-js acá). */
-type TablaSb = {
-  from(t: string): {
-    // deno-lint-ignore no-explicit-any
-    select(c: string): any;
-    // deno-lint-ignore no-explicit-any
-    upsert(v: Obj): any;
-    // deno-lint-ignore no-explicit-any
-    delete(): any;
-  };
-};
-
 /** Almacén sobre la tabla `cobre_simulador (tipo, id, datos)` (solo service role). */
-export function almacenSupabase(sb: TablaSb): AlmacenSim {
+export function almacenSupabase(sb: SupabaseClient): AlmacenSim {
   const t = () => sb.from("cobre_simulador");
   const fallar = (e: { message: string } | null) => {
     if (e) throw new Error(`Simulador de Cobre: ${e.message}`);
@@ -328,6 +318,21 @@ export function fetchSimulado(almacen: AlmacenSim, o: OpcionesSim = {}): typeof 
       const ext = url.searchParams.get("external_id");
       if (ext) mms = mms.filter((m) => m.external_id === ext);
       return resp(200, pagina(mms.map(publico).reverse(), url.searchParams));
+    }
+    if (partes[0] === "money_movement_approvals" && partes[2] === "decision" && metodo === "POST") {
+      if (cuerpo.decision !== "approved" && cuerpo.decision !== "denied")
+        return error("MMA001", "Invalid decision");
+      if (!cuerpo.description) return error("MMA002", "description is required");
+      const mm = (await almacen.listar("movimiento")).find((m) => m.mm_approval_id === partes[1]);
+      if (!mm) return error("MMA003", "Approval not found", 404);
+      const r = await decidirAprobacionSimulada(
+        almacen,
+        String(mm.id),
+        cuerpo.decision === "approved",
+        ahora(),
+      );
+      if (!r) return error("MMA004", "The approval was already decided");
+      return resp(200, { id: partes[1], decision: cuerpo.decision, money_movement_id: mm.id });
     }
     if (partes[0] === "money_movements_return" && metodo === "POST") {
       return error("G005", "Returns are not simulated yet");
