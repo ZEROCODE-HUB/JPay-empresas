@@ -6444,6 +6444,7 @@ export type Database = {
         }
         Returns: Json
       }
+      alertas_proveedor_pagos: { Args: { p_proveedor?: string }; Returns: Json }
       aplicar_contracargo_retenido: {
         Args: { p_contracargo_id: string; p_lote_id: string }
         Returns: Json

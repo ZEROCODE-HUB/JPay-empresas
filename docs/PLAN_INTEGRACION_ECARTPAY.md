@@ -656,6 +656,37 @@ Lista de pruebas (todas en sandbox, con evidencia en una planilla):
 Además: tests automáticos (vitest) de adaptadores, firma de webhooks, conversión de montos y
 validadores; pruebas end-to-end en el navegador de los flujos 2, 5, 8, 10, 16.
 
+**Resultados en sandbox (2026-10-28, rama `feature/ecartpay-fase9`):**
+
+| #   | Resultado | Evidencia |
+| --- | --------- | --------- |
+| 1   | OK | Comercio Demo MX conectado por OAuth, clave en Vault (Fase 3). |
+| 2–7 | Bloqueado | Pasarela de tarjeta "EcartPay México" inactiva en la cuenta JPayTest (Ecart Pay debe activarla). |
+| 8   | OK | SPEI pagado con la simulación STP; webhooks firmados → `pagado` (Fase 6). |
+| 9   | OK | OXXO con referencia; en sandbox se paga solo a los ~50 s → `pagado` (Fase 8). |
+| 10  | OK | Link `mxecart0001`: 6 órdenes distintas en Ecart Pay, 4 pagadas (una orden por cobro; no hace falta template). |
+| 11  | OK | Firma alterada → 401 "Firma inválida", registrado como `rechazado`. Sin firma → solo consulta la orden (no cambia nada). |
+| 12  | OK | Caso real: Ecart Pay reenvió `orders.create` con el mismo `x-pay-webhook-id` → una fila, 2 intentos, procesado una vez. |
+| 13  | OK | Pago OXXO pagado devuelto a `pendiente` a mano (aviso perdido) → la tarea de las 18:45 lo dejó `pagado`, sin duplicar el cobro del link y con su fecha original. |
+| 14  | Parcial | Reserva y liberación probadas con un SPEI (Ecart Pay no lo reembolsa); el reembolso con tarjeta espera la activación. |
+| 15  | Parcial | Sucursal y cajas con `id_externo`; la cuenta no tiene terminales para vincular. |
+| 16  | Bloqueado | No hay API publicada para cobrar en una terminal (pregunta 1). |
+| 17  | OK | Contracargo con aviso firmado simulado: visible en admin y portal con plazo (Fase 8). |
+| 18  | OK | Link de la empresa AR → checkout de Payway de siempre, sin Ecart Pay (link temporal, borrado). |
+| 19  | OK | Conexión marcada `revocado` → checkout "no disponible" y `crear` 409; restaurada → disponible. |
+| 20  | OK | Tests del cliente (renovación ante 401, caché por vencimiento) y funciones corriendo más de 14 h seguidas sin errores de token. |
+
+Además, en esta fase:
+
+- Meses sin intereses por comercio (Edge Function `ecartpay-msi`, tarjeta en el admin): lee y
+  guarda `/api/cards/msi-configuration` (plazos 3–18, mínimo/máximo, cuotas con interés, comisión
+  por plazo). Probado: cambiar un plazo y restaurarlo. Guardar deja prendido el interruptor
+  general de la cuenta (no documentado). Se ofrecen en el checkout de Ecart Pay solo con tarjeta.
+- Monitoreo (migración 1032): `alertas_proveedor_pagos()` (solo backoffice) con avisos fallidos,
+  tarea de pendientes atrasada, conciliación atrasada o fallida, diferencias abiertas, pendientes
+  viejos, contracargos por vencer y conexiones en error. Admin: tarjeta "Alertas de Ecart Pay".
+- Checkout embebido (camino b) no se hizo: depende de la tarjeta activa para poder probarlo.
+
 Salida a producción (checklist):
 
 - Credenciales de producción en secrets (no en el código), `ECARTPAY_ENV=production`.
