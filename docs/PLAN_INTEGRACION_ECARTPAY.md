@@ -542,6 +542,26 @@ Listo cuando: en sandbox se crea sucursal + caja, se vincula una terminal (o la 
 indique Ecart Pay, pregunta 1–2) y un cobro en caja termina en `pagado` o `rechazado` con su
 pantalla de espera.
 
+**Estado (2026-10-28): GESTIÓN HECHA, cobro en caja pendiente** en las ramas
+`feature/ecartpay-fase7` (admin y empresas). La API de POS funciona con la pasarela inactiva.
+
+- Migración 1026: `sucursales`, `cajas` (número único por sucursal, una terminal por caja) y
+  `terminales`, con `id_externo` del proveedor, bajas lógicas y RLS de lectura (comercio dueño y
+  backoffice); escriben solo las Edge Functions.
+- Edge Function `ecartpay-pos` (comercio dueño o admin): sincronizar (trae lo creado en el panel
+  de Ecart Pay, da de baja lo que ya no existe, no duplica), alta/edición/baja de sucursales y
+  cajas (primero en Ecart Pay, después en JPay), vincular/desvincular terminal y modo punto de
+  venta. Cliente compartido: mapeos sucursal/caja/terminal con tests y `listarTodo` paginado.
+- Empresas: menú "Puntos físicos" (`/app/puntos-fisicos`): sucursales con sus cajas, terminal de
+  cada caja, formularios, baja con confirmación, "Sincronizar con Ecart Pay". Admin: tarjeta
+  "Puntos físicos" con las sucursales de todos los comercios.
+- Probado: sucursal y cajas creadas en Ecart Pay desde el portal, sincronización sin duplicar,
+  baja de caja. Si Ecart Pay no devuelve un ajuste de caja (p. ej. copias de ticket), la
+  sincronización no pisa el valor de JPay.
+- La cuenta no tiene terminales: falta probar vincular/modo con una real o de prueba.
+- **Cobrar en caja: bloqueado** (pregunta 1: no hay API publicada para enviar un cobro a una
+  terminal). El portal lo aclara.
+
 ### Fase 8 — Reembolsos, contracargos, conciliación y reportes
 
 Hacer:

@@ -4,6 +4,11 @@ import { createHmac } from "node:crypto";
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
   _reiniciarEstado,
+  cajaAEcart,
+  cajaDeEcart,
+  sucursalAEcart,
+  sucursalDeEcart,
+  terminalDeEcart,
   canjearCodigoOAuth,
   centavosAUnidades,
   EcartPayCliente,
@@ -314,4 +319,75 @@ Deno.test("SPEI y OXXO: referencia de pago desde la orden pública", () => {
   assertEquals(leerReferenciaPago(oxxo, "oxxo")?.referencia, "98000014505724");
   assertEquals(leerReferenciaPago(oxxo, "oxxo")?.monto, 150);
   assertEquals(leerReferenciaPago({}, "spei"), null);
+});
+
+Deno.test("POS: sucursal ida y vuelta con Ecart Pay", () => {
+  const cuerpo = sucursalAEcart(
+    {
+      nombre: "Centro",
+      calle: "Reforma 100",
+      ciudad: "CDMX",
+      codigo_postal: "06600",
+      telefono: "",
+      encargado: "Ana",
+      estado: "pausada",
+      timezone: "America/Mexico_City",
+    },
+    "loc-1",
+  );
+  assertEquals(cuerpo, {
+    name: "Centro",
+    external_id: "loc-1",
+    address: { street: "Reforma 100", city: "CDMX", postal_code: "06600", country: "Mexico" },
+    contact: { manager_name: "Ana" },
+    timezone: "America/Mexico_City",
+    status: "paused",
+  });
+  const local = sucursalDeEcart({ _id: "b1", ...cuerpo });
+  assertEquals(local.id_externo, "b1");
+  assertEquals(local.estado, "pausada");
+  assertEquals(local.calle, "Reforma 100");
+  assertEquals(local.telefono, null);
+});
+
+Deno.test("POS: caja y terminal", () => {
+  const c = cajaAEcart(
+    {
+      nombre: "Caja 1",
+      numero: "1",
+      estado: "mantenimiento",
+      permite_reembolsos: true,
+      copias_ticket: 2,
+    },
+    "b1",
+  );
+  assertEquals(c, {
+    pos_branches_id: "b1",
+    name: "Caja 1",
+    register_number: "1",
+    status: "maintenance",
+    settings: { allow_refunds: true, receipt_copies: 2 },
+  });
+  const local = cajaDeEcart({ _id: "r1", ...c, pos_information_id: { _id: "t9" } });
+  assertEquals(local.sucursal_externa, "b1");
+  assertEquals(local.terminal_externa, "t9");
+  assertEquals(local.estado, "mantenimiento");
+  assertEquals(local.copias_ticket, 2);
+  assertEquals(
+    terminalDeEcart({
+      _id: "t9",
+      serial_number: "SN1",
+      is_point_of_sale: true,
+      operating_mode: "POINT_OF_SALE",
+      sales_register: { _id: "r1" },
+    }),
+    {
+      id_externo: "t9",
+      serie: "SN1",
+      modo: "POINT_OF_SALE",
+      es_punto_venta: true,
+      estado: null,
+      caja_externa: "r1",
+    },
+  );
 });

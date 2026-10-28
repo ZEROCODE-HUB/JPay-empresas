@@ -28,6 +28,7 @@ import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones
 import { Route as AppLinkPagoRouteImport } from './routes/app.link-pago'
 import { Route as AppLiquidacionesRouteImport } from './routes/app.liquidaciones'
 import { Route as AppMisComerciosRouteImport } from './routes/app.mis-comercios'
+import { Route as AppPuntosFisicosRouteImport } from './routes/app.puntos-fisicos'
 import { Route as AppQrRouteImport } from './routes/app.qr'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
 import { Route as AppServiciosRouteImport } from './routes/app.servicios'
@@ -149,6 +150,11 @@ const AppLiquidacionesRoute = AppLiquidacionesRouteImport.update({
 const AppMisComerciosRoute = AppMisComerciosRouteImport.update({
   id: '/mis-comercios',
   path: '/mis-comercios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPuntosFisicosRoute = AppPuntosFisicosRouteImport.update({
+  id: '/puntos-fisicos',
+  path: '/puntos-fisicos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppQrRoute = AppQrRouteImport.update({
@@ -308,6 +314,7 @@ export interface FileRoutesByFullPath {
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
+  '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
+  '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
@@ -403,6 +411,7 @@ export interface FileRoutesById {
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
   '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
+  '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
@@ -453,6 +462,7 @@ export interface FileRouteTypes {
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
+    | '/app/puntos-fisicos'
     | '/app/qr'
     | '/app/seguridad'
     | '/app/servicios'
@@ -499,6 +509,7 @@ export interface FileRouteTypes {
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
+    | '/app/puntos-fisicos'
     | '/app/qr'
     | '/app/seguridad'
     | '/app/servicios'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/app/link-pago'
     | '/app/liquidaciones'
     | '/app/mis-comercios'
+    | '/app/puntos-fisicos'
     | '/app/qr'
     | '/app/seguridad'
     | '/app/servicios'
@@ -729,6 +741,13 @@ declare module '@tanstack/react-router' {
       path: '/mis-comercios'
       fullPath: '/app/mis-comercios'
       preLoaderRoute: typeof AppMisComerciosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/puntos-fisicos': {
+      id: '/app/puntos-fisicos'
+      path: '/puntos-fisicos'
+      fullPath: '/app/puntos-fisicos'
+      preLoaderRoute: typeof AppPuntosFisicosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/qr': {
@@ -981,6 +1000,7 @@ interface AppRouteChildren {
   AppLinkPagoRoute: typeof AppLinkPagoRouteWithChildren
   AppLiquidacionesRoute: typeof AppLiquidacionesRoute
   AppMisComerciosRoute: typeof AppMisComerciosRoute
+  AppPuntosFisicosRoute: typeof AppPuntosFisicosRoute
   AppQrRoute: typeof AppQrRouteWithChildren
   AppSeguridadRoute: typeof AppSeguridadRoute
   AppServiciosRoute: typeof AppServiciosRoute
@@ -1001,6 +1021,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLinkPagoRoute: AppLinkPagoRouteWithChildren,
   AppLiquidacionesRoute: AppLiquidacionesRoute,
   AppMisComerciosRoute: AppMisComerciosRoute,
+  AppPuntosFisicosRoute: AppPuntosFisicosRoute,
   AppQrRoute: AppQrRouteWithChildren,
   AppSeguridadRoute: AppSeguridadRoute,
   AppServiciosRoute: AppServiciosRoute,

@@ -838,6 +838,78 @@ export type Database = {
           },
         ]
       }
+      cajas: {
+        Row: {
+          copias_ticket: number
+          created_at: string
+          eliminado_at: string | null
+          estado: string
+          id: string
+          id_externo: string | null
+          nombre: string
+          numero: string
+          permite_reembolsos: boolean
+          requiere_aprobacion: boolean
+          sincronizado_at: string | null
+          sucursal_id: string
+          terminal_id: string | null
+          tope_reembolso: number | null
+          umbral_aprobacion: number | null
+          updated_at: string
+        }
+        Insert: {
+          copias_ticket?: number
+          created_at?: string
+          eliminado_at?: string | null
+          estado?: string
+          id?: string
+          id_externo?: string | null
+          nombre: string
+          numero: string
+          permite_reembolsos?: boolean
+          requiere_aprobacion?: boolean
+          sincronizado_at?: string | null
+          sucursal_id: string
+          terminal_id?: string | null
+          tope_reembolso?: number | null
+          umbral_aprobacion?: number | null
+          updated_at?: string
+        }
+        Update: {
+          copias_ticket?: number
+          created_at?: string
+          eliminado_at?: string | null
+          estado?: string
+          id?: string
+          id_externo?: string | null
+          nombre?: string
+          numero?: string
+          permite_reembolsos?: boolean
+          requiere_aprobacion?: boolean
+          sincronizado_at?: string | null
+          sucursal_id?: string
+          terminal_id?: string | null
+          tope_reembolso?: number | null
+          umbral_aprobacion?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cajas_sucursal_id_fkey"
+            columns: ["sucursal_id"]
+            isOneToOne: false
+            referencedRelation: "sucursales"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cajas_terminal_id_fkey"
+            columns: ["terminal_id"]
+            isOneToOne: true
+            referencedRelation: "terminales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       canales_notificacion: {
         Row: {
           activo: boolean
@@ -4846,6 +4918,94 @@ export type Database = {
           },
         ]
       }
+      sucursales: {
+        Row: {
+          calle: string | null
+          ciudad: string | null
+          codigo_postal: string | null
+          comercio_id: string
+          created_at: string
+          eliminado_at: string | null
+          email: string | null
+          encargado: string | null
+          estado: string
+          estado_region: string | null
+          horario: Json
+          id: string
+          id_externo: string | null
+          nombre: string
+          proveedor: string
+          sincronizado_at: string | null
+          telefono: string | null
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          calle?: string | null
+          ciudad?: string | null
+          codigo_postal?: string | null
+          comercio_id: string
+          created_at?: string
+          eliminado_at?: string | null
+          email?: string | null
+          encargado?: string | null
+          estado?: string
+          estado_region?: string | null
+          horario?: Json
+          id?: string
+          id_externo?: string | null
+          nombre: string
+          proveedor?: string
+          sincronizado_at?: string | null
+          telefono?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          calle?: string | null
+          ciudad?: string | null
+          codigo_postal?: string | null
+          comercio_id?: string
+          created_at?: string
+          eliminado_at?: string | null
+          email?: string | null
+          encargado?: string | null
+          estado?: string
+          estado_region?: string | null
+          horario?: Json
+          id?: string
+          id_externo?: string | null
+          nombre?: string
+          proveedor?: string
+          sincronizado_at?: string | null
+          telefono?: string | null
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sucursales_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sucursales_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "sucursales_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
+      }
       tareas_programadas: {
         Row: {
           nombre: string
@@ -4863,6 +5023,73 @@ export type Database = {
           ultima_corrida_at?: string | null
         }
         Relationships: []
+      }
+      terminales: {
+        Row: {
+          comercio_id: string
+          created_at: string
+          es_punto_venta: boolean
+          estado: string | null
+          id: string
+          id_externo: string
+          modo: string | null
+          proveedor: string
+          serie: string | null
+          sincronizado_at: string | null
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          comercio_id: string
+          created_at?: string
+          es_punto_venta?: boolean
+          estado?: string | null
+          id?: string
+          id_externo: string
+          modo?: string | null
+          proveedor?: string
+          serie?: string | null
+          sincronizado_at?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          comercio_id?: string
+          created_at?: string
+          es_punto_venta?: boolean
+          estado?: string | null
+          id?: string
+          id_externo?: string
+          modo?: string | null
+          proveedor?: string
+          serie?: string | null
+          sincronizado_at?: string | null
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "terminales_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "terminales_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "terminales_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
       tipos_movimiento: {
         Row: {

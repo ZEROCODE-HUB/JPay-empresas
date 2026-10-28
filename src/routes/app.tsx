@@ -17,6 +17,7 @@ import {
   Code2,
   Landmark,
   Plug,
+  MapPinned,
 } from "lucide-react";
 import { PortalShell, type NavItem } from "@/components/portal-shell";
 import { SupportBot } from "@/components/support-bot";
@@ -36,6 +37,7 @@ const nav: NavItem[] = [
   { to: "/app/subcuentas", label: "Subcuentas", icon: Wallet },
   { to: "/app/mis-comercios", label: "Mis comercios", icon: Store },
   { to: "/app/integraciones", label: "Integraciones", icon: Plug },
+  { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned },
   {
     label: "Link de pago",
     icon: Link2,

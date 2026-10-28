@@ -400,6 +400,188 @@ export function leerReferenciaPago(orden: unknown, metodo: MetodoExterno): Refer
 }
 
 // ---------------------------------------------------------------------------------------------
+// Puntos físicos (docs: branch-management, sales-register-management, terminal-pos-management).
+// Sucursal → Caja → Terminal. Las respuestas traen el objeto en `data` y los listados en
+// `data[]` con `pagination`.
+// ---------------------------------------------------------------------------------------------
+
+const ESTADO_A_ECART: Record<string, string> = {
+  activa: "active",
+  inactiva: "inactive",
+  pausada: "paused",
+  mantenimiento: "maintenance",
+};
+const ESTADO_DE_ECART: Record<string, string> = Object.fromEntries(
+  Object.entries(ESTADO_A_ECART).map(([k, v]) => [v, k]),
+);
+
+export type SucursalLocal = {
+  nombre: string;
+  calle?: string | null;
+  ciudad?: string | null;
+  estado_region?: string | null;
+  codigo_postal?: string | null;
+  telefono?: string | null;
+  email?: string | null;
+  encargado?: string | null;
+  horario?: Record<string, unknown> | null;
+  timezone?: string | null;
+  estado?: string | null;
+};
+
+const sinVacios = (o: Record<string, unknown>) =>
+  Object.fromEntries(
+    Object.entries(o).filter(([, v]) => v !== undefined && v !== null && v !== ""),
+  );
+
+/** Cuerpo para POST/PUT /api/pos/branches. */
+export function sucursalAEcart(s: SucursalLocal, idLocal?: string): Record<string, unknown> {
+  const address = sinVacios({
+    street: s.calle,
+    city: s.ciudad,
+    state: s.estado_region,
+    postal_code: s.codigo_postal,
+    country: "Mexico",
+  });
+  const contact = sinVacios({ email: s.email, phone: s.telefono, manager_name: s.encargado });
+  return sinVacios({
+    name: s.nombre,
+    external_id: idLocal,
+    address,
+    contact: Object.keys(contact).length ? contact : undefined,
+    operating_hours: s.horario && Object.keys(s.horario).length ? s.horario : undefined,
+    timezone: s.timezone,
+    status: s.estado ? ESTADO_A_ECART[s.estado] : undefined,
+  });
+}
+
+/** Campos locales a partir de una sucursal de Ecart Pay. */
+export function sucursalDeEcart(
+  b: Record<string, unknown>,
+): SucursalLocal & { id_externo: string } {
+  const a = (b.address ?? {}) as Record<string, unknown>;
+  const c = (b.contact ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  return {
+    id_externo: String(b._id ?? b.id ?? ""),
+    nombre: s(b.name) ?? "Sucursal",
+    calle: s(a.street),
+    ciudad: s(a.city),
+    estado_region: s(a.state),
+    codigo_postal: s(a.postal_code),
+    telefono: s(c.phone),
+    email: s(c.email),
+    encargado: s(c.manager_name),
+    horario:
+      b.operating_hours && typeof b.operating_hours === "object"
+        ? (b.operating_hours as Record<string, unknown>)
+        : {},
+    timezone: s(b.timezone) ?? "America/Mexico_City",
+    estado: ESTADO_DE_ECART[s(b.status) ?? ""] ?? "activa",
+  };
+}
+
+export type CajaLocal = {
+  nombre: string;
+  numero: string;
+  estado?: string | null;
+  permite_reembolsos?: boolean;
+  tope_reembolso?: number | null;
+  requiere_aprobacion?: boolean;
+  umbral_aprobacion?: number | null;
+  copias_ticket?: number;
+};
+
+/** Cuerpo para POST/PUT /api/pos/sales-registers. */
+export function cajaAEcart(
+  c: CajaLocal,
+  sucursalExterna: string,
+  idLocal?: string,
+): Record<string, unknown> {
+  return sinVacios({
+    pos_branches_id: sucursalExterna,
+    name: c.nombre,
+    register_number: c.numero,
+    external_id: idLocal,
+    status: c.estado ? ESTADO_A_ECART[c.estado] : undefined,
+    settings: sinVacios({
+      allow_refunds: c.permite_reembolsos,
+      max_refund_amount: c.tope_reembolso,
+      require_manager_approval: c.requiere_aprobacion,
+      manager_approval_threshold: c.umbral_aprobacion,
+      receipt_copies: c.copias_ticket,
+    }),
+  });
+}
+
+/** Campos locales a partir de una caja de Ecart Pay (y el id externo de su sucursal). */
+export function cajaDeEcart(r: Record<string, unknown>): CajaLocal & {
+  id_externo: string;
+  sucursal_externa: string | null;
+  terminal_externa: string | null;
+} {
+  const st = (r.settings ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  // Números que pueden venir como texto; si el ajuste no viene, queda undefined y la
+  // sincronización no pisa el valor guardado en JPay.
+  const n = (v: unknown) => {
+    const x = typeof v === "string" && v.trim() ? Number(v) : v;
+    return typeof x === "number" && Number.isFinite(x) ? x : undefined;
+  };
+  const b = (v: unknown) => (typeof v === "boolean" ? v : undefined);
+  const ref = (v: unknown) =>
+    s(v) ?? (v && typeof v === "object" ? s((v as Record<string, unknown>)._id) : null);
+  return {
+    id_externo: String(r._id ?? r.id ?? ""),
+    sucursal_externa: ref(r.pos_branches_id) ?? ref(r.branch),
+    terminal_externa: ref(r.pos_information_id) ?? ref(r.terminal),
+    nombre: s(r.name) ?? "Caja",
+    numero: s(r.register_number) ?? String(r.register_number ?? ""),
+    estado: ESTADO_DE_ECART[s(r.status) ?? ""] ?? "activa",
+    permite_reembolsos: b(st.allow_refunds),
+    tope_reembolso: n(st.max_refund_amount),
+    requiere_aprobacion: b(st.require_manager_approval),
+    umbral_aprobacion: n(st.manager_approval_threshold),
+    copias_ticket: n(st.receipt_copies),
+  };
+}
+
+/** Campos locales de una terminal de Ecart Pay (GET /api/pos/terminals/point-of-sale). */
+export function terminalDeEcart(t: Record<string, unknown>) {
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const caja = (t.sales_register ?? null) as Record<string, unknown> | null;
+  return {
+    id_externo: String(t._id ?? t.id ?? ""),
+    serie: s(t.serial_number),
+    modo: s(t.operating_mode),
+    es_punto_venta: t.is_point_of_sale === true,
+    estado: s(t.status),
+    caja_externa: caja ? (s(caja._id) ?? s(caja.id)) : null,
+  };
+}
+
+/** Lista de un endpoint paginado (`data[]` + `pagination`), todas las páginas. */
+export async function listarTodo(
+  cliente: EcartPayCliente,
+  ruta: string,
+  query: Record<string, string | number | undefined> = {},
+): Promise<Record<string, unknown>[]> {
+  const todo: Record<string, unknown>[] = [];
+  for (let page = 1; page <= 20; page++) {
+    const r = await cliente.get<{ data?: unknown; pagination?: { pages?: number } }>(ruta, {
+      ...query,
+      page,
+      limit: 100,
+    });
+    const datos = Array.isArray(r?.data) ? (r.data as Record<string, unknown>[]) : [];
+    todo.push(...datos);
+    const paginas = r?.pagination?.pages ?? 1;
+    if (page >= paginas || datos.length === 0) break;
+  }
+  return todo;
+}
+
+// ---------------------------------------------------------------------------------------------
 // Webhooks (docs: /docs/webhook-authentication)
 // Firma: x-pay-signature = "SHA256=" + hex(HMAC-SHA256(secret,
 //   `${x-pay-timestamp}.${x-pay-webhook-id}.${JSON.stringify(body.data)}`))
