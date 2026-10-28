@@ -1,5 +1,6 @@
 // Tests del cliente de Ecart Pay (Deno): `npx -y deno@2.9.5 test supabase/functions/_shared/`.
 // Archivo compartido: idéntico en los repos del panel admin y del portal empresas.
+import { createHmac } from "node:crypto";
 import { assertEquals, assertRejects } from "jsr:@std/assert@1";
 import {
   _reiniciarEstado,
@@ -7,10 +8,12 @@ import {
   centavosAUnidades,
   EcartPayCliente,
   EcartPayError,
+  leerEventoWebhook,
   resumirOrden,
   unidadesACentavos,
   urlAutorizacionOAuth,
   vencimientoToken,
+  verificarFirmaWebhook,
 } from "./ecartpay.ts";
 
 const BASE = "https://sandbox.ecartpay.com";
@@ -218,4 +221,57 @@ Deno.test("órdenes: último intento rechazado deja el pago rechazado con motivo
     resumirOrden({ status: "paid", payments: [{ status: "declined" }, { status: "paid" }] }).estado,
     "pagado",
   );
+});
+
+// Firma como el ejemplo de la documentación (Node), independiente de la implementación.
+const firmaDoc = (secreto: string, ts: string, id: string, datos: string) =>
+  "SHA256=" + createHmac("sha256", secreto).update(`${ts}.${id}.${datos}`).digest("hex");
+
+Deno.test("webhooks: firma válida con { event, data }", async () => {
+  const cuerpo = {
+    event: "chargebacks.create",
+    data: { id: "cb1", status: "created", monto: 1.5 },
+  };
+  const firma = firmaDoc("s3cr3t", "1700000000000", "hook_1", JSON.stringify(cuerpo.data));
+  const base = { secreto: "s3cr3t", timestamp: "1700000000000", webhookId: "hook_1", cuerpo };
+  assertEquals(await verificarFirmaWebhook({ ...base, firma }), true);
+  assertEquals(await verificarFirmaWebhook({ ...base, firma: firma.toLowerCase() }), true);
+  // Cualquier cambio invalida la firma.
+  assertEquals(await verificarFirmaWebhook({ ...base, firma, secreto: "otro" }), false);
+  assertEquals(await verificarFirmaWebhook({ ...base, firma, webhookId: "hook_2" }), false);
+  assertEquals(
+    await verificarFirmaWebhook({
+      ...base,
+      firma,
+      cuerpo: { ...cuerpo, data: { ...cuerpo.data, status: "won" } },
+    }),
+    false,
+  );
+  assertEquals(await verificarFirmaWebhook({ ...base, firma: "SHA256=nohex" }), false);
+});
+
+Deno.test("webhooks: eventos de órdenes planos ({status, id})", async () => {
+  const cuerpo = { status: "paid", id: "ord1" };
+  const base = { secreto: "k", timestamp: "1", webhookId: "h", cuerpo };
+  const plano = firmaDoc("k", "1", "h", JSON.stringify(cuerpo));
+  const sinData = firmaDoc("k", "1", "h", "undefined");
+  assertEquals(await verificarFirmaWebhook({ ...base, firma: plano }), true);
+  assertEquals(await verificarFirmaWebhook({ ...base, firma: sinData }), true);
+});
+
+Deno.test("webhooks: evento e id, planos o dentro de data", () => {
+  assertEquals(leerEventoWebhook({ status: "paid", id: "o1" }), {
+    evento: null,
+    idExterno: "o1",
+    estado: "paid",
+  });
+  assertEquals(
+    leerEventoWebhook({ event: "orders.update", data: { id: "o2", status: "cancelled" } }),
+    {
+      evento: "orders.update",
+      idExterno: "o2",
+      estado: "cancelled",
+    },
+  );
+  assertEquals(leerEventoWebhook("basura"), { evento: null, idExterno: null, estado: null });
 });

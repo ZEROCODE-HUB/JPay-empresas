@@ -4837,6 +4837,24 @@ export type Database = {
           },
         ]
       }
+      tareas_programadas: {
+        Row: {
+          nombre: string
+          resultado: Json
+          ultima_corrida_at: string | null
+        }
+        Insert: {
+          nombre: string
+          resultado?: Json
+          ultima_corrida_at?: string | null
+        }
+        Update: {
+          nombre?: string
+          resultado?: Json
+          ultima_corrida_at?: string | null
+        }
+        Relationships: []
+      }
       tipos_movimiento: {
         Row: {
           codigo: string
@@ -5354,6 +5372,75 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_eventos: {
+        Row: {
+          error: string | null
+          estado_externo: string | null
+          evento: string | null
+          firma_valida: boolean | null
+          id: string
+          id_externo: string | null
+          intentos: number
+          origen: string
+          pago_id: string | null
+          payload: Json
+          procesado_at: string | null
+          proveedor: string
+          recibido_at: string
+          resultado: string | null
+          webhook_id: string | null
+        }
+        Insert: {
+          error?: string | null
+          estado_externo?: string | null
+          evento?: string | null
+          firma_valida?: boolean | null
+          id?: string
+          id_externo?: string | null
+          intentos?: number
+          origen: string
+          pago_id?: string | null
+          payload?: Json
+          procesado_at?: string | null
+          proveedor: string
+          recibido_at?: string
+          resultado?: string | null
+          webhook_id?: string | null
+        }
+        Update: {
+          error?: string | null
+          estado_externo?: string | null
+          evento?: string | null
+          firma_valida?: boolean | null
+          id?: string
+          id_externo?: string | null
+          intentos?: number
+          origen?: string
+          pago_id?: string | null
+          payload?: Json
+          procesado_at?: string | null
+          proveedor?: string
+          recibido_at?: string
+          resultado?: string | null
+          webhook_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_eventos_pago_id_fkey"
+            columns: ["pago_id"]
+            isOneToOne: false
+            referencedRelation: "pagos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_eventos_proveedor_fkey"
+            columns: ["proveedor"]
+            isOneToOne: false
+            referencedRelation: "proveedores_pago"
+            referencedColumns: ["codigo"]
+          },
+        ]
       }
     }
     Views: {
@@ -6309,6 +6396,10 @@ export type Database = {
           p_subcuenta_origen: string
         }
         Returns: Json
+      }
+      reservar_tarea: {
+        Args: { p_intervalo: string; p_nombre: string }
+        Returns: boolean
       }
       reservar_transferencia_bdc: {
         Args: {

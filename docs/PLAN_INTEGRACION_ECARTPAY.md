@@ -445,6 +445,27 @@ Hacer:
   Listo cuando: pagar en sandbox actualiza el estado en segundos sin recargar (realtime ya
   existe), y un webhook con firma mala queda rechazado y registrado.
 
+**Estado (2026-10-28): HECHA** en las ramas `feature/ecartpay-fase5` (admin y empresas).
+
+- **Formato real confirmado (pregunta 3 resuelta):** los webhooks de la cuenta llegan como
+  `{"event": "orders.create", "data": {"id", "status"}}`, firmados sobre `JSON.stringify(data)`
+  con `x-pay-timestamp` en milisegundos. Se verificaron webhooks reales de Ecart Pay
+  (`firma_valida = true`). Ecart Pay mandó dos avisos (webhook_id distintos) por la misma orden.
+- Principio de diseño: un aviso NUNCA cambia un estado por su contenido; solo dispara
+  `GET /api/orders/{id}` (`_shared/pagos.ts`: `confirmarPago`, `procesarEvento`). Probado: un
+  aviso sin firma que decía `paid` dejó el pago en `creado` porque la orden seguía `created`.
+- Migración 1022: `webhook_eventos` (único por webhook_id firmado), `tareas_programadas` y
+  `reservar_tarea`. Migración 1023: pg_cron cada 5 min → `ecartpay-pendientes`.
+- Edge Functions públicas (`--no-verify-jwt`): `ecartpay-webhook` (firma inválida → 401 y
+  registro; también recibe el `notify_url` de cada orden, sin firma) y `ecartpay-pendientes`
+  (reconsulta pagos abiertos de 2 min a 7 días, máximo una corrida cada 4 min; con `evento_id`
+  reprocesa un aviso, solo admins).
+- No se rechazan timestamps viejos: la repetición es inofensiva (idempotencia + consulta).
+- Admin > País y proveedores: tarjeta "Avisos de Ecart Pay" (firma, resultado, error, última
+  revisión de pendientes, "Reprocesar"). Probado en local.
+- Sin hacer: registrar webhooks por API en la cuenta de cada comercio (`POST /api/webhooks`); con
+  `notify_url` por orden más la tarea de pendientes alcanza para sus órdenes.
+
 ### Fase 6 — Transferencias SPEI y efectivo OXXO
 
 Hacer:

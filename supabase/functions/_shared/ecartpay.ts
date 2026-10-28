@@ -361,6 +361,77 @@ export function resumirOrden(orden: unknown): ResumenOrden {
   return { estado, estadoProveedor, motivo, metodo, pagoId: texto(ultimo?.id) };
 }
 
+// ---------------------------------------------------------------------------------------------
+// Webhooks (docs: /docs/webhook-authentication)
+// Firma: x-pay-signature = "SHA256=" + hex(HMAC-SHA256(secret,
+//   `${x-pay-timestamp}.${x-pay-webhook-id}.${JSON.stringify(body.data)}`))
+// ---------------------------------------------------------------------------------------------
+
+async function hmacHex(secreto: string, texto: string): Promise<string> {
+  const enc = new TextEncoder();
+  const clave = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secreto),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const firma = await crypto.subtle.sign("HMAC", clave, enc.encode(texto));
+  return [...new Uint8Array(firma)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function igualesTiempoConstante(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let r = 0;
+  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return r === 0;
+}
+
+/**
+ * Verifica la firma de un webhook. La documentación firma `JSON.stringify(body.data)`, pero los
+ * eventos de órdenes vienen planos (`{status, id}`): se aceptan las variantes razonables
+ * (data, cuerpo completo, el literal "undefined" que produce JSON.stringify sin data).
+ */
+export async function verificarFirmaWebhook(o: {
+  secreto: string;
+  timestamp: string;
+  webhookId: string;
+  firma: string;
+  cuerpo: unknown;
+}): Promise<boolean> {
+  const recibida = o.firma
+    .replace(/^SHA256=/i, "")
+    .trim()
+    .toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(recibida)) return false;
+  const c = (o.cuerpo ?? {}) as Record<string, unknown>;
+  const candidatos = new Set<string>();
+  if ("data" in c) candidatos.add(JSON.stringify(c.data));
+  candidatos.add(JSON.stringify(o.cuerpo));
+  if (!("data" in c)) candidatos.add("undefined");
+  for (const datos of candidatos) {
+    const esperada = await hmacHex(o.secreto, `${o.timestamp}.${o.webhookId}.${datos}`);
+    if (igualesTiempoConstante(esperada, recibida)) return true;
+  }
+  return false;
+}
+
+/** Evento e id de la orden (u objeto) a partir del cuerpo, venga plano o dentro de `data`. */
+export function leerEventoWebhook(cuerpo: unknown): {
+  evento: string | null;
+  idExterno: string | null;
+  estado: string | null;
+} {
+  const c = (cuerpo ?? {}) as Record<string, unknown>;
+  const d = (c.data && typeof c.data === "object" ? c.data : c) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  return {
+    evento: s(c.event) ?? s(c.type),
+    idExterno: s(d.id) ?? s(d._id) ?? s(d.order_id),
+    estado: s(d.status),
+  };
+}
+
 /** Solo para tests: limpia la caché de tokens y el modo de autorización. */
 export function _reiniciarEstado(): void {
   tokens.clear();

@@ -9,14 +9,10 @@
 // - "confirmar": { pago_id } → consulta la orden en Ecart Pay y actualiza el estado. Nunca se
 //                confía en la redirección: el estado sale siempre de GET /api/orders/{id}.
 
-import {
-  clienteDeConexion,
-  conexionEcartPay,
-  urlDeVuelta,
-  type ConexionActiva,
-} from "../_shared/conexiones.ts";
-import { EcartPayError, resumirOrden } from "../_shared/ecartpay.ts";
+import { clienteDeConexion, conexionEcartPay, urlDeVuelta } from "../_shared/conexiones.ts";
+import { EcartPayError } from "../_shared/ecartpay.ts";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { confirmarPago } from "../_shared/pagos.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
 type Link = {
@@ -190,59 +186,5 @@ async function crear(sb: SupabaseClient, body: Body) {
 
 async function confirmar(sb: SupabaseClient, pagoId: unknown) {
   if (typeof pagoId !== "string" || !UUID.test(pagoId)) throw new HttpError(400, "Pago inválido");
-  const { data: pago, error } = await sb
-    .from("pagos")
-    .select("id, conexion_id, entorno, proveedor_orden_id, estado, monto, moneda, motivo")
-    .eq("id", pagoId)
-    .eq("proveedor", "ecartpay")
-    .maybeSingle();
-  if (error) throw new HttpError(500, error.message);
-  if (!pago) throw new HttpError(404, "Pago inexistente");
-  if (!pago.proveedor_orden_id || !pago.conexion_id) {
-    return { estado: pago.estado, monto: pago.monto, moneda: pago.moneda, motivo: pago.motivo };
-  }
-
-  const { data: con } = await sb
-    .from("comercio_proveedores")
-    .select("id, comercio_id, entorno, public_id")
-    .eq("id", pago.conexion_id)
-    .maybeSingle();
-  if (!con?.public_id) throw new HttpError(409, "La conexión del comercio ya no está activa");
-  const conexion: ConexionActiva = {
-    id: con.id,
-    comercioId: con.comercio_id,
-    entorno: con.entorno as ConexionActiva["entorno"],
-    publicId: con.public_id,
-  };
-  const cliente = await clienteDeConexion(sb, conexion);
-  const orden = await cliente.get<Record<string, unknown>>(
-    `/api/orders/${encodeURIComponent(pago.proveedor_orden_id)}`,
-  );
-  const r = resumirOrden(orden);
-  const { data: final, error: e2 } = await sb.rpc("aplicar_estado_pago", {
-    p_pago_id: pago.id,
-    p_estado: r.estado,
-    p_estado_proveedor: r.estadoProveedor,
-    p_motivo: r.motivo,
-    p_metodo: r.metodo,
-    p_proveedor_pago_id: r.pagoId,
-    p_respuesta: orden,
-  });
-  if (e2) throw new HttpError(500, e2.message);
-  const f = final as {
-    estado: string;
-    monto: number;
-    moneda: string;
-    motivo: string | null;
-    pagado_at: string | null;
-  };
-  return {
-    estado: f.estado,
-    monto: Number(f.monto),
-    moneda: f.moneda,
-    motivo: f.motivo,
-    metodo: r.metodo,
-    pagado_at: f.pagado_at,
-    orden_id: pago.proveedor_orden_id,
-  };
+  return await confirmarPago(sb, pagoId);
 }
