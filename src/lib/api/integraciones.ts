@@ -1,5 +1,6 @@
 import { requireSupabase } from "@/lib/supabase";
 import type { Tables } from "@/lib/database.types";
+import { toReporteCobros, type ReporteCobros } from "@/shared/reporte-cobros";
 import { DataAccessError } from "./errors";
 
 /**
@@ -174,3 +175,59 @@ export const esReembolsable = (c: CobroProveedor) =>
   c.metodo !== "spei" &&
   c.metodo !== "oxxo" &&
   c.monto - c.reembolsado > 0;
+
+/** Reporte de cobros con Ecart Pay de un período (RPC con RLS: solo los cobros propios). */
+export async function getReporteCobros(desde: string, hasta: string): Promise<ReporteCobros> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.rpc("reporte_cobros_proveedor", {
+    p_desde: desde,
+    p_hasta: hasta,
+  });
+  if (error) throw new DataAccessError(error);
+  return toReporteCobros(data);
+}
+
+export type CuentaRetiro = {
+  id: string;
+  tipo: string;
+  nombre: string | null;
+  /** Solo los últimos 4 dígitos: la Edge Function nunca devuelve el número completo. */
+  numero: string | null;
+  banco: string | null;
+  titular: string | null;
+};
+
+export type Retiro = {
+  id: string;
+  transaccionId: string | null;
+  estado: string;
+  monto: number;
+  comision: number;
+  moneda: string | null;
+  enRevision: boolean;
+  cuentaId: string | null;
+  creadoAt: string | null;
+  actualizadoAt: string | null;
+};
+
+export type Retiros = {
+  retiros: Retiro[];
+  pagina: number;
+  paginas: number;
+  total: number;
+  cuentas: CuentaRetiro[];
+  saldo: { moneda: string; cobrado: number; cargos: number; disponible: number } | null;
+  /** Partes que Ecart Pay no pudo devolver (el resto se muestra igual). */
+  errores: string[];
+};
+
+/** Saldo, cuentas de retiro e historial en Ecart Pay (Edge Function `ecartpay-retiros`). */
+export async function getRetirosEcartPay(pagina = 1): Promise<Retiros> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<Retiros>("ecartpay-retiros", {
+    body: { pagina },
+  });
+  if (error) throw await errorDeFuncion(error);
+  if (!data) throw new Error("Respuesta vacía de Ecart Pay");
+  return data;
+}

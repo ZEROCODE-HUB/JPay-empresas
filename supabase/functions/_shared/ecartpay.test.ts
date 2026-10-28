@@ -13,6 +13,9 @@ import {
   canjearCodigoOAuth,
   centavosAUnidades,
   conciliar,
+  cuentaRetiroDeEcart,
+  enmascararCuenta,
+  retiroDeEcart,
   EcartPayCliente,
   EcartPayError,
   leerEventoWebhook,
@@ -442,4 +445,56 @@ Deno.test("conciliación: transacciones de pago y diferencias", () => {
     [],
   );
   assertEquals(otra.diferencias[0].tipo, "falta_en_jpay");
+});
+
+Deno.test("retiros: cuentas enmascaradas y retiros", () => {
+  assertEquals(enmascararCuenta("001112125452458751"), "•••• 8751");
+  assertEquals(enmascararCuenta("12"), null);
+  assertEquals(enmascararCuenta(undefined), null);
+  const cuenta = cuentaRetiroDeEcart({
+    id: "61e7",
+    method: "clabe",
+    name: "FLUDISA-MXP",
+    number: "001112125452458751",
+    business_name: "Angel Cantu",
+    bank: 40072,
+  });
+  assertEquals(cuenta, {
+    id: "61e7",
+    tipo: "clabe",
+    nombre: "FLUDISA-MXP",
+    numero: "•••• 8751",
+    banco: "40072",
+    titular: "Angel Cantu",
+  });
+  assertEquals(JSON.stringify(cuenta).includes("0011121254"), false);
+  assertEquals(
+    cuentaRetiroDeEcart({ id: "x", method: "debit", number: "4242424242424242" }).tipo,
+    "tarjeta",
+  );
+  assertEquals(
+    retiroDeEcart({
+      id: "654b",
+      transaction_id: "TR00000914A",
+      status: "processing",
+      amount: 100,
+      fee: 0,
+      currency: "MXN",
+      in_review: true,
+      payment_method_id: "60e6",
+      created_at: "2023-11-08T19:19:04.539Z",
+    }),
+    {
+      id: "654b",
+      transaccionId: "TR00000914A",
+      estado: "processing",
+      monto: 100,
+      comision: 0,
+      moneda: "MXN",
+      enRevision: true,
+      cuentaId: "60e6",
+      creadoAt: "2023-11-08T19:19:04.539Z",
+      actualizadoAt: null,
+    },
+  );
 });

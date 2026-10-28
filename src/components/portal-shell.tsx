@@ -11,9 +11,11 @@ import {
 import { useMemo, useState, type ReactNode } from "react";
 import { BrandLogo } from "./brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
+import type { Modulo } from "@/shared/pais";
 
-export type NavLeaf = { to: string; label: string; icon: LucideIcon };
-export type NavGroup = { label: string; icon: LucideIcon; items: NavLeaf[] };
+/** `modulo`: el ítem solo aparece si el país lo tiene (ver `filtrarPorModulo`). */
+export type NavLeaf = { to: string; label: string; icon: LucideIcon; modulo?: Modulo };
+export type NavGroup = { label: string; icon: LucideIcon; items: NavLeaf[]; modulo?: Modulo };
 export type NavItem = NavLeaf | NavGroup;
 
 const isGroup = (item: NavItem): item is NavGroup => (item as NavGroup).items !== undefined;

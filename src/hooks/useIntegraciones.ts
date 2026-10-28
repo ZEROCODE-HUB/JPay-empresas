@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   desconectarEcartPay,
   getConexionEcartPay,
+  getReporteCobros,
+  getRetirosEcartPay,
   iniciarConexionEcartPay,
   listCobrosEcartPay,
   reembolsarCobro,
@@ -46,5 +48,22 @@ export function useReembolsarCobro() {
   return useMutation({
     mutationFn: reembolsarCobro,
     onSettled: () => qc.invalidateQueries({ queryKey: ["integraciones", "cobros"] }),
+  });
+}
+
+export function useReporteCobros(rango: { desde: string; hasta: string }, habilitado = true) {
+  return useQuery({
+    queryKey: ["integraciones", "reporte", rango.desde, rango.hasta],
+    queryFn: () => getReporteCobros(rango.desde, rango.hasta),
+    enabled: habilitado,
+  });
+}
+
+export function useRetirosEcartPay(pagina: number, habilitado: boolean) {
+  return useQuery({
+    queryKey: ["integraciones", "retiros", pagina],
+    queryFn: () => getRetirosEcartPay(pagina),
+    enabled: habilitado,
+    placeholderData: (prev) => prev,
   });
 }

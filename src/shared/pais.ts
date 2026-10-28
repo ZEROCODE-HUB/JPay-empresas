@@ -31,6 +31,31 @@ export type Identificador = {
   validar: Validador;
 };
 
+/**
+ * Funcionalidades que se prenden o apagan por país (mismas claves que `paises.modulos` en la
+ * base). El menú del admin y del portal oculta lo que el país no tiene; no se borra nada.
+ */
+export type Modulo =
+  | "spei"
+  | "oxxo"
+  | "msi"
+  | "pos"
+  | "cfdi"
+  | "pld_mx"
+  | "iibb"
+  | "debitos_creditos"
+  | "bcra"
+  | "afip"
+  | "repet"
+  /** Cobros con un proveedor externo conectado por OAuth (Ecart Pay). */
+  | "pagos_proveedor"
+  /** Retiros a la cuenta bancaria desde el proveedor (consulta). */
+  | "retiros_proveedor"
+  /** Tarjetas con Payway y sus conciliaciones (BLP). */
+  | "payway"
+  /** Transferencias salientes por BDC / Coelsa. */
+  | "transferencias_salientes";
+
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };
 
 export type ConfigPais = {
@@ -62,6 +87,7 @@ export type ConfigPais = {
   ocupaciones: string[];
   origenFondos: string[];
   regimenesFiscales: RegimenFiscal[];
+  modulos: Record<Modulo, boolean>;
   textos: {
     /** Leyenda regulatoria de la marca (null = no se muestra). */
     notaRegulatoria: string | null;
@@ -219,6 +245,23 @@ const MX: ConfigPais = {
     },
     { codigo: "626", nombre: "Régimen Simplificado de Confianza", persona: "ambas" },
   ],
+  modulos: {
+    spei: true,
+    oxxo: true,
+    msi: true,
+    pos: true,
+    cfdi: false,
+    pld_mx: true,
+    iibb: false,
+    debitos_creditos: false,
+    bcra: false,
+    afip: false,
+    repet: false,
+    pagos_proveedor: true,
+    retiros_proveedor: true,
+    payway: false,
+    transferencias_salientes: false,
+  },
   textos: {
     notaRegulatoria: null,
     normativaPld:
@@ -306,6 +349,23 @@ const AR: ConfigPais = {
     "Otro",
   ],
   regimenesFiscales: [],
+  modulos: {
+    spei: false,
+    oxxo: false,
+    msi: false,
+    pos: false,
+    cfdi: false,
+    pld_mx: false,
+    iibb: true,
+    debitos_creditos: true,
+    bcra: true,
+    afip: true,
+    repet: true,
+    pagos_proveedor: false,
+    retiros_proveedor: false,
+    payway: true,
+    transferencias_salientes: true,
+  },
   textos: {
     notaRegulatoria: "Operamos bajo normativa BCRA.",
     normativaPld:
@@ -338,6 +398,39 @@ export function setPaisActivo(codigo: CodigoPais): void {
 /** Configuración de un país por código (`null` si no está soportado). */
 export function paisPorCodigo(codigo: string | null | undefined): ConfigPais | null {
   return esCodigo(codigo) ? PAISES[codigo] : null;
+}
+
+/** Si el país (por defecto, el activo) tiene prendido el módulo. */
+export function tieneModulo(m: Modulo, pais: ConfigPais = getPais()): boolean {
+  return pais.modulos[m];
+}
+
+/**
+ * El país con los módulos guardados en la base (`paises.modulos`, editables desde el admin)
+ * por encima de los de este archivo. Solo toma claves conocidas con valor booleano.
+ */
+export function conModulos(pais: ConfigPais, guardados: unknown): ConfigPais {
+  if (!guardados || typeof guardados !== "object") return pais;
+  const modulos = { ...pais.modulos };
+  for (const [k, v] of Object.entries(guardados)) {
+    if (k in modulos && typeof v === "boolean") modulos[k as Modulo] = v;
+  }
+  return { ...pais, modulos };
+}
+
+/**
+ * Quita de un menú los ítems cuyo `modulo` el país no tiene, y los grupos que quedan vacíos.
+ */
+export function filtrarPorModulo<T extends { modulo?: Modulo; items?: T[] }>(
+  items: T[],
+  pais: ConfigPais = getPais(),
+): T[] {
+  return items.flatMap((i) => {
+    if (i.modulo && !pais.modulos[i.modulo]) return [];
+    if (!i.items) return [i];
+    const sub = filtrarPorModulo(i.items, pais);
+    return sub.length ? [{ ...i, items: sub } as T] : [];
+  });
 }
 
 /** Regímenes fiscales que aplican al tipo de persona. */

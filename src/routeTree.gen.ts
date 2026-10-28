@@ -30,6 +30,8 @@ import { Route as AppLiquidacionesRouteImport } from './routes/app.liquidaciones
 import { Route as AppMisComerciosRouteImport } from './routes/app.mis-comercios'
 import { Route as AppPuntosFisicosRouteImport } from './routes/app.puntos-fisicos'
 import { Route as AppQrRouteImport } from './routes/app.qr'
+import { Route as AppReportesRouteImport } from './routes/app.reportes'
+import { Route as AppRetirosRouteImport } from './routes/app.retiros'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
 import { Route as AppServiciosRouteImport } from './routes/app.servicios'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
@@ -160,6 +162,16 @@ const AppPuntosFisicosRoute = AppPuntosFisicosRouteImport.update({
 const AppQrRoute = AppQrRouteImport.update({
   id: '/qr',
   path: '/qr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportesRoute = AppReportesRouteImport.update({
+  id: '/reportes',
+  path: '/reportes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRetirosRoute = AppRetirosRouteImport.update({
+  id: '/retiros',
+  path: '/retiros',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSeguridadRoute = AppSeguridadRouteImport.update({
@@ -316,6 +328,8 @@ export interface FileRoutesByFullPath {
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
+  '/app/reportes': typeof AppReportesRoute
+  '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
@@ -363,6 +377,8 @@ export interface FileRoutesByTo {
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
+  '/app/reportes': typeof AppReportesRoute
+  '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
@@ -413,6 +429,8 @@ export interface FileRoutesById {
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
   '/app/qr': typeof AppQrRouteWithChildren
+  '/app/reportes': typeof AppReportesRoute
+  '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
@@ -464,6 +482,8 @@ export interface FileRouteTypes {
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
     | '/app/qr'
+    | '/app/reportes'
+    | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
     | '/app/subcuentas'
@@ -511,6 +531,8 @@ export interface FileRouteTypes {
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
     | '/app/qr'
+    | '/app/reportes'
+    | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
     | '/app/subcuentas'
@@ -560,6 +582,8 @@ export interface FileRouteTypes {
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
     | '/app/qr'
+    | '/app/reportes'
+    | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
     | '/app/subcuentas'
@@ -755,6 +779,20 @@ declare module '@tanstack/react-router' {
       path: '/qr'
       fullPath: '/app/qr'
       preLoaderRoute: typeof AppQrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/reportes': {
+      id: '/app/reportes'
+      path: '/reportes'
+      fullPath: '/app/reportes'
+      preLoaderRoute: typeof AppReportesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/retiros': {
+      id: '/app/retiros'
+      path: '/retiros'
+      fullPath: '/app/retiros'
+      preLoaderRoute: typeof AppRetirosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/seguridad': {
@@ -1002,6 +1040,8 @@ interface AppRouteChildren {
   AppMisComerciosRoute: typeof AppMisComerciosRoute
   AppPuntosFisicosRoute: typeof AppPuntosFisicosRoute
   AppQrRoute: typeof AppQrRouteWithChildren
+  AppReportesRoute: typeof AppReportesRoute
+  AppRetirosRoute: typeof AppRetirosRoute
   AppSeguridadRoute: typeof AppSeguridadRoute
   AppServiciosRoute: typeof AppServiciosRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
@@ -1023,6 +1063,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppMisComerciosRoute: AppMisComerciosRoute,
   AppPuntosFisicosRoute: AppPuntosFisicosRoute,
   AppQrRoute: AppQrRouteWithChildren,
+  AppReportesRoute: AppReportesRoute,
+  AppRetirosRoute: AppRetirosRoute,
   AppSeguridadRoute: AppSeguridadRoute,
   AppServiciosRoute: AppServiciosRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,

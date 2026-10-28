@@ -762,6 +762,72 @@ export function leerEventoWebhook(cuerpo: unknown): {
   };
 }
 
+// ---------------------------------------------------------------------------------------------
+// Retiros (docs: /docs/withdrawals). Solo consulta: Ecart Pay no documenta crear retiros por API
+// (se piden desde su panel). `GET /api/withdrawals` (paginado `docs` + `pages`) y las cuentas de
+// retiro `GET /api/payment-methods` (la ruta `/api/accounts/payments/method` ya no existe), cuyos números (tarjeta o CLABE) nunca salen
+// completos de la Edge Function.
+// ---------------------------------------------------------------------------------------------
+
+/** Deja ver solo los últimos 4 dígitos ("•••• 8751"). */
+export function enmascararCuenta(numero: unknown): string | null {
+  if (typeof numero !== "string" && typeof numero !== "number") return null;
+  const d = String(numero).replace(/\D/g, "");
+  return d.length >= 4 ? `•••• ${d.slice(-4)}` : null;
+}
+
+export type CuentaRetiro = {
+  id: string;
+  tipo: "clabe" | "tarjeta" | string;
+  nombre: string | null;
+  numero: string | null;
+  banco: string | null;
+  titular: string | null;
+};
+
+export function cuentaRetiroDeEcart(c: Record<string, unknown>): CuentaRetiro {
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const metodo = s(c.method);
+  return {
+    id: String(c.id ?? c._id ?? ""),
+    tipo: metodo === "debit" ? "tarjeta" : (metodo ?? "desconocido"),
+    nombre: s(c.name),
+    numero: enmascararCuenta(c.number),
+    banco: c.bank === undefined || c.bank === null ? null : String(c.bank),
+    titular: s(c.business_name),
+  };
+}
+
+export type Retiro = {
+  id: string;
+  transaccionId: string | null;
+  estado: string;
+  monto: number;
+  comision: number;
+  moneda: string | null;
+  enRevision: boolean;
+  cuentaId: string | null;
+  creadoAt: string | null;
+  actualizadoAt: string | null;
+};
+
+export function retiroDeEcart(r: Record<string, unknown>): Retiro {
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+  return {
+    id: String(r.id ?? r._id ?? ""),
+    transaccionId: s(r.transaction_id),
+    estado: s(r.status) ?? "desconocido",
+    monto: n(r.amount),
+    comision: n(r.fee),
+    moneda: s(r.currency),
+    enRevision: r.in_review === true,
+    cuentaId: s(r.payment_method_id),
+    creadoAt: s(r.created_at),
+    actualizadoAt: s(r.updated_at),
+  };
+}
+
 /** Solo para tests: limpia la caché de tokens y el modo de autorización. */
 export function _reiniciarEstado(): void {
   tokens.clear();

@@ -4183,6 +4183,7 @@ export type Database = {
       }
       pagos: {
         Row: {
+          caja_id: string | null
           cliente_legajo: string | null
           comercio_id: string | null
           comision_proveedor: number | null
@@ -4217,6 +4218,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          caja_id?: string | null
           cliente_legajo?: string | null
           comercio_id?: string | null
           comision_proveedor?: number | null
@@ -4251,6 +4253,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          caja_id?: string | null
           cliente_legajo?: string | null
           comercio_id?: string | null
           comision_proveedor?: number | null
@@ -4285,6 +4288,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pagos_caja_id_fkey"
+            columns: ["caja_id"]
+            isOneToOne: false
+            referencedRelation: "cajas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pagos_comercio_id_fkey"
             columns: ["comercio_id"]
@@ -6449,6 +6459,7 @@ export type Database = {
           p_respuesta?: Json
         }
         Returns: {
+          caja_id: string | null
           cliente_legajo: string | null
           comercio_id: string | null
           comision_proveedor: number | null
@@ -6930,6 +6941,15 @@ export type Database = {
           p_monto: number
           p_subcuenta_destino: string
           p_subcuenta_origen: string
+        }
+        Returns: Json
+      }
+      reporte_cobros_proveedor: {
+        Args: {
+          p_comercio_id?: string
+          p_desde: string
+          p_hasta: string
+          p_proveedor?: string
         }
         Returns: Json
       }

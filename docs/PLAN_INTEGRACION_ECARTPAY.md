@@ -503,7 +503,20 @@ empresas). Funcionan aunque la pasarela de tarjeta de la cuenta esté inactiva.
   documentada: pregunta 2 sigue abierta).
 - Ecart Pay rechaza a veces UUIDs en `metafields` ("must not contain payment card or bank
   account data"): se dejó de mandar `metafields`; el id del pago va en `reference`.
-- Pendiente de la fase: retiros (`GET /api/withdrawals`) y menú por `paises.modulos`.
+- **Retiros y menú por país (2026-10-28, rama `feature/ecartpay-reportes`):**
+  - Edge Function `ecartpay-retiros` (solo consulta; comercio dueño o admin): saldo
+    (`/api/transactions/summary`), cuentas de retiro (`/api/payment-methods`; la ruta documentada
+    `/api/accounts/payments/method` responde "Cannot GET") con el número enmascarado (últimos 4
+    dígitos) e historial (`/api/withdrawals`, paginado). Si una de las tres falla, el resto se
+    muestra igual. Portal: menú "Retiros". Crear retiros sigue siendo desde el panel de Ecart Pay.
+  - Migración 1031: módulos nuevos en `paises.modulos` (`pagos_proveedor`, `retiros_proveedor`,
+    `payway`, `transferencias_salientes`) sin pisar los existentes. `pais.ts` tiene los mismos
+    módulos como respaldo; los menús leen los de la base (`usePaisConModulos`), así que el
+    interruptor del admin cambia el menú al instante. En México se ocultan Transferir (BDC),
+    Impuestos (IIBB) y los reportes BCRA, AFIP, Impuestos y Conciliaciones BLP; en Argentina,
+    Integraciones, Reportes de cobros, Retiros y Puntos físicos. Las rutas siguen existiendo.
+  - Probado en sandbox: saldo $544.66 de la cuenta del Comercio Demo MX; sin cuentas de retiro
+    ni retiros en la cuenta de prueba (estados vacíos).
 
 ### Fase 7 — Puntos físicos (sucursales, cajas y terminales)
 
@@ -581,8 +594,8 @@ Hacer:
   Listo cuando: un reembolso parcial en sandbox se refleja en el pago, el saldo y el reporte; la
   conciliación del día no muestra diferencias.
 
-**Estado (2026-10-28): HECHA salvo reportes** en las ramas `feature/ecartpay-fase8` (admin y
-empresas).
+**Estado (2026-10-28): HECHA** en las ramas `feature/ecartpay-fase8` y `feature/ecartpay-reportes`
+(admin y empresas).
 
 - Reembolsos (migración 1027): `reembolsos`, `pagos.monto_reembolsado`, `reservar_reembolso`
   (bloquea el pago y valida el disponible antes de llamar a Ecart Pay) y `finalizar_reembolso`.
@@ -602,7 +615,16 @@ empresas).
   `orders.update: paid` y el pago queda `pagado` sin intervención.
 - Portal: "Cobros recibidos" en Integraciones (estado, medio, reembolsos, contracargos). Admin:
   tarjetas "Conciliación con Ecart Pay" y "Contracargos de Ecart Pay".
-- Pendiente: reportes por método/sucursal/comisiones y exportación; CFDI (D4: no por ahora).
+- **Reportes (2026-10-28, rama `feature/ecartpay-reportes`):** migración 1030 con
+  `pagos.caja_id` (vacía hasta que exista el cobro en terminal: esos cobros se reportan como "En
+  línea") y la RPC `reporte_cobros_proveedor(desde, hasta, comercio?)`, SECURITY INVOKER (la RLS
+  deja al comercio ver lo suyo y al backoffice todo): resumen, por día (zona horaria del país),
+  por medio, por sucursal/caja, por comercio, comisiones, reembolsos, contracargos, pendientes y
+  detalle (hasta 5000 filas). Vista y exportación Excel (una hoja por corte) / PDF compartidas
+  (`src/shared/reporte-cobros*`). Portal: menú "Reportes de cobros"; admin: reporte "Cobros con
+  Ecart Pay" con corte por comercio. Probado con datos reales (4 cobros, $600, OXXO/SPEI) y RLS
+  verificada (la empresa AR ve 0, anon sin permiso).
+- Pendiente: CFDI (D4: no por ahora).
 
 ### Fase 9 — Pruebas completas en sandbox y salida a producción
 

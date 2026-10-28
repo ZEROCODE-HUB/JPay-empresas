@@ -1,5 +1,5 @@
 ﻿import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -18,10 +18,14 @@ import {
   Landmark,
   Plug,
   MapPinned,
+  FileBarChart2,
+  Banknote,
 } from "lucide-react";
 import { PortalShell, type NavItem } from "@/components/portal-shell";
 import { SupportBot } from "@/components/support-bot";
 import { useDemoMode } from "@/contexts/demo-mode";
+import { usePaisConModulos } from "@/shared/modulos-pais";
+import { filtrarPorModulo } from "@/shared/pais";
 import { RouteSkeleton } from "@/shared/ui/route-skeleton";
 import { usePerfilSesion } from "@/hooks/useCuenta";
 
@@ -30,14 +34,27 @@ export const Route = createFileRoute("/app")({
   pendingComponent: RouteSkeleton,
 });
 
-const nav: NavItem[] = [
+// Cada ítem con `modulo` aparece solo si el país lo tiene prendido (`paises.modulos`).
+const NAV: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/historial", label: "Historial", icon: History },
-  { to: "/app/transferencias", label: "Transferir", icon: ArrowLeftRight },
+  {
+    to: "/app/transferencias",
+    label: "Transferir",
+    icon: ArrowLeftRight,
+    modulo: "transferencias_salientes",
+  },
   { to: "/app/subcuentas", label: "Subcuentas", icon: Wallet },
   { to: "/app/mis-comercios", label: "Mis comercios", icon: Store },
-  { to: "/app/integraciones", label: "Integraciones", icon: Plug },
-  { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned },
+  { to: "/app/integraciones", label: "Integraciones", icon: Plug, modulo: "pagos_proveedor" },
+  {
+    to: "/app/reportes",
+    label: "Reportes de cobros",
+    icon: FileBarChart2,
+    modulo: "pagos_proveedor",
+  },
+  { to: "/app/retiros", label: "Retiros", icon: Banknote, modulo: "retiros_proveedor" },
+  { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned, modulo: "pos" },
   {
     label: "Link de pago",
     icon: Link2,
@@ -63,6 +80,8 @@ const nav: NavItem[] = [
 ];
 
 function AppLayout() {
+  const pais = usePaisConModulos();
+  const nav = useMemo(() => filtrarPorModulo(NAV, pais), [pais]);
   const { role, setRole } = useDemoMode();
   const { nombre: userName, email: userEmail } = usePerfilSesion();
 
