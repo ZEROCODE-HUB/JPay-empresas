@@ -6,6 +6,10 @@
 //   sobre el Balance que le toca según su modelo de fondos (`centralizado` → el de JPay;
 //   `por_comercio` → el propio del cliente, que se crea la primera vez). La CLABE queda en
 //   `cobre_clabes` y en `subaccounts.cbu`. Si ya tiene una activa, la devuelve.
+// - `devolver_deposito` { deposito_id } (solo admin): devuelve al remitente un depósito que
+//   llegó a una CLABE sin dueño (`/money_movements_return`). Uno ya acreditado no se devuelve
+//   por acá: se ajusta desde el backoffice. El resultado llega por aviso o por la revisión de
+//   pendientes.
 // - `deshabilitar_clabe` { clabe_id } (solo admin): la da de baja en Cobre (los depósitos a esa
 //   CLABE se rechazan) y en JPay.
 
@@ -23,7 +27,7 @@ import {
   userClient,
 } from "../_shared/http.ts";
 
-type Body = { accion?: unknown; subcuenta_id?: unknown; clabe_id?: unknown };
+type Body = { accion?: unknown; subcuenta_id?: unknown; clabe_id?: unknown; deposito_id?: unknown };
 type Ctx = { sb: SupabaseClient; cobre: CobreCliente; modo: ModoCobre };
 type CuentaCobre = { id: string; cuenta_externa_id: string; clabe: string | null };
 
@@ -45,6 +49,10 @@ Deno.serve(
           const legajo = admin ? null : await legajoDeSesion(req);
           return json(await asignarClabe(ctx, body.subcuenta_id, legajo));
         }
+        case "devolver_deposito":
+          if (!admin) throw new HttpError(403, "Solo para administradores");
+          if (typeof body.deposito_id !== "string") throw new HttpError(400, "Falta el depósito");
+          return json(await devolverDeposito(ctx, body.deposito_id));
         case "deshabilitar_clabe":
           if (!admin) throw new HttpError(403, "Solo para administradores");
           if (typeof body.clabe_id !== "string") throw new HttpError(400, "Falta la CLABE");
@@ -253,5 +261,40 @@ async function deshabilitarClabe(ctx: Ctx, clabeId: string) {
     .update({ cbu: null })
     .eq("id", c.subcuenta_id)
     .eq("cbu", c.clabe);
+  return fila;
+}
+
+async function devolverDeposito(ctx: Ctx, depositoId: string) {
+  const { data: d, error } = await ctx.sb
+    .from("cobre_depositos")
+    .select("id, modo, estado, transaccion_externa_id, devolucion_estado")
+    .eq("id", depositoId)
+    .maybeSingle();
+  if (error) throw new HttpError(500, error.message);
+  if (!d) throw new HttpError(404, "Depósito inexistente");
+  if (d.modo !== ctx.modo) throw new HttpError(409, `El depósito es del modo ${d.modo}`);
+  if (d.estado !== "sin_asignar") {
+    throw new HttpError(
+      409,
+      "Solo se devuelven depósitos sin asignar; uno acreditado se ajusta desde el backoffice",
+    );
+  }
+  if (d.devolucion_estado && !["rechazada", "fallida", "cancelada"].includes(d.devolucion_estado)) {
+    throw new HttpError(409, "La devolución ya está en curso");
+  }
+  const mm = await ctx.cobre.post<{ id: string; status?: { state?: string } }>(
+    "/money_movements_return",
+    {
+      transaction_id: d.transaccion_externa_id,
+      metadata: { description: "Devolucion: CLABE sin titular en JPay" },
+    },
+  );
+  const { data: fila, error: e2 } = await ctx.sb
+    .from("cobre_depositos")
+    .update({ devolucion_mm_id: mm.id, devolucion_estado: "pendiente", devolucion_motivo: null })
+    .eq("id", d.id)
+    .select("id, estado, devolucion_estado, devolucion_mm_id")
+    .single();
+  if (e2) throw new HttpError(500, e2.message);
   return fila;
 }

@@ -14,7 +14,10 @@
 
 import { depositoSpei, leerEventoCobre, modoCobre, verificarFirmaCobre } from "../_shared/cobre.ts";
 import { claveWebhookCobre } from "../_shared/cobre-servidor.ts";
-import { aplicarEstadoTransferencia } from "../_shared/cobre-transferencias.ts";
+import {
+  aplicarEstadoDevolucion,
+  aplicarEstadoTransferencia,
+} from "../_shared/cobre-transferencias.ts";
 import { json, serviceClient } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -106,7 +109,23 @@ Deno.serve(async (req) => {
     else resultado = `deposito ${(data as { estado?: string } | null)?.estado ?? "?"}`;
   }
 
-  if (evento?.startsWith("money_movements.status.")) {
+  if (evento?.startsWith("money_movements.status.") && contenido.type === "spei_return") {
+    // Devolución de un depósito: external_id = id de la transacción devuelta.
+    const ext = typeof contenido.external_id === "string" ? contenido.external_id : "";
+    const { data: dep } = await sb
+      .from("cobre_depositos")
+      .select("id, devolucion_estado")
+      .eq("transaccion_externa_id", ext)
+      .maybeSingle();
+    if (!dep) resultado = "devolución desconocida";
+    else {
+      try {
+        resultado = `devolución ${await aplicarEstadoDevolucion(sb, dep, contenido)}`;
+      } catch (e) {
+        errorProceso = (e as Error).message;
+      }
+    }
+  } else if (evento?.startsWith("money_movements.status.")) {
     const mmId = typeof contenido.id === "string" ? contenido.id : "";
     const ext = typeof contenido.external_id === "string" ? contenido.external_id : "";
     const { data: t } = await sb

@@ -176,10 +176,21 @@ contra Cobre real: la instancia de prueba de México se pide al KAM.
   liberada, sin saldo, reintento con el mismo TXID, aprobación por admin, verificación de
   titular y una transferencia desde la interfaz del portal. Ledger cuadrado (BANCO_COBRE = saldo
   de la subcuenta).
-- **Pendiente:** C5 (conciliación diaria contra transacciones del Balance, reportes, alertas de
-  Cobre), devoluciones de depósitos (`/money_movements_return`, no simulada), modelo de fondos
-  por cliente desde el admin (la tabla `cobre_clientes` existe; falta la pantalla), y C6 (pruebas
-  en la instancia de Cobre y certificación).
+- **C5 (hecha, 2026-10-28):** migración 1036 y `cobre-conciliacion` (pública, cron 09:30 UTC,
+  manual para admins). Cruza las transacciones de los Balances (3 días) con JPay por
+  identificadores: acredita los depósitos que no llegaron por aviso, marca envíos que JPay no
+  tiene, transferencias completadas sin débito, montos distintos, y compara el saldo en Cobre
+  con BANCO_COBRE + sin asignar (`saldo_distinto`; detecta cargos de Cobre). Devoluciones de
+  depósitos sin asignar (`devolver_deposito`, `/money_movements_return`; también en el
+  simulador), seguidas por aviso y por pendientes. Alertas de Cobre (transferencias trabadas,
+  aprobaciones esperando, depósitos sin dueño). Admin: tarjetas de alertas y conciliación por
+  proveedor, botón Devolver y modelo de fondos por cliente.
+  Probado con el simulador: conciliación limpia (saldo 1.022 = 1.022), depósito sin aviso
+  recuperado sin duplicar, cargo de $1.50 detectado como saldo distinto, devolución completada
+  y segundo pedido rechazado.
+- **Pendiente:** C6 (instancia de prueba de Cobre y certificación). Un depósito ya acreditado no
+  se devuelve por Cobre (se ajusta desde el backoffice). Al pasar de simulado a prueba hay que
+  limpiar los datos simulados (el ledger no distingue modos).
 - **Para revisar con negocio:** las reglas de prevención actuales están pensadas para Argentina
   (salario mínimo argentino, topes de prueba de $10 y $20 que bloquean). En México hay que
   definir los umbrales (por ejemplo en UMA) antes de operar.

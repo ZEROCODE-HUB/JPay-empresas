@@ -2101,6 +2101,10 @@ export type Database = {
           clave_rastreo: string | null
           cliente_legajo: string | null
           cuenta_externa_id: string | null
+          devolucion_estado: string | null
+          devolucion_mm_id: string | null
+          devolucion_motivo: string | null
+          devuelto_at: string | null
           estado: string
           fecha_operacion: string | null
           id: string
@@ -2120,6 +2124,10 @@ export type Database = {
           clave_rastreo?: string | null
           cliente_legajo?: string | null
           cuenta_externa_id?: string | null
+          devolucion_estado?: string | null
+          devolucion_mm_id?: string | null
+          devolucion_motivo?: string | null
+          devuelto_at?: string | null
           estado: string
           fecha_operacion?: string | null
           id?: string
@@ -2139,6 +2147,10 @@ export type Database = {
           clave_rastreo?: string | null
           cliente_legajo?: string | null
           cuenta_externa_id?: string | null
+          devolucion_estado?: string | null
+          devolucion_mm_id?: string | null
+          devolucion_motivo?: string | null
+          devuelto_at?: string | null
           estado?: string
           fecha_operacion?: string | null
           id?: string

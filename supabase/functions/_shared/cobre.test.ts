@@ -414,3 +414,41 @@ Deno.test("simulador: verificación de cuenta y CLABE inválida", async () => {
   );
   assertEquals(e.codigo, "CP003");
 });
+
+Deno.test("simulador: devolución de un depósito", async () => {
+  _reiniciarCobre();
+  const almacen = new AlmacenMemoria();
+  let t = 0;
+  const c = new CobreCliente({
+    baseUrl: "https://cobre.simulado/v1",
+    credenciales: cred,
+    fetch: fetchSimulado(almacen, { ahora: () => t }),
+    ahora: () => t,
+  });
+  const cuenta = await c.post<{ id: string; account_number: string }>("/accounts", {
+    provider_id: "pr_mex_cobre3",
+    action: "create",
+  });
+  const dep = await depositoSimulado(almacen, { clabe: cuenta.account_number, monto: 50 }, t);
+  const mm = await c.post<{ id: string; type: string; external_id: string }>(
+    "/money_movements_return",
+    {
+      transaction_id: dep.id,
+      metadata: { description: "Depósito sin dueño" },
+    },
+  );
+  assertEquals([mm.type, mm.external_id], ["spei_return", dep.id]);
+  await assertRejects(
+    () =>
+      c.post("/money_movements_return", { transaction_id: dep.id, metadata: { description: "x" } }),
+    CobreError,
+  );
+  t += 1500;
+  await avanzarSimulador(almacen, t);
+  t += 5000;
+  assertEquals(resumirTransferencia(await c.get(`/money_movements/${mm.id}`)).estado, "completada");
+  assertEquals(
+    (await c.get<{ obtained_balance: number }>(`/accounts/${cuenta.id}`)).obtained_balance,
+    0,
+  );
+});

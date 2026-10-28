@@ -9,7 +9,8 @@
 //   Con `checker_approval` queda en `pending_approval` hasta aprobarla o cancelarla.
 // - Verificación de cuenta: a los 5 s `matched`; CLABE terminada en 0000X → `unmatched`,
 //   en 1111X → `unresolved` (X = dígito verificador).
-// - Depósitos: `depositoSimulado` crea un `spei_credit` en la cuenta dueña de la CLABE.
+// - Depósitos: `depositoSimulado` crea un `spei_credit` en la cuenta dueña de la CLABE; se
+//   pueden devolver (`/money_movements_return`, una vez) y la devolución avanza como un envío.
 // - Cada cambio deja un evento en cola (`accounts.balance.*`, `money_movements.status.*`) que
 //   `cobre-simulador` firma y envía a `cobre-webhook`, como haría Cobre.
 //
@@ -335,7 +336,57 @@ export function fetchSimulado(almacen: AlmacenSim, o: OpcionesSim = {}): typeof 
       return resp(200, { id: partes[1], decision: cuerpo.decision, money_movement_id: mm.id });
     }
     if (partes[0] === "money_movements_return" && metodo === "POST") {
-      return error("G005", "Returns are not simulated yet");
+      const trx = await almacen.leer("transaccion", String(cuerpo.transaction_id ?? ""));
+      if (!trx || trx.type !== "spei_credit")
+        return error("MMR001", "Only spei_credit transactions can be returned");
+      if (!((cuerpo.metadata ?? {}) as Obj).description)
+        return error("MMR002", "metadata.description is required");
+      const ya = (await almacen.listar("movimiento")).find(
+        (m) => m.type === "spei_return" && m.external_id === trx.id,
+      );
+      if (ya) return error("MMR003", "The transaction was already returned");
+      const meta = (trx.metadata ?? {}) as Obj;
+      const cp = {
+        id: nuevoId("cp"),
+        geo: "mex",
+        type: "mm_return",
+        alias: "",
+        metadata: {
+          account_number: meta.sender_account_number,
+          counterparty_fullname: meta.sender_name,
+          counterparty_id_type: "rfc",
+          counterparty_id_number: meta.sender_id,
+        },
+        created_at: iso(ahora()),
+        updated_at: iso(ahora()),
+      };
+      await almacen.guardar("contraparte", cp.id, cp);
+      const mm = {
+        id: nuevoId("mm"),
+        status: { state: "initiated", code: "", description: "" },
+        metadata: {
+          description: ((cuerpo.metadata ?? {}) as Obj).description,
+          reference: "0000000",
+          tracking_key: "",
+          cep_url: "",
+        },
+        creator: "cli_simulado",
+        external_id: trx.id,
+        checker_approval: false,
+        mm_approval_id: "",
+        type: "spei_return",
+        geo: "mex",
+        source_id: trx.account_id,
+        destination_id: cp.id,
+        currency: "mxn",
+        amount: trx.amount,
+        created_at: iso(ahora()),
+        updated_at: iso(ahora()),
+        _ms: ahora(),
+      };
+      await almacen.guardar("movimiento", mm.id, mm);
+      await encolar(almacen, "money_movements.status.initiated", publico(mm), ahora());
+      return resp(201, publico(mm));
     }
 
     // Verificación de cuentas

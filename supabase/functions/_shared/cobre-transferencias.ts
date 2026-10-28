@@ -52,3 +52,28 @@ export async function aplicarEstadoTransferencia(
   if (error) throw new Error(error.message);
   return { estado: r.estado, cambio: r.estado !== fila.estado };
 }
+
+export type FilaDevolucion = { id: string; devolucion_estado: string | null };
+
+/** Aplica el estado del money movement `spei_return` a la devolución de un depósito. */
+export async function aplicarEstadoDevolucion(
+  sb: SupabaseClient,
+  dep: FilaDevolucion,
+  mm: unknown,
+): Promise<string> {
+  const r = resumirTransferencia(mm);
+  if (dep.devolucion_estado === "completada") return "completada";
+  const { error } = await sb
+    .from("cobre_depositos")
+    .update({
+      devolucion_mm_id: r.id || undefined,
+      devolucion_estado: r.estado,
+      devolucion_motivo: r.motivo,
+      ...(r.estado === "completada"
+        ? { estado: "devuelto", devuelto_at: new Date().toISOString() }
+        : {}),
+    })
+    .eq("id", dep.id);
+  if (error) throw new Error(error.message);
+  return r.estado;
+}

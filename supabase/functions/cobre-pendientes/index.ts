@@ -5,12 +5,15 @@
 //   de 2 min: se consultan en Cobre (por id o, si nunca llegó la respuesta, por external_id =
 //   TXID) y se aplica el estado. Una `enviando` que Cobre no conoce después de 30 min se da por
 //   no enviada y se libera la reserva.
-// - Verificaciones de cuenta en curso: se consulta el resultado.
+// - Devoluciones de depósitos en curso y verificaciones de cuenta: se consulta el resultado.
 // Cubre avisos perdidos: un aviso nunca es la única forma de cerrar una transferencia.
 
 import { resumirTransferencia } from "../_shared/cobre.ts";
 import { conexionCobre } from "../_shared/cobre-servidor.ts";
-import { aplicarEstadoTransferencia } from "../_shared/cobre-transferencias.ts";
+import {
+  aplicarEstadoDevolucion,
+  aplicarEstadoTransferencia,
+} from "../_shared/cobre-transferencias.ts";
 import { handler, json, serviceClient } from "../_shared/http.ts";
 
 Deno.serve(
@@ -70,6 +73,22 @@ Deno.serve(
             .eq("id", t.id);
           resumen.liberadas++;
         }
+      } catch {
+        resumen.errores++;
+      }
+    }
+
+    const { data: devoluciones } = await sb
+      .from("cobre_depositos")
+      .select("id, devolucion_estado, devolucion_mm_id")
+      .eq("modo", modo)
+      .in("devolucion_estado", ["pendiente", "enviando"])
+      .not("devolucion_mm_id", "is", null)
+      .limit(50);
+    for (const d of devoluciones ?? []) {
+      try {
+        const mm = await cobre.get(`/money_movements/${d.devolucion_mm_id}`);
+        if ((await aplicarEstadoDevolucion(sb, d, mm)) !== d.devolucion_estado) resumen.cerradas++;
       } catch {
         resumen.errores++;
       }
