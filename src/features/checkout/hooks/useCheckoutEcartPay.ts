@@ -1,10 +1,12 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
 import {
   confirmarPagoEcartPay,
   crearPagoEcartPay,
   esEstadoAbierto,
   infoEcartPay,
+  type MetodoCheckout,
 } from "@/lib/api/checkout-ecartpay";
 
 /** ¿El link se cobra con Ecart Pay? (sin reintentos: si falla se usa el checkout propio). */
@@ -18,21 +20,22 @@ export function useEcartPayDisponible(code: string) {
 }
 
 /**
- * Inicia el pago y redirige a Ecart Pay. La clave de idempotencia se mantiene mientras el
- * intento siga vivo (doble clic = misma orden) y se renueva si el intento falla.
+ * Inicia el pago. Con tarjeta redirige a Ecart Pay; con SPEI u OXXO muestra la referencia en
+ * /p/$code?pago=<id>. La clave de idempotencia se mantiene mientras el intento siga vivo
+ * (doble clic = misma orden) y se renueva si el intento falla.
  */
 export function useIniciarPagoEcartPay(code: string) {
   const clave = useRef<string>(crypto.randomUUID());
+  const navigate = useNavigate();
   return useMutation({
-    mutationFn: (v: { monto: number; nombre: string; email: string }) =>
+    mutationFn: (v: { metodo: MetodoCheckout; monto: number; nombre: string; email: string }) =>
       crearPagoEcartPay({ code, idempotencyKey: clave.current, ...v }),
-    onSuccess: ({ pago_id, pay_link }) => {
-      try {
-        sessionStorage.setItem(`jpay-pago-${code}`, pago_id);
-      } catch {
-        // sin storage: la vuelta trae ?pago= igual
+    onSuccess: (r) => {
+      if ("pay_link" in r) {
+        window.location.assign(r.pay_link);
+      } else {
+        void navigate({ to: "/p/$code", params: { code }, search: { pago: r.pago_id } });
       }
-      window.location.assign(pay_link);
     },
     onError: () => {
       clave.current = crypto.randomUUID();
@@ -40,7 +43,10 @@ export function useIniciarPagoEcartPay(code: string) {
   });
 }
 
-/** Estado del pago al volver de Ecart Pay: reconsulta cada 3 s mientras siga abierto (máx. 2 min). */
+/**
+ * Estado del pago: reconsulta cada 3 s mientras siga abierto (máx. 2 min); con referencia (SPEI,
+ * OXXO) cada 15 s, porque el pago llega cuando el cliente transfiere o paga en tienda.
+ */
 export function useConfirmarPagoEcartPay(pagoId: string | undefined) {
   const inicio = useRef(Date.now());
   return useQuery({
@@ -52,6 +58,7 @@ export function useConfirmarPagoEcartPay(pagoId: string | undefined) {
     refetchInterval: (q) => {
       const estado = q.state.data?.estado;
       if (!estado || !esEstadoAbierto(estado)) return false;
+      if (q.state.data?.referencia) return 15_000;
       return Date.now() - inicio.current < 120_000 ? 3000 : false;
     },
   });

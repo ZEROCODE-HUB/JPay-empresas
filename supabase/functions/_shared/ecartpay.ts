@@ -362,6 +362,44 @@ export function resumirOrden(orden: unknown): ResumenOrden {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Pagos fuera del checkout: SPEI (CLABE única por orden) y OXXO (referencia en tienda).
+// `POST /api/orders/{id}/process` con el method_id genera la referencia; se lee de la orden
+// pública (`GET /api/orders/public/{id}` → payments[]). Docs: unique-transaction-clabe, oxxo-pay.
+// ---------------------------------------------------------------------------------------------
+
+export const METODOS_EXTERNOS = {
+  spei: { methodId: "66c397dafd263a538b8312a1", tipo: "transfer", tope: null },
+  oxxo: { methodId: "63c5dcfb9a645c3e3265ba42", tipo: "cash", tope: 11_000 },
+} as const;
+export type MetodoExterno = keyof typeof METODOS_EXTERNOS;
+
+export type ReferenciaPago = {
+  referencia: string;
+  venceAt: string | null;
+  url: string | null;
+  monto: number | null;
+};
+
+/** Referencia del último pago del tipo pedido (CLABE o referencia OXXO), o null. */
+export function leerReferenciaPago(orden: unknown, metodo: MetodoExterno): ReferenciaPago | null {
+  const o = (orden ?? {}) as Record<string, unknown>;
+  const pagos = Array.isArray(o.payments) ? (o.payments as Record<string, unknown>[]) : [];
+  const tipo = METODOS_EXTERNOS[metodo].tipo;
+  const p = [...pagos].reverse().find((x) => x?.type === tipo);
+  if (!p) return null;
+  const m = (p.method ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v ? v : null);
+  const referencia = s(m.reference) ?? (metodo === "spei" ? s(p.id) : null);
+  if (!referencia) return null;
+  return {
+    referencia,
+    venceAt: s(m.expires_at),
+    url: s(m.barcode_url),
+    monto: typeof p.amount === "number" ? centavosAUnidades(p.amount) : null,
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
 // Webhooks (docs: /docs/webhook-authentication)
 // Firma: x-pay-signature = "SHA256=" + hex(HMAC-SHA256(secret,
 //   `${x-pay-timestamp}.${x-pay-webhook-id}.${JSON.stringify(body.data)}`))

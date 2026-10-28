@@ -10,7 +10,12 @@
 //                confía en la redirección: el estado sale siempre de GET /api/orders/{id}.
 
 import { clienteDeConexion, conexionEcartPay, urlDeVuelta } from "../_shared/conexiones.ts";
-import { EcartPayError } from "../_shared/ecartpay.ts";
+import {
+  EcartPayError,
+  leerReferenciaPago,
+  METODOS_EXTERNOS,
+  type MetodoExterno,
+} from "../_shared/ecartpay.ts";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 import { confirmarPago } from "../_shared/pagos.ts";
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -29,6 +34,8 @@ type Body = {
   accion?: string;
   code?: string;
   idempotency_key?: string;
+  /** "tarjeta" (por defecto: se paga en la página de Ecart Pay), "spei" u "oxxo". */
+  metodo?: string;
   monto?: number;
   pagador?: { nombre?: string; email?: string };
   volver_a?: string;
@@ -109,12 +116,18 @@ async function crear(sb: SupabaseClient, body: Body) {
   if (!vigente(link)) throw new HttpError(409, "El link de pago no está disponible");
   if (!conexion) throw new HttpError(409, "Este comercio no tiene Ecart Pay conectado");
 
+  const metodo: MetodoExterno | null =
+    body.metodo === "spei" || body.metodo === "oxxo" ? body.metodo : null;
   const total = Number(link.monto);
   const monto = link.pagos_parciales && body.monto ? Number(body.monto) : total;
   if (!Number.isFinite(monto) || monto <= 0 || monto > total) {
     throw new HttpError(400, "Monto inválido");
   }
   const monto2 = Math.round(monto * 100) / 100;
+  const tope = metodo ? METODOS_EXTERNOS[metodo].tope : null;
+  if (tope && monto2 > tope) {
+    throw new HttpError(400, `El pago en OXXO admite hasta $${tope.toLocaleString("es-MX")} MXN`);
+  }
   const nombre = (body.pagador?.nombre ?? "").trim().slice(0, 120);
   const email = (body.pagador?.email ?? "").trim().slice(0, 200);
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new HttpError(400, "Email inválido");
@@ -155,10 +168,11 @@ async function crear(sb: SupabaseClient, body: Body) {
       first_name: nombrePila ?? undefined,
       last_name: apellidos.join(" ") || undefined,
       items: [{ name: concepto, price: monto2, quantity: 1, is_service: true }],
+      // El id del pago va en `reference`. Sin metafields: Ecart Pay rechaza a veces UUIDs ahí
+      // ("must not contain payment card or bank account data", falso positivo por los dígitos).
       reference: pago.id,
       redirect_url: volver.toString(),
       notify_url: `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "")}/functions/v1/ecartpay-webhook`,
-      metafields: { jpay_pago_id: pago.id, jpay_link_id: link.id },
       send_email: false,
     });
     const ordenId = typeof orden.id === "string" ? orden.id : null;
@@ -169,7 +183,34 @@ async function crear(sb: SupabaseClient, body: Body) {
       .update({ proveedor_orden_id: ordenId, pay_link: payLink, respuesta: orden })
       .eq("id", pago.id);
     if (e2) throw new HttpError(500, e2.message);
-    return { pago_id: pago.id, pay_link: payLink };
+    if (!metodo) return { pago_id: pago.id, pay_link: payLink };
+
+    // SPEI / OXXO: se procesa la orden con ese método y se entrega la referencia para pagar.
+    await cliente.post(`/api/orders/${encodeURIComponent(ordenId)}/process`, {
+      method_id: METODOS_EXTERNOS[metodo].methodId,
+    });
+    const publica = await cliente.get<Record<string, unknown>>(
+      `/api/orders/public/${encodeURIComponent(ordenId)}`,
+    );
+    const ref = leerReferenciaPago(publica, metodo);
+    if (!ref) throw new EcartPayError(502, "Ecart Pay no devolvió la referencia de pago", publica);
+    const { error: e3 } = await sb
+      .from("pagos")
+      .update({
+        metodo,
+        referencia: ref.referencia,
+        referencia_vence_at: ref.venceAt,
+        referencia_url: ref.url,
+      })
+      .eq("id", pago.id);
+    if (e3) throw new HttpError(500, e3.message);
+    await sb.rpc("aplicar_estado_pago", {
+      p_pago_id: pago.id,
+      p_estado: "pendiente",
+      p_estado_proveedor: typeof publica.status === "string" ? publica.status : null,
+      p_metodo: metodo,
+    });
+    return { pago_id: pago.id, metodo, referencia: ref.referencia, vence_at: ref.venceAt };
   } catch (e) {
     const motivo = e instanceof EcartPayError ? `${e.message} (HTTP ${e.status})` : String(e);
     await sb.rpc("aplicar_estado_pago", {

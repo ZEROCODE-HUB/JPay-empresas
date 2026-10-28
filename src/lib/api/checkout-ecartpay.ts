@@ -24,8 +24,21 @@ export type PagoEcart = {
   motivo: string | null;
   metodo?: string | null;
   pagado_at?: string | null;
-  orden_id?: string;
+  orden_id?: string | null;
+  referencia?: string | null;
+  referencia_vence_at?: string | null;
+  referencia_url?: string | null;
 };
+
+/** Cómo paga el cliente: en la página de Ecart Pay (tarjeta) o con referencia (SPEI / OXXO). */
+export type MetodoCheckout = "tarjeta" | "spei" | "oxxo";
+
+/** Tope por pago en OXXO (Ecart Pay). */
+export const TOPE_OXXO = 11_000;
+
+export type PagoCreado =
+  | { pago_id: string; pay_link: string }
+  | { pago_id: string; metodo: "spei" | "oxxo"; referencia: string; vence_at: string | null };
 
 async function invocar<T>(body: Record<string, unknown>): Promise<T> {
   const sb = requireSupabase();
@@ -46,13 +59,15 @@ export function infoEcartPay(code: string) {
 
 export function crearPagoEcartPay(input: {
   code: string;
+  metodo: MetodoCheckout;
   idempotencyKey: string;
   monto: number;
   nombre: string;
   email: string;
 }) {
-  return invocar<{ pago_id: string; pay_link: string }>({
+  return invocar<PagoCreado>({
     accion: "crear",
+    metodo: input.metodo,
     code: input.code,
     idempotency_key: input.idempotencyKey,
     monto: input.monto,

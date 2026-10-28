@@ -485,6 +485,26 @@ Hacer:
   (`POST https://sandbox.ecartpay.com/webhooks/stp`) y queda `pagado`; una orden OXXO queda
   `pendiente` con su referencia (el pago en tienda se confirma con Ecart Pay, pregunta 2).
 
+**Estado (2026-10-28): SPEI y OXXO HECHOS** en las ramas `feature/ecartpay-fase6` (admin y
+empresas). Funcionan aunque la pasarela de tarjeta de la cuenta esté inactiva.
+
+- `ecartpay-checkout` acepta `metodo` (`tarjeta` | `spei` | `oxxo`): crea la orden, la procesa
+  (`POST /api/orders/{id}/process` con el `method_id` documentado) y lee la referencia de la
+  orden pública (`leerReferenciaPago`, con tests). OXXO valida el tope de $11,000.
+- Migraciones 1024 (`pagos.referencia`, `referencia_vence_at`, `referencia_url`) y 1025 (el método
+  del pago no se pisa al confirmar).
+- Checkout: selector Tarjeta / Transferencia SPEI / Efectivo en OXXO; pantalla con la CLABE
+  (copiar), banco STP y vencimiento, o la referencia OXXO con código de barras; se actualiza sola
+  (cada 15 s) cuando llega el pago.
+- **Probado de punta a punta (SPEI):** CLABE única generada → simulación STP del sandbox →
+  webhooks firmados (`transfer.created`, `transactions.paid`, `orders.confirmation` paid) → el
+  pago quedó `pagado`, registrado en el link, y la pantalla del pagador pasó sola a "Pago
+  aprobado". OXXO: referencia y código de barras generados (sin simulación de pago en tienda
+  documentada: pregunta 2 sigue abierta).
+- Ecart Pay rechaza a veces UUIDs en `metafields` ("must not contain payment card or bank
+  account data"): se dejó de mandar `metafields`; el id del pago va en `reference`.
+- Pendiente de la fase: retiros (`GET /api/withdrawals`) y menú por `paises.modulos`.
+
 ### Fase 7 — Puntos físicos (sucursales, cajas y terminales)
 
 Estructura Ecart Pay: Sucursal → Caja → Terminal (una terminal por caja).

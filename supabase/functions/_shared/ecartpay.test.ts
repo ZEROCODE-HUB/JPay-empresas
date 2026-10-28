@@ -9,6 +9,7 @@ import {
   EcartPayCliente,
   EcartPayError,
   leerEventoWebhook,
+  leerReferenciaPago,
   resumirOrden,
   unidadesACentavos,
   urlAutorizacionOAuth,
@@ -274,4 +275,43 @@ Deno.test("webhooks: evento e id, planos o dentro de data", () => {
     },
   );
   assertEquals(leerEventoWebhook("basura"), { evento: null, idExterno: null, estado: null });
+});
+
+Deno.test("SPEI y OXXO: referencia de pago desde la orden pública", () => {
+  // Ejemplos de la documentación (unique-transaction-clabe y oxxo-pay).
+  const spei = {
+    status: "pending",
+    payments: [
+      {
+        id: "646010142603008203",
+        status: "pending",
+        type: "transfer",
+        amount: 40999,
+        method: { expires_at: "2025-11-02T18:33:00.331Z", reference: "646010142603008203" },
+      },
+    ],
+  };
+  assertEquals(leerReferenciaPago(spei, "spei"), {
+    referencia: "646010142603008203",
+    venceAt: "2025-11-02T18:33:00.331Z",
+    url: null,
+    monto: 409.99,
+  });
+  assertEquals(leerReferenciaPago(spei, "oxxo"), null);
+  const oxxo = {
+    payments: [
+      {
+        type: "cash",
+        amount: 15000,
+        method: {
+          expires_at: "2026-08-31T18:00:00.000Z",
+          reference: "98000014505724",
+          barcode_url: "https://barcodes.digitalfemsa.io/sandbox_reference.png",
+        },
+      },
+    ],
+  };
+  assertEquals(leerReferenciaPago(oxxo, "oxxo")?.referencia, "98000014505724");
+  assertEquals(leerReferenciaPago(oxxo, "oxxo")?.monto, 150);
+  assertEquals(leerReferenciaPago({}, "spei"), null);
 });

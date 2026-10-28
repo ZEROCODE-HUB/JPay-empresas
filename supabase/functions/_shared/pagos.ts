@@ -16,10 +16,13 @@ export type PagoConfirmado = {
   metodo: string | null;
   pagado_at: string | null;
   orden_id: string | null;
+  referencia: string | null;
+  referencia_vence_at: string | null;
+  referencia_url: string | null;
 };
 
 const COLUMNAS =
-  "id, conexion_id, proveedor_orden_id, estado, monto, moneda, motivo, metodo, pagado_at";
+  "id, conexion_id, proveedor_orden_id, estado, monto, moneda, motivo, metodo, pagado_at, referencia, referencia_vence_at, referencia_url";
 
 type FilaPago = {
   id: string;
@@ -31,6 +34,9 @@ type FilaPago = {
   motivo: string | null;
   metodo: string | null;
   pagado_at: string | null;
+  referencia: string | null;
+  referencia_vence_at: string | null;
+  referencia_url: string | null;
 };
 
 const salida = (p: FilaPago): PagoConfirmado => ({
@@ -42,6 +48,9 @@ const salida = (p: FilaPago): PagoConfirmado => ({
   metodo: p.metodo,
   pagado_at: p.pagado_at,
   orden_id: p.proveedor_orden_id,
+  referencia: p.referencia,
+  referencia_vence_at: p.referencia_vence_at,
+  referencia_url: p.referencia_url,
 });
 
 /** Consulta la orden del pago en Ecart Pay y aplica el estado (idempotente). */

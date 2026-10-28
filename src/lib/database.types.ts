@@ -3953,6 +3953,9 @@ export type Database = {
           proveedor: string
           proveedor_orden_id: string | null
           proveedor_pago_id: string | null
+          referencia: string | null
+          referencia_url: string | null
+          referencia_vence_at: string | null
           respuesta: Json
           updated_at: string
         }
@@ -3979,6 +3982,9 @@ export type Database = {
           proveedor: string
           proveedor_orden_id?: string | null
           proveedor_pago_id?: string | null
+          referencia?: string | null
+          referencia_url?: string | null
+          referencia_vence_at?: string | null
           respuesta?: Json
           updated_at?: string
         }
@@ -4005,6 +4011,9 @@ export type Database = {
           proveedor?: string
           proveedor_orden_id?: string | null
           proveedor_pago_id?: string | null
+          referencia?: string | null
+          referencia_url?: string | null
+          referencia_vence_at?: string | null
           respuesta?: Json
           updated_at?: string
         }
@@ -5974,6 +5983,9 @@ export type Database = {
           proveedor: string
           proveedor_orden_id: string | null
           proveedor_pago_id: string | null
+          referencia: string | null
+          referencia_url: string | null
+          referencia_vence_at: string | null
           respuesta: Json
           updated_at: string
         }
