@@ -1,0 +1,118 @@
+// Tests del cliente de Ecart Pay (Deno): `npx -y deno@2.9.5 test supabase/functions/_shared/`.
+// Archivo compartido: idéntico en los repos del panel admin y del portal empresas.
+import { assertEquals, assertRejects } from "jsr:@std/assert@1";
+import {
+  _reiniciarEstado,
+  centavosAUnidades,
+  EcartPayCliente,
+  EcartPayError,
+  unidadesACentavos,
+  vencimientoToken,
+} from "./ecartpay.ts";
+
+const BASE = "https://sandbox.ecartpay.com";
+const CRED = { publicKey: "pub_test", privateKey: "priv_test" };
+
+function jwt(expSeg: number): string {
+  const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, "");
+  return `${b64({ alg: "HS512" })}.${b64({ exp: expSeg })}.firma`;
+}
+
+type Llamada = { url: string; auth: string | null; metodo: string };
+
+/** fetch falso: `respuestas` se consume en orden (las del token se resuelven aparte). */
+function fetchFalso(respuestas: Array<{ status: number; body?: unknown }>, tokens: string[]) {
+  const llamadas: Llamada[] = [];
+  const f = (input: string | URL | Request, init?: RequestInit) => {
+    const url = String(input);
+    const auth = new Headers(init?.headers).get("authorization");
+    llamadas.push({ url, auth, metodo: init?.method ?? "GET" });
+    if (url.endsWith("/api/authorizations/token")) {
+      const t = tokens.shift() ?? "sin-token";
+      return Promise.resolve(Response.json({ token: t }));
+    }
+    const r = respuestas.shift() ?? { status: 500 };
+    return Promise.resolve(
+      r.body === undefined ? new Response(null, { status: r.status }) : Response.json(r.body, r),
+    );
+  };
+  return { f: f as typeof fetch, llamadas };
+}
+
+const nuevo = (f: typeof fetch) =>
+  new EcartPayCliente({ baseUrl: BASE, credenciales: CRED, fetch: f, reintentos: 1 });
+
+Deno.test("montos: centavos ↔ unidades", () => {
+  assertEquals(centavosAUnidades(12345), 123.45);
+  assertEquals(unidadesACentavos(123.45), 12345);
+  assertEquals(unidadesACentavos(0.1 + 0.2), 30);
+});
+
+Deno.test("vencimientoToken lee exp del JWT y si no, usa una hora", () => {
+  assertEquals(vencimientoToken(jwt(2_000_000_000)), 2_000_000_000_000);
+  assertEquals(vencimientoToken("opaco", 1000), 1000 + 3_600_000);
+});
+
+Deno.test("pide el token con Basic y lo reutiliza", async () => {
+  _reiniciarEstado();
+  const exp = Math.floor(Date.now() / 1000) + 3600;
+  const { f, llamadas } = fetchFalso(
+    [
+      { status: 200, body: { docs: [] } },
+      { status: 200, body: { docs: [] } },
+    ],
+    [jwt(exp)],
+  );
+  const c = nuevo(f);
+  await c.get("/api/transactions");
+  await c.get("/api/transactions", { limit: 1 });
+  const token = llamadas.filter((l) => l.url.endsWith("/token"));
+  assertEquals(token.length, 1);
+  assertEquals(token[0].auth, `Basic ${btoa("pub_test:priv_test")}`);
+  assertEquals(llamadas[1].auth, `Bearer ${jwt(exp)}`);
+  assertEquals(llamadas[2].url, `${BASE}/api/transactions?limit=1`);
+});
+
+Deno.test("ante 401 renueva el token y después prueba sin 'Bearer'", async () => {
+  _reiniciarEstado();
+  const { f, llamadas } = fetchFalso(
+    [{ status: 401 }, { status: 401 }, { status: 200, body: { ok: true } }],
+    ["t1", "t2"],
+  );
+  const c = nuevo(f);
+  assertEquals(await c.get("/api/x"), { ok: true });
+  const api = llamadas.filter((l) => l.url.endsWith("/api/x")).map((l) => l.auth);
+  assertEquals(api, ["Bearer t1", "Bearer t2", "t2"]);
+  assertEquals(c.modoAutorizacion, "plano");
+});
+
+Deno.test("401 persistente termina en EcartPayError 401", async () => {
+  _reiniciarEstado();
+  const { f } = fetchFalso(
+    [{ status: 401 }, { status: 401 }, { status: 401, body: { message: "Unauthorized" } }],
+    ["t1", "t2"],
+  );
+  const e = await assertRejects(() => nuevo(f).get("/api/x"), EcartPayError);
+  assertEquals(e.status, 401);
+  assertEquals(e.message, "Unauthorized");
+});
+
+Deno.test("reintenta GET ante 5xx pero no POST", async () => {
+  _reiniciarEstado();
+  const g = fetchFalso([{ status: 503 }, { status: 200, body: [1] }], ["t"]);
+  assertEquals(await nuevo(g.f).get("/api/x"), [1]);
+
+  _reiniciarEstado();
+  const p = fetchFalso([{ status: 503, body: { error: "caído" } }], ["t"]);
+  const e = await assertRejects(() => nuevo(p.f).post("/api/orders", {}), EcartPayError);
+  assertEquals(e.status, 503);
+  assertEquals(p.llamadas.filter((l) => l.url.endsWith("/api/orders")).length, 1);
+});
+
+Deno.test("error al pedir el token", async () => {
+  _reiniciarEstado();
+  const f = (() =>
+    Promise.resolve(Response.json({ message: "bad keys" }, { status: 400 }))) as typeof fetch;
+  const e = await assertRejects(() => nuevo(f).token(), EcartPayError);
+  assertEquals(e.status, 400);
+});

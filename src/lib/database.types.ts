@@ -4278,6 +4278,9 @@ export type Database = {
         Row: {
           activo: boolean
           codigo: string
+          conexion_detalle: Json
+          conexion_estado: string
+          conexion_verificada_at: string | null
           nombre: string
           pais: string
           sandbox: boolean
@@ -4287,6 +4290,9 @@ export type Database = {
         Insert: {
           activo?: boolean
           codigo: string
+          conexion_detalle?: Json
+          conexion_estado?: string
+          conexion_verificada_at?: string | null
           nombre: string
           pais: string
           sandbox?: boolean
@@ -4296,6 +4302,9 @@ export type Database = {
         Update: {
           activo?: boolean
           codigo?: string
+          conexion_detalle?: Json
+          conexion_estado?: string
+          conexion_verificada_at?: string | null
           nombre?: string
           pais?: string
           sandbox?: boolean

@@ -25,6 +25,8 @@ const SHARED = [
   "scripts/shared-check.mjs",
   "scripts/sync-upstream.mjs",
   "SYNC_MOLIPAY.md",
+  "supabase/functions/_shared/ecartpay.test.ts",
+  "supabase/functions/_shared/ecartpay.ts",
   "supabase/functions/_shared/http.ts",
   "vitest.config.ts",
 ];

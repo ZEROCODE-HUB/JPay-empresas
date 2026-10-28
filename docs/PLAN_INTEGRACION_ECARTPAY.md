@@ -320,6 +320,24 @@ Hacer:
   botón "Probar conexión".
   Listo cuando: el admin ve "Conectado (sandbox)".
 
+**Estado (2026-10-27): HECHA** en las ramas `feature/ecartpay-fase2` (admin y empresas).
+
+- Panel del usuario: `https://appdev.ecartpay.com`; su API es `https://sandbox.ecartpay.com`
+  (visto en el tráfico del panel). El prefijo `oauth_live_` del client_id es solo el nombre.
+- App OAuth "JPay" creada en el panel (66 permisos) con redirect
+  `https://ovbozgezuboftcjwxlwj.supabase.co/functions/v1/ecartpay-oauth-callback`; webhook a
+  `.../functions/v1/ecartpay-webhook` suscrito a los 32 eventos. Secretos cargados por el usuario.
+- No hizo falta `ECARTPAY_ENV`: el entorno sale de `proveedores_pago.sandbox`
+  (`ECARTPAY_BASE_URL` opcional fuerza otra URL).
+- `_shared/ecartpay.ts` (compartido, con tests Deno): token con caché hasta 5 min antes del `exp`,
+  reintentos de GET ante red/429/5xx, ante 401 renueva el token y luego prueba sin "Bearer".
+  **Confirmado: la API acepta `Authorization: Bearer <token>`.**
+- Migración 1016: `proveedores_pago.conexion_estado|conexion_verificada_at|conexion_detalle`.
+- Edge Function `ecartpay-salud` (solo `is_admin()`), desplegada. Prueba real: 5/5 pasos OK,
+  ~830 ms, `GET /api/transactions` con 0 registros.
+- Admin > Integraciones > País y proveedores: tarjeta "Ecart Pay" con estado, URL, pasos y
+  botón "Probar conexión".
+
 ### Fase 3 — El comercio conecta su cuenta (OAuth) (D1)
 
 Hacer:
