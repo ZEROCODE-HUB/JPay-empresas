@@ -54,6 +54,12 @@ const NAV: NavItem[] = [
     modulo: "pagos_proveedor",
   },
   { to: "/app/retiros", label: "Retiros", icon: Banknote, modulo: "retiros_proveedor" },
+  {
+    to: "/app/spei",
+    label: "Transferencias SPEI",
+    icon: ArrowLeftRight,
+    modulo: "transferencias_cobre",
+  },
   { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned, modulo: "pos" },
   {
     label: "Link de pago",

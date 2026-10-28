@@ -54,7 +54,9 @@ export type Modulo =
   /** Tarjetas con Payway y sus conciliaciones (BLP). */
   | "payway"
   /** Transferencias salientes por BDC / Coelsa. */
-  | "transferencias_salientes";
+  | "transferencias_salientes"
+  /** CLABE por subcuenta, depósitos y transferencias SPEI con Cobre. */
+  | "transferencias_cobre";
 
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };
 
@@ -261,6 +263,7 @@ const MX: ConfigPais = {
     retiros_proveedor: true,
     payway: false,
     transferencias_salientes: false,
+    transferencias_cobre: true,
   },
   textos: {
     notaRegulatoria: null,
@@ -365,6 +368,7 @@ const AR: ConfigPais = {
     retiros_proveedor: false,
     payway: true,
     transferencias_salientes: true,
+    transferencias_cobre: false,
   },
   textos: {
     notaRegulatoria: "Operamos bajo normativa BCRA.",

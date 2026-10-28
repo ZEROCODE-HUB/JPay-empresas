@@ -34,6 +34,7 @@ import { Route as AppReportesRouteImport } from './routes/app.reportes'
 import { Route as AppRetirosRouteImport } from './routes/app.retiros'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
 import { Route as AppServiciosRouteImport } from './routes/app.servicios'
+import { Route as AppSpeiRouteImport } from './routes/app.spei'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as LegalesArrepentimientoRouteImport } from './routes/legales.arrepentimiento'
@@ -184,6 +185,11 @@ const AppServiciosRoute = AppServiciosRouteImport.update({
   path: '/servicios',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSpeiRoute = AppSpeiRouteImport.update({
+  id: '/spei',
+  path: '/spei',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSubcuentasRoute = AppSubcuentasRouteImport.update({
   id: '/subcuentas',
   path: '/subcuentas',
@@ -332,6 +338,7 @@ export interface FileRoutesByFullPath {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
+  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -381,6 +388,7 @@ export interface FileRoutesByTo {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
+  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -433,6 +441,7 @@ export interface FileRoutesById {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
+  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -486,6 +495,7 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
+    | '/app/spei'
     | '/app/subcuentas'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
@@ -535,6 +545,7 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
+    | '/app/spei'
     | '/app/subcuentas'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
+    | '/app/spei'
     | '/app/subcuentas'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
@@ -807,6 +819,13 @@ declare module '@tanstack/react-router' {
       path: '/servicios'
       fullPath: '/app/servicios'
       preLoaderRoute: typeof AppServiciosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/spei': {
+      id: '/app/spei'
+      path: '/spei'
+      fullPath: '/app/spei'
+      preLoaderRoute: typeof AppSpeiRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/subcuentas': {
@@ -1044,6 +1063,7 @@ interface AppRouteChildren {
   AppRetirosRoute: typeof AppRetirosRoute
   AppSeguridadRoute: typeof AppSeguridadRoute
   AppServiciosRoute: typeof AppServiciosRoute
+  AppSpeiRoute: typeof AppSpeiRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -1067,6 +1087,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRetirosRoute: AppRetirosRoute,
   AppSeguridadRoute: AppSeguridadRoute,
   AppServiciosRoute: AppServiciosRoute,
+  AppSpeiRoute: AppSpeiRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,

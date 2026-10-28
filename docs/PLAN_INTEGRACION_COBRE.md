@@ -149,3 +149,37 @@ Detalle de cada decisión:
 | 12 | Devolución de un depósito | `spei_return` creado y seguido hasta completed |
 | 13 | Conciliación | Sin diferencias; una diferencia forzada aparece una vez |
 | 14 | Argentina sigue igual | Transferencias AR sin cambios |
+
+## 7. Estado (2026-10-28)
+
+Ramas `feature/cobre-c1` (admin y empresas), sobre `feature/ecartpay-fase9`; sin push.
+Todo funciona de punta a punta con el **simulador** (`COBRE_MODO` sin definir). Falta probarlo
+contra Cobre real: la instancia de prueba de México se pide al KAM.
+
+- **C1 (hecha):** cliente `_shared/cobre.ts` (token al 95%, 401, errores con código, estados y
+  motivos en español, firma de avisos), simulador (`_shared/cobre-simulador.ts`, tabla
+  `cobre_simulador`, cron cada minuto), `cobre-webhook`, `cobre-simulador`, `cobre-salud`,
+  migración 1033, tarjeta de conexión genérica en el admin. 11 tests de Cobre.
+- **C2/C3 (hechas):** migración 1034. El ledger pasa a ser por país: las subcuentas nuevas y sus
+  transacciones nacen en la moneda del cliente (MXN en México; las restricciones admitían solo
+  ARS y ahora ARS o MXN). Cuentas BANCO_COBRE, INGRESOS_COMISIONES_MXN, IVA_DEBITO_FISCAL_MXN.
+  `cobre-cuentas`: cuenta de JPay (centralizado) o del cliente (por comercio) y CLABE virtual
+  por subcuenta (también en `subaccounts.cbu`). Depósitos por webhook con
+  `cobre_registrar_deposito` (mismo asiento y reglas que BDC); CLABE sin dueño → "sin asignar".
+- **C4 (hecha):** migración 1035. `cobre-transferencias`: destinatarios con verificación de
+  titular, envío con reserva (`reservar_transferencia_bdc`), idempotencia por TXID, aprobación
+  por admin sobre un monto, OTP del lado servidor si `exigir_otp`. `cobre-pendientes` (cada
+  5 min) cierra lo que no llegó por aviso. Portal: "Transferencias SPEI" (CLABEs, transferir,
+  movimientos). Admin: tarjeta "Cobre: cuentas y transferencias SPEI".
+- **Probado con el simulador:** depósito acreditado (quedó retenido por las reglas de
+  prevención), depósito a CLABE sin dueño, transferencia completada, rechazo R005 con reserva
+  liberada, sin saldo, reintento con el mismo TXID, aprobación por admin, verificación de
+  titular y una transferencia desde la interfaz del portal. Ledger cuadrado (BANCO_COBRE = saldo
+  de la subcuenta).
+- **Pendiente:** C5 (conciliación diaria contra transacciones del Balance, reportes, alertas de
+  Cobre), devoluciones de depósitos (`/money_movements_return`, no simulada), modelo de fondos
+  por cliente desde el admin (la tabla `cobre_clientes` existe; falta la pantalla), y C6 (pruebas
+  en la instancia de Cobre y certificación).
+- **Para revisar con negocio:** las reglas de prevención actuales están pensadas para Argentina
+  (salario mínimo argentino, topes de prueba de $10 y $20 que bloquean). En México hay que
+  definir los umbrales (por ejemplo en UMA) antes de operar.
