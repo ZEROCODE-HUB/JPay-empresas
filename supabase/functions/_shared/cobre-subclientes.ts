@@ -93,6 +93,17 @@ export async function aplicarEstadoSubcliente(
     .maybeSingle();
   if (!fila) return "desconocido";
   const final = ["approved", "rejected", "failed"];
+  // Rechazo por cumplimiento después de aprobado: Cobre no cierra sus cuentas (el Balance sigue
+  // operando), pero queda registrado y aparece como alerta para consultarlo con el KAM.
+  if (fila.estado === "approved" && estado === "rejected") {
+    const { error } = await sb
+      .from("cobre_subclientes")
+      .update({ revocado_at: new Date().toISOString(), revocado_motivo: motivo })
+      .eq("id", fila.id)
+      .is("revocado_at", null);
+    if (error) throw new Error(error.message);
+    return "rechazado después de aprobado";
+  }
   if (!final.includes(fila.estado) && fila.estado !== estado) {
     const { error } = await sb
       .from("cobre_subclientes")

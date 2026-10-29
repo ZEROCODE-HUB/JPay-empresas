@@ -526,6 +526,9 @@ export type DatosSubcliente = {
 
 /** Largo máximo de `short_name`: Cobre lo combina con su acrónimo y el total no pasa de 40. */
 export const MAX_NOMBRE_CORTO = 30;
+/** Topes del alta de Subcliente en México (esquema `create_subclients_mexico`). */
+export const MAX_REPRESENTANTES = 20;
+export const MAX_BENEFICIARIOS = 4;
 
 const sinAcentos = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 
@@ -567,6 +570,10 @@ export function subclienteCobre(d: DatosSubcliente): {
   if (!/^\+\d{10,15}$/.test(telefono)) faltan.push("Teléfono con código de país (+52…)");
   if (!d.representantes.length) faltan.push("Al menos un representante legal");
   if (!d.ubos.length) faltan.push("Al menos un beneficiario final");
+  if (d.representantes.length > MAX_REPRESENTANTES)
+    faltan.push(`Hasta ${MAX_REPRESENTANTES} representantes legales`);
+  if (d.ubos.length > MAX_BENEFICIARIOS)
+    faltan.push(`Hasta ${MAX_BENEFICIARIOS} beneficiarios finales (los que tienen 25 % o más)`);
   const web = (d.sitioWeb ?? "").trim();
   const cuerpo = {
     legal_name: req(d.razonSocial, "Razón social"),

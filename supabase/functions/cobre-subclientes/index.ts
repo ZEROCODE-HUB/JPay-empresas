@@ -48,6 +48,17 @@ Deno.serve(
           return json(await enviar(legajo, req));
         case "consultar":
           return json(await consultar(legajo));
+        case "revocado_revisado": {
+          // El backoffice ya consultó con el KAM el rechazo posterior a la aprobación.
+          const alta = await ultima();
+          if (!alta?.revocado_at) throw new HttpError(409, "El alta no tiene un rechazo posterior");
+          const { error } = await sb
+            .from("cobre_subclientes")
+            .update({ revocado_revisado: true })
+            .eq("id", alta.id);
+          if (error) throw new Error(error.message);
+          return json({ ok: true });
+        }
         default:
           throw new HttpError(400, "Acción inválida");
       }
@@ -62,7 +73,7 @@ Deno.serve(
       const { data } = await sb
         .from("cobre_subclientes")
         .select(
-          "id, cliente_legajo, modo, subcliente_externo_id, estado, motivo, balance_pedido_at, created_at, updated_at",
+          "id, cliente_legajo, modo, subcliente_externo_id, estado, motivo, balance_pedido_at, created_at, updated_at, revocado_at, revocado_motivo, revocado_revisado",
         )
         .eq("cliente_legajo", legajo)
         .eq("modo", conexion.modo)

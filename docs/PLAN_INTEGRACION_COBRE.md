@@ -132,9 +132,7 @@ aprobación por monto, conciliación por identificadores, alertas y tarjetas del
   pruebas → certificación (cuestionario + demo).
 - Prerrequisitos que Cobre debe habilitar: Named Accounts/Subclientes, Balances Global y USA, par
   MXN/USD con static quote, Fedwire y SWIFT.
-- Preguntas para Cobre: catálogo de `industry`, acrónimo de `short_name` (máx. 40 en total), alta
-  de persona física como Subcliente, cupo de Balances por comercio, si siguen disponibles las
-  CLABEs virtuales.
+- Preguntas para Cobre: ver «Preguntas para Cobre (KAM)» más abajo.
 
 ## 6. Lista de pruebas (simulador primero, después instancia de Cobre)
 
@@ -206,7 +204,14 @@ aprobación por monto, conciliación por identificadores, alertas y tarjetas del
     por cliente o subcuenta (admin → Usuarios → Carga de comisiones; porcentaje o fijo + IVA),
     calculada al cotizar y reservada con el monto; interruptor «Reglas en conversiones» en la
     tarjeta Cobre (apagado por defecto; prendido, la conversión se evalúa como un retiro).
-- **Preguntas para Cobre (KAM):** catálogo de `industry`; el OAS de `/subclients` lista `id_type`
-  de Colombia (cc, nit…) y el documento usa `rfc`: confirmar para México; acrónimo de
-  `short_name`; alta de persona física como Subcliente; cupo de Balances por comercio; barrido
-  de comisiones; costos de R2P, cruce y payouts USD.
+- **Resuelto con la documentación en español (2026-10-29):** el esquema `create_subclients_mexico`
+  acepta `id_type` `rfc` y `curp`; el catálogo de `industry` es el mismo que ya usamos; hasta 4
+  beneficiarios (25 % o más) y 20 representantes (validado en el alta); el nombre en SPEI es
+  `{acrónimo} | {short_name}` con 40 caracteres en total (acrónimo recomendado de 4–5 letras, lo
+  configura Cobre); las Cuentas Nombradas admiten R2P SPEI y CLABEs virtuales; un Subcliente
+  aprobado puede rechazarse después por cumplimiento sin afectar sus cuentas (migración 1042:
+  `revocado_at`, alerta crítica y «Marcar como revisado» en el admin).
+- **Preguntas para Cobre (KAM):** qué `industry` usar para comercios que no encajan en el catálogo
+  (no hay retail ni e-commerce genérico); acrónimo de JPay para configurar; alta de persona física
+  como Subcliente (el esquema es de empresa); cupo de Balances por comercio; barrido de
+  comisiones; costos de R2P, cruce y payouts USD.

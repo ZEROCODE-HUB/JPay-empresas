@@ -202,6 +202,9 @@ export const nombrePais = (iso3: string) =>
 
 export type RolKyb = "representante" | "beneficiario";
 
+/** Topes de Cobre para el alta en México: 20 representantes y 4 beneficiarios (25% o más). */
+export const MAX_PERSONAS_KYB: Record<RolKyb, number> = { representante: 20, beneficiario: 4 };
+
 export type PersonaKyb = {
   id?: string;
   rol: RolKyb;

@@ -11,6 +11,7 @@ import { Trash2 } from "lucide-react";
 import { Badge, BtnOutline, BtnPrimary, Input, Label } from "@/components/portal-shell";
 import {
   INDUSTRIAS_COBRE,
+  MAX_PERSONAS_KYB,
   nombrePais,
   normalizarSitioWeb,
   PAISES_ISO3,
@@ -99,7 +100,7 @@ export function KybCobreForm(p: Props) {
       <div className="mt-5">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium">{titulo}</p>
-          {!p.soloLectura && (
+          {!p.soloLectura && filas.length < MAX_PERSONAS_KYB[rol] && (
             <button
               type="button"
               className="text-xs font-semibold text-secondary hover:underline"

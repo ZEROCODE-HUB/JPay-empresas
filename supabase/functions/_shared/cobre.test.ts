@@ -593,6 +593,12 @@ Deno.test("subcliente: cuerpo del alta, nombre corto acotado y lo que falta", ()
     incompleto.faltan.some((f) => f.startsWith("Teléfono")),
     true,
   );
+  const ubo = datosKyb().ubos[0];
+  const demasiados = subclienteCobre({ ...datosKyb(), ubos: [ubo, ubo, ubo, ubo, ubo] });
+  assertEquals(
+    demasiados.faltan.some((f) => f.startsWith("Hasta 4 beneficiarios")),
+    true,
+  );
   // La API usa status.state; el aviso, status como cadena.
   assertEquals(
     estadoSubcliente({ id: "sc_1", status: { state: "processing" } }).estado,

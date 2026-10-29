@@ -2834,6 +2834,9 @@ export type Database = {
           idempotency_key: string
           modo: string
           motivo: string | null
+          revocado_at: string | null
+          revocado_motivo: string | null
+          revocado_revisado: boolean
           subcliente_externo_id: string | null
           updated_at: string
         }
@@ -2848,6 +2851,9 @@ export type Database = {
           idempotency_key: string
           modo: string
           motivo?: string | null
+          revocado_at?: string | null
+          revocado_motivo?: string | null
+          revocado_revisado?: boolean
           subcliente_externo_id?: string | null
           updated_at?: string
         }
@@ -2862,6 +2868,9 @@ export type Database = {
           idempotency_key?: string
           modo?: string
           motivo?: string | null
+          revocado_at?: string | null
+          revocado_motivo?: string | null
+          revocado_revisado?: boolean
           subcliente_externo_id?: string | null
           updated_at?: string
         }
