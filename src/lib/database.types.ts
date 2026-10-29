@@ -341,6 +341,7 @@ export type Database = {
           is_enabled: boolean
           name: string
           parameters: Json
+          parametros_pais: Json
           sort_order: number
           updated_at: string
           updated_by: string | null
@@ -355,6 +356,7 @@ export type Database = {
           is_enabled?: boolean
           name: string
           parameters?: Json
+          parametros_pais?: Json
           sort_order?: number
           updated_at?: string
           updated_by?: string | null
@@ -369,6 +371,7 @@ export type Database = {
           is_enabled?: boolean
           name?: string
           parameters?: Json
+          parametros_pais?: Json
           sort_order?: number
           updated_at?: string
           updated_by?: string | null

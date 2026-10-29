@@ -190,15 +190,19 @@ aprobación por monto, conciliación por identificadores, alertas y tarjetas del
   comercio 4.492 = 4.492; dólares 22 = 22). 41 tests del cliente y del simulador.
 - **Pendiente:** D8 (instancia de prueba de Cobre y certificación). La instancia propia de un
   comercio está construida pero sin probar contra Cobre real.
-- **Para revisar con negocio:**
-  - Reglas de prevención para México (hoy pensadas para Argentina: bloquean montos chicos).
-  - Monto de aprobación en pesos y en dólares.
-  - Comisión ante un rebote (hoy se devuelve todo, monto + comisión + IVA).
-  - **Comisiones de JPay en el modelo por comercio:** lo que JPay cobra de comisión queda
-    físicamente en el Balance del comercio; hay que acordar con Cobre cómo se barre a una cuenta
-    de JPay (la conciliación ya lo contempla como parte del saldo esperado).
-  - Las conversiones a dólares no pasan por las reglas de prevención ni cobran comisión de JPay.
-  - Comparativa de SPEI Ecart Pay vs. Cobre: `docs/COMPARATIVA_SPEI_ECARTPAY_COBRE.md`.
+- **Decisiones del 2026-10-28 (segunda ronda):**
+  - Comisiones de JPay en el modelo por comercio: se acuerdan aparte entre Cobre y JPay (fuera
+    de este plan).
+  - Montos de aprobación: configurables en el admin (País y proveedores → Cobre), en pesos y en
+    dólares; vacío = sin aprobación.
+  - SPEI en el link de pago: conviven Ecart Pay y Cobre; después se quita uno
+    (`docs/COMPARATIVA_SPEI_ECARTPAY_COBRE.md`).
+  - Reglas de prevención por país (migración 1040): México con sus propios valores, en pesos
+    mexicanos, UMA mensual 2026 ($3,566.22, INEGI) en lugar del salario mínimo argentino y hora
+    del centro. Se editan en el admin (Alertas → Parámetros de alertas / de bloqueos, selector de
+    país). Los valores iniciales son una propuesta para que los valide el oficial de cumplimiento.
+- **Pendiente de negocio:** si ante un rebote se devuelve también la comisión (hoy sí); las
+  conversiones a dólares no pasan por las reglas ni cobran comisión de JPay.
 - **Preguntas para Cobre (KAM):** catálogo de `industry`; el OAS de `/subclients` lista `id_type`
   de Colombia (cc, nit…) y el documento usa `rfc`: confirmar para México; acrónimo de
   `short_name`; alta de persona física como Subcliente; cupo de Balances por comercio; barrido
