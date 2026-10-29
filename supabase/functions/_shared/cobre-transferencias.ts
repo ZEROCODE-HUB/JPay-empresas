@@ -15,6 +15,8 @@ import {
 } from "./cobre.ts";
 
 const FINALES: string[] = ["completada", "devuelta", ...SIN_DEBITO];
+/** Filtro de PostgREST para no pisar un estado final escrito por otro proceso a la vez. */
+const NO_FINAL = `(${[...FINALES, "error_envio"].join(",")})`;
 
 export type FilaTransferencia = {
   id: string;
@@ -62,7 +64,8 @@ export async function aplicarEstadoTransferencia(
       ...(uetr ? { swift_uetr: uetr } : {}),
       updated_at: new Date().toISOString(),
     })
-    .eq("id", fila.id);
+    .eq("id", fila.id)
+    .not("estado", "in", NO_FINAL);
   if (error) throw new Error(error.message);
   return { estado: r.estado, cambio: r.estado !== fila.estado };
 }
@@ -100,7 +103,8 @@ export async function aplicarRebote(
   const { error: e2 } = await sb
     .from("cobre_transferencias")
     .update({ estado: "devuelta", motivo, devuelta_at: ahora, updated_at: ahora })
-    .eq("id", t.id);
+    .eq("id", t.id)
+    .eq("estado", "completada");
   if (e2) throw new Error(e2.message);
   return "reintegrado";
 }

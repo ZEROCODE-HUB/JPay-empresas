@@ -119,8 +119,12 @@ Deno.serve(
               .eq("id", t.id);
           }
         } else if (
+          // Los ítems de un lote los cierra el estado del lote (el archivo puede tardar en
+          // validarse); acá solo se liberan envíos unitarios que Cobre nunca recibió, contando
+          // desde el último cambio (una aprobación tardía reinicia el plazo).
+          !t.lote_id &&
           t.estado === "enviando" &&
-          Date.now() - Date.parse(String(t.created_at)) > 30 * MIN
+          Date.now() - Date.parse(String(t.updated_at)) > 30 * MIN
         ) {
           await sb.rpc("cancelar_transferencia_bdc", {
             p_origin_id: t.id_txn,

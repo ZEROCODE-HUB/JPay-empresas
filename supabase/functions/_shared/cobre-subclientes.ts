@@ -163,17 +163,32 @@ export async function crearBalanceComercio(
     (s) => !s.moneda || s.moneda === "MXN",
   );
   const nombre = (cli?.nombre_fantasia || cli?.nombre || fila.cliente_legajo).slice(0, 20);
-  const cuenta = await conexion.cliente.post<{
+  const alias = `JPAY ${nombre}`.slice(0, 32);
+  const etiqueta = `jpay-${fila.cliente_legajo}`;
+  type CuentaCobre = {
     id: string;
+    provider_id?: string;
+    tags?: string[];
     account_number?: string | null;
     connectivity?: { status?: string };
-  }>("/accounts", {
+  };
+  // `POST /accounts` no tiene idempotencia: si un intento anterior la creó pero no se guardó
+  // (timeout o error después de crearla), se reusa la que tiene la etiqueta del comercio.
+  const previas = await conexion.cliente.get<{ contents?: CuentaCobre[] }>("/accounts", {
+    alias,
     provider_id: "pr_mex_cobre3",
-    action: "create",
-    subclient_id: fila.subcliente_externo_id,
-    tags: [`jpay-${fila.cliente_legajo}`],
-    alias: `JPAY ${nombre}`.slice(0, 32),
   });
+  const cuenta =
+    (previas?.contents ?? []).find(
+      (c) => c.provider_id === "pr_mex_cobre3" && (c.tags ?? []).includes(etiqueta),
+    ) ??
+    (await conexion.cliente.post<CuentaCobre>("/accounts", {
+      provider_id: "pr_mex_cobre3",
+      action: "create",
+      subclient_id: fila.subcliente_externo_id,
+      tags: [etiqueta],
+      alias,
+    }));
   const clabe = /^\d{18}$/.test(cuenta.account_number ?? "") ? cuenta.account_number! : null;
   const { data: nueva, error } = await sb
     .from("cobre_cuentas")
@@ -183,7 +198,7 @@ export async function crearBalanceComercio(
       modo: conexion.modo,
       cuenta_externa_id: cuenta.id,
       clabe,
-      alias: `JPAY ${nombre}`.slice(0, 32),
+      alias,
       subcliente_id: fila.id,
       subcuenta_id: receptora?.id ?? null,
       conectividad: cuenta.connectivity?.status ?? null,

@@ -355,13 +355,15 @@ async function reservar(
   return data as Reserva;
 }
 
+/** Monto positivo con hasta dos decimales (con tolerancia: 19.99 * 100 no da exacto en coma flotante). */
+const centavosExactos = (m: number) => m > 0 && Math.abs(m * 100 - Math.round(m * 100)) < 1e-6;
+
 async function enviar(ctx: Ctx, legajo: string, b: Body) {
   const idTxn = String(b.id_txn ?? "").trim();
   if (!/^[A-Za-z0-9-]{9,40}$/.test(idTxn))
     throw new HttpError(400, "id_txn inválido (9 a 40 caracteres)");
   const monto = Number(b.monto);
-  if (!(monto > 0) || Math.round(monto * 100) !== monto * 100)
-    throw new HttpError(400, "Monto inválido");
+  if (!centavosExactos(monto)) throw new HttpError(400, "Monto inválido");
   const subcuentaId = String(b.subcuenta_id ?? "");
   const concepto = texto(b.concepto, 40) ?? "Transferencia";
 
@@ -458,7 +460,15 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
     })
     .select("*")
     .single();
-  if (eIns) throw new HttpError(500, eIns.message);
+  if (eIns) {
+    // Sin fila no hay quien siga el envío: se libera la reserva (un reintento con el mismo TXID
+    // reserva de nuevo).
+    await ctx.sb.rpc("cancelar_transferencia_bdc", {
+      p_origin_id: idTxn,
+      p_motivo: "No se registró el envío",
+    });
+    throw new HttpError(500, eIns.message);
+  }
   const extra = { comision: r.comision ?? 0, impuesto: r.impuesto ?? 0 };
   if (aprobacion) return { ...fila, ...extra };
 
@@ -519,10 +529,17 @@ async function enviarSpei(
     return; // queda `enviando`: la revisión de pendientes consulta por external_id
   }
   const s = resumirTransferencia(mm);
+  // Solo pasa a `pendiente` si nadie la cerró mientras tanto (el aviso puede llegar antes).
   await sb
     .from("cobre_transferencias")
-    .update({ mm_id: s.id, estado: "pendiente", updated_at: new Date().toISOString() })
-    .eq("id", fila.id);
+    .update({ mm_id: s.id, updated_at: new Date().toISOString() })
+    .eq("id", fila.id)
+    .is("mm_id", null);
+  await sb
+    .from("cobre_transferencias")
+    .update({ estado: "pendiente" })
+    .eq("id", fila.id)
+    .eq("estado", "enviando");
   if (SIN_DEBITO.includes(s.estado) || s.estado === "completada") {
     await aplicarEstadoTransferencia(
       sb,
@@ -555,6 +572,14 @@ async function lote(ctx: Ctx, legajo: string, b: Body) {
     return data;
   }
 
+  const { data: sub } = await ctx.sb
+    .from("subaccounts")
+    .select("cliente_legajo, moneda")
+    .eq("id", subcuentaId)
+    .maybeSingle();
+  if (!sub || sub.cliente_legajo !== legajo) throw new HttpError(404, "Subcuenta inexistente");
+  if (sub.moneda === "USD") throw new HttpError(409, "Elegí una subcuenta en pesos");
+
   const { data: conf } = await ctx.sb
     .from("cobre_configuracion")
     .select("exigir_otp, monto_aprobacion")
@@ -576,8 +601,7 @@ async function lote(ctx: Ctx, legajo: string, b: Body) {
     if (cp.tipo !== "clabe" || cp.verificacion !== "matched") {
       throw new HttpError(409, `Fila ${i + 1}: la CLABE de ${cp.titular} no está verificada`);
     }
-    if (!(monto > 0) || Math.round(monto * 100) !== monto * 100)
-      throw new HttpError(400, `Fila ${i + 1}: monto inválido`);
+    if (!centavosExactos(monto)) throw new HttpError(400, `Fila ${i + 1}: monto inválido`);
     total += monto;
   });
   if (conf?.exigir_otp) await verificarOtp(ctx, b.codigo);
@@ -722,17 +746,21 @@ async function decidir(sb: SupabaseClient, req: Request, b: Body) {
   if (typeof b.lote_id === "string") {
     const { data: l } = await sb.from("cobre_lotes").select("*").eq("id", b.lote_id).maybeSingle();
     if (!l) throw new HttpError(404, "Lote inexistente");
-    if (!l.requiere_aprobacion || l.decidida_at || l.estado !== "preparando") {
-      throw new HttpError(409, "El lote no está pendiente de aprobación");
-    }
-    await sb
+    // Toma condicional: con dos decisiones a la vez, solo una pasa.
+    const { data: tomado } = await sb
       .from("cobre_lotes")
       .update({ ...decision, updated_at: ahora })
-      .eq("id", l.id);
+      .eq("id", l.id)
+      .eq("requiere_aprobacion", true)
+      .eq("estado", "preparando")
+      .is("decidida_at", null)
+      .select("id")
+      .maybeSingle();
+    if (!tomado) throw new HttpError(409, "El lote no está pendiente de aprobación");
     if (aprobar) {
       await sb
         .from("cobre_transferencias")
-        .update({ estado: "enviando", ...decision })
+        .update({ estado: "enviando", ...decision, updated_at: ahora })
         .eq("lote_id", l.id);
       await subirLote(sb, await conexionDeCliente(sb, l.cliente_legajo), l.id);
     } else {
@@ -762,19 +790,25 @@ async function decidir(sb: SupabaseClient, req: Request, b: Body) {
   if (fila.estado !== "pendiente_aprobacion" || fila.mm_id || fila.lote_id) {
     throw new HttpError(409, "La transferencia no está pendiente de aprobación");
   }
-  await sb.from("cobre_transferencias").update(decision).eq("id", fila.id);
+  // Toma condicional: la decisión y el nuevo estado se escriben juntos y solo si sigue pendiente.
+  const { data: tomada } = await sb
+    .from("cobre_transferencias")
+    .update({
+      ...decision,
+      estado: aprobar ? "enviando" : "cancelada",
+      motivo: aprobar ? null : nota,
+      updated_at: ahora,
+    })
+    .eq("id", fila.id)
+    .eq("estado", "pendiente_aprobacion")
+    .is("decidida_at", null)
+    .select("id")
+    .maybeSingle();
+  if (!tomada) throw new HttpError(409, "La transferencia ya fue decidida");
   if (!aprobar) {
     await sb.rpc("cancelar_transferencia_bdc", { p_origin_id: fila.id_txn, p_motivo: nota });
-    await sb
-      .from("cobre_transferencias")
-      .update({ estado: "cancelada", motivo: nota, updated_at: ahora })
-      .eq("id", fila.id);
   } else {
     const conexion = await conexionDeCliente(sb, fila.cliente_legajo);
-    await sb
-      .from("cobre_transferencias")
-      .update({ estado: "enviando", updated_at: ahora })
-      .eq("id", fila.id);
     if (fila.moneda === "USD") await iniciarEnvioUsd(sb, conexion, { ...fila, estado: "enviando" });
     else
       await enviarSpei(
