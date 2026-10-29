@@ -101,7 +101,7 @@ export function digitoClabe(clabe: string): string {
 export function validarClabe(valor: string): string | null {
   const clabe = soloDigitos(valor);
   if (!clabe) return "Requerido";
-  if (clabe.length !== 18 || clabe.length !== valor.replace(/\s/g, "").length) {
+  if (clabe.length !== 18 || clabe.length !== valor.replace(/[\s-]/g, "").length) {
     return "La CLABE tiene 18 dígitos.";
   }
   if (digitoClabe(clabe) !== clabe[17]) return "El dígito de control de la CLABE no coincide.";

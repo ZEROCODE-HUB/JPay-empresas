@@ -48,6 +48,31 @@ Deno.serve(async (req) => {
   }
 
   const { evento, idExterno, estado } = leerEventoWebhook(cuerpo);
+
+  // Avisos sin firma (notify_url): cualquiera puede mandarlos. Solo se registran si la orden es de
+  // un pago de JPay todavía abierto y no hubo otro aviso igual en el último minuto; se guarda un
+  // resumen, no el cuerpo (la verdad sale de consultar la orden).
+  if (!firmado) {
+    if (!idExterno) return json({ ok: true, ignorado: "sin orden" });
+    const { data: pago } = await sb
+      .from("pagos")
+      .select("id, estado")
+      .eq("proveedor", "ecartpay")
+      .eq("proveedor_orden_id", idExterno)
+      .maybeSingle();
+    if (!pago || !["creado", "pendiente"].includes(pago.estado)) {
+      return json({ ok: true, ignorado: "orden desconocida o ya cerrada" });
+    }
+    const { count } = await sb
+      .from("webhook_eventos")
+      .select("id", { count: "exact", head: true })
+      .eq("proveedor", "ecartpay")
+      .eq("origen", "notify_url")
+      .eq("id_externo", idExterno)
+      .gt("recibido_at", new Date(Date.now() - 60_000).toISOString());
+    if ((count ?? 0) > 0) return json({ ok: true, duplicado: true });
+  }
+
   const { data: fila, error } = await sb
     .from("webhook_eventos")
     .insert({
@@ -58,7 +83,7 @@ Deno.serve(async (req) => {
       id_externo: idExterno,
       estado_externo: estado,
       firma_valida: firmaValida,
-      payload: cuerpo ?? {},
+      payload: firmado ? (cuerpo ?? {}) : { evento, id_externo: idExterno, estado },
     })
     .select("id")
     .single();

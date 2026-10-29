@@ -103,10 +103,24 @@ async function crear(sb: SupabaseClient, body: Body) {
   // Mismo intento: devolver lo ya creado (doble clic, reintento de red).
   const { data: previo } = await sb
     .from("pagos")
-    .select("id, pay_link, estado")
+    .select("id, pay_link, estado, metodo, referencia, referencia_vence_at")
     .eq("idempotency_key", clave)
     .maybeSingle();
-  if (previo?.pay_link) return { pago_id: previo.id, pay_link: previo.pay_link };
+  if (previo?.estado === "error") {
+    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Probá de nuevo.");
+  }
+  // SPEI / OXXO: se devuelve la referencia (no el link de tarjeta). Si todavía no está, el primer
+  // request sigue en curso.
+  const pidioExterno = body.metodo === "spei" || body.metodo === "oxxo";
+  if (previo?.referencia) {
+    return {
+      pago_id: previo.id,
+      metodo: previo.metodo,
+      referencia: previo.referencia,
+      vence_at: previo.referencia_vence_at,
+    };
+  }
+  if (previo?.pay_link && !pidioExterno) return { pago_id: previo.id, pay_link: previo.pay_link };
   if (previo) {
     // Intento sin orden: falló (el navegador genera otra clave) o está en curso en otro request.
     throw new HttpError(409, "Este intento de pago no se pudo iniciar. Probá de nuevo.");

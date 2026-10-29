@@ -44,6 +44,7 @@ describe("validarClabe", () => {
   it("acepta una CLABE válida (con o sin espacios)", () => {
     expect(validarClabe("032180000118359719")).toBeNull();
     expect(validarClabe("032 180 00011835971 9")).toBeNull();
+    expect(validarClabe("032-180-000118359719")).toBeNull();
     expect(digitoClabe("03218000011835971")).toBe("9");
   });
   it("rechaza largo, letras y dígito incorrectos", () => {

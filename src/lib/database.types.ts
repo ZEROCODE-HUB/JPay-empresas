@@ -8174,7 +8174,12 @@ export type Database = {
         Returns: Json
       }
       obtener_link_pago: { Args: { p_codigo: string }; Returns: Json }
+      pais_cambiar_modulo: {
+        Args: { p_activo: boolean; p_codigo: string; p_modulo: string }
+        Returns: Json
+      }
       pais_predeterminado: { Args: never; Returns: string }
+      pais_predeterminar: { Args: { p_codigo: string }; Returns: undefined }
       proveedor_borrar_secreto: {
         Args: { p_conexion_id: string }
         Returns: undefined
@@ -8351,6 +8356,7 @@ export type Database = {
         Args: { p_accion: string; p_recurso_codigo: string }
         Returns: boolean
       }
+      rol_asignable: { Args: { p_rol_id: string }; Returns: boolean }
       rpc_debug_log_por_comercio: {
         Args: { p_comercio_id: string; p_n?: number }
         Returns: {

@@ -101,19 +101,41 @@ export async function conexionEcartPay(
 }
 
 /** Cliente de Ecart Pay que opera con las claves del comercio (la privada sale de Vault). */
+// Clientes ya armados por conexión (la tarea de pendientes y la conciliación recorren muchos
+// pagos del mismo comercio): evita leer el secreto de Vault en cada pago. Vida corta, por si se
+// reconecta la cuenta.
+const CLIENTES_TTL_MS = 5 * 60_000;
+const clientes = new Map<string, { cliente: EcartPayCliente; publicId: string; vence: number }>();
+
 export async function clienteDeConexion(
   sb: SupabaseClient,
   c: ConexionActiva,
 ): Promise<EcartPayCliente> {
+  const enCache = clientes.get(c.id);
+  if (enCache && enCache.publicId === c.publicId && enCache.vence > Date.now()) {
+    return enCache.cliente;
+  }
   const { data: privada, error } = await sb.rpc("proveedor_leer_secreto", {
     p_conexion_id: c.id,
   });
   if (error) throw new HttpError(500, error.message);
   if (typeof privada !== "string" || !privada) {
+    // Queda marcada para la alerta de conexiones con error.
+    await sb
+      .from("comercio_proveedores")
+      .update({
+        estado: "error",
+        ultimo_error: "Sin claves guardadas: hay que reconectar la cuenta",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", c.id)
+      .neq("estado", "revocado");
     throw new HttpError(409, "La conexión con Ecart Pay no tiene claves; hay que reconectarla");
   }
-  return new EcartPayCliente({
+  const cliente = new EcartPayCliente({
     baseUrl: baseUrlEcartPay(c.entorno === "sandbox"),
     credenciales: { publicKey: c.publicId, privateKey: privada },
   });
+  clientes.set(c.id, { cliente, publicId: c.publicId, vence: Date.now() + CLIENTES_TTL_MS });
+  return cliente;
 }

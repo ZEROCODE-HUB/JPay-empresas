@@ -7,12 +7,13 @@
   "description": "Soluciones de pago simples, seguras y accesibles para empresas, consorcios y administradores.",
   "country": "MX",
   "company": {
-    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por la razón social y el RFC reales de JPay. taxIdType: RFC (México), CUIT (Argentina).",
+    "$comment": "DATOS FICTICIOS de ejemplo: reemplazar por la razón social, el RFC y el domicilio reales de JPay. taxIdType: RFC (México), CUIT (Argentina).",
     "legalName": "JPay Servicios Digitales S.A. de C.V.",
     "shortName": "JPay",
     "taxIdType": "RFC",
     "taxId": "XAXX010101000",
-    "country": "México"
+    "country": "México",
+    "address": "Av. Paseo de la Reforma 000, Col. Juárez, Cuauhtémoc, 06600, Ciudad de México"
   },
   "contact": {
     "$comment": "DATOS FICTICIOS de ejemplo (dominio .example, reservado): reemplazar por los emails reales.",

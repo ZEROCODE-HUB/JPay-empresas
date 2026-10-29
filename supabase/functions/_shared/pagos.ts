@@ -93,6 +93,22 @@ export async function confirmarPago(sb: SupabaseClient, pagoId: string): Promise
     p_respuesta: orden,
   });
   if (e2) throw new HttpError(500, e2.message);
+  // Reembolsos sin respuesta clara (quedaron `solicitado`): si la orden ya figura reembolsada por
+  // completo, Ecart Pay los hizo. Los parciales dudosos los muestra la alerta de reembolsos.
+  if (r.estado === "reembolsado") {
+    const { data: dudosos } = await sb
+      .from("reembolsos")
+      .select("id")
+      .eq("pago_id", p.id)
+      .eq("estado", "solicitado");
+    for (const d of (dudosos ?? []) as { id: string }[]) {
+      await sb.rpc("finalizar_reembolso", {
+        p_reembolso_id: d.id,
+        p_ok: true,
+        p_respuesta: { confirmado_por: "orden reembolsada" },
+      });
+    }
+  }
   return salida(final as FilaPago);
 }
 

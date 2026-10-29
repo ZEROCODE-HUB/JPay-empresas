@@ -58,7 +58,8 @@ const MARGEN_MS = 5 * 60 * 1000;
 type TokenCache = { token: string; vence: number };
 const tokens = new Map<string, TokenCache>();
 type ModoAuth = "bearer" | "plano";
-let modoAuth: ModoAuth = "bearer";
+/** Formato de autorización aceptado, por credencial (un 401 de un comercio no cambia a otros). */
+const modosAuth = new Map<string, ModoAuth>();
 
 type Opciones = {
   baseUrl: string;
@@ -89,7 +90,7 @@ export class EcartPayCliente {
 
   /** Modo de autorización que aceptó la API (para el diagnóstico). */
   get modoAutorizacion(): ModoAuth {
-    return modoAuth;
+    return modosAuth.get(this.claveCache) ?? "bearer";
   }
 
   private get claveCache(): string {
@@ -139,7 +140,7 @@ export class EcartPayCliente {
           headers: {
             accept: "application/json",
             ...(s.body !== undefined ? { "content-type": "application/json" } : {}),
-            authorization: modoAuth === "bearer" ? `Bearer ${token}` : token,
+            authorization: this.modoAutorizacion === "bearer" ? `Bearer ${token}` : token,
           },
           body: s.body !== undefined ? JSON.stringify(s.body) : undefined,
         });
@@ -158,7 +159,7 @@ export class EcartPayCliente {
           token = await this.token(true);
         } else {
           probadoOtroModo = true;
-          modoAuth = modoAuth === "bearer" ? "plano" : "bearer";
+          modosAuth.set(this.claveCache, this.modoAutorizacion === "bearer" ? "plano" : "bearer");
         }
         continue;
       }
@@ -411,9 +412,20 @@ const ESTADO_A_ECART: Record<string, string> = {
   pausada: "paused",
   mantenimiento: "maintenance",
 };
-const ESTADO_DE_ECART: Record<string, string> = Object.fromEntries(
-  Object.entries(ESTADO_A_ECART).map(([k, v]) => [v, k]),
-);
+// Sucursales admiten activa/inactiva/pausada y cajas activa/inactiva/mantenimiento: un estado de
+// Ecart Pay que la tabla no admite cae en el más cercano (si no, el upsert rompe la sincronización).
+const ESTADO_SUCURSAL_DE_ECART: Record<string, string> = {
+  active: "activa",
+  inactive: "inactiva",
+  paused: "pausada",
+  maintenance: "pausada",
+};
+const ESTADO_CAJA_DE_ECART: Record<string, string> = {
+  active: "activa",
+  inactive: "inactiva",
+  paused: "inactiva",
+  maintenance: "mantenimiento",
+};
 
 export type SucursalLocal = {
   nombre: string;
@@ -477,7 +489,7 @@ export function sucursalDeEcart(
         ? (b.operating_hours as Record<string, unknown>)
         : {},
     timezone: s(b.timezone) ?? "America/Mexico_City",
-    estado: ESTADO_DE_ECART[s(b.status) ?? ""] ?? "activa",
+    estado: ESTADO_SUCURSAL_DE_ECART[s(b.status) ?? ""] ?? "activa",
   };
 }
 
@@ -537,7 +549,7 @@ export function cajaDeEcart(r: Record<string, unknown>): CajaLocal & {
     terminal_externa: ref(r.pos_information_id) ?? ref(r.terminal),
     nombre: s(r.name) ?? "Caja",
     numero: s(r.register_number) ?? String(r.register_number ?? ""),
-    estado: ESTADO_DE_ECART[s(r.status) ?? ""] ?? "activa",
+    estado: ESTADO_CAJA_DE_ECART[s(r.status) ?? ""] ?? "activa",
     permite_reembolsos: b(st.allow_refunds),
     tope_reembolso: n(st.max_refund_amount),
     requiere_aprobacion: b(st.require_manager_approval),
@@ -642,7 +654,16 @@ export function conciliar(
   const diferencias: Diferencia[] = [];
   const coincidencias: { pagoId: string; tx: TransaccionPago }[] = [];
 
+  // Una orden puede tener intentos fallidos antes del cobro: se toma una transacción por orden,
+  // la cobrada si la hay (si no, la última), para no anotar diferencias falsas ni pisar la
+  // comisión y el neto del cobro con los de un intento rechazado.
+  const porOrdenTx = new Map<string, TransaccionPago>();
   for (const tx of txs) {
+    const previa = porOrdenTx.get(tx.ordenId);
+    if (!previa || !TX_COBRADA.has(previa.estado)) porOrdenTx.set(tx.ordenId, tx);
+  }
+
+  for (const tx of porOrdenTx.values()) {
     const p = porOrden.get(tx.ordenId);
     if (!p) {
       if (TX_COBRADA.has(tx.estado)) {
@@ -916,5 +937,5 @@ export function retiroDeEcart(r: Record<string, unknown>): Retiro {
 /** Solo para tests: limpia la caché de tokens y el modo de autorización. */
 export function _reiniciarEstado(): void {
   tokens.clear();
-  modoAuth = "bearer";
+  modosAuth.clear();
 }

@@ -42,11 +42,15 @@ Deno.serve(
     const sb = serviceClient();
     const { data: pago, error } = await sb
       .from("pagos")
-      .select("id, cliente_legajo, conexion_id, proveedor_orden_id, proveedor")
+      .select("id, cliente_legajo, conexion_id, proveedor_orden_id, proveedor, metodo")
       .eq("id", body.pago_id)
       .maybeSingle();
     if (error) throw new HttpError(500, error.message);
     if (!pago || pago.proveedor !== "ecartpay") throw new HttpError(404, "Pago inexistente");
+    // SPEI no admite reembolso y OXXO es efectivo: solo tarjeta (antes lo filtraba solo el portal).
+    if (pago.metodo === "spei" || pago.metodo === "oxxo") {
+      throw new HttpError(409, "Solo los pagos con tarjeta se reembolsan desde JPay");
+    }
 
     // Quién pide: el dueño del pago o el backoffice con permiso.
     const uc = userClient(req);
@@ -97,16 +101,29 @@ Deno.serve(
       );
     } catch (e) {
       const msg = e instanceof EcartPayError ? `${e.message} (HTTP ${e.status})` : String(e);
-      await sb.rpc("finalizar_reembolso", {
+      // Solo un rechazo claro (4xx que no sea timeout ni límite) libera la reserva. Sin respuesta o
+      // con 5xx Ecart Pay pudo haberlo hecho: la reserva queda `solicitado` (sigue descontando del
+      // disponible) y lo resuelve la confirmación de la orden; así no se reembolsa dos veces.
+      const rechazoClaro =
+        e instanceof EcartPayError &&
+        e.status >= 400 &&
+        e.status < 500 &&
+        e.status !== 408 &&
+        e.status !== 429;
+      if (!rechazoClaro) {
+        throw new HttpError(
+          502,
+          `No hubo respuesta clara de Ecart Pay (${msg}). El reembolso queda en verificación; no lo repitas.`,
+        );
+      }
+      const { error: errFin } = await sb.rpc("finalizar_reembolso", {
         p_reembolso_id: reembolsoId,
         p_ok: false,
         p_error: msg.slice(0, 500),
-        p_respuesta: e instanceof EcartPayError ? (e.cuerpo ?? {}) : {},
+        p_respuesta: e.cuerpo ?? {},
       });
-      throw new HttpError(
-        e instanceof EcartPayError && e.status < 500 ? 422 : 502,
-        `Ecart Pay rechazó el reembolso: ${msg}`,
-      );
+      if (errFin) throw new HttpError(500, errFin.message);
+      throw new HttpError(422, `Ecart Pay rechazó el reembolso: ${msg}`);
     }
 
     const idExterno =

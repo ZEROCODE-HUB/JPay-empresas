@@ -159,10 +159,14 @@ async function conciliarConexion(
   }
   for (const d of diferencias) {
     // Un estado distinto se intenta corregir consultando la orden; si se corrige, no se anota.
+    // Solo se corrige el caso "Ecart Pay cobró y JPay no lo sabía"; si JPay ya lo tenía pagado y
+    // Ecart Pay dice que no, `aplicar_estado_pago` no lo baja: esa diferencia hay que anotarla.
     if (d.tipo === "estado_distinto" && d.pagoId) {
+      const antes = pagos.find((x) => x.id === d.pagoId)?.estado ?? "";
+      const cobrado = (e: string) => e === "pagado" || e.includes("reembolsado");
       try {
         const p = await confirmarPago(sb, d.pagoId);
-        if (p.estado === "pagado" || p.estado.includes("reembolsado")) continue;
+        if (!cobrado(antes) && cobrado(p.estado)) continue;
       } catch {
         // se anota la diferencia
       }

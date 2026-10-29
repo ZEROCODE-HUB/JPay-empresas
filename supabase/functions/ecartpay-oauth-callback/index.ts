@@ -91,12 +91,20 @@ Deno.serve(async (req) => {
   } catch (e) {
     const motivo =
       e instanceof EcartPayError ? `${e.message} (HTTP ${e.status})` : (e as Error).message;
+    // Una conexión que ya funcionaba no se marca en error por un reintento fallido.
     await sb
       .from("comercio_proveedores")
       .update({ ultimo_error: motivo.slice(0, 500), updated_at: new Date().toISOString() })
       .eq("comercio_id", estado.comercio_id)
       .eq("proveedor", "ecartpay")
       .eq("entorno", estado.entorno);
+    await sb
+      .from("comercio_proveedores")
+      .update({ estado: "error" })
+      .eq("comercio_id", estado.comercio_id)
+      .eq("proveedor", "ecartpay")
+      .eq("entorno", estado.entorno)
+      .eq("estado", "pendiente");
     return volver({ ecartpay: "error", motivo: motivo.slice(0, 200) });
   }
 });

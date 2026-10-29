@@ -40,8 +40,8 @@ function Page() {
             </h2>
             <p>
               {brand.company.legalName}, {brand.company.taxIdType} {brand.company.taxId}, con
-              domicilio en Av. Corrientes 1234, CABA, Argentina, es la responsable del tratamiento
-              de los datos personales.
+              domicilio en {brand.company.address}, es la responsable del tratamiento de los datos
+              personales.
             </p>
           </div>
           <div>

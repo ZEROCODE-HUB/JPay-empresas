@@ -53,17 +53,34 @@ Deno.serve(
       .limit(LOTE);
     if (error) throw new HttpError(500, error.message);
 
+    // Pagos con un reembolso sin respuesta clara: la orden dice si Ecart Pay lo hizo.
+    const { data: dudosos } = await sb
+      .from("reembolsos")
+      .select("pago_id")
+      .eq("estado", "solicitado")
+      .lt("created_at", new Date(ahora - 10 * 60_000).toISOString())
+      .limit(LOTE);
+    const ids = [
+      ...new Set([
+        ...(pagos ?? []).map((p) => p.id as string),
+        ...(dudosos ?? []).map((d) => d.pago_id as string),
+      ]),
+    ];
+
     const resumen: Record<string, number> = {};
-    for (const p of pagos ?? []) {
+    for (const id of ids) {
       let clave: string;
       try {
-        clave = (await confirmarPago(sb, p.id)).estado;
+        clave = (await confirmarPago(sb, id)).estado;
       } catch {
         clave = "error";
+        // Se corre al final de la fila: un pago que falla siempre (p. ej. conexión desconectada)
+        // no tapa a los demás.
+        await sb.from("pagos").update({ updated_at: new Date().toISOString() }).eq("id", id);
       }
       resumen[clave] = (resumen[clave] ?? 0) + 1;
     }
-    const resultado = { revisados: pagos?.length ?? 0, ...resumen };
+    const resultado = { revisados: ids.length, ...resumen };
     await sb.from("tareas_programadas").update({ resultado }).eq("nombre", "ecartpay-pendientes");
     return json({ ok: true, ...resultado });
   }),
