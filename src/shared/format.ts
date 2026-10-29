@@ -24,13 +24,22 @@ export function formatNumber(n: Numero, decimals = 0): string {
   });
 }
 
-/** 1234.5 → "$1,234.50" (MX) / "$ 1.234,50" (AR); negativos "-$…". `signo` agrega "+" a los positivos. */
-export function formatMoney(n: Numero, opts: { decimals?: number; signo?: boolean } = {}): string {
+/**
+ * 1234.5 → "$1,234.50" (MX) / "$ 1.234,50" (AR); negativos "-$…". `signo` agrega "+" a los
+ * positivos. Con `moneda` distinta de la del país (p. ej. "USD") va el código: "US$ 1,234.50".
+ */
+export function formatMoney(
+  n: Numero,
+  opts: { decimals?: number; signo?: boolean; moneda?: string } = {},
+): string {
   if (!esNumero(n)) return VACIO;
   const { decimals = 2, signo = false } = opts;
-  const { simboloMoneda, espacioMoneda } = getPais();
+  const pais = getPais();
+  const otra = opts.moneda && opts.moneda !== pais.moneda;
+  const simbolo = otra ? (opts.moneda === "USD" ? "US$" : opts.moneda!) : pais.simboloMoneda;
+  const espacio = otra ? true : pais.espacioMoneda;
   const prefijo = n < 0 ? "-" : signo && n > 0 ? "+" : "";
-  return `${prefijo}${simboloMoneda}${espacioMoneda ? " " : ""}${formatNumber(Math.abs(n), decimals)}`;
+  return `${prefijo}${simbolo}${espacio ? " " : ""}${formatNumber(Math.abs(n), decimals)}`;
 }
 
 /** Código ISO de la moneda del país activo ("MXN", "ARS"), para columnas y exportaciones. */

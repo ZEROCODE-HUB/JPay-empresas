@@ -55,7 +55,7 @@ export type Modulo =
   | "payway"
   /** Transferencias salientes por BDC / Coelsa. */
   | "transferencias_salientes"
-  /** CLABE por subcuenta, depósitos y transferencias SPEI con Cobre. */
+  /** Cuenta con Cobre: CLABE del comercio, cobros y transferencias SPEI, dólares (Fedwire/SWIFT). */
   | "transferencias_cobre";
 
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };

@@ -133,6 +133,23 @@ Deno.serve(
       clienteId = (cli as any).id;
     }
 
+    // Representante legal de una cuenta jurídica (datos KYB del alta en Cobre). No frena el alta:
+    // si falta algo se completa después en Mi cuenta.
+    const rep = perfil.representante as Record<string, string | null> | undefined;
+    if (pais === "MX" && rep?.nombre && rep.idNumero && rep.fechaNacimiento) {
+      const { error: repErr } = await sb.from("cliente_personas_kyb").insert({
+        cliente_legajo: legajo,
+        rol: "representante",
+        nombre: rep.nombre,
+        apellido: rep.apellido || rep.nombre,
+        id_tipo: rep.idTipo === "curp" ? "curp" : "rfc",
+        id_numero: limpiarId(rep.idNumero) ?? rep.idNumero,
+        nacionalidades: ["MEX"],
+        fecha_nacimiento: rep.fechaNacimiento,
+      });
+      if (repErr) console.warn("No se guardó el representante legal:", repErr.message);
+    }
+
     try {
       const docTipos: Record<string, string> = {
         dniFrente: "id_frente",

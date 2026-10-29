@@ -7,18 +7,26 @@ import {
   _reiniciarCobre,
   aCentavos,
   baseUrlCobre,
+  claveEvento,
   CobreCliente,
   CobreError,
   contraparteMx,
+  contraparteUsd,
+  estadoSubcliente,
   deCentavos,
   depositoSpei,
   firmarCobre,
   leerEventoCobre,
   modoCobre,
+  msDeTimestamp,
   referenciaNumerica,
   resumirTransferencia,
+  subclienteCobre,
+  transaccionCobre,
   transferenciaSpei,
+  verificacionUsd,
   verificarFirmaCobre,
+  type DatosSubcliente,
 } from "./cobre.ts";
 import {
   AlmacenMemoria,
@@ -28,6 +36,7 @@ import {
   depositoSimulado,
   eventosPendientes,
   fetchSimulado,
+  pagarR2pSimulado,
 } from "./cobre-simulador.ts";
 
 const cred = { userId: "cli_test", secret: "s3cr3t" };
@@ -234,9 +243,30 @@ Deno.test("firma de webhooks: HMAC-SHA256 hex de timestamp.cuerpo", async () => 
   const cuerpo = '{"id":"ev_1","event_key":"x"}';
   const firma = await firmarCobre("clave", "2025-11-11T19:04:27Z", cuerpo);
   assertEquals(firma.length, 64);
+  const ahora = Date.parse("2025-11-11T19:05:00Z");
   const v = (f: string | null, c = cuerpo) =>
-    verificarFirmaCobre({ clave: "clave", timestamp: "2025-11-11T19:04:27Z", firma: f, cuerpo: c });
+    verificarFirmaCobre({
+      clave: "clave",
+      timestamp: "2025-11-11T19:04:27Z",
+      firma: f,
+      cuerpo: c,
+      ahora,
+    });
   assertEquals(await v(firma), true);
+  // Un aviso firmado hace más de 15 minutos se rechaza (reenvío de un aviso viejo).
+  assertEquals(
+    await verificarFirmaCobre({
+      clave: "clave",
+      timestamp: "2025-11-11T19:04:27Z",
+      firma,
+      cuerpo,
+      ahora: ahora + 20 * 60_000,
+    }),
+    false,
+  );
+  assertEquals(msDeTimestamp("1762887867"), 1762887867000);
+  assertEquals(msDeTimestamp("1762887867000"), 1762887867000);
+  assertEquals(msDeTimestamp("no"), null);
   assertEquals(await v(firma.toUpperCase()), true);
   assertEquals(await v(firma, cuerpo + " "), false);
   assertEquals(await v("00"), false);
@@ -395,14 +425,24 @@ Deno.test("simulador: verificación de cuenta y CLABE inválida", async () => {
     fetch: fetchSimulado(almacen, { ahora: () => t }),
     ahora: () => t,
   });
-  const av = await c.post<{ id: string; status: string }>("/account_verifications", {
+  const av = await c.post<{ id: string; status: { state: string } }>("/account_verifications", {
     model: "mex_acc_ownership_1",
-    account_number: conDigitoClabe("01218000123450000"),
+    verification_request: {
+      account_number: conDigitoClabe("01218000123450000"),
+      account_type: "clabe",
+      account_holder_id_type: "rfc",
+      account_holder_id_number: "XAXX010101000",
+    },
+    external_id: "av-test-001",
   });
-  assertEquals(av.status, "processing");
+  assertEquals(av.status.state, "processing");
   t += 6000;
-  const fin = await c.get<{ verification_response: string }>(`/account_verifications/${av.id}`);
-  assertEquals(fin.verification_response, "unmatched");
+  const fin = await c.get<{
+    status: { state: string };
+    verification_response: { verification_result: string };
+  }>(`/account_verifications/${av.id}`);
+  assertEquals(fin.status.state, "completed");
+  assertEquals(fin.verification_response.verification_result, "unmatched");
   const e = await assertRejects(
     () =>
       c.post("/counterparties", {
@@ -452,3 +492,584 @@ Deno.test("simulador: devolución de un depósito", async () => {
     0,
   );
 });
+
+// ── Solution Design de JPAY (2026-10-26) ─────────────────────────────────────
+
+Deno.test("eventos: familia y estado del event_key; transacciones de cualquier tipo", () => {
+  assertEquals(claveEvento("money_movements.status.completed"), {
+    familia: "money_movements",
+    estado: "completed",
+  });
+  assertEquals(claveEvento("subclient.status.approved"), {
+    familia: "subclient",
+    estado: "approved",
+  });
+  assertEquals(
+    claveEvento("cross_border_money_movements.status.rejected").familia,
+    "cross_border_money_movements",
+  );
+  assertEquals(
+    claveEvento("bulk_money_movements.status.validating").familia,
+    "bulk_money_movements",
+  );
+  assertEquals(claveEvento("accounts.balance.debit"), {
+    familia: "accounts.balance",
+    estado: "debit",
+  });
+  assertEquals(claveEvento("otra.cosa").familia, null);
+  const t = transaccionCobre({
+    id: "trx_1",
+    type: "cbmm_debit",
+    amount: -200000,
+    currency: "mxn",
+    date: "2025-11-11T19:04:27Z",
+    metadata: { money_movement_id: "mm_1", mm_external_id: "FX1" },
+    account_id: "acc_1",
+  });
+  assertEquals(
+    [t.tipo, t.monto, t.mmId, t.mmExternalId, t.cuentaId],
+    ["cbmm_debit", -2000, "mm_1", "FX1", "acc_1"],
+  );
+});
+
+const datosKyb = (): DatosSubcliente => ({
+  razonSocial: "Test Co. S.A. de C.V.",
+  nombreCorto: "Test Có con un nombre muy largo para SPEI",
+  rfc: "mer900191abc",
+  correo: "contacto@testco.mx",
+  telefono: "+52 55 1234 5678",
+  sitioWeb: "www.test.co",
+  industria: "domestic_psp",
+  fechaConstitucion: "2015-03-20",
+  paisConstitucion: "mex",
+  paisOperacion: "MEX",
+  domicilio: {
+    calle: "Av. Insurgentes Sur 1234",
+    ciudad: "Ciudad de Mexico",
+    estado: "CDMX",
+    cp: "03100",
+    pais: "MEX",
+  },
+  representantes: [
+    {
+      nombre: "Lila",
+      apellido: "Rosa",
+      idTipo: "rfc",
+      idNumero: "PEL800101ABD",
+      nacionalidades: ["MEX"],
+      fechaNacimiento: "1985-11-28",
+    },
+  ],
+  ubos: [
+    {
+      nombre: "Juan",
+      apellido: "Pérez",
+      idTipo: "rfc",
+      idNumero: "PEPJ750808ABC",
+      nacionalidades: ["MEX"],
+      fechaNacimiento: "1975-08-08",
+    },
+  ],
+});
+
+Deno.test("subcliente: cuerpo del alta, nombre corto acotado y lo que falta", () => {
+  const { cuerpo, faltan } = subclienteCobre(datosKyb());
+  assertEquals(faltan, []);
+  assertEquals(cuerpo.id_number, "MER900191ABC");
+  assertEquals(cuerpo.phone, "+525512345678");
+  assertEquals(cuerpo.website, "https://www.test.co");
+  assertEquals(cuerpo.country_of_incorporation, "MEX");
+  assertEquals((cuerpo.short_name as string).length <= 30, true);
+  assertEquals((cuerpo.ubos as { last_name: string }[])[0].last_name, "Perez");
+  const incompleto = subclienteCobre({
+    ...datosKyb(),
+    telefono: "5512345678",
+    sitioWeb: "",
+    ubos: [],
+  });
+  assertEquals(incompleto.faltan.includes("Sitio web"), true);
+  assertEquals(incompleto.faltan.includes("Al menos un beneficiario final"), true);
+  assertEquals(
+    incompleto.faltan.some((f) => f.startsWith("Teléfono")),
+    true,
+  );
+  // La API usa status.state; el aviso, status como cadena.
+  assertEquals(
+    estadoSubcliente({ id: "sc_1", status: { state: "processing" } }).estado,
+    "processing",
+  );
+  assertEquals(estadoSubcliente({ id: "sc_1", status: "approved" }).estado, "approved");
+  assertEquals(estadoSubcliente({ id: "sc_1", status: "otro" }).estado, null);
+});
+
+Deno.test("beneficiarios USD: Fedwire con ABA, SWIFT con BIC", () => {
+  const base = {
+    titular: "Empresa ABC",
+    idTipo: "ein",
+    idNumero: "9000123",
+    correo: "a@abc.com",
+    telefono: "+12125551234",
+    paisConstitucion: "USA",
+    direccion: {
+      calle1: "123 Main Ave",
+      ciudad: "New York",
+      estado: "NY",
+      cp: "10001",
+      pais: "USA",
+    },
+  };
+  const fed = contraparteUsd({
+    ...base,
+    rail: "fedwire",
+    banco: {
+      nombre: "Bank of America",
+      cuenta: "1234567890",
+      tipoCuenta: "checking",
+      aba: "026009593",
+      direccion: { pais: "USA" },
+    },
+  });
+  assertEquals(fed.geo, "usa");
+  const bank = (fed.metadata as Record<string, Record<string, unknown>>).counterparty_bank_details;
+  assertEquals([bank.rail, bank.routing_number, bank.bic], ["fedwire", "026009593", undefined]);
+  const sw = contraparteUsd({
+    ...base,
+    rail: "swift",
+    direccion: { ...base.direccion, pais: "COL" },
+    banco: {
+      nombre: "Portage Bank",
+      cuenta: "477465322223",
+      bic: "porgus62xxx",
+      direccion: { pais: "USA" },
+    },
+  });
+  assertEquals(sw.geo, "col");
+  const b2 = (sw.metadata as Record<string, Record<string, unknown>>).counterparty_bank_details;
+  assertEquals([b2.rail, b2.routing_number, b2.bic], ["swift", "", "PORGUS62XXX"]);
+  let e = null;
+  try {
+    contraparteUsd({
+      ...base,
+      rail: "fedwire",
+      banco: { nombre: "X", cuenta: "123456", aba: "12", direccion: { pais: "USA" } },
+    });
+  } catch (x) {
+    e = x;
+  }
+  assertEquals(e instanceof CobreError, true);
+  assertEquals(
+    verificacionUsd({ metadata: { counterparty_verification_status: "Verified" } }),
+    "verified",
+  );
+  assertEquals(verificacionUsd({ metadata: {} }), "procesando");
+});
+
+const clienteSim = (almacen: AlmacenMemoria, reloj: { t: number }) => {
+  _reiniciarCobre();
+  return new CobreCliente({
+    baseUrl: "https://cobre.simulado/v1",
+    credenciales: cred,
+    fetch: fetchSimulado(almacen, { ahora: () => reloj.t }),
+    ahora: () => reloj.t,
+  });
+};
+
+Deno.test(
+  "simulador: Subcliente aprobado y su Balance México; rechazado no abre Balance",
+  async () => {
+    const almacen = new AlmacenMemoria();
+    const reloj = { t: 1_000_000 };
+    const c = clienteSim(almacen, reloj);
+    const { cuerpo } = subclienteCobre(datosKyb());
+    await assertRejects(
+      () => c.post("/subclients", cuerpo, undefined, { "Idempotency-Key": "corta" }),
+      CobreError,
+    );
+    const sc = await c.post<{ id: string; status: { state: string } }>(
+      "/subclients",
+      cuerpo,
+      undefined,
+      {
+        "Idempotency-Key": "SC-test-0001",
+      },
+    );
+    assertEquals(sc.status.state, "processing");
+    // Misma clave → mismo Subcliente.
+    const otra = await c.post<{ id: string }>("/subclients", cuerpo, undefined, {
+      "Idempotency-Key": "SC-test-0001",
+    });
+    assertEquals(otra.id, sc.id);
+    const antes = await assertRejects(
+      () =>
+        c.post("/accounts", {
+          provider_id: "pr_mex_cobre3",
+          action: "create",
+          subclient_id: sc.id,
+        }),
+      CobreError,
+    );
+    assertEquals(antes.codigo, "ACC011");
+    reloj.t += 6000;
+    assertEquals(
+      (await c.get<{ status: { state: string } }>(`/subclients/${sc.id}`)).status.state,
+      "approved",
+    );
+    const acc = await c.post<{ id: string; account_number: string; currency: string }>(
+      "/accounts",
+      {
+        provider_id: "pr_mex_cobre3",
+        action: "create",
+        subclient_id: sc.id,
+        alias: "JPAY TestCo",
+      },
+    );
+    assertEquals([acc.account_number.length, acc.currency], [18, "mxn"]);
+    const aviso = (await eventosPendientes(almacen)).find(
+      (e) => (e.cuerpo as Record<string, unknown>).event_key === "subclient.status.approved",
+    );
+    assertEquals(
+      (aviso?.cuerpo as Record<string, Record<string, unknown>>).content.status,
+      "approved",
+    );
+
+    const rech = await c.post<{ id: string }>(
+      "/subclients",
+      { ...cuerpo, legal_name: "RECHAZO SA" },
+      undefined,
+      {
+        "Idempotency-Key": "SC-test-0002",
+      },
+    );
+    reloj.t += 6000;
+    assertEquals(
+      (await c.get<{ status: { state: string } }>(`/subclients/${rech.id}`)).status.state,
+      "rejected",
+    );
+  },
+);
+
+Deno.test(
+  "simulador: R2P pagado acredita con mm_external_id; sin pagar vence con F003",
+  async () => {
+    const almacen = new AlmacenMemoria();
+    const reloj = { t: 2_000_000 };
+    const c = clienteSim(almacen, reloj);
+    const acc = await c.post<{ id: string }>("/accounts", {
+      provider_id: "pr_mex_cobre3",
+      action: "create",
+    });
+    const cp = await c.post<{ id: string }>("/counterparties", {
+      geo: "mex",
+      type: "r2p_spei",
+      alias: "Jaime Roa",
+      metadata: {
+        counterparty_fullname: "JAIME ROA",
+        counterparty_id_type: "rfc",
+        counterparty_id_number: "REMJ0000011C8",
+      },
+    });
+    const crear = (ext: string) =>
+      c.post<{ id: string; type: string; metadata: { virtual_account: string } }>(
+        "/money_movements",
+        {
+          amount: 12300,
+          source_id: cp.id,
+          destination_id: acc.id,
+          metadata: {
+            r2p_rail: "spei",
+            description_to_payer: "PayIn",
+            description_to_payee: "PayIn",
+            valid_until: new Date(reloj.t + 60_000).toISOString(),
+          },
+          external_id: ext,
+        },
+        ext,
+      );
+    const mm = await crear("R2P-0000001");
+    assertEquals(mm.type, "r2p_spei");
+    assertEquals(mm.metadata.virtual_account.length, 18);
+    const trx = await pagarR2pSimulado(almacen, mm.metadata.virtual_account, reloj.t);
+    const t = transaccionCobre(trx);
+    assertEquals(
+      [t.tipo, t.monto, t.mmExternalId, t.mmId],
+      ["r2p_spei_credit", 123, "R2P-0000001", mm.id],
+    );
+    assertEquals(
+      resumirTransferencia(await c.get(`/money_movements/${mm.id}`)).estado,
+      "completada",
+    );
+
+    const vence = await crear("R2P-0000002");
+    reloj.t += 61_000;
+    const r = resumirTransferencia(await c.get(`/money_movements/${vence.id}`));
+    assertEquals([r.estado, r.codigo], ["rechazada", "F003"]);
+    await assertRejects(() => pagarR2pSimulado(almacen, vence.metadata.virtual_account, reloj.t));
+  },
+);
+
+Deno.test("simulador: rebote posterior a completed llega como spei_rejected", async () => {
+  const almacen = new AlmacenMemoria();
+  const reloj = { t: 3_000_000 };
+  const c = clienteSim(almacen, reloj);
+  const acc = await c.post<{ id: string; account_number: string }>("/accounts", {
+    provider_id: "pr_mex_cobre3",
+    action: "create",
+  });
+  await depositoSimulado(almacen, { clabe: acc.account_number, monto: 100 }, reloj.t);
+  const cp = await c.post<{ id: string }>(
+    "/counterparties",
+    contraparteMx({
+      tipo: "clabe",
+      numero: conDigitoClabe("01218000123450001"),
+      titular: "Rebote SA",
+      idTipo: "rfc",
+      idNumero: "XAXX010101000",
+    }),
+  );
+  const mm = await c.post<{ id: string }>(
+    "/money_movements",
+    transferenciaSpei({
+      cuentaOrigen: acc.id,
+      contraparte: cp.id,
+      monto: 10,
+      concepto: "x",
+      referencia: "1",
+      externalId: "TXREBOTE01",
+    }),
+    "TXREBOTE01",
+  );
+  reloj.t += 1500;
+  await avanzarSimulador(almacen, reloj.t);
+  reloj.t += 4500;
+  await avanzarSimulador(almacen, reloj.t);
+  assertEquals(resumirTransferencia(await c.get(`/money_movements/${mm.id}`)).estado, "completada");
+  reloj.t += 3500;
+  await avanzarSimulador(almacen, reloj.t);
+  const txs = await c.get<{ contents: Record<string, unknown>[] }>(
+    `/accounts/${acc.id}/transactions`,
+  );
+  const rebote = txs.contents.map(transaccionCobre).find((x) => x.tipo === "spei_rejected");
+  assertEquals([rebote?.monto, rebote?.mmId], [10, mm.id]);
+  assertEquals(resumirTransferencia(await c.get(`/money_movements/${mm.id}`)).estado, "completada");
+});
+
+Deno.test("simulador: lote SPEI crea un movimiento por ítem con batch_id", async () => {
+  const almacen = new AlmacenMemoria();
+  const reloj = { t: 4_000_000 };
+  const c = clienteSim(almacen, reloj);
+  const acc = await c.post<{ id: string; account_number: string }>("/accounts", {
+    provider_id: "pr_mex_cobre3",
+    action: "create",
+  });
+  await depositoSimulado(almacen, { clabe: acc.account_number, monto: 1000 }, reloj.t);
+  const cp = await c.post<{ id: string }>(
+    "/counterparties",
+    contraparteMx({
+      tipo: "clabe",
+      numero: conDigitoClabe("01218000123450002"),
+      titular: "Uno",
+      idTipo: "rfc",
+      idNumero: "XAXX010101000",
+    }),
+  );
+  const items = [1, 2].map((n) => ({
+    amount: n * 100,
+    source_id: acc.id,
+    destination_id: cp.id,
+    metadata: { description: "Pago", reference: String(n) },
+    external_id: `LOTE00001-${n}`,
+  }));
+  const fd = new FormData();
+  fd.append(
+    "file",
+    new File([JSON.stringify(items)], "jpay-lote-1.json", { type: "application/json" }),
+  );
+  const bat = await c.post<{ id: string; input_filename: string; status: { state: string } }>(
+    "/bulk_money_movements",
+    fd,
+  );
+  assertEquals([bat.status.state, bat.input_filename], ["validating", "jpay-lote-1.json"]);
+  reloj.t += 1500;
+  await avanzarSimulador(almacen, reloj.t);
+  assertEquals(
+    (await c.get<{ status: { state: string } }>(`/bulk_money_movements/${bat.id}`)).status.state,
+    "completed",
+  );
+  const mms = await c.get<{ contents: { external_id: string; batch_id: string }[] }>(
+    "/money_movements",
+    { batch_id: bat.id },
+  );
+  assertEquals(mms.contents.map((m) => m.external_id).sort(), ["LOTE00001-1", "LOTE00001-2"]);
+});
+
+Deno.test(
+  "simulador: cotización, Cross Border, traslado Global→USA, Fedwire y SWIFT fallido",
+  async () => {
+    const almacen = new AlmacenMemoria();
+    const reloj = { t: Date.parse("2026-10-28T15:00:00Z") };
+    const c = clienteSim(almacen, reloj);
+    const mx = await c.post<{ id: string; account_number: string }>("/accounts", {
+      provider_id: "pr_mex_cobre3",
+      action: "create",
+    });
+    const global = await c.post<{ id: string; currency: string }>("/accounts", {
+      provider_id: "pr_global_cobre",
+      action: "create",
+      metadata: { currency: "usd" },
+    });
+    const usa = await c.post<{ id: string }>("/accounts", {
+      provider_id: "pr_usa_cobre",
+      action: "create",
+      metadata: {},
+    });
+    assertEquals(global.currency, "usd");
+    await depositoSimulado(almacen, { clabe: mx.account_number, monto: 2000 }, reloj.t);
+
+    const q = await c.post<{
+      id: string;
+      destination_amount: number;
+      valid_until: string;
+      off_market: boolean;
+    }>("/fx_quotes", {
+      currency_pair: "mxn/usd",
+      source_amount: 200000,
+      type: "static_quote",
+    });
+    assertEquals([q.destination_amount, q.off_market], [10800, false]);
+    // Cotización vencida: el movimiento se rechaza (se pide otra; nunca se reintenta).
+    reloj.t += 26_000;
+    const vencida = await assertRejects(
+      () =>
+        c.post(
+          "/cross_border_money_movements",
+          {
+            source_id: mx.id,
+            destination_id: global.id,
+            forex_quote_id: q.id,
+            external_id: "FX-000001",
+          },
+          "FX-000001",
+        ),
+      CobreError,
+    );
+    assertEquals(vencida.codigo, "CBMM003");
+    const q2 = await c.post<{ id: string }>("/fx_quotes", {
+      currency_pair: "mxn/usd",
+      source_amount: 200000,
+      type: "static_quote",
+    });
+    const cb = await c.post<{ id: string; type: string }>(
+      "/cross_border_money_movements",
+      {
+        source_id: mx.id,
+        destination_id: global.id,
+        forex_quote_id: q2.id,
+        metadata: { destination_description: "x" },
+        external_id: "FX-000002",
+      },
+      "FX-000002",
+    );
+    assertEquals(cb.type, "cross_border");
+    reloj.t += 1500;
+    await avanzarSimulador(almacen, reloj.t);
+    reloj.t += 3500;
+    await avanzarSimulador(almacen, reloj.t);
+    assertEquals(
+      (await c.get<{ status: { state: string } }>(`/cross_border_money_movements/${cb.id}`)).status
+        .state,
+      "completed",
+    );
+    assertEquals(
+      (await c.get<{ obtained_balance: number }>(`/accounts/${global.id}`)).obtained_balance,
+      10800,
+    );
+
+    const traslado = await c.post<{ id: string }>(
+      "/money_movements",
+      {
+        source_id: global.id,
+        destination_id: usa.id,
+        amount: 5000,
+        metadata: { description: "Traslado" },
+        external_id: "TX-USD-01-T",
+      },
+      "TX-USD-01-T",
+    );
+    reloj.t += 2500;
+    await avanzarSimulador(almacen, reloj.t);
+    const tr = await c.get<{ type: string; status: { state: string } }>(
+      `/money_movements/${traslado.id}`,
+    );
+    assertEquals([tr.type, tr.status.state], ["global_pay_to_usa", "completed"]);
+
+    const benef = (rail: "fedwire" | "swift", nombre: string) =>
+      contraparteUsd({
+        rail,
+        titular: nombre,
+        idTipo: "ein",
+        idNumero: "9000123",
+        correo: "a@b.com",
+        telefono: "+12125551234",
+        paisConstitucion: "USA",
+        direccion: { calle1: "1 Main", ciudad: "NY", estado: "NY", cp: "10001", pais: "USA" },
+        banco:
+          rail === "fedwire"
+            ? { nombre: "BoA", cuenta: "1234567890", aba: "026009593", direccion: { pais: "USA" } }
+            : {
+                nombre: "Portage",
+                cuenta: "477465322223",
+                bic: "PORGUS62XXX",
+                direccion: { pais: "USA" },
+              },
+      });
+    const fed = await c.post<{ id: string }>("/counterparties", benef("fedwire", "Empresa ABC"));
+    const sw = await c.post<{ id: string }>("/counterparties", benef("swift", "FALLA SA"));
+    const sinVerificar = await assertRejects(
+      () =>
+        c.post(
+          "/money_movements",
+          {
+            source_id: usa.id,
+            destination_id: fed.id,
+            amount: 1000,
+            metadata: { description: "x" },
+            external_id: "TX-USD-00",
+          },
+          "TX-USD-00",
+        ),
+      CobreError,
+    );
+    assertEquals(sinVerificar.codigo, "MM041");
+    reloj.t += 6000;
+    await avanzarSimulador(almacen, reloj.t);
+    const pago = (cp: string, ext: string, amount: number) =>
+      c.post<{ id: string; type: string }>(
+        "/money_movements",
+        {
+          source_id: usa.id,
+          destination_id: cp,
+          amount,
+          metadata: { description: "Pago", category: "" },
+          external_id: ext,
+        },
+        ext,
+      );
+    const p1 = await pago(fed.id, "TX-USD-01", 3000);
+    const p2 = await pago(sw.id, "TX-USD-02", 1000);
+    assertEquals([p1.type, p2.type], ["fedwire", "swift"]);
+    reloj.t += 1500;
+    await avanzarSimulador(almacen, reloj.t);
+    reloj.t += 4500;
+    await avanzarSimulador(almacen, reloj.t);
+    assertEquals(
+      resumirTransferencia(await c.get(`/money_movements/${p1.id}`)).estado,
+      "completada",
+    );
+    assertEquals(resumirTransferencia(await c.get(`/money_movements/${p2.id}`)).estado, "fallida");
+    // El SWIFT fallido devuelve el USD al Balance USA: 50 − 30 = 20 USD.
+    assertEquals(
+      (await c.get<{ obtained_balance: number }>(`/accounts/${usa.id}`)).obtained_balance,
+      2000,
+    );
+  },
+);

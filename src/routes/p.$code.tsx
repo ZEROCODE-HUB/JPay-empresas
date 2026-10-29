@@ -2,11 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { CheckoutEstado } from "@/features/checkout/components/CheckoutEstado";
+import { CobreSpeiPagoCard } from "@/features/checkout/components/CobreSpeiPagoCard";
 import { EcartPayPagoCard } from "@/features/checkout/components/EcartPayPagoCard";
 import { EcartPayResultado } from "@/features/checkout/components/EcartPayResultado";
 import { PagoCard } from "@/features/checkout/components/PagoCard";
 import { PagoExitoso } from "@/features/checkout/components/PagoExitoso";
 import { ResumenCobro } from "@/features/checkout/components/ResumenCobro";
+import { useCobreDisponible } from "@/features/checkout/hooks/useCheckoutCobre";
 import { useEcartPayDisponible } from "@/features/checkout/hooks/useCheckoutEcartPay";
 import { useCheckoutPago } from "@/features/checkout/hooks/useCheckoutPago";
 
@@ -27,7 +29,9 @@ function Checkout() {
   const pago = useCheckoutPago(code);
   const ecart = useEcartPayDisponible(code);
   const { status, data, result } = pago;
+  const cobre = useCobreDisponible(code);
   const conEcartPay = ecart.data?.disponible === true;
+  const conCobre = cobre.data?.disponible === true;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(120%_120%_at_50%_0%,#fff_40%,var(--brand-primary-50)_100%)] flex flex-col">
@@ -50,11 +54,15 @@ function Checkout() {
           ) : (
             <>
               {/* Mientras se consulta si el comercio cobra con Ecart Pay, sigue "cargando". */}
-              <CheckoutEstado status={status === "ready" && ecart.isLoading ? "loading" : status} />
+              <CheckoutEstado
+                status={
+                  status === "ready" && (ecart.isLoading || cobre.isLoading) ? "loading" : status
+                }
+              />
 
               {status === "success" && result && <PagoExitoso result={result} data={data} />}
 
-              {status === "ready" && data && !ecart.isLoading && (
+              {status === "ready" && data && !ecart.isLoading && !cobre.isLoading && (
                 <div className="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 items-start">
                   {/* Resumen del cobro */}
                   <ResumenCobro
@@ -63,9 +71,25 @@ function Checkout() {
                     onMontoPagar={pago.setMontoPagar}
                     total={pago.total}
                   />
-                  {/* Pago: con Ecart Pay si el comercio lo tiene conectado */}
-                  {conEcartPay ? (
-                    <EcartPayPagoCard code={code} montoPagar={pago.montoPagar} total={pago.total} />
+                  {/* Pago: Ecart Pay si el comercio lo tiene conectado y/o SPEI con Cobre (conviven
+                      mientras se decide; ver docs/COMPARATIVA_SPEI_ECARTPAY_COBRE.md). */}
+                  {conEcartPay || conCobre ? (
+                    <div className="space-y-4">
+                      {conEcartPay && (
+                        <EcartPayPagoCard
+                          code={code}
+                          montoPagar={pago.montoPagar}
+                          total={pago.total}
+                        />
+                      )}
+                      {conCobre && (
+                        <CobreSpeiPagoCard
+                          code={code}
+                          montoPagar={pago.montoPagar}
+                          total={pago.total}
+                        />
+                      )}
+                    </div>
                   ) : (
                     <PagoCard pago={pago} />
                   )}

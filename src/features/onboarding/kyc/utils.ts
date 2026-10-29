@@ -103,6 +103,18 @@ export function armarAlta(
     perfil.nombreLegal = datosEmpresa.nombreLegal;
     perfil.nombreFantasia = datosEmpresa.nombreFantasia;
     perfil.fechaInscripcion = datosEmpresa.fechaInscripcion;
+    // Quien completa los datos personales de una cuenta jurídica es el representante legal
+    // (lo pide Cobre para el alta del comercio; antes se descartaba).
+    const idRep = (datosPersonales.idPersonal || datosPersonales.taxId || "").trim().toUpperCase();
+    if (registro.nombre && idRep) {
+      perfil.representante = {
+        nombre: registro.nombre,
+        apellido: registro.apellido ?? "",
+        idTipo: datosPersonales.idPersonal ? "curp" : "rfc",
+        idNumero: idRep,
+        fechaNacimiento: registro.fechaNac ?? null,
+      };
+    }
   } else {
     taxId = datosPersonales.taxId ?? "";
     perfil.genero = datosPersonales.genero;

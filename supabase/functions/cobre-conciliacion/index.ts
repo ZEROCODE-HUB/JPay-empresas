@@ -1,26 +1,39 @@
-// Edge Function PÚBLICA (desplegar con --no-verify-jwt): conciliación diaria con Cobre (Fase C5).
-// pg_cron 09:30 UTC; una vez cada 20 h. Con { manual: true } la corre un admin cuando quiera.
+// Edge Function PÚBLICA (desplegar con --no-verify-jwt): conciliación diaria con Cobre
+// (Solution Design §6). pg_cron 09:30 UTC; una vez cada 20 h. Con { manual: true } la corre un
+// admin cuando quiera.
 //
-// Por cada Cobre Balance activo (de JPay o de clientes) trae las transacciones de los últimos
-// 3 días y las cruza con JPay por identificadores (nunca por monto y hora):
-// - `spei_credit` que JPay no tiene → se registra ya (`cobre_registrar_deposito`): un depósito
-//   no depende de que llegue el aviso. Monto distinto → diferencia.
-// - Débito de un envío (`money_movement_id`) que JPay no conoce → diferencia `falta_en_jpay`.
-// - Transferencia completada en JPay sin débito en Cobre → `falta_en_proveedor`.
-// - Saldo: suma de los Balances en Cobre contra BANCO_COBRE + depósitos sin asignar no
-//   devueltos (comisiones o cargos de Cobre aparecen acá) → `saldo_distinto`. El ledger no
-//   distingue modos: al pasar de simulado a prueba hay que limpiar los datos simulados.
-// Las diferencias quedan en `conciliacion_proveedor_diferencias` (una abierta por caso).
+// Por cada instancia (la matriz de JPay y las instancias propias de comercios) y cada Cobre
+// Balance activo, trae las transacciones de los últimos 3 días y las cruza con JPay por
+// identificadores (`money_movement_id`, `mm_external_id`), nunca por monto y hora:
+// - `spei_credit` / `r2p_spei_credit` que JPay no tiene → se acreditan ya (un depósito o un cobro
+//   no dependen de que llegue el aviso).
+// - `spei_rejected` de un envío ya completado → se reintegra (rebote).
+// - Débitos de envíos (`spei_debit`, `fedwire_debit`, `swift_debit`), de conversiones
+//   (`cbmm_debit`/`cbmm_credit`) y traslados (`global_pay_to_usa_*`) que JPay no conoce →
+//   `falta_en_jpay`; montos distintos → `monto_distinto`.
+// - Envío completado en JPay sin débito en Cobre → `falta_en_proveedor`.
+// - Saldo por Balance: el de cada comercio contra `cobre_saldo_esperado_comercio` (lo que JPay le
+//   debe + comisiones aún en el Balance − envíos debitados sin cerrar); Global + USA contra
+//   BANCO_COBRE_USD → `saldo_distinto`.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { deCentavos, depositoSpei, type CobreCliente } from "../_shared/cobre.ts";
-import { conexionCobre } from "../_shared/cobre-servidor.ts";
+import { deCentavos, depositoSpei, transaccionCobre, type CobreCliente } from "../_shared/cobre.ts";
+import { conexionCobre, instanciaCobre, type ConexionCobre } from "../_shared/cobre-servidor.ts";
+import { acreditarCobroR2p } from "../_shared/cobre-r2p.ts";
+import { aplicarRebote } from "../_shared/cobre-transferencias.ts";
 import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 
 const DIAS = 3;
 const MAX_PAGINAS = 20;
 type Obj = Record<string, unknown>;
 type Diferencia = { tipo: string; clave: string; transaccion: string | null; detalle: Obj };
+type Cuenta = {
+  id: string;
+  tipo: string;
+  cliente_legajo: string | null;
+  cuenta_externa_id: string;
+  moneda: string;
+};
 
 Deno.serve(
   handler(async (req) => {
@@ -39,7 +52,8 @@ Deno.serve(
       if (!libre) return json({ ok: true, omitida: "ya corrió en las últimas 20 horas" });
     }
 
-    const { cliente: cobre, modo } = conexionCobre(sb);
+    const matriz = conexionCobre(sb);
+    const modo = matriz.modo;
     const hasta = new Date();
     const desde = new Date(hasta.getTime() - DIAS * 86_400_000);
     const { data: corrida, error: e0 } = await sb
@@ -56,81 +70,144 @@ Deno.serve(
 
     const resumen = {
       modo,
+      instancias: 0,
       cuentas: 0,
       transacciones: 0,
-      depositos_recuperados: 0,
+      recuperados: 0,
       diferencias: 0,
-      saldo_cobre: 0,
-      saldo_jpay: 0,
+      saldos: [] as Obj[],
       errores: [] as string[],
     };
     const diferencias: Diferencia[] = [];
 
-    const { data: cuentas } = await sb
-      .from("cobre_cuentas")
-      .select("id, cuenta_externa_id")
+    // Instancias: la matriz (instancia_id null) y las propias de comercios.
+    const { data: insts } = await sb
+      .from("cobre_instancias")
+      .select("id")
       .eq("modo", modo)
       .eq("estado", "activa");
-
-    const debitosDeEnvio = new Set<string>();
-    for (const c of cuentas ?? []) {
+    const conexiones: ConexionCobre[] = [matriz];
+    for (const i of (insts ?? []) as { id: string }[]) {
       try {
-        const cuenta = await cobre.get<{ obtained_balance?: number }>(
-          `/accounts/${c.cuenta_externa_id}`,
-          {
-            balance: true,
-          },
-        );
-        resumen.saldo_cobre += deCentavos(Number(cuenta?.obtained_balance ?? 0));
-        const txs = await traerTransacciones(cobre, c.cuenta_externa_id, desde);
-        resumen.cuentas++;
-        resumen.transacciones += txs.length;
-        for (const t of txs) {
-          const r = await revisarTransaccion(sb, modo, t, debitosDeEnvio);
-          if (r === "recuperado") resumen.depositos_recuperados++;
-          else if (r) diferencias.push(r);
-        }
+        const inst = await instanciaCobre(sb, i.id);
+        if (inst) conexiones.push(conexionCobre(sb, inst));
       } catch (e) {
-        resumen.errores.push(`${c.cuenta_externa_id}: ${(e as Error).message}`.slice(0, 300));
+        resumen.errores.push(`instancia ${i.id}: ${(e as Error).message}`);
       }
     }
 
-    // Transferencias completadas en JPay sin débito en Cobre (dentro de la ventana).
-    if (!resumen.errores.length) {
-      const { data: completadas } = await sb
-        .from("cobre_transferencias")
-        .select("id_txn, mm_id, monto")
+    const vistos = new Set<string>(); // money movements con débito en Cobre
+    const enCurso = new Map<string, number>(); // por Balance: envíos debitados que JPay no cerró
+    for (const c of conexiones) {
+      resumen.instancias++;
+      let q = sb
+        .from("cobre_cuentas")
+        .select("id, tipo, cliente_legajo, cuenta_externa_id, moneda")
         .eq("modo", modo)
-        .eq("estado", "completada")
-        // Creadas con margen dentro de la ventana: su débito tiene que estar en las transacciones.
-        .gte("created_at", new Date(desde.getTime() + 3_600_000).toISOString());
-      for (const t of completadas ?? []) {
-        if (t.mm_id && !debitosDeEnvio.has(t.mm_id)) {
+        .eq("estado", "activa")
+        .in("tipo", ["cliente", "global", "usa"]);
+      q = c.instanciaId ? q.eq("instancia_id", c.instanciaId) : q.is("instancia_id", null);
+      const { data: cuentas } = await q;
+      const saldosUsd: number[] = [];
+      for (const cuenta of (cuentas ?? []) as Cuenta[]) {
+        try {
+          const info = await c.cliente.get<{ obtained_balance?: number }>(
+            `/accounts/${cuenta.cuenta_externa_id}`,
+            { balance: true },
+          );
+          const saldoCobre = deCentavos(Number(info?.obtained_balance ?? 0));
+          const txs = await traerTransacciones(c.cliente, cuenta.cuenta_externa_id, desde);
+          resumen.cuentas++;
+          resumen.transacciones += txs.length;
+          for (const t of txs) {
+            const r = await revisarTransaccion(sb, c, cuenta, t, vistos, enCurso);
+            if (r === "recuperado") resumen.recuperados++;
+            else if (r) diferencias.push(r);
+          }
+          if (cuenta.tipo === "cliente") {
+            const { data: esperado } = await sb.rpc("cobre_saldo_esperado_comercio", {
+              p_legajo: cuenta.cliente_legajo,
+            });
+            const jpay =
+              Math.round(
+                (Number(esperado ?? 0) - (enCurso.get(cuenta.cuenta_externa_id) ?? 0)) * 100,
+              ) / 100;
+            resumen.saldos.push({
+              cuenta: cuenta.cuenta_externa_id,
+              legajo: cuenta.cliente_legajo,
+              cobre: saldoCobre,
+              jpay,
+            });
+            if (Math.abs(saldoCobre - jpay) >= 0.01) {
+              diferencias.push({
+                tipo: "saldo_distinto",
+                clave: `saldo:${modo}:${cuenta.cuenta_externa_id}`,
+                transaccion: null,
+                detalle: {
+                  cuenta: cuenta.cuenta_externa_id,
+                  legajo: cuenta.cliente_legajo,
+                  saldo_cobre: saldoCobre,
+                  saldo_jpay: jpay,
+                  diferencia: Math.round((saldoCobre - jpay) * 100) / 100,
+                },
+              });
+            }
+          } else {
+            saldosUsd.push(saldoCobre);
+          }
+        } catch (e) {
+          resumen.errores.push(
+            `${cuenta.cuenta_externa_id}: ${(e as Error).message}`.slice(0, 300),
+          );
+        }
+      }
+      // Global + USA de la matriz contra BANCO_COBRE_USD.
+      if (!c.instanciaId && saldosUsd.length) {
+        const cobre = Math.round(saldosUsd.reduce((a, b) => a + b, 0) * 100) / 100;
+        const jpay =
+          Math.round(
+            ((await saldoCuenta(sb, "BANCO_COBRE_USD")) - (enCurso.get("USD") ?? 0)) * 100,
+          ) / 100;
+        resumen.saldos.push({ cuenta: "Global + USA", cobre, jpay, moneda: "USD" });
+        if (Math.abs(cobre - jpay) >= 0.01) {
           diferencias.push({
-            tipo: "falta_en_proveedor",
-            clave: t.mm_id,
+            tipo: "saldo_distinto",
+            clave: `saldo:${modo}:usd`,
             transaccion: null,
             detalle: {
-              txid: t.id_txn,
-              monto: Number(t.monto),
-              nota: "Completada en JPay sin débito en Cobre",
+              cuenta: "Global + USA",
+              moneda: "USD",
+              saldo_cobre: cobre,
+              saldo_jpay: jpay,
+              diferencia: Math.round((cobre - jpay) * 100) / 100,
             },
           });
         }
       }
-      // Saldo total: Balances de Cobre contra BANCO_COBRE + depósitos sin asignar no devueltos.
-      resumen.saldo_jpay = await saldoJpay(sb, modo);
-      if (Math.abs(resumen.saldo_cobre - resumen.saldo_jpay) >= 0.01) {
-        diferencias.push({
-          tipo: "saldo_distinto",
-          clave: `saldo:${modo}`,
-          transaccion: null,
-          detalle: {
-            saldo_cobre: resumen.saldo_cobre,
-            saldo_jpay: resumen.saldo_jpay,
-            diferencia: Math.round((resumen.saldo_cobre - resumen.saldo_jpay) * 100) / 100,
-          },
-        });
+    }
+
+    // Envíos completados en JPay sin débito en Cobre (dentro de la ventana, con margen).
+    if (!resumen.errores.length) {
+      const { data: completadas } = await sb
+        .from("cobre_transferencias")
+        .select("id_txn, mm_id, monto, moneda")
+        .eq("modo", modo)
+        .eq("estado", "completada")
+        .gte("created_at", new Date(desde.getTime() + 3_600_000).toISOString());
+      for (const t of (completadas ?? []) as Obj[]) {
+        if (t.mm_id && !vistos.has(String(t.mm_id))) {
+          diferencias.push({
+            tipo: "falta_en_proveedor",
+            clave: String(t.mm_id),
+            transaccion: null,
+            detalle: {
+              txid: t.id_txn,
+              monto: Number(t.monto),
+              moneda: t.moneda,
+              nota: "Completada en JPay sin débito en Cobre",
+            },
+          });
+        }
       }
     }
 
@@ -177,15 +254,39 @@ async function traerTransacciones(
   return todas;
 }
 
-/** Cruza una transacción de Cobre con JPay: recupera depósitos y devuelve la diferencia, si hay. */
+/** Saldo deudor de una cuenta del ledger (activo). */
+async function saldoCuenta(sb: SupabaseClient, codigo: string): Promise<number> {
+  const { data: cuenta } = await sb
+    .from("ledger_accounts")
+    .select("id")
+    .eq("account_code", codigo)
+    .single();
+  let saldo = 0;
+  for (let desde = 0; ; desde += 1000) {
+    const { data } = await sb
+      .from("ledger_entries")
+      .select("entry_type, amount")
+      .eq("account_id", cuenta?.id ?? "")
+      .range(desde, desde + 999);
+    for (const e of data ?? []) saldo += (e.entry_type === "debit" ? 1 : -1) * Number(e.amount);
+    if (!data || data.length < 1000) break;
+  }
+  return saldo;
+}
+
+const DEBITOS_ENVIO = ["spei_debit", "fedwire_debit", "swift_debit"];
+
+/** Cruza una transacción de Cobre con JPay: recupera lo que faltó y devuelve la diferencia, si hay. */
 async function revisarTransaccion(
   sb: SupabaseClient,
-  modo: string,
+  c: ConexionCobre,
+  cuenta: Cuenta,
   t: Obj,
-  debitosDeEnvio: Set<string>,
+  vistos: Set<string>,
+  enCurso: Map<string, number>,
 ): Promise<Diferencia | "recuperado" | null> {
-  const meta = (t.metadata ?? {}) as Obj;
-  const id = String(t.id ?? "");
+  const modo = c.modo;
+  const tx = transaccionCobre(t);
   const dep = depositoSpei(t);
   if (dep) {
     const { data: fila } = await sb
@@ -198,7 +299,7 @@ async function revisarTransaccion(
       const { error } = await sb.rpc("cobre_registrar_deposito", {
         p_modo: modo,
         p_transaccion_id: dep.transaccionId,
-        p_cuenta_externa_id: dep.cuentaId ?? undefined,
+        p_cuenta_externa_id: dep.cuentaId ?? cuenta.cuenta_externa_id,
         p_clabe: dep.clabeDestino ?? undefined,
         p_monto: dep.monto,
         p_remitente: dep.remitente ?? undefined,
@@ -208,80 +309,158 @@ async function revisarTransaccion(
         p_cep: dep.cep ?? undefined,
         p_fecha: dep.fecha ?? undefined,
       });
-      if (error) {
+      if (error)
         return {
           tipo: "falta_en_jpay",
-          clave: id,
-          transaccion: id,
+          clave: tx.id,
+          transaccion: tx.id,
           detalle: { monto: dep.monto, error: error.message },
         };
-      }
       return "recuperado";
     }
     if (Math.abs(Number(fila.monto) - dep.monto) >= 0.01) {
       return {
         tipo: "monto_distinto",
-        clave: id,
-        transaccion: id,
+        clave: tx.id,
+        transaccion: tx.id,
         detalle: { cobre: dep.monto, jpay: Number(fila.monto) },
       };
     }
     return null;
   }
 
-  const mmId = typeof meta.money_movement_id === "string" ? meta.money_movement_id : null;
+  if (tx.tipo === "r2p_spei_credit") {
+    const { data: fila } = await sb
+      .from("cobre_depositos")
+      .select("monto")
+      .eq("modo", modo)
+      .eq("transaccion_externa_id", tx.id)
+      .maybeSingle();
+    if (fila) return null;
+    try {
+      await acreditarCobroR2p(sb, modo, {
+        ...t,
+        account_id: tx.cuentaId ?? cuenta.cuenta_externa_id,
+      });
+      return "recuperado";
+    } catch (e) {
+      return {
+        tipo: "falta_en_jpay",
+        clave: tx.id,
+        transaccion: tx.id,
+        detalle: { monto: tx.monto, tipo: tx.tipo, error: (e as Error).message },
+      };
+    }
+  }
+
+  if (tx.tipo === "spei_rejected") {
+    const r = await aplicarRebote(sb, modo, { mmId: tx.mmId, externalId: tx.mmExternalId });
+    return r === "reintegrado" ? "recuperado" : null;
+  }
+
+  const mmId = tx.mmId;
   if (!mmId) return null;
-  if (t.type === "spei_rejected") return null; // reintegro de un rechazo: lo cierra el estado del envío
-  debitosDeEnvio.add(mmId);
-  const monto = deCentavos(Math.abs(Number(t.amount ?? 0)));
-  const [{ data: envio }, { data: devolucion }] = await Promise.all([
-    sb.from("cobre_transferencias").select("monto, estado").eq("mm_id", mmId).maybeSingle(),
-    sb.from("cobre_depositos").select("monto").eq("devolucion_mm_id", mmId).maybeSingle(),
-  ]);
-  const propio = envio ?? devolucion;
-  if (!propio) {
+  const monto = Math.abs(tx.monto);
+
+  if (tx.tipo === "cbmm_debit" || tx.tipo === "cbmm_credit") {
+    const { data: cruce } = await sb
+      .from("cobre_cruces")
+      .select("monto_mxn, monto_usd")
+      .eq("modo", modo)
+      .or(
+        `mm_id.eq.${mmId.replace(/[^\w-]/g, "")},external_id.eq.${(tx.mmExternalId ?? "-").replace(/[^\w-]/g, "")}`,
+      )
+      .limit(1)
+      .maybeSingle();
+    if (!cruce)
+      return {
+        tipo: "falta_en_jpay",
+        clave: `${mmId}:${tx.tipo}`,
+        transaccion: tx.id,
+        detalle: { monto, tipo: tx.tipo, nota: "Conversión en Cobre que JPay no tiene" },
+      };
+    const esperado = Number(tx.tipo === "cbmm_debit" ? cruce.monto_mxn : cruce.monto_usd);
+    if (Math.abs(esperado - monto) >= 0.01) {
+      return {
+        tipo: "monto_distinto",
+        clave: `${mmId}:${tx.tipo}`,
+        transaccion: tx.id,
+        detalle: { cobre: monto, jpay: esperado, tipo: tx.tipo },
+      };
+    }
+    return null;
+  }
+
+  if (tx.tipo === "global_pay_to_usa_debit" || tx.tipo === "global_pay_to_usa_credit") {
+    const { data: envio } = await sb
+      .from("cobre_transferencias")
+      .select("monto")
+      .eq("modo", modo)
+      .eq("traslado_mm_id", mmId)
+      .maybeSingle();
+    if (!envio)
+      return {
+        tipo: "falta_en_jpay",
+        clave: `${mmId}:${tx.tipo}`,
+        transaccion: tx.id,
+        detalle: { monto, tipo: tx.tipo, nota: "Traslado Global→USA que JPay no tiene" },
+      };
+    return Math.abs(Number(envio.monto) - monto) >= 0.01
+      ? {
+          tipo: "monto_distinto",
+          clave: `${mmId}:${tx.tipo}`,
+          transaccion: tx.id,
+          detalle: { cobre: monto, jpay: Number(envio.monto) },
+        }
+      : null;
+  }
+
+  if (!DEBITOS_ENVIO.includes(tx.tipo)) {
+    // Débito de una devolución de depósito (spei_return) u otro movimiento de JPay.
+    const { data: dev } = await sb
+      .from("cobre_depositos")
+      .select("monto")
+      .eq("devolucion_mm_id", mmId)
+      .maybeSingle();
+    if (dev) return null;
+    return tx.monto < 0
+      ? {
+          tipo: "falta_en_jpay",
+          clave: mmId,
+          transaccion: tx.id,
+          detalle: { monto, tipo: tx.tipo, nota: "Movimiento en Cobre que JPay no tiene" },
+        }
+      : null;
+  }
+
+  vistos.add(mmId);
+  const { data: envio } = await sb
+    .from("cobre_transferencias")
+    .select("monto, estado")
+    .eq("modo", modo)
+    .or(
+      `mm_id.eq.${mmId.replace(/[^\w-]/g, "")},id_txn.eq.${(tx.mmExternalId ?? "-").replace(/[^\w-]/g, "")}`,
+    )
+    .limit(1)
+    .maybeSingle();
+  if (!envio)
     return {
       tipo: "falta_en_jpay",
       clave: mmId,
-      transaccion: id,
-      detalle: { monto, tipo: t.type, nota: "Envío en Cobre que JPay no tiene" },
+      transaccion: tx.id,
+      detalle: { monto, tipo: tx.tipo, nota: "Envío en Cobre que JPay no tiene" },
     };
+  if (["pendiente", "enviando", "trasladando"].includes(envio.estado)) {
+    const clave = cuenta.moneda === "USD" ? "USD" : cuenta.cuenta_externa_id;
+    enCurso.set(clave, (enCurso.get(clave) ?? 0) + monto);
   }
-  if (Math.abs(Number(propio.monto) - monto) >= 0.01) {
+  if (Math.abs(Number(envio.monto) - monto) >= 0.01) {
     return {
       tipo: "monto_distinto",
       clave: mmId,
-      transaccion: id,
-      detalle: { cobre: monto, jpay: Number(propio.monto) },
+      transaccion: tx.id,
+      detalle: { cobre: monto, jpay: Number(envio.monto) },
     };
   }
   return null;
-}
-
-/** BANCO_COBRE (deudor) + depósitos sin asignar que siguen en Cobre. */
-async function saldoJpay(sb: SupabaseClient, modo: string): Promise<number> {
-  const { data: cuenta } = await sb
-    .from("ledger_accounts")
-    .select("id")
-    .eq("account_code", "BANCO_COBRE")
-    .single();
-  let banco = 0;
-  for (let desde = 0; ; desde += 1000) {
-    const { data } = await sb
-      .from("ledger_entries")
-      .select("entry_type, amount")
-      .eq("account_id", cuenta?.id ?? "")
-      .range(desde, desde + 999);
-    for (const e of data ?? []) banco += (e.entry_type === "debit" ? 1 : -1) * Number(e.amount);
-    if (!data || data.length < 1000) break;
-  }
-  const { data: sinAsignar } = await sb
-    .from("cobre_depositos")
-    .select("monto")
-    .eq("modo", modo)
-    .eq("estado", "sin_asignar")
-    // Con la devolución en curso el dinero ya salió (o está saliendo) de Cobre.
-    .or("devolucion_estado.is.null,devolucion_estado.in.(rechazada,fallida,cancelada)");
-  const pendiente = (sinAsignar ?? []).reduce((s, d) => s + Number(d.monto), 0);
-  return Math.round((banco + pendiente) * 100) / 100;
 }

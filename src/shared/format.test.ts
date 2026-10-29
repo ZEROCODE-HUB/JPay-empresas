@@ -42,6 +42,11 @@ describe("formatMoney", () => {
   it("muestra — para vacíos", () => {
     expect(formatMoney(undefined)).toBe("—");
   });
+  it("otra moneda va con su código; la del país, con su símbolo", () => {
+    setPaisActivo("MX");
+    expect(formatMoney(1234.5, { moneda: "USD" })).toBe("US$ 1,234.50");
+    expect(formatMoney(1234.5, { moneda: "MXN" })).toBe("$1,234.50");
+  });
 });
 
 describe("formatPercent", () => {

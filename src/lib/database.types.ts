@@ -1610,6 +1610,80 @@ export type Database = {
           },
         ]
       }
+      cliente_personas_kyb: {
+        Row: {
+          apellido: string
+          cliente_legajo: string
+          created_at: string
+          fecha_nacimiento: string
+          id: string
+          id_numero: string
+          id_tipo: string
+          nacionalidades: string[]
+          nombre: string
+          porcentaje: number | null
+          rol: string
+          updated_at: string
+        }
+        Insert: {
+          apellido: string
+          cliente_legajo: string
+          created_at?: string
+          fecha_nacimiento: string
+          id?: string
+          id_numero: string
+          id_tipo: string
+          nacionalidades?: string[]
+          nombre: string
+          porcentaje?: number | null
+          rol: string
+          updated_at?: string
+        }
+        Update: {
+          apellido?: string
+          cliente_legajo?: string
+          created_at?: string
+          fecha_nacimiento?: string
+          id?: string
+          id_numero?: string
+          id_tipo?: string
+          nacionalidades?: string[]
+          nombre?: string
+          porcentaje?: number | null
+          rol?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cliente_personas_kyb_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cliente_personas_kyb_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cliente_personas_kyb_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cliente_personas_kyb_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+        ]
+      }
       cliente_transiciones: {
         Row: {
           admin_user_id: string | null
@@ -1688,6 +1762,7 @@ export type Database = {
           id: string
           id_personal: string | null
           id_personal_tipo: string | null
+          industria_cobre: string | null
           legajo: string
           limite_monto_diario: number | null
           limite_ops_diarias: number | null
@@ -1699,8 +1774,11 @@ export type Database = {
           onboarding_completo: boolean
           origen_fondos: string | null
           pais: string
+          pais_constitucion: string | null
+          pais_operacion: string | null
           provincia: string | null
           regimen_fiscal: string | null
+          sitio_web: string | null
           tax_id: string | null
           tax_id_tipo: string | null
           telefono: string | null
@@ -1734,6 +1812,7 @@ export type Database = {
           id?: string
           id_personal?: string | null
           id_personal_tipo?: string | null
+          industria_cobre?: string | null
           legajo: string
           limite_monto_diario?: number | null
           limite_ops_diarias?: number | null
@@ -1745,8 +1824,11 @@ export type Database = {
           onboarding_completo?: boolean
           origen_fondos?: string | null
           pais?: string
+          pais_constitucion?: string | null
+          pais_operacion?: string | null
           provincia?: string | null
           regimen_fiscal?: string | null
+          sitio_web?: string | null
           tax_id?: string | null
           tax_id_tipo?: string | null
           telefono?: string | null
@@ -1780,6 +1862,7 @@ export type Database = {
           id?: string
           id_personal?: string | null
           id_personal_tipo?: string | null
+          industria_cobre?: string | null
           legajo?: string
           limite_monto_diario?: number | null
           limite_ops_diarias?: number | null
@@ -1791,8 +1874,11 @@ export type Database = {
           onboarding_completo?: boolean
           origen_fondos?: string | null
           pais?: string
+          pais_constitucion?: string | null
+          pais_operacion?: string | null
           provincia?: string | null
           regimen_fiscal?: string | null
+          sitio_web?: string | null
           tax_id?: string | null
           tax_id_tipo?: string | null
           telefono?: string | null
@@ -1911,35 +1997,198 @@ export type Database = {
           },
         ]
       }
+      cobre_cobros_r2p: {
+        Row: {
+          clabe_dinamica: string | null
+          cliente_legajo: string
+          codigo: string | null
+          concepto: string | null
+          contraparte_externa_id: string | null
+          created_at: string
+          cuenta_destino_externa_id: string
+          estado: string
+          external_id: string
+          id: string
+          instancia_id: string | null
+          link_id: string | null
+          mm_id: string | null
+          modo: string
+          monto: number
+          motivo: string | null
+          pagado_at: string | null
+          pagador_correo: string | null
+          pagador_id_numero: string
+          pagador_id_tipo: string
+          pagador_nombre: string
+          pago_id: string | null
+          subcuenta_id: string
+          transaccion_externa_id: string | null
+          transaction_id: string | null
+          updated_at: string
+          valido_hasta: string
+        }
+        Insert: {
+          clabe_dinamica?: string | null
+          cliente_legajo: string
+          codigo?: string | null
+          concepto?: string | null
+          contraparte_externa_id?: string | null
+          created_at?: string
+          cuenta_destino_externa_id: string
+          estado?: string
+          external_id: string
+          id?: string
+          instancia_id?: string | null
+          link_id?: string | null
+          mm_id?: string | null
+          modo: string
+          monto: number
+          motivo?: string | null
+          pagado_at?: string | null
+          pagador_correo?: string | null
+          pagador_id_numero: string
+          pagador_id_tipo: string
+          pagador_nombre: string
+          pago_id?: string | null
+          subcuenta_id: string
+          transaccion_externa_id?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          valido_hasta: string
+        }
+        Update: {
+          clabe_dinamica?: string | null
+          cliente_legajo?: string
+          codigo?: string | null
+          concepto?: string | null
+          contraparte_externa_id?: string | null
+          created_at?: string
+          cuenta_destino_externa_id?: string
+          estado?: string
+          external_id?: string
+          id?: string
+          instancia_id?: string | null
+          link_id?: string | null
+          mm_id?: string | null
+          modo?: string
+          monto?: number
+          motivo?: string | null
+          pagado_at?: string | null
+          pagador_correo?: string | null
+          pagador_id_numero?: string
+          pagador_id_tipo?: string
+          pagador_nombre?: string
+          pago_id?: string | null
+          subcuenta_id?: string
+          transaccion_externa_id?: string | null
+          transaction_id?: string | null
+          updated_at?: string
+          valido_hasta?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_cobros_r2p_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_subcuenta_id_fkey"
+            columns: ["subcuenta_id"]
+            isOneToOne: false
+            referencedRelation: "subaccounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cobros_r2p_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cobre_configuracion: {
         Row: {
+          cuenta_global_id: string | null
           cuenta_plataforma_id: string | null
+          cuenta_usa_id: string | null
           exigir_otp: boolean
           id: number
           modelo_default: string
           monto_aprobacion: number | null
+          monto_aprobacion_usd: number | null
           updated_at: string
         }
         Insert: {
+          cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
+          cuenta_usa_id?: string | null
           exigir_otp?: boolean
           id?: number
           modelo_default?: string
           monto_aprobacion?: number | null
+          monto_aprobacion_usd?: number | null
           updated_at?: string
         }
         Update: {
+          cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
+          cuenta_usa_id?: string | null
           exigir_otp?: boolean
           id?: number
           modelo_default?: string
           monto_aprobacion?: number | null
+          monto_aprobacion_usd?: number | null
           updated_at?: string
         }
         Relationships: [
           {
+            foreignKeyName: "cobre_configuracion_cuenta_global_id_fkey"
+            columns: ["cuenta_global_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_cuentas"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "cobre_configuracion_cuenta_plataforma_id_fkey"
             columns: ["cuenta_plataforma_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_cuentas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_configuracion_cuenta_usa_id_fkey"
+            columns: ["cuenta_usa_id"]
             isOneToOne: false
             referencedRelation: "cobre_cuentas"
             referencedColumns: ["id"]
@@ -1953,15 +2202,19 @@ export type Database = {
           cliente_legajo: string
           contraparte_externa_id: string
           created_at: string
+          datos: Json
+          geo: string | null
           id: string
           id_numero: string
           id_tipo: string
           modo: string
           numero: string
+          rail: string | null
           tipo: string
           titular: string
           verificacion: string
           verificacion_externa_id: string | null
+          verificacion_motivo: string | null
           verificado_at: string | null
         }
         Insert: {
@@ -1970,15 +2223,19 @@ export type Database = {
           cliente_legajo: string
           contraparte_externa_id: string
           created_at?: string
+          datos?: Json
+          geo?: string | null
           id?: string
           id_numero: string
           id_tipo: string
           modo: string
           numero: string
+          rail?: string | null
           tipo: string
           titular: string
           verificacion?: string
           verificacion_externa_id?: string | null
+          verificacion_motivo?: string | null
           verificado_at?: string | null
         }
         Update: {
@@ -1987,15 +2244,19 @@ export type Database = {
           cliente_legajo?: string
           contraparte_externa_id?: string
           created_at?: string
+          datos?: Json
+          geo?: string | null
           id?: string
           id_numero?: string
           id_tipo?: string
           modo?: string
           numero?: string
+          rail?: string | null
           tipo?: string
           titular?: string
           verificacion?: string
           verificacion_externa_id?: string | null
+          verificacion_motivo?: string | null
           verificado_at?: string | null
         }
         Relationships: [
@@ -2029,38 +2290,194 @@ export type Database = {
           },
         ]
       }
+      cobre_cruces: {
+        Row: {
+          cliente_legajo: string
+          codigo: string | null
+          comisiones: Json
+          cotizacion_id: string
+          cotizacion_vence_at: string
+          created_at: string
+          decidida_at: string | null
+          decidida_por: string | null
+          estado: string
+          external_id: string
+          fuera_de_mercado: boolean
+          id: string
+          idempotency: string
+          mm_id: string | null
+          modo: string
+          monto_mxn: number
+          monto_usd: number
+          motivo: string | null
+          subcuenta_mxn_id: string
+          subcuenta_usd_id: string
+          tasa: number
+          transaction_mxn_id: string | null
+          transaction_usd_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_legajo: string
+          codigo?: string | null
+          comisiones?: Json
+          cotizacion_id: string
+          cotizacion_vence_at: string
+          created_at?: string
+          decidida_at?: string | null
+          decidida_por?: string | null
+          estado?: string
+          external_id: string
+          fuera_de_mercado?: boolean
+          id?: string
+          idempotency: string
+          mm_id?: string | null
+          modo: string
+          monto_mxn: number
+          monto_usd: number
+          motivo?: string | null
+          subcuenta_mxn_id: string
+          subcuenta_usd_id: string
+          tasa: number
+          transaction_mxn_id?: string | null
+          transaction_usd_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_legajo?: string
+          codigo?: string | null
+          comisiones?: Json
+          cotizacion_id?: string
+          cotizacion_vence_at?: string
+          created_at?: string
+          decidida_at?: string | null
+          decidida_por?: string | null
+          estado?: string
+          external_id?: string
+          fuera_de_mercado?: boolean
+          id?: string
+          idempotency?: string
+          mm_id?: string | null
+          modo?: string
+          monto_mxn?: number
+          monto_usd?: number
+          motivo?: string | null
+          subcuenta_mxn_id?: string
+          subcuenta_usd_id?: string
+          tasa?: number
+          transaction_mxn_id?: string | null
+          transaction_usd_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_cruces_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_subcuenta_mxn_id_fkey"
+            columns: ["subcuenta_mxn_id"]
+            isOneToOne: false
+            referencedRelation: "subaccounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_subcuenta_usd_id_fkey"
+            columns: ["subcuenta_usd_id"]
+            isOneToOne: false
+            referencedRelation: "subaccounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_transaction_mxn_id_fkey"
+            columns: ["transaction_mxn_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_transaction_usd_id_fkey"
+            columns: ["transaction_usd_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cobre_cuentas: {
         Row: {
           alias: string | null
           clabe: string | null
           cliente_legajo: string | null
+          conectividad: string | null
           created_at: string
           cuenta_externa_id: string
           estado: string
           id: string
+          instancia_id: string | null
           modo: string
+          moneda: string
+          proveedor_id: string
+          subcliente_id: string | null
+          subcuenta_id: string | null
           tipo: string
         }
         Insert: {
           alias?: string | null
           clabe?: string | null
           cliente_legajo?: string | null
+          conectividad?: string | null
           created_at?: string
           cuenta_externa_id: string
           estado?: string
           id?: string
+          instancia_id?: string | null
           modo: string
+          moneda?: string
+          proveedor_id?: string
+          subcliente_id?: string | null
+          subcuenta_id?: string | null
           tipo: string
         }
         Update: {
           alias?: string | null
           clabe?: string | null
           cliente_legajo?: string | null
+          conectividad?: string | null
           created_at?: string
           cuenta_externa_id?: string
           estado?: string
           id?: string
+          instancia_id?: string | null
           modo?: string
+          moneda?: string
+          proveedor_id?: string
+          subcliente_id?: string | null
+          subcuenta_id?: string | null
           tipo?: string
         }
         Relationships: [
@@ -2091,6 +2508,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cuentas_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cuentas_subcliente_id_fkey"
+            columns: ["subcliente_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_subclientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_cuentas_subcuenta_id_fkey"
+            columns: ["subcuenta_id"]
+            isOneToOne: false
+            referencedRelation: "subaccounts"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -2110,6 +2548,7 @@ export type Database = {
           id: string
           modo: string
           monto: number
+          origen: string
           recibido_at: string
           remitente: string | null
           remitente_cuenta: string | null
@@ -2133,6 +2572,7 @@ export type Database = {
           id?: string
           modo: string
           monto: number
+          origen?: string
           recibido_at?: string
           remitente?: string | null
           remitente_cuenta?: string | null
@@ -2156,6 +2596,7 @@ export type Database = {
           id?: string
           modo?: string
           monto?: number
+          origen?: string
           recibido_at?: string
           remitente?: string | null
           remitente_cuenta?: string | null
@@ -2177,6 +2618,170 @@ export type Database = {
             columns: ["transaction_id"]
             isOneToOne: false
             referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cobre_instancias: {
+        Row: {
+          base_url: string | null
+          clave_webhook_ref: string | null
+          cliente_legajo: string
+          created_at: string
+          estado: string
+          id: string
+          modo: string
+          secreto_ref: string | null
+          suscripcion_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          base_url?: string | null
+          clave_webhook_ref?: string | null
+          cliente_legajo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          modo: string
+          secreto_ref?: string | null
+          suscripcion_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          base_url?: string | null
+          clave_webhook_ref?: string | null
+          cliente_legajo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          modo?: string
+          secreto_ref?: string | null
+          suscripcion_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_instancias_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_instancias_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_instancias_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_instancias_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+        ]
+      }
+      cobre_lotes: {
+        Row: {
+          archivo: string
+          cantidad: number
+          cliente_legajo: string
+          created_at: string
+          decidida_at: string | null
+          decidida_por: string | null
+          estado: string
+          id: string
+          lote_externo_id: string | null
+          modo: string
+          motivo: string | null
+          nota_decision: string | null
+          requiere_aprobacion: boolean
+          subcuenta_id: string
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          archivo: string
+          cantidad: number
+          cliente_legajo: string
+          created_at?: string
+          decidida_at?: string | null
+          decidida_por?: string | null
+          estado?: string
+          id?: string
+          lote_externo_id?: string | null
+          modo: string
+          motivo?: string | null
+          nota_decision?: string | null
+          requiere_aprobacion?: boolean
+          subcuenta_id: string
+          total: number
+          updated_at?: string
+        }
+        Update: {
+          archivo?: string
+          cantidad?: number
+          cliente_legajo?: string
+          created_at?: string
+          decidida_at?: string | null
+          decidida_por?: string | null
+          estado?: string
+          id?: string
+          lote_externo_id?: string | null
+          modo?: string
+          motivo?: string | null
+          nota_decision?: string | null
+          requiere_aprobacion?: boolean
+          subcuenta_id?: string
+          total?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_lotes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_lotes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_lotes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_lotes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_lotes_subcuenta_id_fkey"
+            columns: ["subcuenta_id"]
+            isOneToOne: false
+            referencedRelation: "subaccounts"
             referencedColumns: ["id"]
           },
         ]
@@ -2205,6 +2810,118 @@ export type Database = {
         }
         Relationships: []
       }
+      cobre_subclientes: {
+        Row: {
+          balance_pedido_at: string | null
+          cliente_legajo: string
+          creado_por: string | null
+          created_at: string
+          datos_enviados: Json
+          estado: string
+          id: string
+          idempotency_key: string
+          modo: string
+          motivo: string | null
+          subcliente_externo_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          balance_pedido_at?: string | null
+          cliente_legajo: string
+          creado_por?: string | null
+          created_at?: string
+          datos_enviados: Json
+          estado?: string
+          id?: string
+          idempotency_key: string
+          modo: string
+          motivo?: string | null
+          subcliente_externo_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          balance_pedido_at?: string | null
+          cliente_legajo?: string
+          creado_por?: string | null
+          created_at?: string
+          datos_enviados?: Json
+          estado?: string
+          id?: string
+          idempotency_key?: string
+          modo?: string
+          motivo?: string | null
+          subcliente_externo_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_subclientes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_subclientes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_subclientes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_subclientes_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+        ]
+      }
+      cobre_suscripciones: {
+        Row: {
+          created_at: string
+          eventos: string[]
+          id: string
+          instancia_id: string | null
+          modo: string
+          suscripcion_externa_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          eventos: string[]
+          id?: string
+          instancia_id?: string | null
+          modo: string
+          suscripcion_externa_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          eventos?: string[]
+          id?: string
+          instancia_id?: string | null
+          modo?: string
+          suscripcion_externa_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_suscripciones_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cobre_transferencias: {
         Row: {
           aprobacion_externa_id: string | null
@@ -2215,20 +2932,28 @@ export type Database = {
           concepto: string | null
           contraparte_id: string
           created_at: string
-          cuenta_origen_externa_id: string
+          cuenta_origen_externa_id: string | null
           decidida_at: string | null
           decidida_por: string | null
+          devuelta_at: string | null
           estado: string
           id: string
           id_txn: string
+          instancia_id: string | null
+          lote_id: string | null
           mm_id: string | null
           modo: string
+          moneda: string
           monto: number
           motivo: string | null
           nota_decision: string | null
           requiere_aprobacion: boolean
           subcuenta_id: string
+          swift_uetr: string | null
+          tipo: string
           transaction_id: string | null
+          traslado_estado: string | null
+          traslado_mm_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2240,20 +2965,28 @@ export type Database = {
           concepto?: string | null
           contraparte_id: string
           created_at?: string
-          cuenta_origen_externa_id: string
+          cuenta_origen_externa_id?: string | null
           decidida_at?: string | null
           decidida_por?: string | null
+          devuelta_at?: string | null
           estado?: string
           id?: string
           id_txn: string
+          instancia_id?: string | null
+          lote_id?: string | null
           mm_id?: string | null
           modo: string
+          moneda?: string
           monto: number
           motivo?: string | null
           nota_decision?: string | null
           requiere_aprobacion?: boolean
           subcuenta_id: string
+          swift_uetr?: string | null
+          tipo?: string
           transaction_id?: string | null
+          traslado_estado?: string | null
+          traslado_mm_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2265,20 +2998,28 @@ export type Database = {
           concepto?: string | null
           contraparte_id?: string
           created_at?: string
-          cuenta_origen_externa_id?: string
+          cuenta_origen_externa_id?: string | null
           decidida_at?: string | null
           decidida_por?: string | null
+          devuelta_at?: string | null
           estado?: string
           id?: string
           id_txn?: string
+          instancia_id?: string | null
+          lote_id?: string | null
           mm_id?: string | null
           modo?: string
+          moneda?: string
           monto?: number
           motivo?: string | null
           nota_decision?: string | null
           requiere_aprobacion?: boolean
           subcuenta_id?: string
+          swift_uetr?: string | null
+          tipo?: string
           transaction_id?: string | null
+          traslado_estado?: string | null
+          traslado_mm_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2287,6 +3028,20 @@ export type Database = {
             columns: ["contraparte_id"]
             isOneToOne: false
             referencedRelation: "cobre_contrapartes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_transferencias_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobre_transferencias_lote_fk"
+            columns: ["lote_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_lotes"
             referencedColumns: ["id"]
           },
           {
@@ -5608,6 +6363,7 @@ export type Database = {
           id: string
           ingresos: string | null
           limite: string | null
+          moneda: string | null
           nombre: string
           responsable: string | null
           retiros_habilitados: boolean
@@ -5627,6 +6383,7 @@ export type Database = {
           id?: string
           ingresos?: string | null
           limite?: string | null
+          moneda?: string | null
           nombre?: string
           responsable?: string | null
           retiros_habilitados?: boolean
@@ -5646,6 +6403,7 @@ export type Database = {
           id?: string
           ingresos?: string | null
           limite?: string | null
+          moneda?: string | null
           nombre?: string
           responsable?: string | null
           retiros_habilitados?: boolean
@@ -6383,6 +7141,7 @@ export type Database = {
           firma_valida: boolean | null
           id: string
           id_externo: string | null
+          instancia_id: string | null
           intentos: number
           origen: string
           pago_id: string | null
@@ -6400,6 +7159,7 @@ export type Database = {
           firma_valida?: boolean | null
           id?: string
           id_externo?: string | null
+          instancia_id?: string | null
           intentos?: number
           origen: string
           pago_id?: string | null
@@ -6417,6 +7177,7 @@ export type Database = {
           firma_valida?: boolean | null
           id?: string
           id_externo?: string | null
+          instancia_id?: string | null
           intentos?: number
           origen?: string
           pago_id?: string | null
@@ -6792,6 +7553,10 @@ export type Database = {
         Args: { p_client_id: string; p_subaccount_id?: string }
         Returns: string
       }
+      _cobre_cuenta: {
+        Args: { p_moneda: string; p_tipo: string }
+        Returns: string
+      }
       _comision_aplicable: {
         Args: { p_cliente_id: string; p_subcuenta_id: string; p_tipo: string }
         Returns: {
@@ -7117,10 +7882,21 @@ export type Database = {
         Args: { p_legajo: string }
         Returns: boolean
       }
+      cobre_confirmar_cruce: { Args: { p_cruce_id: string }; Returns: Json }
       cobre_confirmar_transferencia: {
         Args: { p_id_txn: string }
         Returns: Json
       }
+      cobre_instancia_guardar_secretos: {
+        Args: {
+          p_clave_webhook: string
+          p_instancia_id: string
+          p_secret: string
+        }
+        Returns: undefined
+      }
+      cobre_instancia_leer: { Args: { p_instancia_id: string }; Returns: Json }
+      cobre_liberar_cruce: { Args: { p_cruce_id: string }; Returns: Json }
       cobre_registrar_deposito: {
         Args: {
           p_cep?: string
@@ -7130,12 +7906,35 @@ export type Database = {
           p_fecha?: string
           p_modo: string
           p_monto: number
+          p_origen?: string
           p_remitente?: string
           p_remitente_cuenta?: string
           p_remitente_id?: string
+          p_subcuenta_id?: string
           p_transaccion_id: string
         }
         Returns: Json
+      }
+      cobre_reintegrar_transferencia: {
+        Args: { p_id_txn: string; p_motivo: string }
+        Returns: Json
+      }
+      cobre_reservar_cruce: { Args: { p_cruce_id: string }; Returns: Json }
+      cobre_reservar_transferencia: {
+        Args: {
+          p_destinatario_banco: string
+          p_destinatario_nombre: string
+          p_destino: string
+          p_id_txn: string
+          p_legajo: string
+          p_monto: number
+          p_subcuenta_id: string
+        }
+        Returns: Json
+      }
+      cobre_saldo_esperado_comercio: {
+        Args: { p_legajo: string }
+        Returns: number
       }
       confirmar_adelanto: {
         Args: { p_adelanto_id: string }

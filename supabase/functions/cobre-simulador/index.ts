@@ -4,7 +4,8 @@
 // - Sin body (pg_cron, cada minuto): hace avanzar transferencias y verificaciones y envía los
 //   avisos en cola, firmados, a `cobre-webhook` (como haría Cobre). Una vez cada 50 s.
 // - Con `accion` (solo admins): `deposito` { clabe, monto, remitente?, concepto? } simula una
-//   transferencia SPEI entrante; `aprobar` / `cancelar` { mm } decide una transferencia en
+//   transferencia SPEI entrante; `pagar_r2p` { clabe } simula que el pagador paga un cobro R2P
+//   (CLABE dinámica); `aprobar` / `cancelar` { mm } decide una transferencia en
 //   `pending_approval`; `avanzar` fuerza una vuelta ya.
 
 import { firmarCobre, modoCobre } from "../_shared/cobre.ts";
@@ -15,6 +16,7 @@ import {
   depositoSimulado,
   eventosPendientes,
   marcarEventoEnviado,
+  pagarR2pSimulado,
   type AlmacenSim,
 } from "../_shared/cobre-simulador.ts";
 import { claveWebhookCobre, urlWebhookCobre } from "../_shared/cobre-servidor.ts";
@@ -54,6 +56,17 @@ Deno.serve(
                 typeof body.remitente === "string" ? body.remitente.slice(0, 60) : undefined,
               concepto: typeof body.concepto === "string" ? body.concepto.slice(0, 40) : undefined,
             });
+          } catch (e) {
+            throw new HttpError(422, (e as Error).message);
+          }
+          return json({ transaccion: trx, ...(await vuelta(almacen)) });
+        }
+        case "pagar_r2p": {
+          if (typeof body.clabe !== "string" || !/^\d{18}$/.test(body.clabe))
+            throw new HttpError(400, "CLABE inválida");
+          let trx;
+          try {
+            trx = await pagarR2pSimulado(almacen, body.clabe);
           } catch (e) {
             throw new HttpError(422, (e as Error).message);
           }

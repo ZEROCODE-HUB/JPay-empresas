@@ -1,22 +1,9 @@
 import { Badge, Card } from "@/components/portal-shell";
-import type { DepositoSpei, EstadoSpei, TransferenciaSpei } from "@/lib/api/cobre";
+import type { DepositoSpei, TransferenciaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
+import { ESTADO_ENVIO } from "../estados";
 
-const ESTADO: Record<
-  EstadoSpei,
-  { label: string; tone: "success" | "warn" | "danger" | "neutral" }
-> = {
-  enviando: { label: "Enviando", tone: "warn" },
-  pendiente: { label: "En proceso", tone: "warn" },
-  pendiente_aprobacion: { label: "Esperando aprobación", tone: "warn" },
-  completada: { label: "Completada", tone: "success" },
-  rechazada: { label: "Rechazada", tone: "danger" },
-  fallida: { label: "Fallida", tone: "danger" },
-  cancelada: { label: "Cancelada", tone: "neutral" },
-  error_envio: { label: "No enviada", tone: "danger" },
-};
-
-/** Transferencias enviadas y depósitos recibidos por SPEI. */
+/** Transferencias SPEI enviadas (sueltas o en lote) y depósitos recibidos (a la CLABE o por cobro). */
 export function MovimientosSpeiCard({
   transferencias,
   depositos,
@@ -33,7 +20,7 @@ export function MovimientosSpeiCard({
         ) : (
           <ul className="mt-3 divide-y divide-black-100 text-sm">
             {transferencias.map((t) => {
-              const e = ESTADO[t.estado];
+              const e = ESTADO_ENVIO[t.estado];
               return (
                 <li key={t.id} className="py-2.5">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -41,6 +28,7 @@ export function MovimientosSpeiCard({
                       <div className="font-medium">{t.destinatario ?? "—"}</div>
                       <div className="text-xs text-black-400">
                         {formatDateTime(t.creadaAt)} · {t.concepto ?? ""} · {t.idTxn}
+                        {t.loteId && " · en lote"}
                       </div>
                     </div>
                     <div className="text-right">
@@ -78,9 +66,7 @@ export function MovimientosSpeiCard({
       <Card>
         <h2 className="font-semibold">Depósitos recibidos</h2>
         {depositos.length === 0 ? (
-          <p className="mt-2 text-sm text-black-400">
-            Todavía no recibiste depósitos en tus CLABEs.
-          </p>
+          <p className="mt-2 text-sm text-black-400">Todavía no recibiste depósitos.</p>
         ) : (
           <ul className="mt-3 divide-y divide-black-100 text-sm">
             {depositos.map((d) => (
@@ -88,7 +74,8 @@ export function MovimientosSpeiCard({
                 <div>
                   <div className="font-medium">{d.remitente ?? "Remitente sin nombre"}</div>
                   <div className="text-xs text-black-400">
-                    {formatDateTime(d.recibidoAt)} · CLABE {d.clabe?.slice(-4) ?? "—"}
+                    {formatDateTime(d.recibidoAt)} ·{" "}
+                    {d.origen === "r2p" ? "Cobro por SPEI" : "A tu CLABE"}
                     {d.claveRastreo && ` · ${d.claveRastreo}`}
                   </div>
                 </div>

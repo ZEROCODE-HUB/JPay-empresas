@@ -107,4 +107,17 @@ describe("armarAlta", () => {
   it("jurídica sin nombre legal cae al nombre del registro", () => {
     expect(armarAlta(addr, "juridica", registro, {}, {}).nombre).toBe("Ana");
   });
+  it("jurídica guarda al representante legal (datos personales del que registra)", () => {
+    const r = armarAlta(addr, "juridica", registro, { taxId: "godE561231GR8", idPersonal: "" }, {});
+    expect(r.perfil.representante).toEqual({
+      nombre: "Ana",
+      apellido: "Pérez",
+      idTipo: "rfc",
+      idNumero: "GODE561231GR8",
+      fechaNacimiento: "1990-01-01",
+    });
+    expect(
+      armarAlta(addr, "fisica", registro, { taxId: "GODE561231GR8" }, {}).perfil.representante,
+    ).toBeUndefined();
+  });
 });

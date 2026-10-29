@@ -6,30 +6,28 @@ import { enviarOtpTransferencia } from "@/lib/api/transferencias";
 import { nuevoTxid, type DestinatarioSpei, type SubcuentaSpei } from "@/lib/api/cobre";
 import { formatMoney, parseMonto } from "@/shared/format";
 import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";
-
-const VERIFICACION: Record<
-  DestinatarioSpei["verificacion"],
-  { label: string; tone: "success" | "warn" | "danger" | "neutral" }
-> = {
-  sin_verificar: { label: "Sin verificar", tone: "neutral" },
-  procesando: { label: "Verificando titular…", tone: "warn" },
-  matched: { label: "Titular verificado", tone: "success" },
-  unmatched: { label: "El titular no coincide", tone: "danger" },
-  unresolved: { label: "No se pudo verificar", tone: "warn" },
-};
+import { VERIFICACION } from "../estados";
 
 const select = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
-/** Transferencia SPEI desde una subcuenta a una CLABE (destinatarios guardados o nuevos). */
+/**
+ * Transferencia SPEI desde una subcuenta en pesos (sale del Cobre Balance del comercio) a una
+ * CLABE. Solo a destinatarios con el titular verificado (`matched`): la verificación se pide sola
+ * al guardar el destinatario y tarda unos minutos.
+ */
 export function TransferirSpeiCard({
   subcuentas,
-  destinatarios,
+  destinatarios: todos,
+  habilitada,
 }: {
   subcuentas: SubcuentaSpei[];
   destinatarios: DestinatarioSpei[];
+  /** El comercio ya tiene su Cobre Balance activo. */
+  habilitada: boolean;
 }) {
   const m = useCuentaSpeiMutaciones();
-  const conClabe = subcuentas.filter((s) => s.clabe);
+  const conClabe = subcuentas.filter((s) => s.moneda === "MXN");
+  const destinatarios = todos.filter((d) => d.tipo !== "business");
   const [origen, setOrigen] = useState("");
   const [destino, setDestino] = useState("");
   const [monto, setMonto] = useState("");
@@ -58,7 +56,6 @@ export function TransferirSpeiCard({
         idTipo,
         idNumero: id,
         alias: dest.alias || undefined,
-        verificar: true,
       },
       {
         onSuccess: (r) => {
@@ -74,7 +71,7 @@ export function TransferirSpeiCard({
 
   const enviar = () => {
     const importe = parseMonto(monto);
-    if (!sub) return toast.error("Elegí una subcuenta con CLABE");
+    if (!sub) return toast.error("Elegí una subcuenta");
     if (!d) return toast.error("Elegí un destinatario");
     if (!(importe > 0)) return toast.error("Ingresá un monto");
     if (importe > sub.saldoDisponible) return toast.error("El monto supera el saldo disponible");
@@ -123,9 +120,9 @@ export function TransferirSpeiCard({
   return (
     <Card>
       <h2 className="font-semibold">Transferir por SPEI</h2>
-      {conClabe.length === 0 ? (
+      {!habilitada || conClabe.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
-          Generá la CLABE de una subcuenta para poder transferir.
+          Vas a poder transferir cuando tu cuenta en Cobre esté activa.
         </p>
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -249,7 +246,7 @@ export function TransferirSpeiCard({
             </p>
             <BtnPrimary
               onClick={enviar}
-              disabled={m.enviar.isPending || d?.verificacion === "unmatched"}
+              disabled={m.enviar.isPending || (d?.tipo === "clabe" && d.verificacion !== "matched")}
             >
               {m.enviar.isPending ? "Enviando…" : "Transferir"}
             </BtnPrimary>

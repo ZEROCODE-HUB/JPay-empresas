@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Card, PageHeader } from "@/components/portal-shell";
 import { ClabesCard } from "@/features/spei/components/ClabesCard";
+import { LoteSpeiCard } from "@/features/spei/components/LoteSpeiCard";
 import { MovimientosSpeiCard } from "@/features/spei/components/MovimientosSpeiCard";
 import { TransferirSpeiCard } from "@/features/spei/components/TransferirSpeiCard";
 import { useCuentaSpei } from "@/hooks/useCobre";
@@ -11,15 +12,16 @@ export const Route = createFileRoute("/app/spei")({
 });
 
 function Page() {
-  const { subcuentas, destinatarios, transferencias, depositos } = useCuentaSpei();
-  const error = subcuentas.error ?? destinatarios.error;
+  const { cuenta, subcuentas, destinatarios, transferencias, lotes, depositos } = useCuentaSpei();
+  const error = cuenta.error ?? subcuentas.error ?? destinatarios.error;
+  const habilitada = !!cuenta.data?.cuenta && cuenta.data.cuenta.conectividad !== "processing";
   return (
     <>
       <PageHeader
         title="Transferencias SPEI"
-        description="Recibí dinero en la CLABE de cada subcuenta y transferí a cualquier banco de México."
+        description="Recibí dinero en la CLABE de tu cuenta y transferí a cualquier banco de México, uno a uno o en lote."
       />
-      {subcuentas.isLoading || destinatarios.isLoading ? (
+      {cuenta.isLoading || subcuentas.isLoading || destinatarios.isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>
       ) : error ? (
         <Card className="text-sm text-danger-600">
@@ -27,13 +29,20 @@ function Page() {
         </Card>
       ) : (
         <div className="space-y-4">
-          <ClabesCard subcuentas={subcuentas.data ?? []} />
+          <ClabesCard cuenta={cuenta.data!} subcuentas={subcuentas.data ?? []} />
           <TransferirSpeiCard
             subcuentas={subcuentas.data ?? []}
             destinatarios={destinatarios.data ?? []}
+            habilitada={habilitada}
+          />
+          <LoteSpeiCard
+            subcuentas={subcuentas.data ?? []}
+            destinatarios={destinatarios.data ?? []}
+            lotes={lotes.data ?? []}
+            habilitada={habilitada}
           />
           <MovimientosSpeiCard
-            transferencias={transferencias.data ?? []}
+            transferencias={(transferencias.data ?? []).filter((t) => t.moneda === "MXN")}
             depositos={depositos.data ?? []}
           />
         </div>

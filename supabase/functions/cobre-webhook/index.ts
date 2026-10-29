@@ -1,23 +1,25 @@
-// Edge Function PÚBLICA (desplegar con --no-verify-jwt): avisos de Cobre (Fase C1).
+// Edge Function PÚBLICA (desplegar con --no-verify-jwt): avisos de Cobre.
 //
 // Cobre firma cada aviso: `event-timestamp` y `event-signature` = HMAC-SHA256 (hex) de
-// "timestamp.cuerpo crudo" con la `event_signature_key` de la suscripción. Sin firma válida →
-// 401 y queda registrado como rechazado. Todo aviso queda en `webhook_eventos`
-// (proveedor `cobre`); el mismo `id` de evento se procesa una sola vez.
+// "timestamp.cuerpo crudo" con la `event_signature_key` de la suscripción. Sin firma válida (o
+// con un timestamp de más de 15 min) → 401 y queda registrado como rechazado. Todo aviso queda
+// en `webhook_eventos` (proveedor `cobre`); el mismo `id` de evento se procesa una sola vez.
 //
-// Procesamiento:
-// - `accounts.balance.credit` con `spei_credit` → `cobre_registrar_deposito` (acredita en la
-//   subcuenta dueña de la CLABE, idempotente por id de transacción; sin dueño → sin asignar).
-// - `money_movements.status.*` → `aplicarEstadoTransferencia` (busca la transferencia por id
-//   del money movement o por external_id = TXID; completed contabiliza, rechazos liberan).
-// - El resto queda registrado.
+// Instancias: la matriz de JPay avisa a esta URL; un comercio con instancia Cobre propia avisa a
+// `?instancia=<id>` y se verifica con la clave de esa instancia (nunca se mezclan).
+//
+// El procesamiento está en `_shared/cobre-procesos.ts` (depósitos, cobros R2P, envíos, rebotes,
+// lotes, Subclientes, conversiones y envíos USD). Con error se responde 500: Cobre reintenta solo
+// errores de conexión, así que lo que falle lo recupera la revisión de pendientes o la conciliación.
 
-import { depositoSpei, leerEventoCobre, modoCobre, verificarFirmaCobre } from "../_shared/cobre.ts";
-import { claveWebhookCobre } from "../_shared/cobre-servidor.ts";
+import { leerEventoCobre, modoCobre, verificarFirmaCobre } from "../_shared/cobre.ts";
 import {
-  aplicarEstadoDevolucion,
-  aplicarEstadoTransferencia,
-} from "../_shared/cobre-transferencias.ts";
+  claveWebhookCobre,
+  conexionCobre,
+  instanciaCobre,
+  type InstanciaCobre,
+} from "../_shared/cobre-servidor.ts";
+import { procesarEventoCobre } from "../_shared/cobre-procesos.ts";
 import { json, serviceClient } from "../_shared/http.ts";
 
 Deno.serve(async (req) => {
@@ -31,7 +33,16 @@ Deno.serve(async (req) => {
     return json({ error: "Body inválido" }, 400);
   }
 
-  const clave = await claveWebhookCobre();
+  const sb = serviceClient();
+  const instanciaId = new URL(req.url).searchParams.get("instancia");
+  let instancia: InstanciaCobre | null = null;
+  if (instanciaId) {
+    if (!/^[0-9a-f-]{36}$/i.test(instanciaId)) return json({ error: "Instancia inválida" }, 400);
+    instancia = await instanciaCobre(sb, instanciaId).catch(() => null);
+    if (!instancia) return json({ error: "Instancia desconocida" }, 404);
+  }
+
+  const clave = await claveWebhookCobre(modoCobre(), instancia);
   const firmaValida = clave
     ? await verificarFirmaCobre({
         clave,
@@ -42,13 +53,13 @@ Deno.serve(async (req) => {
     : false;
 
   const { id, evento, contenido } = leerEventoCobre(cuerpo);
-  const estado = (contenido.status as { state?: unknown } | undefined)?.state;
-  const sb = serviceClient();
+  const estado = (contenido.status as { state?: unknown } | undefined)?.state ?? contenido.status;
   const { data: fila, error } = await sb
     .from("webhook_eventos")
     .insert({
       proveedor: "cobre",
       origen: "webhook",
+      instancia_id: instancia?.id ?? null,
       webhook_id: id,
       evento,
       id_externo: typeof contenido.id === "string" ? contenido.id : null,
@@ -81,7 +92,7 @@ Deno.serve(async (req) => {
       .from("webhook_eventos")
       .update({
         resultado: "rechazado",
-        error: clave ? "Firma inválida" : "Falta COBRE_WEBHOOK_KEY",
+        error: clave ? "Firma inválida o vencida" : "Falta la clave de avisos de la instancia",
         procesado_at: new Date().toISOString(),
       })
       .eq("id", filaId);
@@ -90,70 +101,20 @@ Deno.serve(async (req) => {
 
   let resultado = "registrado";
   let errorProceso: string | null = null;
-  const deposito = evento === "accounts.balance.credit" ? depositoSpei(contenido) : null;
-  if (deposito) {
-    const { data, error: e } = await sb.rpc("cobre_registrar_deposito", {
-      p_modo: modoCobre(),
-      p_transaccion_id: deposito.transaccionId,
-      p_cuenta_externa_id: deposito.cuentaId ?? undefined,
-      p_clabe: deposito.clabeDestino ?? undefined,
-      p_monto: deposito.monto,
-      p_remitente: deposito.remitente ?? undefined,
-      p_remitente_cuenta: deposito.remitenteCuenta ?? undefined,
-      p_remitente_id: deposito.remitenteId ?? undefined,
-      p_clave_rastreo: deposito.claveRastreo ?? undefined,
-      p_cep: deposito.cep ?? undefined,
-      p_fecha: deposito.fecha ?? undefined,
-    });
-    if (e) errorProceso = e.message;
-    else resultado = `deposito ${(data as { estado?: string } | null)?.estado ?? "?"}`;
-  }
-
-  if (evento?.startsWith("money_movements.status.") && contenido.type === "spei_return") {
-    // Devolución de un depósito: external_id = id de la transacción devuelta.
-    const ext = typeof contenido.external_id === "string" ? contenido.external_id : "";
-    const { data: dep } = await sb
-      .from("cobre_depositos")
-      .select("id, devolucion_estado")
-      .eq("transaccion_externa_id", ext)
-      .maybeSingle();
-    if (!dep) resultado = "devolución desconocida";
-    else {
-      try {
-        resultado = `devolución ${await aplicarEstadoDevolucion(sb, dep, contenido)}`;
-      } catch (e) {
-        errorProceso = (e as Error).message;
-      }
-    }
-  } else if (evento?.startsWith("money_movements.status.")) {
-    const mmId = typeof contenido.id === "string" ? contenido.id : "";
-    const ext = typeof contenido.external_id === "string" ? contenido.external_id : "";
-    const { data: t } = await sb
-      .from("cobre_transferencias")
-      .select("id, id_txn, estado, mm_id")
-      .or(`mm_id.eq.${mmId.replace(/[^\w-]/g, "")},id_txn.eq.${ext.replace(/[^\w-]/g, "")}`)
-      .limit(1)
-      .maybeSingle();
-    if (!t) resultado = "transferencia desconocida";
-    else {
-      try {
-        const r = await aplicarEstadoTransferencia(sb, t, contenido);
-        resultado = `transferencia ${r.estado}`;
-      } catch (e) {
-        errorProceso = (e as Error).message;
-      }
-    }
+  try {
+    resultado = await procesarEventoCobre(sb, conexionCobre(sb, instancia), evento, contenido);
+  } catch (e) {
+    errorProceso = (e as Error).message;
   }
 
   await sb
     .from("webhook_eventos")
     .update({
-      resultado: errorProceso ? "error" : resultado,
+      resultado: errorProceso ? "error" : resultado.slice(0, 200),
       error: errorProceso,
       procesado_at: new Date().toISOString(),
       intentos,
     })
     .eq("id", filaId);
-  // Con error se responde 500 para que Cobre reintente (el depósito es idempotente).
   return errorProceso ? json({ error: "No se pudo procesar el aviso" }, 500) : json({ ok: true });
 });

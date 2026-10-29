@@ -10,6 +10,8 @@ import {
   InfoEmpresaCard,
 } from "@/features/cuenta/components/InfoAdicionalCards";
 import { InfoUsuarioCard } from "@/features/cuenta/components/InfoUsuarioCard";
+import { AltaCobreCard } from "@/features/cuenta/components/AltaCobreCard";
+import { usePaisConModulos } from "@/shared/modulos-pais";
 import { useCuentaPantalla } from "@/features/cuenta/hooks/useCuentaPantalla";
 import type { DocReal } from "@/features/cuenta/types";
 
@@ -18,6 +20,7 @@ export const Route = createFileRoute("/app/cuenta")({ component: Page });
 function Page() {
   const [docPreview, setDocPreview] = useState<DocReal | null>(null);
   const c = useCuentaPantalla();
+  const pais = usePaisConModulos();
 
   return (
     <>
@@ -37,6 +40,7 @@ function Page() {
           <InfoUsuarioCard c={c} />
           <InfoAdicionalCard c={c} />
           {c.isPJ && <InfoEmpresaCard c={c} />}
+          {pais.modulos.transferencias_cobre && <AltaCobreCard />}
           <DocumentosKycCard c={c} onPreview={setDocPreview} />
         </div>
         <CuentaSidebar c={c} />

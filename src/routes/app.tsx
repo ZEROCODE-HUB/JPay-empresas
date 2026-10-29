@@ -20,6 +20,8 @@ import {
   MapPinned,
   FileBarChart2,
   Banknote,
+  HandCoins,
+  DollarSign,
 } from "lucide-react";
 import { PortalShell, type NavItem } from "@/components/portal-shell";
 import { SupportBot } from "@/components/support-bot";
@@ -60,6 +62,13 @@ const NAV: NavItem[] = [
     icon: ArrowLeftRight,
     modulo: "transferencias_cobre",
   },
+  {
+    to: "/app/cobrar-spei",
+    label: "Cobrar por SPEI",
+    icon: HandCoins,
+    modulo: "transferencias_cobre",
+  },
+  { to: "/app/dolares", label: "Dólares", icon: DollarSign, modulo: "transferencias_cobre" },
   { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned, modulo: "pos" },
   {
     label: "Link de pago",

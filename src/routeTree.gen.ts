@@ -19,9 +19,11 @@ import { Route as VerificarCorreoRouteImport } from './routes/verificar-correo'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppApiRouteImport } from './routes/app.api'
 import { Route as AppApiConfigRouteImport } from './routes/app.api-config'
+import { Route as AppCobrarSpeiRouteImport } from './routes/app.cobrar-spei'
 import { Route as AppCobrosRouteImport } from './routes/app.cobros'
 import { Route as AppCuentaRouteImport } from './routes/app.cuenta'
 import { Route as AppDestinatariosRouteImport } from './routes/app.destinatarios'
+import { Route as AppDolaresRouteImport } from './routes/app.dolares'
 import { Route as AppEcommerceRouteImport } from './routes/app.ecommerce'
 import { Route as AppHistorialRouteImport } from './routes/app.historial'
 import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones'
@@ -110,6 +112,11 @@ const AppApiConfigRoute = AppApiConfigRouteImport.update({
   path: '/api-config',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCobrarSpeiRoute = AppCobrarSpeiRouteImport.update({
+  id: '/cobrar-spei',
+  path: '/cobrar-spei',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCobrosRoute = AppCobrosRouteImport.update({
   id: '/cobros',
   path: '/cobros',
@@ -123,6 +130,11 @@ const AppCuentaRoute = AppCuentaRouteImport.update({
 const AppDestinatariosRoute = AppDestinatariosRouteImport.update({
   id: '/destinatarios',
   path: '/destinatarios',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDolaresRoute = AppDolaresRouteImport.update({
+  id: '/dolares',
+  path: '/dolares',
   getParentRoute: () => AppRoute,
 } as any)
 const AppEcommerceRoute = AppEcommerceRouteImport.update({
@@ -323,9 +335,11 @@ export interface FileRoutesByFullPath {
   '/verificar-correo': typeof VerificarCorreoRoute
   '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
+  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
+  '/app/dolares': typeof AppDolaresRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -374,8 +388,10 @@ export interface FileRoutesByTo {
   '/verificar-correo': typeof VerificarCorreoRoute
   '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
+  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
+  '/app/dolares': typeof AppDolaresRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -426,9 +442,11 @@ export interface FileRoutesById {
   '/verificar-correo': typeof VerificarCorreoRoute
   '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
+  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
+  '/app/dolares': typeof AppDolaresRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -480,9 +498,11 @@ export interface FileRouteTypes {
     | '/verificar-correo'
     | '/app/api'
     | '/app/api-config'
+    | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
     | '/app/destinatarios'
+    | '/app/dolares'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -531,8 +551,10 @@ export interface FileRouteTypes {
     | '/verificar-correo'
     | '/app/api'
     | '/app/api-config'
+    | '/app/cobrar-spei'
     | '/app/cuenta'
     | '/app/destinatarios'
+    | '/app/dolares'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -582,9 +604,11 @@ export interface FileRouteTypes {
     | '/verificar-correo'
     | '/app/api'
     | '/app/api-config'
+    | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
     | '/app/destinatarios'
+    | '/app/dolares'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -716,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppApiConfigRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/cobrar-spei': {
+      id: '/app/cobrar-spei'
+      path: '/cobrar-spei'
+      fullPath: '/app/cobrar-spei'
+      preLoaderRoute: typeof AppCobrarSpeiRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cobros': {
       id: '/app/cobros'
       path: '/cobros'
@@ -735,6 +766,13 @@ declare module '@tanstack/react-router' {
       path: '/destinatarios'
       fullPath: '/app/destinatarios'
       preLoaderRoute: typeof AppDestinatariosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/dolares': {
+      id: '/app/dolares'
+      path: '/dolares'
+      fullPath: '/app/dolares'
+      preLoaderRoute: typeof AppDolaresRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/ecommerce': {
@@ -1048,9 +1086,11 @@ const AppQrRouteWithChildren = AppQrRoute._addFileChildren(AppQrRouteChildren)
 interface AppRouteChildren {
   AppApiRoute: typeof AppApiRoute
   AppApiConfigRoute: typeof AppApiConfigRoute
+  AppCobrarSpeiRoute: typeof AppCobrarSpeiRoute
   AppCobrosRoute: typeof AppCobrosRouteWithChildren
   AppCuentaRoute: typeof AppCuentaRoute
   AppDestinatariosRoute: typeof AppDestinatariosRoute
+  AppDolaresRoute: typeof AppDolaresRoute
   AppEcommerceRoute: typeof AppEcommerceRoute
   AppHistorialRoute: typeof AppHistorialRoute
   AppIntegracionesRoute: typeof AppIntegracionesRoute
@@ -1072,9 +1112,11 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppApiRoute: AppApiRoute,
   AppApiConfigRoute: AppApiConfigRoute,
+  AppCobrarSpeiRoute: AppCobrarSpeiRoute,
   AppCobrosRoute: AppCobrosRouteWithChildren,
   AppCuentaRoute: AppCuentaRoute,
   AppDestinatariosRoute: AppDestinatariosRoute,
+  AppDolaresRoute: AppDolaresRoute,
   AppEcommerceRoute: AppEcommerceRoute,
   AppHistorialRoute: AppHistorialRoute,
   AppIntegracionesRoute: AppIntegracionesRoute,

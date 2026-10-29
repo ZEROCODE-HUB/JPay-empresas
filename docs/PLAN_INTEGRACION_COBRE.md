@@ -1,196 +1,205 @@
 # Plan de integración: Cobre (México)
 
-Fecha: 2026-10-28. Documentación: https://docs.cobre.com/llms.txt (copia local de las 504 páginas en
-el scratchpad de la sesión, carpeta `cobre/p`).
+Fecha: 2026-10-28. **Documento de referencia:** "Solution Design — integración de JPAY con Cobre"
+(Cobre, 2026-10-26). Documentación general: https://docs.cobre.com/llms.txt.
 
-## 1. Qué es Cobre y dónde encaja en JPay
+Este plan reemplaza al anterior (fases C1–C5). Lo construido en C1–C5 se reutiliza donde coincide
+con el documento de Cobre; lo que no coincide se cambia en las fases D0–D8.
 
-Cobre no es una pasarela de tarjetas: es una plataforma de **movimiento de dinero entre cuentas**
-(México, Colombia, EE. UU.). En México ofrece:
+## 1. Qué pide el documento de Cobre
 
-| Producto Cobre | Para qué sirve en JPay | Equivalente en Argentina |
+JPay es un PSP sobre su **instancia matriz** de Cobre. Por cada comercio de la plataforma:
+
+1. **Subcliente** (`sc_…`): alta KYB del comercio en Cobre (onboarding FBO). Queda en
+   `processing` hasta `approved`. Un `rejected` no se reenvía: se crea un registro nuevo.
+2. **Cobre Balance México** (`pr_mex_cobre3`, `acc_…`) creado con el `subclient_id` aprobado
+   (Named Account). Su `account_number` es la CLABE del comercio. **No hay balance concentrador.**
+3. Con ese Balance el comercio:
+   - **cobra** por Direct Link R2P SPEI (una CLABE dinámica por cobro, con vencimiento);
+   - **paga** por SPEI, unitario o masivo (lote), a CLABEs verificadas;
+   - **convierte** MXN→USD (cotización `mxn/usd` + Cross Border) al Balance **Global** USD de JPay.
+4. JPay mueve los USD del Balance Global al **Balance USA** (`global_pay_to_usa`) y desde ahí paga
+   por **Fedwire** (EE. UU.) o **SWIFT** (exterior).
+5. **Excepción:** un comercio con contrato directo con Cobre usa su **propia instancia**
+   (credenciales, webhooks y conciliación propios). El resto de la cartera sigue con Subcliente.
+
+Balances de la instancia matriz: Global USD (`pr_global_cobre`, destino del cruce) y USA
+(`pr_usa_cobre`, origen de Fedwire y SWIFT). No son intercambiables.
+
+## 2. Qué cambia respecto de lo construido (C1–C5)
+
+| Tema | C1–C5 | Documento de Cobre |
 | --- | --- | --- |
-| Cobre Balance MXN (`pr_mex_cobre3`) | Cuenta donde vive el dinero; tiene su propia CLABE | Cuenta en BDC |
-| CLABEs virtuales (`virtual_clabe_accounts`) | Una CLABE por cliente/subcuenta para recibir depósitos SPEI | CVU |
-| Contrapartes (`clabe`, `spei_card`) | Destinatarios frecuentes con CLABE o tarjeta SPEI y RFC/CURP | Destinatarios CBU/CVU |
-| Money Movement SPEI (payout) | Transferencias salientes reales | Transferencia por Coelsa |
-| Verificación de cuentas | Confirmar que la CLABE es del titular (RFC/CURP) antes de pagar | Consulta de titularidad |
-| Devoluciones (`/money_movements_return`) | Devolver un depósito recibido | — |
-| Webhooks (`accounts.balance.credit/debit`, `money_movements.status.*`) | Acreditar depósitos y cerrar transferencias | Avisos de BDC |
-| Named Accounts (función restringida) | La CLABE del comercio muestra "JPAY \| Comercio" en el SPEI | — |
-| R2P / Direct Link (CLABE dinámica de un solo uso) | Cobros puntuales por SPEI | — |
+| Fondos MX | `centralizado` (Balance de JPay + CLABE virtual por subcuenta) por defecto; `por_comercio` sin KYB | Subcliente + Balance por comercio, sin concentrador |
+| PayIn | Depósitos `spei_credit` a CLABE virtual | R2P SPEI con CLABE dinámica (`r2p_spei_credit`) |
+| Payout SPEI | Unitario desde el Balance de JPay | Unitario y masivo desde el Balance del comercio; titular `matched` |
+| Rebotes | No se reintegra un rebote posterior a `completed` | `spei_rejected` / `spei_return` se reintegran |
+| USD | No existe | Cruce, traslado Global→USA, Fedwire y SWIFT |
+| Credenciales | Una instancia | Matriz + instancia propia del comercio |
+| Webhooks | `money_movements.*`, `accounts.balance.*` | + `cross_border_*`, `bulk_*`, `subclient.*`; suscripción por API |
 
-Ecart Pay sigue siendo el proveedor de **cobros** (tarjeta, OXXO, SPEI de links, terminales).
-Cobre sería el proveedor de **cuenta y transferencias**: lo que en México hoy está apagado
-(`transferencias_salientes` = false) y la CLABE propia de cada cliente.
+Se reutiliza: cliente HTTP (token al 95%, 401, errores, firma), simulador, webhook con
+deduplicación, transferencias SPEI con reserva e idempotencia, verificación de titular,
+aprobación por monto, conciliación por identificadores, alertas y tarjetas del admin.
 
-Hoy las transferencias de JPay solo mueven saldo en la base (`registrar_transferencia_externa`
-descuenta y registra el movimiento como acreditado al instante); no salen por ningún riel real.
+## 3. Decisiones
 
-## 2. Ambientes: no hay sandbox para México
+- **Modelo de fondos (cerrada por Cobre):** Subcliente + Balance por comercio.
+- **Subcuentas (usuario, 2026-10-28):** un Balance por comercio. Su CLABE es la de la subcuenta
+  principal; las demás subcuentas son saldos internos de JPay que se fondean y pagan desde el
+  Balance del comercio.
+- **PayIn (usuario):** se ofrecen los dos, el SPEI de Ecart Pay y el R2P de Cobre, y se documenta
+  la comparación (`docs/COMPARATIVA_SPEI_ECARTPAY_COBRE.md`) para decidir después.
+- **USD (usuario):** lo decide el comercio desde el portal (cotiza, convierte y paga), con
+  aprobación de admin sobre un monto. JPay hace el traslado Global→USA automáticamente antes de
+  cada pago.
+- Aprobación doble sobre un monto (de C4) se mantiene; el `checker_approval` de Cobre queda apagado.
 
-- Cobre tiene ambiente QA (`https://api.qa.cobre.co`) solo para Colombia. **México no está en QA.**
-- Para México, Cobre crea una **instancia de prueba previa a producción** (credenciales, usuarios y
-  datos propios, aislada de producción). Se pide al Key Account Manager (KAM), y la integración
-  solo arranca formalmente con contrato firmado, KAM asignado y "API onboarding" abierto.
-- Para salir a producción hay **certificación**: cuestionario + demo en vivo sobre la instancia
-  de prueba; Cobre emite un informe con puntaje.
+## 4. Datos técnicos clave (del documento)
 
-**Qué se puede hacer sin credenciales:** todo el código contra la especificación publicada, con un
-**simulador de Cobre** del lado servidor (mismas respuestas, estados y webhooks firmados que
-documenta Cobre) para usar y probar los flujos completos en local y en el admin. Cuando lleguen
-las credenciales de la instancia de prueba, se cambia el modo `simulado` → `prueba` (variable de
-entorno) y se corre la lista de pruebas real. Riesgo: lo que la documentación no dice con
-precisión (formatos exactos de algunos campos) se ajusta recién con la instancia real.
-
-## 3. Datos técnicos clave (de la documentación)
-
-- Autenticación: `POST /v1/auth` con `user_id` y `secret` → JWT de 20 min. Cachear y renovar al
-  95% (`expiration_time`); nunca pedir token por cada llamada (rate limit). 401 = token vencido.
-- Montos en centavos (MXN 2.390,15 → `239015`). Fechas en UTC.
-- `POST /v1/money_movements` exige encabezado `idempotency` (≥ 9 caracteres, válido 24 h).
-- Paginación: `page_size`, `page_number`, `contents`, `is_last_page` (máx. 10.000 registros).
-- Payout SPEI: contraparte (`clabe` o `spei_card`, RFC/CURP) → money movement con `source_id`
-  (Cobre Balance), `destination_id` (contraparte), `external_id` (id de JPay), `metadata`
-  (`description`, `reference`), `checker_approval` opcional. Estados: `initiated` →
-  `processing` (se debita) → `completed` | `rejected` (se reintegra) | `failed`;
-  `pending_approval` / `canceled` con aprobación. Códigos de error F001–F099 y R000–R085.
-- Depósitos: transacción `spei_credit` en el Cobre Balance; `metadata.account_reference` dice a
-  qué CLABE virtual llegó (no hay money movement detrás). Webhook `accounts.balance.credit`.
-- Webhooks: suscripción por API (`POST /v1/subscriptions`) con `event_signature_key`; cada envío
-  trae `event-timestamp` y `event-signature` = HMAC-SHA256 (hex) de `timestamp + "." + cuerpo
-  crudo`. Comparación en tiempo constante. Deduplicar por `id` del objeto.
-- Verificación de cuentas (MX): `mex_acc_ownership_1` (CLABE/tarjeta + RFC/CURP → `matched` /
-  `unmatched` / `unresolved`) y `mex_acc_details_1` (devuelve el titular). Asíncrona: P50 10 min,
-  solo en horario bancario, no repetir antes de 12 h.
-- Límite: hay pocos Cobre Balances MX por cliente de Cobre; se recomienda muchas CLABEs virtuales
-  sobre un mismo Balance.
-
-## 4. Decisiones (respondidas el 2026-10-28)
-
-- **C1: los dos modelos**, configurable por comercio (`centralizado` = CLABE virtual sobre el
-  Balance de JPay; `por_comercio` = Cobre Balance propio). Default: `centralizado`.
-- **C2: cuenta y transferencias** (sin R2P/Direct Link por ahora).
-- **C4: sí**, aprobación doble sobre un monto configurable.
-- C3 (comisiones): configurable por país, IVA 16% en México.
-
-Detalle de cada decisión:
-
-- **C1. Modelo de fondos.**
-  a) *Centralizado*: JPay tiene uno o pocos Cobre Balances; cada cliente/subcuenta recibe una
-     CLABE virtual; el saldo de cada cliente lo lleva el ledger de JPay (como hoy con CVU).
-  b) *Por comercio*: un Cobre Balance (Named Account, "JPAY | Comercio") por cliente; el saldo lo
-     lleva Cobre y JPay lo refleja. Requiere que Cobre habilite Named Accounts y tiene cupo.
-  Nota: en (a) JPay custodia fondos de terceros, lo que en México suele requerir figura de IFPE
-  (Ley Fintech) o un esquema acordado con Cobre. Es una decisión legal/comercial, no técnica.
-- **C2. Alcance.** Recomendado: CLABE por cliente + depósitos + transferencias SPEI + destinatarios
-  con verificación + devoluciones + conciliación. Opcional después: R2P/Direct Link (se pisa con
-  el SPEI de Ecart Pay en links), aprobación doble y pagos masivos.
-- **C3. Comisiones de JPay** por transferencia saliente y/o depósito (hoy hay comisión de
-  transferencia con IVA 21% fijo de Argentina; en México sería IVA 16% configurable).
-- **C4. Aprobación doble** (maker-checker de Cobre) para transferencias sobre cierto monto: sí/no.
+- Base `https://api.cobre.co/v1`. `POST /auth` → token de 1200 s; renovar al 95%.
+- Montos en centavos (MXN y USD).
+- `POST /money_movements` y `POST /cross_border_money_movements` exigen el encabezado
+  `idempotency` (≥ 9 caracteres, 24 h). Mismo valor + mismo cuerpo = mismo movimiento; mismo valor
+  + otro cuerpo = 409. **Se guarda `(external_id, idempotency)` antes de llamar** y se reusa en
+  todo reintento; nunca uno nuevo. Ante un timeout se consulta por `external_id` antes de recrear.
+- `POST /subclients` usa otro encabezado: `Idempotency-Key` (≥ 9, 24 h).
+- Cotización `static_quote`: vale 25 s; el Balance MX debe tener el monto antes; par on-market de
+  05:00 a 16:00 (UTC−5). Una cotización vencida es una solicitud nueva, nunca un reintento.
+- Fedwire y SWIFT: mínimo 1.00 USD; la contraparte `business` debe estar verificada antes de
+  pagar. SWIFT termina en `completed` o `failed` (en `failed` el USD vuelve al Balance USA).
+- Estados de Money Movement: `initiated`, `processing`, `pending_approval`, `completed`,
+  `canceled`, `failed`, `rejected`. Cross Border: `initiated`, `processing`, `completed`,
+  `rejected` (+ `failed` con static quote sin fondos). Nunca avanzar con un evento no terminal.
+- Webhook `{ id, event_key, created_at, content }`, firmado con `event-timestamp` y
+  `event-signature` (HMAC-SHA256 de `timestamp.cuerpo crudo`). Cobre reintenta solo errores de
+  conexión (3 veces), nunca un 4xx: lo que se pierde lo recupera la conciliación diaria.
+- Conciliación por identificadores (`external_id`, `money_movement_id`, `batch_id`), nunca por
+  monto y hora.
 
 ## 5. Fases
 
-### Fase C1 — Base y simulador
-- Proveedor `cobre` en `proveedores_pago` (tipo `transferencia`, MX) y módulo
-  `transferencias_cobre` en `paises.modulos`.
-- Cliente `_shared/cobre.ts`: token con caché al 95% y un solo refresco a la vez, encabezado
-  `idempotency`, montos en centavos, paginación, errores con su código del diccionario, mapeos de
-  estados; tests con `fetch` simulado.
-- Simulador (`COBRE_MODO=simulado`): implementa los mismos endpoints sobre tablas propias,
-  hace avanzar los estados y emite webhooks firmados hacia `cobre-webhook`.
-- Edge Function `cobre-salud` (admin) y tarjeta "Cobre" en País y proveedores.
+### D0 — Base común
+- Ruteo de eventos por familia (`money_movements`, `accounts.balance`, `subclient`,
+  `cross_border_money_movements`, `bulk_money_movements`); tipos de transacción nuevos; motivos de
+  rechazo completos; firma con timestamp reciente.
+- Multi-instancia en `conexionCobre` (matriz o instancia del comercio) y webhook por instancia.
+- Suscripción por API con todos los eventos del documento.
+- Se retira el modelo `centralizado` y las CLABEs virtuales de la interfaz; se limpian los datos
+  simulados de C1–C5.
 
-### Fase C2 — Cuentas y CLABE de cada cliente
-- Según C1: alta del Cobre Balance de JPay (o por comercio) y CLABE virtual por cliente/subcuenta
-  (`clabe` en la subcuenta, como hoy `cbu`), con baja (deshabilitar).
-- Portal: "Mi CLABE para recibir depósitos" (copiar, compartir). Admin: CLABEs por cliente.
+### D1 — Alta del comercio: Subcliente y Balance
+- Datos KYB que faltan: sitio web, industria, país de constitución y de operación,
+  representantes legales y beneficiarios finales (UBOs). El onboarding de persona moral pasa a
+  guardar al representante. Formularios en el admin y en el portal.
+- `cobre-subclientes`: validar datos, crear (`POST /subclients`), consultar; aviso
+  `subclient.status.*` y consulta periódica como respaldo.
+- Al aprobarse: `POST /accounts` con `subclient_id`; la CLABE del Balance queda en la subcuenta
+  principal. Balances Global y USA de la matriz, una vez, desde el admin.
 
-### Fase C3 — Depósitos
-- Webhook `cobre-webhook` (público, firma obligatoria): `accounts.balance.credit` →
-  identifica la subcuenta por `account_reference` → acredita el saldo y registra el movimiento
-  (idempotente por id de transacción). Sin CLABE conocida → bandeja de "depósitos sin asignar".
-- Tarea de respaldo: lee transacciones del Balance y acredita lo que no llegó por webhook.
-- Devolución de un depósito (`/money_movements_return`) desde el admin.
+### D2 — Payouts SPEI unitario y masivo
+- Origen: el Balance del comercio. Solo se paga a titular `matched`.
+- Rebotes posteriores a `completed` (`spei_rejected`, `spei_return`): estado `devuelta` y reintegro.
+- Lotes: carga de archivo en el portal → `POST /bulk_money_movements`; cada ítem se sigue por su
+  propio estado (`batch_id`).
 
-### Fase C4 — Transferencias SPEI salientes
-- Destinatarios: CLABE (validada con dígito verificador, ya existe `validarClabe`) o tarjeta SPEI,
-  titular y RFC/CURP → contraparte en Cobre; verificación de titularidad opcional (asíncrona).
-- Transferir: reserva el saldo en JPay → money movement con `idempotency` y `external_id` →
-  movimiento `pendiente` → webhook `completed` (acreditado) o `rejected`/`failed` (reintegra el
-  saldo y muestra el motivo R0xx/F0xx en español). OTP actual se mantiene.
-- Se reemplaza el "acreditado al instante" de `registrar_transferencia_externa` solo para MX.
+### D3 — PayIn Direct Link R2P SPEI
+- `cobre-r2p`: contraparte `r2p_spei` del pagador → Money Movement `r2p_spei` hacia el Balance del
+  comercio → CLABE dinámica y vencimiento. Se acredita con `completed` + `r2p_spei_credit`.
+- En el checkout del link (junto a Ecart Pay) y en el portal ("Solicitar pago por SPEI").
+- Comparativa Ecart Pay vs Cobre para decidir cuál queda.
 
-### Fase C5 — Conciliación, reportes y alertas
-- Conciliación diaria contra transacciones del Balance (por id, nunca por monto y hora).
-- Reportes de depósitos/transferencias/comisiones; alertas como las de Ecart Pay.
+### D4 — USD: saldo y conversión
+- El ledger admite USD; subcuenta USD por comercio; cuentas contables de los Balances Global y USA.
+- `cobre-fx`: cotizar y convertir; acreditación al `completed` del cruce.
+- Portal "Dólares": saldos, cotización con cuenta regresiva, horario de mercado y comisión.
 
-### Fase C6 — Pruebas en la instancia de Cobre y certificación
-- Cambiar a `COBRE_MODO=prueba` con las credenciales que entregue el KAM; registrar la
-  suscripción de webhooks; correr la lista de pruebas (sección 6).
-- Cuestionario de certificación y demo en vivo. Credenciales de producción en secretos.
+### D5 — Payouts USD: Fedwire y SWIFT
+- Destinatarios `business` (ABA para Fedwire, BIC para SWIFT) con verificación.
+- Envío: reserva USD → traslado `global_pay_to_usa` → `fedwire` o `swift` → resultado final.
+
+### D6 — Instancia Cobre propia del comercio
+- Credenciales en Vault por comercio; todas las funciones resuelven la instancia; webhook y
+  conciliación por instancia.
+
+### D7 — Conciliación, reportes y alertas
+- Conciliación por Balance (cada comercio contra su saldo en JPay; Global y USA contra USD).
+- Alertas: subcliente trabado, Balance no conectado, cruce o traslado sin terminar, payout USD
+  trabado, contraparte sin verificar.
+
+### D8 — Instancia de prueba y certificación
+- Credenciales de la instancia de prueba (las entrega el KAM) → `COBRE_MODO=prueba` → lista de
+  pruebas → certificación (cuestionario + demo).
+- Prerrequisitos que Cobre debe habilitar: Named Accounts/Subclientes, Balances Global y USA, par
+  MXN/USD con static quote, Fedwire y SWIFT.
+- Preguntas para Cobre: catálogo de `industry`, acrónimo de `short_name` (máx. 40 en total), alta
+  de persona física como Subcliente, cupo de Balances por comercio, si siguen disponibles las
+  CLABEs virtuales.
 
 ## 6. Lista de pruebas (simulador primero, después instancia de Cobre)
 
 | # | Escenario | Esperado |
 | --- | --- | --- |
 | 1 | Token y renovación | Un solo token por 19 min; 401 → renueva y reintenta una vez |
-| 2 | Crear CLABE virtual | La subcuenta muestra su CLABE |
-| 3 | Depósito a la CLABE | Saldo acreditado una sola vez, movimiento en historial |
-| 4 | Depósito a CLABE desconocida | Bandeja "sin asignar", no acredita a nadie |
-| 5 | Webhook con firma inválida | 401 y registrado |
-| 6 | Webhook duplicado | Se procesa una vez |
-| 7 | Transferencia completada | Pendiente → acreditada |
-| 8 | Transferencia rechazada (R005 cuenta inexistente) | Reintegra saldo y comisión, motivo claro |
-| 9 | Fondos insuficientes en el Balance (F002) | No debita al cliente; alerta en admin |
-| 10 | Reintento con la misma clave | Una sola transferencia (idempotencia) |
-| 11 | Verificación de cuenta | matched / unmatched / unresolved visibles |
-| 12 | Devolución de un depósito | `spei_return` creado y seguido hasta completed |
-| 13 | Conciliación | Sin diferencias; una diferencia forzada aparece una vez |
-| 14 | Argentina sigue igual | Transferencias AR sin cambios |
+| 2 | Alta de Subcliente aprobada | `approved` → Balance creado y CLABE en la subcuenta principal |
+| 3 | Subcliente rechazado | Motivo visible; se corrige y se crea un registro nuevo |
+| 4 | Webhook con firma inválida o vieja | 401 y registrado |
+| 5 | Webhook duplicado | Se procesa una vez |
+| 6 | R2P pagado | CLABE dinámica → `completed` → saldo acreditado una vez |
+| 7 | R2P vencido (F003/R017) | Se puede emitir uno nuevo; nada acreditado |
+| 8 | SPEI unitario completado | Pendiente → acreditada |
+| 9 | SPEI rechazado (R005) | Reintegra saldo y comisión, motivo claro |
+| 10 | Rebote después de `completed` | `devuelta` y reintegro una sola vez |
+| 11 | Fondos insuficientes (F002) | No debita al cliente; alerta en admin |
+| 12 | Reintento con la misma clave | Un solo movimiento (idempotencia) |
+| 13 | Titular `unmatched` / `unresolved` | No permite pagar |
+| 14 | Lote con ítems mixtos | Cada ítem con su estado; reintegro de los fallidos |
+| 15 | Cruce MXN→USD | Cotización vigente → `completed` → saldo USD acreditado |
+| 16 | Cruce con cotización vencida | Se pide otra; nunca se reintenta el movimiento |
+| 17 | Traslado + Fedwire | Traslado `completed` → Fedwire `completed` |
+| 18 | SWIFT fallido | `failed` → USD reintegrado al comercio |
+| 19 | Contraparte USD sin verificar | No permite pagar |
+| 20 | Instancia propia del comercio | Usa sus credenciales y su clave de webhook |
+| 21 | Conciliación | Sin diferencias; una diferencia forzada aparece una vez |
+| 22 | Argentina sigue igual | Transferencias AR sin cambios |
 
 ## 7. Estado (2026-10-28)
 
-Ramas `feature/cobre-c1` (admin y empresas), sobre `feature/ecartpay-fase9`; sin push.
-Todo funciona de punta a punta con el **simulador** (`COBRE_MODO` sin definir). Falta probarlo
-contra Cobre real: la instancia de prueba de México se pide al KAM.
-
-- **C1 (hecha):** cliente `_shared/cobre.ts` (token al 95%, 401, errores con código, estados y
-  motivos en español, firma de avisos), simulador (`_shared/cobre-simulador.ts`, tabla
-  `cobre_simulador`, cron cada minuto), `cobre-webhook`, `cobre-simulador`, `cobre-salud`,
-  migración 1033, tarjeta de conexión genérica en el admin. 11 tests de Cobre.
-- **C2/C3 (hechas):** migración 1034. El ledger pasa a ser por país: las subcuentas nuevas y sus
-  transacciones nacen en la moneda del cliente (MXN en México; las restricciones admitían solo
-  ARS y ahora ARS o MXN). Cuentas BANCO_COBRE, INGRESOS_COMISIONES_MXN, IVA_DEBITO_FISCAL_MXN.
-  `cobre-cuentas`: cuenta de JPay (centralizado) o del cliente (por comercio) y CLABE virtual
-  por subcuenta (también en `subaccounts.cbu`). Depósitos por webhook con
-  `cobre_registrar_deposito` (mismo asiento y reglas que BDC); CLABE sin dueño → "sin asignar".
-- **C4 (hecha):** migración 1035. `cobre-transferencias`: destinatarios con verificación de
-  titular, envío con reserva (`reservar_transferencia_bdc`), idempotencia por TXID, aprobación
-  por admin sobre un monto, OTP del lado servidor si `exigir_otp`. `cobre-pendientes` (cada
-  5 min) cierra lo que no llegó por aviso. Portal: "Transferencias SPEI" (CLABEs, transferir,
-  movimientos). Admin: tarjeta "Cobre: cuentas y transferencias SPEI".
-- **Probado con el simulador:** depósito acreditado (quedó retenido por las reglas de
-  prevención), depósito a CLABE sin dueño, transferencia completada, rechazo R005 con reserva
-  liberada, sin saldo, reintento con el mismo TXID, aprobación por admin, verificación de
-  titular y una transferencia desde la interfaz del portal. Ledger cuadrado (BANCO_COBRE = saldo
-  de la subcuenta).
-- **C5 (hecha, 2026-10-28):** migración 1036 y `cobre-conciliacion` (pública, cron 09:30 UTC,
-  manual para admins). Cruza las transacciones de los Balances (3 días) con JPay por
-  identificadores: acredita los depósitos que no llegaron por aviso, marca envíos que JPay no
-  tiene, transferencias completadas sin débito, montos distintos, y compara el saldo en Cobre
-  con BANCO_COBRE + sin asignar (`saldo_distinto`; detecta cargos de Cobre). Devoluciones de
-  depósitos sin asignar (`devolver_deposito`, `/money_movements_return`; también en el
-  simulador), seguidas por aviso y por pendientes. Alertas de Cobre (transferencias trabadas,
-  aprobaciones esperando, depósitos sin dueño). Admin: tarjetas de alertas y conciliación por
-  proveedor, botón Devolver y modelo de fondos por cliente.
-  Probado con el simulador: conciliación limpia (saldo 1.022 = 1.022), depósito sin aviso
-  recuperado sin duplicar, cargo de $1.50 detectado como saldo distinto, devolución completada
-  y segundo pedido rechazado.
-- **Pendiente:** C6 (instancia de prueba de Cobre y certificación). Un depósito ya acreditado no
-  se devuelve por Cobre (se ajusta desde el backoffice). Al pasar de simulado a prueba hay que
-  limpiar los datos simulados (el ledger no distingue modos).
-- **Para revisar con negocio:** las reglas de prevención actuales están pensadas para Argentina
-  (salario mínimo argentino, topes de prueba de $10 y $20 que bloquean). En México hay que
-  definir los umbrales (por ejemplo en UMA) antes de operar.
+- **C1–C5 (rama `feature/cobre-c1`):** base, simulador, cuentas, depósitos, transferencias SPEI,
+  conciliación, devoluciones y alertas con el modelo anterior.
+- **D0–D7 (rama `feature/cobre-sd`, sobre `feature/cobre-c1`, sin push): hechas con el simulador.**
+  - Migraciones 1037 (instancias, KYB, Subclientes, Balances por comercio/Global/USA, depósitos
+    por Balance), 1038 (rebotes, lotes, R2P, USD, conversiones) y 1039 (ajustes y saldo esperado
+    por comercio). Aplicadas.
+  - Funciones: `cobre-subclientes`, `cobre-r2p`, `cobre-fx`, `cobre-instancias` (nuevas);
+    `cobre-webhook`, `cobre-cuentas`, `cobre-transferencias`, `cobre-pendientes`,
+    `cobre-conciliacion`, `cobre-simulador`, `crear-cliente` (cambiadas). Desplegadas.
+  - Portal: Transferencias SPEI (CLABE del comercio, envío, lote), Cobrar por SPEI, Dólares,
+    "Cuenta en Cobre" en Mi cuenta, SPEI de Cobre en el checkout del link.
+  - Admin: tarjeta Cobre (Balances Global/USA, suscripción, aprobaciones de envíos y lotes,
+    depósitos sin asignar, simulador) y pestaña "Cobre (México)" en el cliente (KYB, alta,
+    instancia propia).
+  - Se retiraron el modelo centralizado y las CLABEs virtuales; se limpiaron los datos simulados
+    de C1–C5 (con contra-asientos).
+- **Probado de punta a punta con el simulador (empresa MX de prueba):** alta KYB aprobada →
+  Balance y CLABE; depósito acreditado; SPEI con titular sin verificar bloqueado; verificación
+  `matched`; SPEI completado; rebote posterior a `completed` → `devuelta` con reintegro; reintento
+  con el mismo TXID devuelve el mismo envío; lote de 2 pagos completado; cobro R2P pagado y
+  acreditado; cotización y conversión de $500 a 27 USD; Fedwire completado tras el traslado
+  Global→USA; SWIFT fallido con el saldo liberado; conciliación sin diferencias (Balance del
+  comercio 4.492 = 4.492; dólares 22 = 22). 41 tests del cliente y del simulador.
+- **Pendiente:** D8 (instancia de prueba de Cobre y certificación). La instancia propia de un
+  comercio está construida pero sin probar contra Cobre real.
+- **Para revisar con negocio:**
+  - Reglas de prevención para México (hoy pensadas para Argentina: bloquean montos chicos).
+  - Monto de aprobación en pesos y en dólares.
+  - Comisión ante un rebote (hoy se devuelve todo, monto + comisión + IVA).
+  - **Comisiones de JPay en el modelo por comercio:** lo que JPay cobra de comisión queda
+    físicamente en el Balance del comercio; hay que acordar con Cobre cómo se barre a una cuenta
+    de JPay (la conciliación ya lo contempla como parte del saldo esperado).
+  - Las conversiones a dólares no pasan por las reglas de prevención ni cobran comisión de JPay.
+  - Comparativa de SPEI Ecart Pay vs. Cobre: `docs/COMPARATIVA_SPEI_ECARTPAY_COBRE.md`.
+- **Preguntas para Cobre (KAM):** catálogo de `industry`; el OAS de `/subclients` lista `id_type`
+  de Colombia (cc, nit…) y el documento usa `rfc`: confirmar para México; acrónimo de
+  `short_name`; alta de persona física como Subcliente; cupo de Balances por comercio; barrido
+  de comisiones; costos de R2P, cruce y payouts USD.

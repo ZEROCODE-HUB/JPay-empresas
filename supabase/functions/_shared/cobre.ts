@@ -72,9 +72,12 @@ type Opciones = {
 
 export type SolicitudCobre = {
   query?: Record<string, string | number | boolean | undefined>;
+  /** JSON, o `FormData` para los endpoints multipart (lotes). */
   body?: unknown;
-  /** Clave de idempotencia (obligatoria en POST /money_movements). */
+  /** Clave de idempotencia (obligatoria en POST /money_movements y /cross_border_money_movements). */
   idempotency?: string;
+  /** Encabezados extra (p. ej. `Idempotency-Key` de /subclients, `checker_approval` de lotes). */
+  headers?: Record<string, string>;
 };
 
 export class CobreCliente {
@@ -133,16 +136,22 @@ export class CobreCliente {
     let token = await this.token();
     for (let intento = 0; ; intento++) {
       let res: Response;
+      const multipart = s.body instanceof FormData;
       try {
         res = await this.f(url, {
           method: metodo,
           headers: {
             accept: "application/json",
             authorization: `Bearer ${token}`,
-            ...(s.body !== undefined ? { "content-type": "application/json" } : {}),
+            ...(s.body !== undefined && !multipart ? { "content-type": "application/json" } : {}),
             ...(s.idempotency ? { idempotency: s.idempotency } : {}),
+            ...(s.headers ?? {}),
           },
-          body: s.body !== undefined ? JSON.stringify(s.body) : undefined,
+          body: multipart
+            ? (s.body as FormData)
+            : s.body !== undefined
+              ? JSON.stringify(s.body)
+              : undefined,
         });
       } catch (e) {
         throw new CobreError(503, `Sin respuesta de Cobre: ${(e as Error).message}`);
@@ -162,8 +171,13 @@ export class CobreCliente {
     return this.request<T>("GET", ruta, { query });
   }
 
-  post<T = unknown>(ruta: string, body: unknown, idempotency?: string): Promise<T> {
-    return this.request<T>("POST", ruta, { body, idempotency });
+  post<T = unknown>(
+    ruta: string,
+    body: unknown,
+    idempotency?: string,
+    headers?: Record<string, string>,
+  ): Promise<T> {
+    return this.request<T>("POST", ruta, { body, idempotency, headers });
   }
 
   delete<T = unknown>(ruta: string): Promise<T> {
@@ -218,8 +232,11 @@ export const SIN_DEBITO: EstadoTransferencia[] = ["rechazada", "fallida", "cance
 const MOTIVOS: Record<string, string> = {
   F001: "No se pudo procesar la transferencia; intentá de nuevo",
   F002: "Fondos insuficientes en la cuenta de origen",
+  F003: "La solicitud de pago venció",
   F004: "Se alcanzó el límite diario de transferencias",
   F005: "El monto supera el máximo permitido por transferencia",
+  F098: "Cobre no pudo procesarla en este momento; se reintenta más tarde",
+  F099: "Cobre no pudo procesarla en este momento; se reintenta más tarde",
   R000: "Transferencia rechazada",
   R001: "La cuenta de destino está inactiva o bloqueada",
   R002: "La cuenta y la identificación del titular no coinciden",
@@ -228,9 +245,17 @@ const MOTIVOS: Record<string, string> = {
   R006: "Número de cuenta inválido",
   R008: "El beneficiario devolvió el pago",
   R009: "El monto supera el máximo permitido",
+  R010: "La cuenta no está autorizada a debitar",
   R011: "Tipo de cuenta inválido",
+  R012: "El pagador abandonó el pago",
   R013: "El banco de destino no está disponible",
   R015: "La cuenta de destino no admite abonos",
+  R016: "El pago se rechazó por tiempo de espera",
+  R017: "La solicitud de pago venció",
+  R019: "El monto pagado no coincide",
+  R020: "Falló la autenticación del pagador",
+  R021: "El pagador no tenía fondos suficientes",
+  R023: "Cancelada por el usuario",
   R024: "Se superó la cantidad de transferencias permitidas",
   R025: "Faltan datos obligatorios",
   R026: "El banco de destino no está operando",
@@ -356,6 +381,243 @@ export function contraparteMx(d: DestinatarioMx): Record<string, unknown> {
   };
 }
 
+export type DestinatarioUsd = {
+  rail: "fedwire" | "swift";
+  titular: string;
+  idTipo: string;
+  idNumero: string;
+  correo: string;
+  telefono: string;
+  sitioWeb?: string | null;
+  /** País de constitución del beneficiario (ISO alfa-3). */
+  paisConstitucion: string;
+  direccion: {
+    calle1: string;
+    calle2?: string | null;
+    ciudad: string;
+    estado: string;
+    cp: string;
+    pais: string;
+  };
+  banco: {
+    nombre: string;
+    cuenta: string;
+    tipoCuenta?: "checking" | "savings" | "";
+    /** ABA (Fedwire). */
+    aba?: string | null;
+    /** BIC (SWIFT). */
+    bic?: string | null;
+    direccion: {
+      pais: string;
+      ciudad?: string | null;
+      estado?: string | null;
+      cp?: string | null;
+      calle1?: string | null;
+    };
+  };
+  alias?: string | null;
+};
+
+/**
+ * Cuerpo de POST /counterparties tipo `business` para Fedwire (ABA en `routing_number`, geo `usa`)
+ * o SWIFT (BIC en `bic`, `routing_number` vacío, geo = país del beneficiario en minúsculas).
+ */
+export function contraparteUsd(d: DestinatarioUsd): Record<string, unknown> {
+  const pais3 = (v: string, que: string) => {
+    const x = (v ?? "").trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(x))
+      throw new CobreError(400, `${que}: código de país inválido (ISO alfa-3)`);
+    return x;
+  };
+  const cuenta = d.banco.cuenta.replace(/[\s-]/g, "").toUpperCase();
+  if (!/^[A-Z0-9]{4,34}$/.test(cuenta)) throw new CobreError(400, "Número de cuenta inválido");
+  const aba = (d.banco.aba ?? "").replace(/\D/g, "");
+  const bic = (d.banco.bic ?? "").trim().toUpperCase();
+  if (d.rail === "fedwire" && !/^\d{9}$/.test(aba))
+    throw new CobreError(400, "El ABA tiene 9 dígitos");
+  if (d.rail === "swift" && !/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(bic)) {
+    throw new CobreError(400, "BIC/SWIFT inválido (8 u 11 caracteres)");
+  }
+  const titular = d.titular.trim();
+  if (!titular) throw new CobreError(400, "Falta el nombre del beneficiario");
+  const paisDir = pais3(d.direccion.pais, "Dirección del beneficiario");
+  return {
+    geo: d.rail === "fedwire" ? "usa" : paisDir.toLowerCase(),
+    type: "business",
+    alias: (d.alias || titular).slice(0, 32),
+    metadata: {
+      counterparty_fullname: titular,
+      counterparty_id_type: d.idTipo,
+      counterparty_id_number: d.idNumero.trim(),
+      counterparty_phone: d.telefono.trim(),
+      counterparty_email: d.correo.trim(),
+      counterparty_website: d.sitioWeb?.trim() ?? "",
+      counterparty_incorporation_country: pais3(d.paisConstitucion, "País de constitución"),
+      counterparty_address: {
+        street_line1: d.direccion.calle1.trim(),
+        street_line2: d.direccion.calle2?.trim() ?? "",
+        city: d.direccion.ciudad.trim(),
+        state: d.direccion.estado.trim(),
+        postal_code: d.direccion.cp.trim(),
+        country: paisDir,
+      },
+      counterparty_bank_details: {
+        rail: d.rail,
+        currency: "usd",
+        bank_name: d.banco.nombre.trim(),
+        account_type: d.banco.tipoCuenta ?? "",
+        account_number: cuenta,
+        routing_number: d.rail === "fedwire" ? aba : "",
+        ...(d.rail === "swift" ? { bic } : {}),
+        bank_address: {
+          country: pais3(d.banco.direccion.pais, "País del banco"),
+          ...(d.banco.direccion.ciudad ? { city: d.banco.direccion.ciudad } : {}),
+          ...(d.banco.direccion.estado ? { state: d.banco.direccion.estado } : {}),
+          ...(d.banco.direccion.cp ? { postal_code: d.banco.direccion.cp } : {}),
+          ...(d.banco.direccion.calle1 ? { street_line1: d.banco.direccion.calle1 } : {}),
+        },
+      },
+    },
+  };
+}
+
+/** `counterparty_verification_status` de una contraparte `business` → estado de JPay. */
+export function verificacionUsd(cp: unknown): "procesando" | "verified" | "rejected" | "failed" {
+  const meta = (((cp ?? {}) as Record<string, unknown>).metadata ?? {}) as Record<string, unknown>;
+  const v = String(meta.counterparty_verification_status ?? "").toLowerCase();
+  return v === "verified"
+    ? "verified"
+    : v === "rejected"
+      ? "rejected"
+      : v === "failed"
+        ? "failed"
+        : "procesando";
+}
+
+// ---------------------------------------------------------------------------------------------
+// Subclientes (alta KYB del comercio, "Named Accounts") y su Cobre Balance
+// ---------------------------------------------------------------------------------------------
+
+export type PersonaKyb = {
+  nombre: string;
+  apellido: string;
+  idTipo: "rfc" | "curp";
+  idNumero: string;
+  /** ISO 3166-1 alfa-3 (MEX, USA…). */
+  nacionalidades: string[];
+  fechaNacimiento: string;
+};
+
+export type DatosSubcliente = {
+  razonSocial: string;
+  nombreCorto: string;
+  rfc: string;
+  correo: string;
+  telefono: string;
+  sitioWeb: string;
+  industria: string;
+  fechaConstitucion: string;
+  paisConstitucion: string;
+  paisOperacion: string;
+  domicilio: { calle: string; ciudad: string; estado: string; cp: string; pais: string };
+  representantes: PersonaKyb[];
+  ubos: PersonaKyb[];
+};
+
+/** Largo máximo de `short_name`: Cobre lo combina con su acrónimo y el total no pasa de 40. */
+export const MAX_NOMBRE_CORTO = 30;
+
+const sinAcentos = (v: string) => v.normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+
+/**
+ * Cuerpo de POST /subclients y la lista de lo que falta (vacía = se puede enviar). Las fechas
+ * van en AAAA-MM-DD y los países en ISO alfa-3.
+ */
+export function subclienteCobre(d: DatosSubcliente): {
+  cuerpo: Record<string, unknown>;
+  faltan: string[];
+} {
+  const faltan: string[] = [];
+  const req = (v: string | null | undefined, que: string) => {
+    if (!v || !v.trim()) faltan.push(que);
+    return (v ?? "").trim();
+  };
+  const fecha = (v: string, que: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) faltan.push(que);
+    return v;
+  };
+  const pais = (v: string, que: string) => {
+    const x = (v ?? "").trim().toUpperCase();
+    if (!/^[A-Z]{3}$/.test(x)) faltan.push(que);
+    return x;
+  };
+  const persona = (p: PersonaKyb, que: string) => ({
+    first_name: req(sinAcentos(p.nombre), `${que}: nombre`),
+    last_name: req(sinAcentos(p.apellido), `${que}: apellido`),
+    id_type: p.idTipo,
+    id_number: req(p.idNumero?.toUpperCase(), `${que}: RFC o CURP`),
+    nationalities: p.nacionalidades.length
+      ? p.nacionalidades.map((n) => pais(n, `${que}: nacionalidad`))
+      : (faltan.push(`${que}: nacionalidad`), []),
+    date_of_birth: fecha(p.fechaNacimiento ?? "", `${que}: fecha de nacimiento`),
+  });
+
+  const nombreCorto = sinAcentos(d.nombreCorto ?? "").slice(0, MAX_NOMBRE_CORTO);
+  const telefono = (d.telefono ?? "").replace(/[^\d+]/g, "");
+  if (!/^\+\d{10,15}$/.test(telefono)) faltan.push("Teléfono con código de país (+52…)");
+  if (!d.representantes.length) faltan.push("Al menos un representante legal");
+  if (!d.ubos.length) faltan.push("Al menos un beneficiario final");
+  const web = (d.sitioWeb ?? "").trim();
+  const cuerpo = {
+    legal_name: req(d.razonSocial, "Razón social"),
+    short_name: req(nombreCorto, "Nombre corto"),
+    id_type: "rfc",
+    id_number: req(d.rfc?.toUpperCase(), "RFC"),
+    email: req(d.correo, "Correo"),
+    phone: telefono,
+    website: req(web && !/^https?:\/\//.test(web) ? `https://${web}` : web, "Sitio web"),
+    industry: req(d.industria, "Industria"),
+    date_of_incorporation: fecha(d.fechaConstitucion ?? "", "Fecha de constitución"),
+    country_of_incorporation: pais(d.paisConstitucion, "País de constitución"),
+    country_of_operation: pais(d.paisOperacion, "País de operación"),
+    address: {
+      street: req(d.domicilio.calle, "Domicilio: calle"),
+      city: req(d.domicilio.ciudad, "Domicilio: ciudad"),
+      state: req(d.domicilio.estado, "Domicilio: estado"),
+      postal_code: req(d.domicilio.cp, "Domicilio: código postal"),
+      country: pais(d.domicilio.pais, "Domicilio: país"),
+    },
+    legal_representatives: d.representantes.map((p, i) => persona(p, `Representante ${i + 1}`)),
+    ubos: d.ubos.map((p, i) => persona(p, `Beneficiario ${i + 1}`)),
+  };
+  return { cuerpo, faltan: [...new Set(faltan)] };
+}
+
+export type EstadoSubcliente = "processing" | "approved" | "rejected" | "failed";
+
+/** Estado de un Subcliente: la API usa `status.state` y el webhook `status` como cadena. */
+export function estadoSubcliente(sc: unknown): {
+  id: string;
+  estado: EstadoSubcliente | null;
+  motivo: string | null;
+} {
+  const x = (sc ?? {}) as Record<string, unknown>;
+  const st = x.status;
+  const v =
+    typeof st === "string"
+      ? st
+      : typeof (st as Record<string, unknown> | null)?.state === "string"
+        ? String((st as Record<string, unknown>).state)
+        : null;
+  const ok = ["processing", "approved", "rejected", "failed"].includes(v ?? "");
+  const desc = (st as Record<string, unknown> | null)?.description;
+  return {
+    id: String(x.id ?? ""),
+    estado: ok ? (v as EstadoSubcliente) : null,
+    motivo: typeof desc === "string" && desc ? desc : null,
+  };
+}
+
 // ---------------------------------------------------------------------------------------------
 // Depósitos y webhooks
 // ---------------------------------------------------------------------------------------------
@@ -394,6 +656,59 @@ export function depositoSpei(t: unknown): DepositoSpei | null {
     cep: s(meta.cep),
     fecha: s(x.date) ?? s(x.transaction_date),
   };
+}
+
+/** Transacción de un Cobre Balance (API o `content` de `accounts.balance.*`), de cualquier tipo. */
+export type TransaccionCobre = {
+  id: string;
+  /** `spei_credit`, `r2p_spei_credit`, `spei_debit`, `spei_rejected`, `cbmm_credit`… */
+  tipo: string;
+  cuentaId: string | null;
+  /** En unidades, con signo (negativo en débitos). */
+  monto: number;
+  moneda: string | null;
+  mmId: string | null;
+  mmExternalId: string | null;
+  fecha: string | null;
+};
+
+export function transaccionCobre(t: unknown): TransaccionCobre {
+  const x = (t ?? {}) as Record<string, unknown>;
+  const meta = (x.metadata ?? {}) as Record<string, unknown>;
+  const s = (v: unknown) => (typeof v === "string" && v && v !== "N/A" ? v : null);
+  return {
+    id: String(x.id ?? ""),
+    tipo: String(x.type ?? ""),
+    cuentaId: s(x.account_id) ?? s(x.accountId),
+    monto: typeof x.amount === "number" ? deCentavos(x.amount) : 0,
+    moneda: s(x.currency),
+    mmId: s(meta.money_movement_id),
+    mmExternalId: s(meta.mm_external_id),
+    fecha: s(x.operation_date) ?? s(x.date) ?? s(x.transaction_date),
+  };
+}
+
+export type FamiliaEvento =
+  | "money_movements"
+  | "accounts.balance"
+  | "subclient"
+  | "cross_border_money_movements"
+  | "bulk_money_movements";
+
+/** Familia y estado de un `event_key` (`money_movements.status.completed` → familia, `completed`). */
+export function claveEvento(evento: string | null): {
+  familia: FamiliaEvento | null;
+  estado: string | null;
+} {
+  if (!evento) return { familia: null, estado: null };
+  const m =
+    /^(money_movements|subclient|cross_border_money_movements|bulk_money_movements)\.status\.([a-z_]+)$/.exec(
+      evento,
+    );
+  if (m) return { familia: m[1] as FamiliaEvento, estado: m[2] };
+  const b = /^accounts\.balance\.(credit|debit)$/.exec(evento);
+  if (b) return { familia: "accounts.balance", estado: b[1] };
+  return { familia: null, estado: null };
 }
 
 export type EventoCobre = {
@@ -441,8 +756,15 @@ export async function verificarFirmaCobre(o: {
   timestamp: string | null;
   firma: string | null;
   cuerpo: string;
+  /** Antigüedad máxima del `event-timestamp` (ms); por defecto 15 min. Protege contra reenvíos. */
+  vigenciaMs?: number;
+  ahora?: number;
 }): Promise<boolean> {
   if (!o.timestamp || !o.firma) return false;
+  const ms = msDeTimestamp(o.timestamp);
+  if (ms !== null && Math.abs((o.ahora ?? Date.now()) - ms) > (o.vigenciaMs ?? 15 * 60_000)) {
+    return false;
+  }
   const esperada = await firmarCobre(o.clave, o.timestamp, o.cuerpo);
   const recibida = o.firma
     .trim()
@@ -452,6 +774,15 @@ export async function verificarFirmaCobre(o: {
   let dif = 0;
   for (let i = 0; i < esperada.length; i++) dif |= esperada.charCodeAt(i) ^ recibida.charCodeAt(i);
   return dif === 0;
+}
+
+/** `event-timestamp` a milisegundos: epoch en segundos o ms, o fecha ISO; null si no se entiende. */
+export function msDeTimestamp(t: string): number | null {
+  const v = t.trim();
+  if (/^\d{10}(\.\d+)?$/.test(v)) return Math.round(Number(v) * 1000);
+  if (/^\d{13}$/.test(v)) return Number(v);
+  const p = Date.parse(v);
+  return Number.isNaN(p) ? null : p;
 }
 
 /** Solo para tests: limpia la caché de tokens. */
