@@ -508,6 +508,9 @@ export type Conversion = {
   tasa: number;
   montoMxn: number;
   montoUsd: number;
+  /** Comisión de JPay e IVA, en pesos, que se cobran además del monto convertido. */
+  comision: number;
+  impuesto: number;
   comisiones: Record<string, unknown>;
   fueraDeMercado: boolean;
   venceAt: string;
@@ -521,6 +524,8 @@ const aConversion = (r: Record<string, unknown>): Conversion => ({
   tasa: Number(r.tasa),
   montoMxn: Number(r.monto_mxn),
   montoUsd: Number(r.monto_usd),
+  comision: Number(r.comision ?? 0),
+  impuesto: Number(r.impuesto ?? 0),
   comisiones: (r.comisiones as Record<string, unknown>) ?? {},
   fueraDeMercado: r.fuera_de_mercado === true,
   venceAt: String(r.cotizacion_vence_at),

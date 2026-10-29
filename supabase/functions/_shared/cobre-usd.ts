@@ -111,6 +111,15 @@ export async function cotizarCruce(
   if (!(destino > 0) || !(tasa > 0) || !s(q.id) || !s(q.valid_until)) {
     throw new CobreError(502, "Cobre devolvió una cotización incompleta");
   }
+  const montoMxn = deCentavos(Number(q.source_amount ?? aCentavos(o.montoMxn)));
+  // Comisión de JPay (tipo Conversión de las comisiones del cliente); se cobra aparte del monto.
+  const { data: com, error: errCom } = await sb.rpc("cobre_comision_cruce", {
+    p_legajo: o.legajo,
+    p_subcuenta_id: o.subcuentaMxnId,
+    p_monto: montoMxn,
+  });
+  if (errCom) throw new Error(errCom.message);
+  const comision = (com ?? {}) as { comision?: number; impuesto?: number };
   const externo = nuevoExternal("FX");
   const { data, error } = await sb
     .from("cobre_cruces")
@@ -121,8 +130,10 @@ export async function cotizarCruce(
       subcuenta_usd_id: await subcuentaUsd(sb, o.legajo),
       cotizacion_id: q.id,
       tasa,
-      monto_mxn: deCentavos(Number(q.source_amount ?? aCentavos(o.montoMxn))),
+      monto_mxn: montoMxn,
       monto_usd: deCentavos(destino),
+      comision: Number(comision.comision ?? 0),
+      impuesto: Number(comision.impuesto ?? 0),
       comisiones: (q.fees_breakdown ?? {}) as Obj,
       fuera_de_mercado: q.off_market === true,
       cotizacion_vence_at: q.valid_until,

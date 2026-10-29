@@ -201,8 +201,11 @@ aprobación por monto, conciliación por identificadores, alertas y tarjetas del
     mexicanos, UMA mensual 2026 ($3,566.22, INEGI) en lugar del salario mínimo argentino y hora
     del centro. Se editan en el admin (Alertas → Parámetros de alertas / de bloqueos, selector de
     país). Los valores iniciales son una propuesta para que los valide el oficial de cumplimiento.
-- **Pendiente de negocio:** si ante un rebote se devuelve también la comisión (hoy sí); las
-  conversiones a dólares no pasan por las reglas ni cobran comisión de JPay.
+  - Rebotes: se reintegra todo al comercio, monto y comisión (decisión del 2026-10-29).
+  - Conversiones a dólares parametrizables (migración 1041): comisión de JPay tipo `Conversión`
+    por cliente o subcuenta (admin → Usuarios → Carga de comisiones; porcentaje o fijo + IVA),
+    calculada al cotizar y reservada con el monto; interruptor «Reglas en conversiones» en la
+    tarjeta Cobre (apagado por defecto; prendido, la conversión se evalúa como un retiro).
 - **Preguntas para Cobre (KAM):** catálogo de `industry`; el OAS de `/subclients` lista `id_type`
   de Colombia (cc, nit…) y el documento usa `rfc`: confirmar para México; acrónimo de
   `short_name`; alta de persona física como Subcliente; cupo de Balances por comercio; barrido

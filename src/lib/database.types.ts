@@ -2142,6 +2142,7 @@ export type Database = {
       }
       cobre_configuracion: {
         Row: {
+          conversion_evalua_reglas: boolean
           cuenta_global_id: string | null
           cuenta_plataforma_id: string | null
           cuenta_usa_id: string | null
@@ -2153,6 +2154,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          conversion_evalua_reglas?: boolean
           cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
           cuenta_usa_id?: string | null
@@ -2164,6 +2166,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          conversion_evalua_reglas?: boolean
           cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
           cuenta_usa_id?: string | null
@@ -2297,6 +2300,7 @@ export type Database = {
         Row: {
           cliente_legajo: string
           codigo: string | null
+          comision: number
           comisiones: Json
           cotizacion_id: string
           cotizacion_vence_at: string
@@ -2308,6 +2312,7 @@ export type Database = {
           fuera_de_mercado: boolean
           id: string
           idempotency: string
+          impuesto: number
           mm_id: string | null
           modo: string
           monto_mxn: number
@@ -2323,6 +2328,7 @@ export type Database = {
         Insert: {
           cliente_legajo: string
           codigo?: string | null
+          comision?: number
           comisiones?: Json
           cotizacion_id: string
           cotizacion_vence_at: string
@@ -2334,6 +2340,7 @@ export type Database = {
           fuera_de_mercado?: boolean
           id?: string
           idempotency: string
+          impuesto?: number
           mm_id?: string | null
           modo: string
           monto_mxn: number
@@ -2349,6 +2356,7 @@ export type Database = {
         Update: {
           cliente_legajo?: string
           codigo?: string | null
+          comision?: number
           comisiones?: Json
           cotizacion_id?: string
           cotizacion_vence_at?: string
@@ -2360,6 +2368,7 @@ export type Database = {
           fuera_de_mercado?: boolean
           id?: string
           idempotency?: string
+          impuesto?: number
           mm_id?: string | null
           modo?: string
           monto_mxn?: number
@@ -7884,6 +7893,10 @@ export type Database = {
       cliente_tiene_movimientos: {
         Args: { p_legajo: string }
         Returns: boolean
+      }
+      cobre_comision_cruce: {
+        Args: { p_legajo: string; p_monto: number; p_subcuenta_id: string }
+        Returns: Json
       }
       cobre_confirmar_cruce: { Args: { p_cruce_id: string }; Returns: Json }
       cobre_confirmar_transferencia: {

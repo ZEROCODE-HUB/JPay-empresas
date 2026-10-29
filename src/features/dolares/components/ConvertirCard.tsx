@@ -121,6 +121,12 @@ export function ConvertirCard({
                 Tipo de cambio: 1 MXN = {formatNumber(q.tasa, 6)} USD
                 {Number.isFinite(comision) && ` · spread ${formatNumber(comision, 2)}%`}
               </p>
+              {q.comision + q.impuesto > 0 && (
+                <p className="text-xs text-black-400">
+                  Comisión {formatMoney(q.comision)} + IVA {formatMoney(q.impuesto)} · se debitan{" "}
+                  {formatMoney(q.montoMxn + q.comision + q.impuesto)} en total
+                </p>
+              )}
               {(!q.enHorario || q.fueraDeMercado) && (
                 <p className="mt-1 text-xs text-amber-700">
                   Fuera del horario de mercado (5 a 16 h): la tasa y el límite pueden ser distintos.
