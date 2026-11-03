@@ -17,7 +17,8 @@ export const brand = {
     "shortName": "JPay",
     "taxIdType": "RFC",
     "taxId": "XAXX010101000",
-    "country": "México"
+    "country": "México",
+    "address": "Av. Paseo de la Reforma 000, Col. Juárez, Cuauhtémoc, 06600, Ciudad de México"
   },
   "contact": {
     "support": "soporte@jpay.example",
