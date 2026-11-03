@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Input, Label } from "@/components/portal-shell";
-import type { Caja, CajaInput, Sucursal, SucursalInput } from "@/lib/api/puntos-fisicos";
+import type { Caja, CajaInput, Sucursal, SucursalInput } from "../puntos-fisicos";
 import { parseMonto } from "@/shared/format";
 import { FormDialog } from "@/shared/ui/form-dialog";
 

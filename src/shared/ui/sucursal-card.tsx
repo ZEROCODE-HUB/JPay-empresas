@@ -1,6 +1,6 @@
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { Badge, BtnOutline, Card } from "@/components/portal-shell";
-import type { Caja, Sucursal, Terminal } from "@/lib/api/puntos-fisicos";
+import type { Caja, Sucursal, Terminal } from "../puntos-fisicos";
 import { formatMoney } from "@/shared/format";
 
 const TONO: Record<string, "success" | "warn" | "neutral"> = {
@@ -51,12 +51,12 @@ export function SucursalCard({
             <Badge tone={TONO[sucursal.estado] ?? "neutral"}>{sucursal.estado}</Badge>
           </h2>
           {direccion && (
-            <p className="text-xs text-black-400 mt-1 flex items-center gap-1">
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
               <MapPin size={12} /> {direccion}
             </p>
           )}
           {sucursal.encargado && (
-            <p className="text-xs text-black-400 mt-0.5">Encargado: {sucursal.encargado}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Encargado: {sucursal.encargado}</p>
           )}
         </div>
         <div className="flex gap-2">
@@ -71,7 +71,7 @@ export function SucursalCard({
 
       <div className="mt-4 overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-xs text-black-400 text-left">
+          <thead className="text-xs text-muted-foreground text-left">
             <tr>
               <th className="py-2 pr-4">Caja</th>
               <th className="py-2 pr-4">Estado</th>
@@ -83,16 +83,16 @@ export function SucursalCard({
           <tbody>
             {sucursal.cajas.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-3 text-black-400">
+                <td colSpan={5} className="py-3 text-muted-foreground">
                   Esta sucursal todavía no tiene cajas.
                 </td>
               </tr>
             )}
             {sucursal.cajas.map((c) => (
-              <tr key={c.id} className="border-t border-black-100">
+              <tr key={c.id} className="border-t border-border">
                 <td className="py-2 pr-4">
                   <span className="font-medium">{c.nombre}</span>{" "}
-                  <span className="text-xs text-black-400">#{c.numero}</span>
+                  <span className="text-xs text-muted-foreground">#{c.numero}</span>
                 </td>
                 <td className="py-2 pr-4">
                   <Badge tone={TONO[c.estado] ?? "neutral"}>{c.estado}</Badge>
@@ -129,7 +129,7 @@ export function SucursalCard({
                 <td className="py-2 text-right whitespace-nowrap">
                   <button
                     type="button"
-                    className="p-1.5 text-black-400 hover:text-black-800"
+                    className="p-1.5 text-muted-foreground hover:text-foreground"
                     onClick={() => onEditarCaja(c)}
                     disabled={ocupado}
                     aria-label={`Editar ${c.nombre}`}
@@ -138,7 +138,7 @@ export function SucursalCard({
                   </button>
                   <button
                     type="button"
-                    className="p-1.5 text-black-400 hover:text-danger-600"
+                    className="p-1.5 text-muted-foreground hover:text-danger-600"
                     onClick={() => onBorrarCaja(c)}
                     disabled={ocupado}
                     aria-label={`Dar de baja ${c.nombre}`}
