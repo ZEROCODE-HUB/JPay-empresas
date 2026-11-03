@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Badge, BtnOutline, BtnPrimary, Card, Input, Label, PageHeader } from "@/components/portal-shell";
+import {
+  Badge,
+  BtnOutline,
+  BtnPrimary,
+  Card,
+  Input,
+  Label,
+  PageHeader,
+} from "@/components/portal-shell";
 import {
   INTERVALOS,
   intervaloLabel,
@@ -133,7 +141,11 @@ export function DomiciliacionesPanel({
                           {formatDateTime(c.cobrado_at)}
                           {c.motivo && <span className="text-muted-foreground"> · {c.motivo}</span>}
                         </span>
-                        <span className={c.estado === "pagado" ? "font-mono" : "font-mono text-danger-600"}>
+                        <span
+                          className={
+                            c.estado === "pagado" ? "font-mono" : "font-mono text-danger-600"
+                          }
+                        >
                           {c.estado === "pagado" ? "" : "Falló · "}
                           {formatMoney(c.monto, { moneda: c.moneda })}
                         </span>
@@ -261,12 +273,32 @@ function NuevaDomiciliacionDialog({
       size="lg"
     >
       <div className="grid gap-3 md:grid-cols-2">
-        <Campo id="dom-nombre" label="Nombre del titular" value={f.nombre} onChange={set("nombre")} />
+        <Campo
+          id="dom-nombre"
+          label="Nombre del titular"
+          value={f.nombre}
+          onChange={set("nombre")}
+        />
         <Campo id="dom-email" label="Correo" type="email" value={f.email} onChange={set("email")} />
         <Campo id="dom-clabe" label="CLABE (18 dígitos)" value={f.clabe} onChange={set("clabe")} />
-        <Campo id="dom-rfc" label="RFC del titular (opcional)" value={f.rfc} onChange={set("rfc")} />
-        <Campo id="dom-alias" label="Alias de la cuenta (opcional)" value={f.alias} onChange={set("alias")} />
-        <Campo id="dom-tel" label="Teléfono (opcional)" value={f.telefono} onChange={set("telefono")} />
+        <Campo
+          id="dom-rfc"
+          label="RFC del titular (opcional)"
+          value={f.rfc}
+          onChange={set("rfc")}
+        />
+        <Campo
+          id="dom-alias"
+          label="Alias de la cuenta (opcional)"
+          value={f.alias}
+          onChange={set("alias")}
+        />
+        <Campo
+          id="dom-tel"
+          label="Teléfono (opcional)"
+          value={f.telefono}
+          onChange={set("telefono")}
+        />
         <Campo id="dom-concepto" label="Concepto" value={f.concepto} onChange={set("concepto")} />
         <Campo id="dom-monto" label="Monto (MXN)" value={f.monto} onChange={set("monto")} />
         <div>

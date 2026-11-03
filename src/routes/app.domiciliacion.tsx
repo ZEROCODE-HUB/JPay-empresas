@@ -21,7 +21,10 @@ function Page() {
   if (!comercioId || !conectado) {
     return (
       <>
-        <PageHeader title="Domiciliación" description="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación." />
+        <PageHeader
+          title="Domiciliación"
+          description="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación."
+        />
         <Card className="text-sm">
           Primero conectá tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold underline">
@@ -32,5 +35,11 @@ function Page() {
       </>
     );
   }
-  return <DomiciliacionesPanel comercioId={comercioId} titulo="Domiciliación" descripcion="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación." />;
+  return (
+    <DomiciliacionesPanel
+      comercioId={comercioId}
+      titulo="Domiciliación"
+      descripcion="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación."
+    />
+  );
 }

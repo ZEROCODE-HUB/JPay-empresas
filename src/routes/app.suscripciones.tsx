@@ -21,7 +21,10 @@ function Page() {
   if (!comercioId || !conectado) {
     return (
       <>
-        <PageHeader title="Suscripciones" description="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay." />
+        <PageHeader
+          title="Suscripciones"
+          description="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
+        />
         <Card className="text-sm">
           Primero conectá tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold underline">
@@ -32,5 +35,11 @@ function Page() {
       </>
     );
   }
-  return <SuscripcionesPanel comercioId={comercioId} titulo="Suscripciones" descripcion="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay." />;
+  return (
+    <SuscripcionesPanel
+      comercioId={comercioId}
+      titulo="Suscripciones"
+      descripcion="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
+    />
+  );
 }

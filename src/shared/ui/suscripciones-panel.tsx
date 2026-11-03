@@ -1,7 +1,15 @@
 import { useState } from "react";
 import { Copy, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { Badge, BtnOutline, BtnPrimary, Card, Input, Label, PageHeader } from "@/components/portal-shell";
+import {
+  Badge,
+  BtnOutline,
+  BtnPrimary,
+  Card,
+  Input,
+  Label,
+  PageHeader,
+} from "@/components/portal-shell";
 import {
   INTERVALOS,
   intervaloLabel,
@@ -58,7 +66,11 @@ export function SuscripcionesPanel({
       {
         onSuccess: () =>
           toast.success(
-            a === "pausar" ? "Suscripción pausada" : a === "reanudar" ? "Suscripción reanudada" : "Actualizada",
+            a === "pausar"
+              ? "Suscripción pausada"
+              : a === "reanudar"
+                ? "Suscripción reanudada"
+                : "Actualizada",
           ),
         onError: avisar,
       },
@@ -169,7 +181,11 @@ export function SuscripcionesPanel({
                           {formatDateTime(c.cobrado_at)}
                           {c.motivo && <span className="text-muted-foreground"> · {c.motivo}</span>}
                         </span>
-                        <span className={c.estado === "pagado" ? "font-mono" : "font-mono text-danger-600"}>
+                        <span
+                          className={
+                            c.estado === "pagado" ? "font-mono" : "font-mono text-danger-600"
+                          }
+                        >
                           {c.estado === "pagado" ? "" : "Falló · "}
                           {formatMoney(c.monto, { moneda: c.moneda })}
                         </span>
@@ -293,10 +309,25 @@ function NuevaSuscripcionDialog({
       size="lg"
     >
       <div className="grid gap-3 md:grid-cols-2">
-        <Campo id="sus-nombre" label="Nombre del suscriptor" value={f.nombre} onChange={set("nombre")} />
+        <Campo
+          id="sus-nombre"
+          label="Nombre del suscriptor"
+          value={f.nombre}
+          onChange={set("nombre")}
+        />
         <Campo id="sus-email" label="Correo" type="email" value={f.email} onChange={set("email")} />
-        <Campo id="sus-tel" label="Teléfono (opcional)" value={f.telefono} onChange={set("telefono")} />
-        <Campo id="sus-servicio" label="Servicio o plan" value={f.servicio} onChange={set("servicio")} />
+        <Campo
+          id="sus-tel"
+          label="Teléfono (opcional)"
+          value={f.telefono}
+          onChange={set("telefono")}
+        />
+        <Campo
+          id="sus-servicio"
+          label="Servicio o plan"
+          value={f.servicio}
+          onChange={set("servicio")}
+        />
         <Campo id="sus-monto" label="Monto por cobro" value={f.monto} onChange={set("monto")} />
         <div>
           <Label htmlFor="sus-moneda">Moneda</Label>
@@ -342,7 +373,11 @@ function NuevaSuscripcionDialog({
         {f.intervalo !== "daily" && (
           <Campo
             id="sus-dia"
-            label={f.intervalo === "weekly" ? "Día de cobro (1 = lunes, opcional)" : "Día del mes de cobro (opcional)"}
+            label={
+              f.intervalo === "weekly"
+                ? "Día de cobro (1 = lunes, opcional)"
+                : "Día del mes de cobro (opcional)"
+            }
             type="number"
             value={f.ciclo_dia}
             onChange={set("ciclo_dia")}
