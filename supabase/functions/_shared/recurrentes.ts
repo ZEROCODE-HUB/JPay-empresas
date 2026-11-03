@@ -37,8 +37,15 @@ export type Contexto = {
 };
 
 /** URL de avisos (la misma función que recibe los de órdenes). */
-export const urlAvisos = () =>
-  `${(Deno.env.get("SUPABASE_URL") ?? "").replace(/\/+$/, "")}/functions/v1/ecartpay-webhook`;
+export function urlAvisos(): string {
+  let base = "";
+  try {
+    base = Deno.env.get("SUPABASE_URL") ?? "";
+  } catch {
+    // Sin permiso de entorno (tests): la URL queda relativa.
+  }
+  return `${base.replace(/\/+$/, "")}/functions/v1/ecartpay-webhook`;
+}
 
 /** Error de Ecart Pay sin respuesta clara (sin conexión, timeout, 5xx): la operación pudo hacerse. */
 export const esAmbiguo = (e: unknown) =>
