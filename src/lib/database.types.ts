@@ -2149,6 +2149,7 @@ export type Database = {
           exigir_otp: boolean
           id: number
           modelo_default: string
+          modo_comision: string
           monto_aprobacion: number | null
           monto_aprobacion_usd: number | null
           updated_at: string
@@ -2161,6 +2162,7 @@ export type Database = {
           exigir_otp?: boolean
           id?: number
           modelo_default?: string
+          modo_comision?: string
           monto_aprobacion?: number | null
           monto_aprobacion_usd?: number | null
           updated_at?: string
@@ -2173,6 +2175,7 @@ export type Database = {
           exigir_otp?: boolean
           id?: number
           modelo_default?: string
+          modo_comision?: string
           monto_aprobacion?: number | null
           monto_aprobacion_usd?: number | null
           updated_at?: string
@@ -3808,8 +3811,10 @@ export type Database = {
       configuracion_pagos: {
         Row: {
           cobro_comision: string
+          comision_domiciliacion_pct: number
           comision_fija: number
           comision_pct: number
+          comision_suscripcion_pct: number
           iva_comision_pct: number
           modelo_fondos: string
           pais: string
@@ -3818,8 +3823,10 @@ export type Database = {
         }
         Insert: {
           cobro_comision?: string
+          comision_domiciliacion_pct?: number
           comision_fija?: number
           comision_pct?: number
+          comision_suscripcion_pct?: number
           iva_comision_pct?: number
           modelo_fondos?: string
           pais: string
@@ -3828,8 +3835,10 @@ export type Database = {
         }
         Update: {
           cobro_comision?: string
+          comision_domiciliacion_pct?: number
           comision_fija?: number
           comision_pct?: number
+          comision_suscripcion_pct?: number
           iva_comision_pct?: number
           modelo_fondos?: string
           pais?: string
@@ -5843,6 +5852,80 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "proveedores_pago"
             referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      pagos_comisiones_jpay: {
+        Row: {
+          cliente_legajo: string | null
+          created_at: string
+          fecha_pago: string
+          id: string
+          moneda: string
+          monto: number
+          nota: string | null
+          periodo_desde: string
+          periodo_hasta: string
+          proveedor: string
+          referencia: string | null
+          registrado_por: string | null
+        }
+        Insert: {
+          cliente_legajo?: string | null
+          created_at?: string
+          fecha_pago: string
+          id?: string
+          moneda?: string
+          monto: number
+          nota?: string | null
+          periodo_desde: string
+          periodo_hasta: string
+          proveedor: string
+          referencia?: string | null
+          registrado_por?: string | null
+        }
+        Update: {
+          cliente_legajo?: string | null
+          created_at?: string
+          fecha_pago?: string
+          id?: string
+          moneda?: string
+          monto?: number
+          nota?: string | null
+          periodo_desde?: string
+          periodo_hasta?: string
+          proveedor?: string
+          referencia?: string | null
+          registrado_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagos_comisiones_jpay_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "pagos_comisiones_jpay_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "pagos_comisiones_jpay_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "pagos_comisiones_jpay_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
           },
         ]
       }
@@ -8107,6 +8190,15 @@ export type Database = {
         }
         Returns: string
       }
+      _regla_de_pais: {
+        Args: { p_code: string; p_pais: string }
+        Returns: {
+          activa: boolean
+          nombre: string
+          parametros: Json
+          regla_id: string
+        }[]
+      }
       _subaccount_add_conciliado: {
         Args: { p_delta: number; p_subaccount_id: string }
         Returns: undefined
@@ -8407,6 +8499,32 @@ export type Database = {
         Args: { p_legajo: string }
         Returns: number
       }
+      comision_teorica: {
+        Args: {
+          p_cliente_id: string
+          p_monto: number
+          p_subcuenta_id: string
+          p_tipo: string
+        }
+        Returns: {
+          comision: number
+          impuesto: number
+        }[]
+      }
+      comisiones_jpay: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: {
+          base: number
+          cliente_legajo: string
+          cliente_nombre: string
+          comision: number
+          forma: string
+          iva: number
+          operaciones: number
+          producto: string
+          proveedor: string
+        }[]
+      }
       confirmar_adelanto: {
         Args: { p_adelanto_id: string }
         Returns: {
@@ -8669,6 +8787,38 @@ export type Database = {
           p_titular_origen?: string
         }
         Returns: Json
+      }
+      registrar_pago_comisiones: {
+        Args: {
+          p_cliente_legajo: string
+          p_desde: string
+          p_fecha_pago: string
+          p_hasta: string
+          p_monto: number
+          p_nota: string
+          p_proveedor: string
+          p_referencia: string
+        }
+        Returns: {
+          cliente_legajo: string | null
+          created_at: string
+          fecha_pago: string
+          id: string
+          moneda: string
+          monto: number
+          nota: string | null
+          periodo_desde: string
+          periodo_hasta: string
+          proveedor: string
+          referencia: string | null
+          registrado_por: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pagos_comisiones_jpay"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       registrar_pago_link: {
         Args: {

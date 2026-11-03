@@ -11,10 +11,44 @@ import { ResumenCobro } from "@/features/checkout/components/ResumenCobro";
 import { useCobreDisponible } from "@/features/checkout/hooks/useCheckoutCobre";
 import { useEcartPayDisponible } from "@/features/checkout/hooks/useCheckoutEcartPay";
 import { useCheckoutPago } from "@/features/checkout/hooks/useCheckoutPago";
+import { brand } from "@/brand/brand";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+// Vista previa al compartir el link (WhatsApp, redes): título, texto y logo de la marca. Las
+// apps de mensajería exigen la imagen con dirección absoluta (VITE_PUBLIC_APP_URL).
+const absoluta = (ruta: string) => {
+  const base = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
+  try {
+    return base ? new URL(ruta, base).toString() : ruta;
+  } catch {
+    return ruta;
+  }
+};
+const TITULO_LINK = `Link de pago · ${brand.name}`;
+const TEXTO_LINK =
+  "Te enviaron un link de pago. Entra y sigue los pasos; cualquier duda, estamos para apoyarte.";
+
 export const Route = createFileRoute("/p/$code")({
+  head: () => ({
+    meta: [
+      { title: TITULO_LINK },
+      { name: "description", content: TEXTO_LINK },
+      { property: "og:title", content: TITULO_LINK },
+      { property: "og:description", content: TEXTO_LINK },
+      { property: "og:type", content: "website" },
+      { property: "og:site_name", content: brand.name },
+      { property: "og:image", content: absoluta(brand.assets.ogImage.src) },
+      { property: "og:image:width", content: String(brand.assets.ogImage.width) },
+      { property: "og:image:height", content: String(brand.assets.ogImage.height) },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: TITULO_LINK },
+      { name: "twitter:description", content: TEXTO_LINK },
+      { name: "twitter:image", content: absoluta(brand.assets.ogImage.src) },
+      // Un link de pago no se indexa en buscadores.
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   // ?pago=<id>: vuelta desde Ecart Pay.
   validateSearch: (s: Record<string, unknown>): { pago?: string } => ({
     pago: typeof s.pago === "string" && UUID.test(s.pago) ? s.pago : undefined,

@@ -77,6 +77,16 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+// Las apps de mensajería solo muestran la imagen de vista previa con dirección absoluta.
+const imagenAbsoluta = (() => {
+  const base = import.meta.env.VITE_PUBLIC_APP_URL as string | undefined;
+  try {
+    return base ? new URL(brand.assets.ogImage.src, base).toString() : brand.assets.ogImage.src;
+  } catch {
+    return brand.assets.ogImage.src;
+  }
+})();
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
@@ -93,10 +103,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:title", content: pageTitle() },
       { name: "twitter:description", content: brand.description },
-      { property: "og:image", content: brand.assets.ogImage.src },
+      { property: "og:image", content: imagenAbsoluta },
       { property: "og:image:width", content: String(brand.assets.ogImage.width) },
       { property: "og:image:height", content: String(brand.assets.ogImage.height) },
-      { name: "twitter:image", content: brand.assets.ogImage.src },
+      { name: "twitter:image", content: imagenAbsoluta },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
