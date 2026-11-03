@@ -2,7 +2,7 @@
 // `ecartpay-oauth-*`. Solo en el repo del portal empresas.
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { baseUrlEcartPay, EcartPayCliente } from "./ecartpay.ts";
-import { HttpError, userClient } from "./http.ts";
+import { esAdmin, HttpError, userClient } from "./http.ts";
 
 export type Comercio = { id: string; legajo: string; nombre: string | null };
 
@@ -36,6 +36,23 @@ export async function comercioDeSesion(
     );
   }
   return { id: data.id, legajo: data.legajo, nombre: data.nombre_comercio };
+}
+
+/**
+ * Comercio sobre el que actúa la solicitud: un admin lo indica en `comercio_id` (obligatorio);
+ * un cliente solo puede usar uno suyo (si no lo indica, el primero que tenga).
+ */
+export async function comercioDeLaSolicitud(
+  req: Request,
+  sb: SupabaseClient,
+  pedido: unknown,
+): Promise<string> {
+  const comercioId = typeof pedido === "string" && pedido ? pedido : undefined;
+  if (await esAdmin(req)) {
+    if (!comercioId) throw new HttpError(400, "Falta comercio_id");
+    return comercioId;
+  }
+  return (await comercioDeSesion(req, sb, comercioId)).id;
 }
 
 /**

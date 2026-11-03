@@ -4,9 +4,9 @@
 // enmascarado, `/api/payment-methods`) y el historial (`/api/withdrawals`, paginado).
 // La usa el comercio dueño o un admin (con `comercio_id`). Body: { comercio_id?, pagina?, estado? }.
 
-import { clienteDeConexion, comercioDeSesion, conexionEcartPay } from "../_shared/conexiones.ts";
+import { clienteDeConexion, comercioDeLaSolicitud, conexionEcartPay } from "../_shared/conexiones.ts";
 import { cuentaRetiroDeEcart, EcartPayError, retiroDeEcart } from "../_shared/ecartpay.ts";
-import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 
 type Body = { comercio_id?: unknown; pagina?: unknown; estado?: unknown };
 type Obj = Record<string, unknown>;
@@ -18,14 +18,7 @@ Deno.serve(
   handler(async (req) => {
     const body = await readJson<Body>(req);
     const sb = serviceClient();
-    let comercioId: string;
-    if (await esAdmin(req)) {
-      if (typeof body.comercio_id !== "string") throw new HttpError(400, "Falta comercio_id");
-      comercioId = body.comercio_id;
-    } else {
-      const pedido = typeof body.comercio_id === "string" ? body.comercio_id : undefined;
-      comercioId = (await comercioDeSesion(req, sb, pedido)).id;
-    }
+    const comercioId = await comercioDeLaSolicitud(req, sb, body.comercio_id);
     const conexion = await conexionEcartPay(sb, [comercioId]);
     if (!conexion) throw new HttpError(409, "El comercio no tiene Ecart Pay conectado");
     const ecart = await clienteDeConexion(sb, conexion);

@@ -7,7 +7,7 @@
 //           vincular_terminal | desvincular_terminal | modo_terminal
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { clienteDeConexion, comercioDeSesion, conexionEcartPay } from "../_shared/conexiones.ts";
+import { clienteDeConexion, comercioDeLaSolicitud, conexionEcartPay } from "../_shared/conexiones.ts";
 import {
   cajaAEcart,
   cajaDeEcart,
@@ -20,7 +20,7 @@ import {
   type CajaLocal,
   type SucursalLocal,
 } from "../_shared/ecartpay.ts";
-import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 
 type Body = Record<string, unknown> & { accion?: string; comercio_id?: string };
 type Ctx = { sb: SupabaseClient; ecart: EcartPayCliente; comercioId: string };
@@ -33,13 +33,7 @@ Deno.serve(
   handler(async (req) => {
     const body = await readJson<Body>(req);
     const sb = serviceClient();
-    let comercioId: string;
-    if (await esAdmin(req)) {
-      if (typeof body.comercio_id !== "string") throw new HttpError(400, "Falta comercio_id");
-      comercioId = body.comercio_id;
-    } else {
-      comercioId = (await comercioDeSesion(req, sb, body.comercio_id as string | undefined)).id;
-    }
+    const comercioId = await comercioDeLaSolicitud(req, sb, body.comercio_id);
     const conexion = await conexionEcartPay(sb, [comercioId]);
     if (!conexion) throw new HttpError(409, "El comercio no tiene Ecart Pay conectado");
     const ctx: Ctx = { sb, ecart: await clienteDeConexion(sb, conexion), comercioId };

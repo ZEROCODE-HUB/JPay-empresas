@@ -4,21 +4,15 @@
 // panel (no hay endpoint documentado para revocarlo desde la plataforma).
 // Body: { comercio_id?: string } (obligatorio para admins).
 
-import { comercioDeSesion } from "../_shared/conexiones.ts";
-import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { comercioDeLaSolicitud } from "../_shared/conexiones.ts";
+import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 
 Deno.serve(
   handler(async (req) => {
     const body = await readJson<{ comercio_id?: string }>(req);
     const sb = serviceClient();
 
-    let comercioId: string;
-    if (await esAdmin(req)) {
-      if (!body.comercio_id) throw new HttpError(400, "Falta comercio_id");
-      comercioId = body.comercio_id;
-    } else {
-      comercioId = (await comercioDeSesion(req, sb, body.comercio_id)).id;
-    }
+    const comercioId = await comercioDeLaSolicitud(req, sb, body.comercio_id);
 
     const { data: conexiones, error } = await sb
       .from("comercio_proveedores")
