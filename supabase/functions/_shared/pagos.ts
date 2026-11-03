@@ -6,6 +6,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { clienteDeConexion, type ConexionActiva } from "./conexiones.ts";
 import { resumirOrden } from "./ecartpay.ts";
 import { HttpError } from "./http.ts";
+import { procesarAvisoRecurrente } from "./recurrentes.ts";
 
 export type PagoConfirmado = {
   id: string;
@@ -142,7 +143,10 @@ export async function procesarEvento(
     .eq("id", eventoId)
     .single();
   try {
-    if (ev?.evento?.startsWith("chargebacks.")) {
+    if (ev?.evento?.startsWith("subscription.") || ev?.evento?.startsWith("direct_debit.")) {
+      // Suscripciones y domiciliaciones: se confirman contra Ecart Pay (no por el aviso).
+      resultado = await procesarAvisoRecurrente(sb, ev.evento, ev.payload);
+    } else if (ev?.evento?.startsWith("chargebacks.")) {
       // Contracargos: solo desde avisos firmados (no hay forma documentada de consultarlos).
       if (ev.firma_valida !== true) {
         resultado = "ignorado (sin firma)";

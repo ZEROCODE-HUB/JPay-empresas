@@ -15,6 +15,7 @@
 import { leerEventoWebhook, verificarFirmaWebhook } from "../_shared/ecartpay.ts";
 import { json, serviceClient } from "../_shared/http.ts";
 import { procesarEvento } from "../_shared/pagos.ts";
+import { eventoRecurrente, idRecurrente, resumenAvisoRecurrente } from "../_shared/recurrentes.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -47,29 +48,49 @@ Deno.serve(async (req) => {
       : false;
   }
 
-  const { evento, idExterno, estado } = leerEventoWebhook(cuerpo);
+  const leido = leerEventoWebhook(cuerpo);
+  // Suscripciones y domiciliaciones: su id va en otro campo y, por notify_url, pueden venir sin
+  // `event`.
+  const recurrente = eventoRecurrente(leido.evento, cuerpo);
+  const evento = recurrente ?? leido.evento;
+  const idExterno = recurrente ? idRecurrente(cuerpo) : leido.idExterno;
+  const estado = leido.estado;
 
   // Avisos sin firma (notify_url): cualquiera puede mandarlos. Solo se registran si la orden es de
   // un pago de JPay todavía abierto y no hubo otro aviso igual en el último minuto; se guarda un
   // resumen, no el cuerpo (la verdad sale de consultar la orden).
   if (!firmado) {
     if (!idExterno) return json({ ok: true, ignorado: "sin orden" });
-    const { data: pago } = await sb
-      .from("pagos")
-      .select("id, estado")
-      .eq("proveedor", "ecartpay")
-      .eq("proveedor_orden_id", idExterno)
-      .maybeSingle();
-    if (!pago || !["creado", "pendiente"].includes(pago.estado)) {
-      return json({ ok: true, ignorado: "orden desconocida o ya cerrada" });
+    if (recurrente) {
+      // Suscripción o domiciliación nuestra (cualquier estado: los avisos de cobro llegan con
+      // la suscripción activa).
+      const tabla = recurrente.startsWith("subscription.") ? "suscripciones" : "domiciliaciones";
+      const { data: propia } = await sb
+        .from(tabla)
+        .select("id")
+        .eq("id_externo", idExterno)
+        .maybeSingle();
+      if (!propia) return json({ ok: true, ignorado: "suscripción o domiciliación desconocida" });
+    } else {
+      const { data: pago } = await sb
+        .from("pagos")
+        .select("id, estado")
+        .eq("proveedor", "ecartpay")
+        .eq("proveedor_orden_id", idExterno)
+        .maybeSingle();
+      if (!pago || !["creado", "pendiente"].includes(pago.estado)) {
+        return json({ ok: true, ignorado: "orden desconocida o ya cerrada" });
+      }
     }
-    const { count } = await sb
+    let repetido = sb
       .from("webhook_eventos")
       .select("id", { count: "exact", head: true })
       .eq("proveedor", "ecartpay")
       .eq("origen", "notify_url")
       .eq("id_externo", idExterno)
       .gt("recibido_at", new Date(Date.now() - 60_000).toISOString());
+    if (evento) repetido = repetido.eq("evento", evento);
+    const { count } = await repetido;
     if ((count ?? 0) > 0) return json({ ok: true, duplicado: true });
   }
 
@@ -83,7 +104,11 @@ Deno.serve(async (req) => {
       id_externo: idExterno,
       estado_externo: estado,
       firma_valida: firmaValida,
-      payload: firmado ? (cuerpo ?? {}) : { evento, id_externo: idExterno, estado },
+      payload: firmado
+        ? (cuerpo ?? {})
+        : recurrente
+          ? resumenAvisoRecurrente(cuerpo)
+          : { evento, id_externo: idExterno, estado },
     })
     .select("id")
     .single();

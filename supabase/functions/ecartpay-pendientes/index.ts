@@ -8,6 +8,11 @@
 
 import { esAdmin, HttpError, handler, json, readJson, serviceClient } from "../_shared/http.ts";
 import { confirmarPago, procesarEvento } from "../_shared/pagos.ts";
+import {
+  contextoDeFila,
+  sincronizarDomiciliacion,
+  sincronizarSuscripcion,
+} from "../_shared/recurrentes.ts";
 
 const LOTE = 25;
 
@@ -80,6 +85,35 @@ Deno.serve(
       }
       resumen[clave] = (resumen[clave] ?? 0) + 1;
     }
+    // Suscripciones y domiciliaciones: las que quedaron sin respuesta al crearse y las abiertas que
+    // no se sincronizan hace más de 6 horas (por si se perdió un aviso).
+    const hace6h = new Date(ahora - 6 * 3_600_000).toISOString();
+    for (const [tabla, abiertos] of [
+      ["suscripciones", ["activa", "pausada"]],
+      ["domiciliaciones", ["created", "active", "pending"]],
+    ] as const) {
+      const { data: filas } = await sb
+        .from(tabla)
+        .select("*")
+        .or(
+          `estado.eq.creando,and(estado.in.(${abiertos.join(",")}),or(sincronizada_at.is.null,sincronizada_at.lt.${hace6h}))`,
+        )
+        .lt("created_at", new Date(ahora - 2 * 60_000).toISOString())
+        .order("updated_at")
+        .limit(LOTE);
+      for (const fila of filas ?? []) {
+        try {
+          const ctx = await contextoDeFila(sb, fila);
+          if (tabla === "suscripciones") await sincronizarSuscripcion(ctx, fila);
+          else await sincronizarDomiciliacion(ctx, fila);
+          resumen[tabla] = (resumen[tabla] ?? 0) + 1;
+        } catch {
+          resumen[`${tabla}_error`] = (resumen[`${tabla}_error`] ?? 0) + 1;
+          await sb.from(tabla).update({ updated_at: new Date().toISOString() }).eq("id", fila.id);
+        }
+      }
+    }
+
     const resultado = { revisados: ids.length, ...resumen };
     await sb.from("tareas_programadas").update({ resultado }).eq("nombre", "ecartpay-pendientes");
     return json({ ok: true, ...resultado });
