@@ -4,7 +4,11 @@
 // enmascarado, `/api/payment-methods`) y el historial (`/api/withdrawals`, paginado).
 // La usa el comercio dueño o un admin (con `comercio_id`). Body: { comercio_id?, pagina?, estado? }.
 
-import { clienteDeConexion, comercioDeLaSolicitud, conexionEcartPay } from "../_shared/conexiones.ts";
+import {
+  clienteDeConexion,
+  comercioDeLaSolicitud,
+  conexionEcartPay,
+} from "../_shared/conexiones.ts";
 import { cuentaRetiroDeEcart, EcartPayError, retiroDeEcart } from "../_shared/ecartpay.ts";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 

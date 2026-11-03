@@ -6,7 +6,11 @@
 // Acciones: leer | guardar ({ planes: [{ meses, activo, cuotas_fijas, minimo, maximo }],
 //                            amex_cuotas_fijas })
 
-import { clienteDeConexion, comercioDeLaSolicitud, conexionEcartPay } from "../_shared/conexiones.ts";
+import {
+  clienteDeConexion,
+  comercioDeLaSolicitud,
+  conexionEcartPay,
+} from "../_shared/conexiones.ts";
 import { EcartPayError, msiAEcart, msiDeEcart } from "../_shared/ecartpay.ts";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 

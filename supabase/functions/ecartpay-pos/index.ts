@@ -7,7 +7,11 @@
 //           vincular_terminal | desvincular_terminal | modo_terminal
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { clienteDeConexion, comercioDeLaSolicitud, conexionEcartPay } from "../_shared/conexiones.ts";
+import {
+  clienteDeConexion,
+  comercioDeLaSolicitud,
+  conexionEcartPay,
+} from "../_shared/conexiones.ts";
 import {
   cajaAEcart,
   cajaDeEcart,
