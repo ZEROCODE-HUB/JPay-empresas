@@ -56,7 +56,11 @@ export type Modulo =
   /** Transferencias salientes por BDC / Coelsa. */
   | "transferencias_salientes"
   /** Cuenta con Cobre: CLABE del comercio, cobros y transferencias SPEI, dólares (Fedwire/SWIFT). */
-  | "transferencias_cobre";
+  | "transferencias_cobre"
+  /** Pagos y cobros con QR / pago con transferencia (PCT). */
+  | "qr"
+  /** Alertas y bloqueos automáticos por reglas, y la pestaña de riesgo del cliente. */
+  | "monitoreo_automatico";
 
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };
 
@@ -264,6 +268,8 @@ const MX: ConfigPais = {
     payway: false,
     transferencias_salientes: false,
     transferencias_cobre: true,
+    qr: false,
+    monitoreo_automatico: true,
   },
   textos: {
     notaRegulatoria: null,
@@ -369,6 +375,8 @@ const AR: ConfigPais = {
     payway: true,
     transferencias_salientes: true,
     transferencias_cobre: false,
+    qr: true,
+    monitoreo_automatico: true,
   },
   textos: {
     notaRegulatoria: "Operamos bajo normativa BCRA.",

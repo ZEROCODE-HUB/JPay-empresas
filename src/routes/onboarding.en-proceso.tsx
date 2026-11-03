@@ -1,4 +1,6 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { cuentaDelPais } from "@/lib/cuenta-pais";
+import { getPais } from "@/shared/pais";
 import {
   AuthShell,
   PrimaryButton,
@@ -68,7 +70,7 @@ function EnProceso() {
               {norm === "registrado" &&
                 "Tu documentacion esta en revision. Permaneceras en Registrado hasta que Admin apruebe."}
               {norm === "preactivado" &&
-                "Documentacion aprobada (Preactivado). Falta generar tu CBU y cargar tu comision para activar."}
+                `Documentacion aprobada (Preactivado). Falta generar tu ${getPais().codigo === "AR" ? "CBU" : cuentaDelPais()} y cargar tu comision para activar.`}
               {norm === "activado" && "Tu cuenta ya esta Activada. Podes operar."}
               {norm === "suspendido" &&
                 "Tu cuenta esta Suspendida temporalmente. Contacta a soporte."}

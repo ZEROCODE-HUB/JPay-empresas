@@ -4,6 +4,12 @@
 //        + Eliminado = borrado físico (no es estado almacenado, solo si no tiene movimientos)
 // Compartible entre ambos proyectos (sin dependencias de UI).
 
+import { cuentaDelPais } from "@/lib/cuenta-pais";
+import { getPais } from "@/shared/pais";
+
+/** CBU/CVU en Argentina, CLABE en México. */
+const CUENTA = getPais().codigo === "AR" ? "CBU" : cuentaDelPais();
+
 export const ESTADOS_CLIENTE = [
   "pendiente_verificacion",
   "registrado",
@@ -97,7 +103,7 @@ const TRANSICIONES: Transicion[] = [
     to: "activado",
     accion: "activar",
     requiere: (ctx) => ctx.hasCbu && ctx.hasComision,
-    descripcion: "Activación requiere CBU + comisión",
+    descripcion: `Activación requiere ${CUENTA} + comisión`,
   },
   {
     from: "activado",
@@ -118,7 +124,7 @@ const TRANSICIONES: Transicion[] = [
     from: "activado",
     to: "deshabilitado",
     accion: "deshabilitar",
-    descripcion: "Deshabilitación (cancela CBU, conserva historial)",
+    descripcion: `Deshabilitación (cancela ${CUENTA}, conserva historial)`,
   },
   {
     from: "suspendido",
@@ -193,7 +199,7 @@ export function puedeTransicionar(
   if (t.requiere && !t.requiere(ctx)) {
     if (to === "activado") {
       const faltantes: string[] = [];
-      if (!ctx.hasCbu) faltantes.push("CBU");
+      if (!ctx.hasCbu) faltantes.push(CUENTA);
       if (!ctx.hasComision) faltantes.push("comisión");
       return { ok: false, motivo: `No se puede activar: faltan ${faltantes.join(" y ")}.` };
     }
@@ -232,7 +238,7 @@ export function accionesParaEstado(estadoRaw: string, ctx: TransicionContext): A
     const canActivar = ctx.hasCbu && ctx.hasComision;
     acciones.push({
       key: "activar",
-      label: canActivar ? "Activar" : "Activar (requiere CBU + comisión)",
+      label: canActivar ? "Activar" : `Activar (requiere ${CUENTA} + comisión)`,
       target: "activado",
     });
   }
@@ -275,13 +281,13 @@ export function siguientePasoOnboarding(estadoRaw: string): string {
     case "registrado":
       return "Completar onboarding y esperar aprobación de documentación";
     case "preactivado":
-      return "Generar CBU y cargar comisión para activar";
+      return `Generar ${CUENTA} y cargar comisión para activar`;
     case "activado":
       return "Usuario operativo";
     case "suspendido":
       return "Usuario suspendido temporalmente";
     case "deshabilitado":
-      return "Usuario deshabilitado (CBU cancelado, historial conservado)";
+      return `Usuario deshabilitado (${CUENTA} cancelada, historial conservado)`;
     case "eliminado":
       return "Usuario eliminado (sin movimientos)";
     default:
