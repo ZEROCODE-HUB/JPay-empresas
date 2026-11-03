@@ -24,6 +24,7 @@ import { Route as AppCobrosRouteImport } from './routes/app.cobros'
 import { Route as AppCuentaRouteImport } from './routes/app.cuenta'
 import { Route as AppDestinatariosRouteImport } from './routes/app.destinatarios'
 import { Route as AppDolaresRouteImport } from './routes/app.dolares'
+import { Route as AppDomiciliacionRouteImport } from './routes/app.domiciliacion'
 import { Route as AppEcommerceRouteImport } from './routes/app.ecommerce'
 import { Route as AppHistorialRouteImport } from './routes/app.historial'
 import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones'
@@ -38,6 +39,7 @@ import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
 import { Route as AppServiciosRouteImport } from './routes/app.servicios'
 import { Route as AppSpeiRouteImport } from './routes/app.spei'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
+import { Route as AppSuscripcionesRouteImport } from './routes/app.suscripciones'
 import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as LegalesArrepentimientoRouteImport } from './routes/legales.arrepentimiento'
 import { Route as LegalesComisionesRouteImport } from './routes/legales.comisiones'
@@ -137,6 +139,11 @@ const AppDolaresRoute = AppDolaresRouteImport.update({
   path: '/dolares',
   getParentRoute: () => AppRoute,
 } as any)
+const AppDomiciliacionRoute = AppDomiciliacionRouteImport.update({
+  id: '/domiciliacion',
+  path: '/domiciliacion',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEcommerceRoute = AppEcommerceRouteImport.update({
   id: '/ecommerce',
   path: '/ecommerce',
@@ -205,6 +212,11 @@ const AppSpeiRoute = AppSpeiRouteImport.update({
 const AppSubcuentasRoute = AppSubcuentasRouteImport.update({
   id: '/subcuentas',
   path: '/subcuentas',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSuscripcionesRoute = AppSuscripcionesRouteImport.update({
+  id: '/suscripciones',
+  path: '/suscripciones',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
@@ -340,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
+  '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -354,6 +367,7 @@ export interface FileRoutesByFullPath {
   '/app/servicios': typeof AppServiciosRoute
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
+  '/app/suscripciones': typeof AppSuscripcionesRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
@@ -392,6 +406,7 @@ export interface FileRoutesByTo {
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
+  '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -406,6 +421,7 @@ export interface FileRoutesByTo {
   '/app/servicios': typeof AppServiciosRoute
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
+  '/app/suscripciones': typeof AppSuscripcionesRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
@@ -447,6 +463,7 @@ export interface FileRoutesById {
   '/app/cuenta': typeof AppCuentaRoute
   '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
+  '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
@@ -461,6 +478,7 @@ export interface FileRoutesById {
   '/app/servicios': typeof AppServiciosRoute
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
+  '/app/suscripciones': typeof AppSuscripcionesRoute
   '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
@@ -503,6 +521,7 @@ export interface FileRouteTypes {
     | '/app/cuenta'
     | '/app/destinatarios'
     | '/app/dolares'
+    | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -517,6 +536,7 @@ export interface FileRouteTypes {
     | '/app/servicios'
     | '/app/spei'
     | '/app/subcuentas'
+    | '/app/suscripciones'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
@@ -555,6 +575,7 @@ export interface FileRouteTypes {
     | '/app/cuenta'
     | '/app/destinatarios'
     | '/app/dolares'
+    | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -569,6 +590,7 @@ export interface FileRouteTypes {
     | '/app/servicios'
     | '/app/spei'
     | '/app/subcuentas'
+    | '/app/suscripciones'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
@@ -609,6 +631,7 @@ export interface FileRouteTypes {
     | '/app/cuenta'
     | '/app/destinatarios'
     | '/app/dolares'
+    | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
@@ -623,6 +646,7 @@ export interface FileRouteTypes {
     | '/app/servicios'
     | '/app/spei'
     | '/app/subcuentas'
+    | '/app/suscripciones'
     | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
@@ -775,6 +799,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDolaresRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/domiciliacion': {
+      id: '/app/domiciliacion'
+      path: '/domiciliacion'
+      fullPath: '/app/domiciliacion'
+      preLoaderRoute: typeof AppDomiciliacionRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/ecommerce': {
       id: '/app/ecommerce'
       path: '/ecommerce'
@@ -871,6 +902,13 @@ declare module '@tanstack/react-router' {
       path: '/subcuentas'
       fullPath: '/app/subcuentas'
       preLoaderRoute: typeof AppSubcuentasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/suscripciones': {
+      id: '/app/suscripciones'
+      path: '/suscripciones'
+      fullPath: '/app/suscripciones'
+      preLoaderRoute: typeof AppSuscripcionesRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/transferencias': {
@@ -1091,6 +1129,7 @@ interface AppRouteChildren {
   AppCuentaRoute: typeof AppCuentaRoute
   AppDestinatariosRoute: typeof AppDestinatariosRoute
   AppDolaresRoute: typeof AppDolaresRoute
+  AppDomiciliacionRoute: typeof AppDomiciliacionRoute
   AppEcommerceRoute: typeof AppEcommerceRoute
   AppHistorialRoute: typeof AppHistorialRoute
   AppIntegracionesRoute: typeof AppIntegracionesRoute
@@ -1105,6 +1144,7 @@ interface AppRouteChildren {
   AppServiciosRoute: typeof AppServiciosRoute
   AppSpeiRoute: typeof AppSpeiRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
+  AppSuscripcionesRoute: typeof AppSuscripcionesRoute
   AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -1117,6 +1157,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCuentaRoute: AppCuentaRoute,
   AppDestinatariosRoute: AppDestinatariosRoute,
   AppDolaresRoute: AppDolaresRoute,
+  AppDomiciliacionRoute: AppDomiciliacionRoute,
   AppEcommerceRoute: AppEcommerceRoute,
   AppHistorialRoute: AppHistorialRoute,
   AppIntegracionesRoute: AppIntegracionesRoute,
@@ -1131,6 +1172,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppServiciosRoute: AppServiciosRoute,
   AppSpeiRoute: AppSpeiRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,
+  AppSuscripcionesRoute: AppSuscripcionesRoute,
   AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
 }

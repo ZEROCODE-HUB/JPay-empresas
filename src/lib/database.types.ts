@@ -3081,6 +3081,86 @@ export type Database = {
           },
         ]
       }
+      cobros_recurrentes: {
+        Row: {
+          clave_externa: string
+          cliente_legajo: string
+          cobrado_at: string
+          comercio_id: string
+          created_at: string
+          domiciliacion_id: string | null
+          estado: string
+          id: string
+          moneda: string
+          monto: number
+          motivo: string | null
+          orden_externa_id: string | null
+          suscripcion_id: string | null
+          tipo: string
+        }
+        Insert: {
+          clave_externa: string
+          cliente_legajo: string
+          cobrado_at?: string
+          comercio_id: string
+          created_at?: string
+          domiciliacion_id?: string | null
+          estado: string
+          id?: string
+          moneda: string
+          monto: number
+          motivo?: string | null
+          orden_externa_id?: string | null
+          suscripcion_id?: string | null
+          tipo: string
+        }
+        Update: {
+          clave_externa?: string
+          cliente_legajo?: string
+          cobrado_at?: string
+          comercio_id?: string
+          created_at?: string
+          domiciliacion_id?: string | null
+          estado?: string
+          id?: string
+          moneda?: string
+          monto?: number
+          motivo?: string | null
+          orden_externa_id?: string | null
+          suscripcion_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobros_recurrentes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobros_recurrentes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "cobros_recurrentes_domiciliacion_id_fkey"
+            columns: ["domiciliacion_id"]
+            isOneToOne: false
+            referencedRelation: "domiciliaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cobros_recurrentes_suscripcion_id_fkey"
+            columns: ["suscripcion_id"]
+            isOneToOne: false
+            referencedRelation: "suscripciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       codigos_categoria: {
         Row: {
           codigo: string
@@ -4247,6 +4327,162 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+        ]
+      }
+      domiciliaciones: {
+        Row: {
+          alias: string
+          ciclo_dia: number | null
+          clabe: string
+          cliente_legajo: string
+          comercio_id: string
+          concepto: string
+          conexion_id: string
+          creado_por: string | null
+          created_at: string
+          entorno: string
+          estado: string
+          fecha_fin: string | null
+          id: string
+          id_externo: string | null
+          idempotency_key: string
+          intervalo: string | null
+          moneda: string
+          monto: number
+          nivel_validacion: number | null
+          proveedor_cliente_id: string | null
+          proximo_cobro: string | null
+          recurrente: boolean
+          referencia: string | null
+          respuesta: Json | null
+          sincronizada_at: string | null
+          titular_email: string
+          titular_nombre: string
+          titular_rfc: string | null
+          ultimo_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          alias: string
+          ciclo_dia?: number | null
+          clabe: string
+          cliente_legajo: string
+          comercio_id: string
+          concepto: string
+          conexion_id: string
+          creado_por?: string | null
+          created_at?: string
+          entorno: string
+          estado?: string
+          fecha_fin?: string | null
+          id?: string
+          id_externo?: string | null
+          idempotency_key: string
+          intervalo?: string | null
+          moneda?: string
+          monto: number
+          nivel_validacion?: number | null
+          proveedor_cliente_id?: string | null
+          proximo_cobro?: string | null
+          recurrente?: boolean
+          referencia?: string | null
+          respuesta?: Json | null
+          sincronizada_at?: string | null
+          titular_email: string
+          titular_nombre: string
+          titular_rfc?: string | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alias?: string
+          ciclo_dia?: number | null
+          clabe?: string
+          cliente_legajo?: string
+          comercio_id?: string
+          concepto?: string
+          conexion_id?: string
+          creado_por?: string | null
+          created_at?: string
+          entorno?: string
+          estado?: string
+          fecha_fin?: string | null
+          id?: string
+          id_externo?: string | null
+          idempotency_key?: string
+          intervalo?: string | null
+          moneda?: string
+          monto?: number
+          nivel_validacion?: number | null
+          proveedor_cliente_id?: string | null
+          proximo_cobro?: string | null
+          recurrente?: boolean
+          referencia?: string | null
+          respuesta?: Json | null
+          sincronizada_at?: string | null
+          titular_email?: string
+          titular_nombre?: string
+          titular_rfc?: string | null
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "domiciliaciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_conexion_id_fkey"
+            columns: ["conexion_id"]
+            isOneToOne: false
+            referencedRelation: "comercio_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "domiciliaciones_proveedor_cliente_id_fkey"
+            columns: ["proveedor_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "proveedor_clientes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -6019,6 +6255,57 @@ export type Database = {
           },
         ]
       }
+      proveedor_clientes: {
+        Row: {
+          cliente_externo_id: string
+          comercio_id: string
+          created_at: string
+          email: string
+          entorno: string
+          id: string
+          nombre: string
+          proveedor: string
+          telefono: string | null
+        }
+        Insert: {
+          cliente_externo_id: string
+          comercio_id: string
+          created_at?: string
+          email: string
+          entorno: string
+          id?: string
+          nombre: string
+          proveedor?: string
+          telefono?: string | null
+        }
+        Update: {
+          cliente_externo_id?: string
+          comercio_id?: string
+          created_at?: string
+          email?: string
+          entorno?: string
+          id?: string
+          nombre?: string
+          proveedor?: string
+          telefono?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proveedor_clientes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proveedor_clientes_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+        ]
+      }
       proveedores_pago: {
         Row: {
           activo: boolean
@@ -6548,6 +6835,165 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "proveedores_pago"
             referencedColumns: ["codigo"]
+          },
+        ]
+      }
+      suscripciones: {
+        Row: {
+          beneficios: string[]
+          checkout_link: string | null
+          ciclo_dia: number | null
+          ciclo_mes: number | null
+          cliente_legajo: string
+          comercio_id: string
+          compromiso_periodos: number | null
+          conexion_id: string
+          creado_por: string | null
+          created_at: string
+          dias_prueba: number
+          entorno: string
+          estado: string
+          fecha_fin: string | null
+          frecuencia: number
+          id: string
+          id_externo: string | null
+          idempotency_key: string
+          intentos: number
+          intervalo: string
+          moneda: string
+          monto: number
+          proveedor_cliente_id: string | null
+          proximo_cobro: string | null
+          respuesta: Json | null
+          servicio: string
+          sincronizada_at: string | null
+          suscriptor_email: string
+          suscriptor_nombre: string
+          ultimo_error: string | null
+          updated_at: string
+        }
+        Insert: {
+          beneficios?: string[]
+          checkout_link?: string | null
+          ciclo_dia?: number | null
+          ciclo_mes?: number | null
+          cliente_legajo: string
+          comercio_id: string
+          compromiso_periodos?: number | null
+          conexion_id: string
+          creado_por?: string | null
+          created_at?: string
+          dias_prueba?: number
+          entorno: string
+          estado?: string
+          fecha_fin?: string | null
+          frecuencia?: number
+          id?: string
+          id_externo?: string | null
+          idempotency_key: string
+          intentos?: number
+          intervalo: string
+          moneda?: string
+          monto: number
+          proveedor_cliente_id?: string | null
+          proximo_cobro?: string | null
+          respuesta?: Json | null
+          servicio: string
+          sincronizada_at?: string | null
+          suscriptor_email: string
+          suscriptor_nombre: string
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Update: {
+          beneficios?: string[]
+          checkout_link?: string | null
+          ciclo_dia?: number | null
+          ciclo_mes?: number | null
+          cliente_legajo?: string
+          comercio_id?: string
+          compromiso_periodos?: number | null
+          conexion_id?: string
+          creado_por?: string | null
+          created_at?: string
+          dias_prueba?: number
+          entorno?: string
+          estado?: string
+          fecha_fin?: string | null
+          frecuencia?: number
+          id?: string
+          id_externo?: string | null
+          idempotency_key?: string
+          intentos?: number
+          intervalo?: string
+          moneda?: string
+          monto?: number
+          proveedor_cliente_id?: string | null
+          proximo_cobro?: string | null
+          respuesta?: Json | null
+          servicio?: string
+          sincronizada_at?: string | null
+          suscriptor_email?: string
+          suscriptor_nombre?: string
+          ultimo_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suscripciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "suscripciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "suscripciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "suscripciones_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "suscripciones_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripciones_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
+          },
+          {
+            foreignKeyName: "suscripciones_conexion_id_fkey"
+            columns: ["conexion_id"]
+            isOneToOne: false
+            referencedRelation: "comercio_proveedores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "suscripciones_proveedor_cliente_id_fkey"
+            columns: ["proveedor_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "proveedor_clientes"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -8010,6 +8456,8 @@ export type Database = {
       current_admin_id: { Args: never; Returns: string }
       current_cliente_id: { Args: never; Returns: string }
       current_cliente_legajo: { Args: never; Returns: string }
+      dashboard_detalle: { Args: never; Returns: Json }
+      dashboard_kpis: { Args: never; Returns: Json }
       ejecutar_barrido_compliance: { Args: never; Returns: Json }
       eliminar_auth_por_email: { Args: { p_email: string }; Returns: undefined }
       eliminar_lote: { Args: { p_lote_id: string }; Returns: undefined }
@@ -8192,6 +8640,24 @@ export type Database = {
         Args: { p_conexion_id: string }
         Returns: string
       }
+      reembolsos_en_verificacion: {
+        Args: never
+        Returns: {
+          cliente_legajo: string
+          created_at: string
+          error: string
+          id: string
+          metodo: string
+          monto: number
+          monto_pago: number
+          motivo: string
+          nota: string
+          origen: string
+          pago_id: string
+          proveedor: string
+          proveedor_orden_id: string
+        }[]
+      }
       registrar_deposito_entrante: {
         Args: {
           p_cbu_destino: string
@@ -8341,6 +8807,31 @@ export type Database = {
       resolver_alerta: {
         Args: { p_id: string; p_notes: string; p_resolution: string }
         Returns: undefined
+      }
+      resolver_reembolso: {
+        Args: { p_id: string; p_nota: string; p_ok: boolean }
+        Returns: {
+          created_at: string
+          error: string | null
+          estado: string
+          finalizado_at: string | null
+          id: string
+          monto: number
+          motivo: string
+          nota: string | null
+          origen: string
+          pago_id: string
+          proveedor: string
+          proveedor_reembolso_id: string | null
+          respuesta: Json
+          solicitado_por: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reembolsos"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       resumen_lotes_admin: {
         Args: { p_desde?: string; p_hasta?: string }

@@ -60,7 +60,11 @@ export type Modulo =
   /** Pagos y cobros con QR / pago con transferencia (PCT). */
   | "qr"
   /** Alertas y bloqueos automáticos por reglas, y la pestaña de riesgo del cliente. */
-  | "monitoreo_automatico";
+  | "monitoreo_automatico"
+  /** Suscripciones con tarjeta (Ecart Pay). */
+  | "suscripciones"
+  /** Domiciliación: cargos recurrentes a la CLABE del cliente (Ecart Pay). */
+  | "domiciliacion";
 
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };
 
@@ -270,6 +274,8 @@ const MX: ConfigPais = {
     transferencias_cobre: true,
     qr: false,
     monitoreo_automatico: true,
+    suscripciones: true,
+    domiciliacion: true,
   },
   textos: {
     notaRegulatoria: null,
@@ -377,6 +383,8 @@ const AR: ConfigPais = {
     transferencias_cobre: false,
     qr: true,
     monitoreo_automatico: true,
+    suscripciones: false,
+    domiciliacion: false,
   },
   textos: {
     notaRegulatoria: "Operamos bajo normativa BCRA.",

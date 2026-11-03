@@ -22,6 +22,8 @@ import {
   Banknote,
   HandCoins,
   DollarSign,
+  Repeat,
+  CalendarClock,
 } from "lucide-react";
 import { PortalShell, type NavItem } from "@/components/portal-shell";
 import { SupportBot } from "@/components/support-bot";
@@ -70,6 +72,13 @@ const NAV: NavItem[] = [
   },
   { to: "/app/dolares", label: "Dólares", icon: DollarSign, modulo: "transferencias_cobre" },
   { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned, modulo: "pos" },
+  { to: "/app/suscripciones", label: "Suscripciones", icon: Repeat, modulo: "suscripciones" },
+  {
+    to: "/app/domiciliacion",
+    label: "Domiciliación",
+    icon: CalendarClock,
+    modulo: "domiciliacion",
+  },
   {
     label: "Link de pago",
     icon: Link2,
