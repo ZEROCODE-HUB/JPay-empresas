@@ -46,7 +46,7 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
             {conectado && c.entorno === "sandbox" && <Badge tone="warn">Pruebas</Badge>}
           </h2>
           <p className="text-sm text-black-400 mt-1 max-w-xl">
-            Conectá tu cuenta de Ecart Pay para cobrar con tarjeta, transferencia y efectivo. El
+            Conecta tu cuenta de Ecart Pay para cobrar con tarjeta, transferencia y efectivo. El
             dinero de cada cobro llega a tu cuenta de Ecart Pay.
           </p>
         </div>

@@ -15,7 +15,7 @@ function Page() {
     <>
       <PageHeader
         title="Cobrar por SPEI"
-        description="Generá una CLABE de un solo uso, por un monto y con vencimiento, para que te paguen por transferencia."
+        description="Genera una CLABE de un solo uso, por un monto y con vencimiento, para que te paguen por transferencia."
       />
       {cuenta.isLoading || subcuentas.isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>

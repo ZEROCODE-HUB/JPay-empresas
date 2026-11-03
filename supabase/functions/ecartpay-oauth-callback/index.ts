@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     .select("comercio_id, entorno, volver_a")
     .maybeSingle();
   if (!estado) {
-    return pagina("El enlace de conexión venció o ya se usó. Volvé a intentarlo desde JPay.", 400);
+    return pagina("El enlace de conexión venció o ya se usó. Vuelve a intentarlo desde JPay.", 400);
   }
   const volver = (r: Record<string, string>) =>
     Response.redirect(conResultado(estado.volver_a, r), 302);

@@ -26,7 +26,7 @@ function Page() {
           description="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación."
         />
         <Card className="text-sm">
-          Primero conectá tu cuenta de Ecart Pay en{" "}
+          Primero conecta tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold underline">
             Integraciones
           </Link>

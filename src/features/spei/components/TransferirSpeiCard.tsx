@@ -71,9 +71,9 @@ export function TransferirSpeiCard({
 
   const enviar = () => {
     const importe = parseMonto(monto);
-    if (!sub) return toast.error("Elegí una subcuenta");
-    if (!d) return toast.error("Elegí un destinatario");
-    if (!(importe > 0)) return toast.error("Ingresá un monto");
+    if (!sub) return toast.error("Elige una subcuenta");
+    if (!d) return toast.error("Elige un destinatario");
+    if (!(importe > 0)) return toast.error("Ingresa un monto");
     if (importe > sub.saldoDisponible) return toast.error("El monto supera el saldo disponible");
     m.enviar.mutate(
       {

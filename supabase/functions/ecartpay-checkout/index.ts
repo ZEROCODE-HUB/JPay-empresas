@@ -108,7 +108,7 @@ async function crear(sb: SupabaseClient, body: Body) {
     .eq("idempotency_key", clave)
     .maybeSingle();
   if (previo?.estado === "error") {
-    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Probá de nuevo.");
+    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Prueba de nuevo.");
   }
   // SPEI / OXXO: se devuelve la referencia (no el link de tarjeta). Si todavía no está, el primer
   // request sigue en curso.
@@ -124,7 +124,7 @@ async function crear(sb: SupabaseClient, body: Body) {
   if (previo?.pay_link && !pidioExterno) return { pago_id: previo.id, pay_link: previo.pay_link };
   if (previo) {
     // Intento sin orden: falló (el navegador genera otra clave) o está en curso en otro request.
-    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Probá de nuevo.");
+    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Prueba de nuevo.");
   }
 
   const { link, conexion, comercio } = await contexto(sb, body.code);
@@ -240,7 +240,7 @@ async function crear(sb: SupabaseClient, body: Body) {
     if (e instanceof EcartPayError && (e.status === 400 || e.status === 422)) {
       throw new HttpError(422, `Ecart Pay rechazó los datos: ${e.message}`);
     }
-    throw new HttpError(502, "No se pudo iniciar el pago con Ecart Pay. Probá de nuevo.");
+    throw new HttpError(502, "No se pudo iniciar el pago con Ecart Pay. Prueba de nuevo.");
   }
 }
 

@@ -32,11 +32,11 @@ export function CobreSpeiPagoCard({
 
   const generar = () => {
     const id = idNumero.trim().toUpperCase();
-    if (!nombre.trim()) return setError("Ingresá tu nombre o razón social.");
+    if (!nombre.trim()) return setError("Ingresa tu nombre o razón social.");
     const err = id.length === 18 ? validarCurp(id) : validarRfc(id);
     if (err) return setError(`RFC o CURP: ${err}`);
     if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()))
-      return setError("Ingresá un email válido.");
+      return setError("Ingresa un email válido.");
     if (!(monto > 0) || monto > total) return setError("El monto no es válido.");
     setError(null);
     iniciar.mutate(
@@ -88,7 +88,7 @@ export function CobreSpeiPagoCard({
           )}
           {["cancelado", "rechazado", "error"].includes(datos.estado) ? (
             <p className="text-sm text-danger-600">
-              La CLABE ya no está vigente. Generá una nueva.
+              La CLABE ya no está vigente. Genera una nueva.
             </p>
           ) : (
             <p className="inline-flex items-center gap-2 text-xs text-muted-foreground">

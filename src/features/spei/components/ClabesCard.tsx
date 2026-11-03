@@ -56,7 +56,7 @@ export function ClabesCard({
         <div className="mt-3 text-sm">
           {!cuenta.alta ? (
             <p className="text-black-400">
-              Todavía no tenés tu cuenta en Cobre. Completá los datos de la empresa, sus
+              Todavía no tienes tu cuenta en Cobre. Completa los datos de la empresa, sus
               representantes y beneficiarios en{" "}
               <Link to="/app/cuenta" className="font-semibold text-secondary hover:underline">
                 Mi cuenta
@@ -67,7 +67,7 @@ export function ClabesCard({
             cuenta.alta.estado === "failed" ||
             cuenta.alta.estado === "error_envio" ? (
             <p className="text-danger-600">
-              {cuenta.alta.motivo ?? "Cobre no aprobó el alta"}. Corregí los datos en{" "}
+              {cuenta.alta.motivo ?? "Cobre no aprobó el alta"}. Corrige los datos en{" "}
               <Link to="/app/cuenta" className="font-semibold hover:underline">
                 Mi cuenta
               </Link>{" "}

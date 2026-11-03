@@ -81,7 +81,7 @@ export function PuntosFisicosPanel({
         <div className="space-y-4">
           {sucursales.length === 0 && (
             <Card className="text-sm text-muted-foreground">
-              Todavía no hay sucursales. Creá una o sincronizá las que haya en Ecart Pay.
+              Todavía no hay sucursales. Crea una o sincronizá las que haya en Ecart Pay.
             </Card>
           )}
           {sucursales.map((s) => (
@@ -115,7 +115,7 @@ export function PuntosFisicosPanel({
             </p>
             {terminales.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                No hay terminales en la cuenta. Cuando Ecart Pay asigne una, tocá "Sincronizar con
+                No hay terminales en la cuenta. Cuando Ecart Pay asigne una, toca "Sincronizar con
                 Ecart Pay".
               </p>
             ) : (

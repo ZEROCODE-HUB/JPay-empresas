@@ -79,7 +79,7 @@ export function SuscripcionesPanel({
   const copiar = async (link: string) => {
     try {
       await navigator.clipboard.writeText(link);
-      toast.success("Link copiado: compartilo con el suscriptor");
+      toast.success("Link copiado: compártelo con el suscriptor");
     } catch {
       toast.error("No se pudo copiar");
     }
@@ -105,7 +105,7 @@ export function SuscripcionesPanel({
         <Card className="text-sm text-danger-600">{(lista.error as Error).message}</Card>
       ) : filas.length === 0 ? (
         <Card className="text-sm text-muted-foreground">
-          Todavía no hay suscripciones. Creá una: Ecart Pay te da un link para que el suscriptor
+          Todavía no hay suscripciones. Crea una: Ecart Pay te da un link para que el suscriptor
           cargue su tarjeta y se le cobre en cada período.
         </Card>
       ) : (
@@ -208,7 +208,7 @@ export function SuscripcionesPanel({
             { ...v, idempotency_key: nuevaClave() },
             {
               onSuccess: (s) => {
-                toast.success("Suscripción creada: copiá el link y compartilo con el suscriptor");
+                toast.success("Suscripción creada: copiá el link y compártelo con el suscriptor");
                 setNueva(false);
                 if (s.checkout_link) void copiar(s.checkout_link);
               },
@@ -271,7 +271,7 @@ function NuevaSuscripcionDialog({
   const guardar = () => {
     const monto = parseMonto(f.monto);
     if (!f.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.trim()))
-      return toast.error("Completá el nombre y un correo válido del suscriptor");
+      return toast.error("Completa el nombre y un correo válido del suscriptor");
     if (!f.servicio.trim()) return toast.error("Falta el nombre del servicio");
     if (!(monto > 0)) return toast.error("Monto inválido");
     onGuardar({

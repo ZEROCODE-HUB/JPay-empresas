@@ -80,7 +80,7 @@ export function DomiciliacionesPanel({
         <Card className="text-sm text-danger-600">{(lista.error as Error).message}</Card>
       ) : filas.length === 0 ? (
         <Card className="text-sm text-muted-foreground">
-          Todavía no hay domiciliaciones. Creá una con la CLABE del cliente: Ecart Pay le pide que
+          Todavía no hay domiciliaciones. Crea una con la CLABE del cliente: Ecart Pay le pide que
           la acepte y valida la cuenta antes del primer cargo.
         </Card>
       ) : (
@@ -232,7 +232,7 @@ function NuevaDomiciliacionDialog({
     const clabe = f.clabe.replace(/\D/g, "");
     const rfc = f.rfc.trim().toUpperCase();
     if (!f.nombre.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.email.trim()))
-      return toast.error("Completá el nombre y un correo válido del titular");
+      return toast.error("Completa el nombre y un correo válido del titular");
     const errClabe = validarClabe(clabe);
     if (errClabe) return toast.error(errClabe);
     if (rfc) {

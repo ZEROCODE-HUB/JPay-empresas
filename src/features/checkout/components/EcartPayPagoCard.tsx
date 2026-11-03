@@ -53,9 +53,9 @@ export function EcartPayPagoCard({
   const actual = metodos.find((m) => m.id === metodo) ?? metodos[0];
 
   const pagar = () => {
-    if (!nombre.trim()) return setError("Ingresá tu nombre.");
+    if (!nombre.trim()) return setError("Ingresa tu nombre.");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim()))
-      return setError("Ingresá un email válido.");
+      return setError("Ingresa un email válido.");
     if (!(monto > 0) || monto > total) return setError("El monto no es válido.");
     if (metodo === "oxxo" && monto > TOPE_OXXO) {
       return setError(`En OXXO se puede pagar hasta ${formatMoney(TOPE_OXXO)}.`);

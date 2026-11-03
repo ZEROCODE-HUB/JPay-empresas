@@ -35,8 +35,8 @@ export function ConvertirCard({
 
   const pedir = () => {
     const importe = parseMonto(monto);
-    if (!sub) return toast.error("Elegí una subcuenta en pesos");
-    if (!(importe > 0)) return toast.error("Ingresá un monto");
+    if (!sub) return toast.error("Elige una subcuenta en pesos");
+    if (!(importe > 0)) return toast.error("Ingresa un monto");
     if (importe > sub.saldoDisponible) return toast.error("El monto supera el saldo disponible");
     cotizar.mutate(
       { subcuentaId: sub.id, montoMxn: importe },
@@ -113,7 +113,7 @@ export function ConvertirCard({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p>
-                Recibís{" "}
+                Recibes{" "}
                 <span className="font-semibold">{formatMoney(q.montoUsd, { moneda: "USD" })}</span>{" "}
                 por {formatMoney(q.montoMxn)}
               </p>

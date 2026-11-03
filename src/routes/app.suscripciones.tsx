@@ -23,10 +23,10 @@ function Page() {
       <>
         <PageHeader
           title="Suscripciones"
-          description="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
+          description="Cobra en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
         />
         <Card className="text-sm">
-          Primero conectá tu cuenta de Ecart Pay en{" "}
+          Primero conecta tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold underline">
             Integraciones
           </Link>
@@ -39,7 +39,7 @@ function Page() {
     <SuscripcionesPanel
       comercioId={comercioId}
       titulo="Suscripciones"
-      descripcion="Cobrá en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
+      descripcion="Cobra en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay."
     />
   );
 }

@@ -37,7 +37,7 @@ function Page() {
     <>
       <PageHeader
         title="Integraciones"
-        description="Conectá las cuentas con las que cobrás tus ventas."
+        description="Conecta las cuentas con las que cobras tus ventas."
       />
       {isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>

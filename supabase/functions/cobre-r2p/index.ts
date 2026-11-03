@@ -234,7 +234,7 @@ async function checkout(sb: SupabaseClient, b: Obj) {
       .eq("pago_id", previo.id)
       .maybeSingle();
     if (c?.clabe_dinamica) return respuestaCheckout(previo.id, c);
-    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Probá de nuevo.");
+    throw new HttpError(409, "Este intento de pago no se pudo iniciar. Prueba de nuevo.");
   }
   const link = await linkPorCodigo(sb, b.code);
   if (!vigente(link)) throw new HttpError(409, "El link de pago no está disponible");

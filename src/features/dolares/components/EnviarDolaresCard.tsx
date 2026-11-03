@@ -62,7 +62,7 @@ export function EnviarDolaresCard({
   const guardar = () => {
     if (!nuevo) return;
     if (!nuevo.titular.trim() || !nuevo.banco.nombre.trim() || !nuevo.banco.cuenta.trim()) {
-      return toast.error("Completá beneficiario, banco y número de cuenta");
+      return toast.error("Completa beneficiario, banco y número de cuenta");
     }
     m.crearDestinatarioUsd.mutate(nuevo, {
       onSuccess: (r) => {
@@ -77,7 +77,7 @@ export function EnviarDolaresCard({
   const enviar = () => {
     const importe = parseMonto(monto);
     if (!usd) return toast.error("Primero convertí pesos a dólares");
-    if (!d) return toast.error("Elegí un beneficiario");
+    if (!d) return toast.error("Elige un beneficiario");
     if (!(importe >= 1)) return toast.error("El mínimo es 1.00 USD");
     if (importe > usd.saldoDisponible) return toast.error("El monto supera tu saldo en dólares");
     m.enviar.mutate(
@@ -169,7 +169,7 @@ export function EnviarDolaresCard({
               {!nuevo &&
                 (destinatarios.length === 0 ? (
                   <p className="mt-1 text-sm text-black-400">
-                    Todavía no tenés beneficiarios en dólares.
+                    Todavía no tienes beneficiarios en dólares.
                   </p>
                 ) : (
                   <>

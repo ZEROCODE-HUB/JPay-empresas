@@ -32,7 +32,7 @@ export async function comercioDeSesion(
       409,
       comercioId
         ? "El comercio no pertenece a tu cuenta"
-        : "Tu cuenta todavía no tiene un comercio habilitado. Pedíselo a soporte.",
+        : "Tu cuenta todavía no tiene un comercio habilitado. Pídeselo a soporte.",
     );
   }
   return { id: data.id, legajo: data.legajo, nombre: data.nombre_comercio };

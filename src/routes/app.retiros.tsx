@@ -40,7 +40,7 @@ function Page() {
         <Card className="text-sm text-black-400">Cargando…</Card>
       ) : !conectado ? (
         <Card className="text-sm">
-          Para ver tus retiros primero conectá tu cuenta de Ecart Pay en{" "}
+          Para ver tus retiros primero conecta tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold text-secondary hover:underline">
             Integraciones
           </Link>
@@ -74,7 +74,7 @@ function Page() {
             <h2 className="font-semibold">Cuentas de retiro</h2>
             {data.cuentas.length === 0 ? (
               <p className="mt-2 text-sm text-black-400">
-                No tenés cuentas de retiro cargadas. Agregá tu CLABE en el panel de Ecart Pay.
+                No tienes cuentas de retiro cargadas. Agrega tu CLABE en el panel de Ecart Pay.
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-black-100 text-sm">

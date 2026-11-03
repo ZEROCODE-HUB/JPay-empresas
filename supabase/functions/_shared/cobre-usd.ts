@@ -158,7 +158,7 @@ export async function ejecutarCruce(
   }
   if (new Date(String(cruce.cotizacion_vence_at)).getTime() <= Date.now()) {
     await sb.from("cobre_cruces").update({ estado: "vencida", updated_at: ahora() }).eq("id", id);
-    throw new CobreError(409, "La cotización venció; pedí una nueva");
+    throw new CobreError(409, "La cotización venció; pide una nueva");
   }
   const { data: res, error } = await sb.rpc("cobre_reservar_cruce", { p_cruce_id: id });
   if (error) throw new Error(error.message);

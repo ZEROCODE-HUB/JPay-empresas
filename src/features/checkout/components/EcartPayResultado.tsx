@@ -96,7 +96,7 @@ function InstruccionesPago({ pago, data }: { pago: PagoEcart; data: CheckoutLink
     <CenterCard>
       <Clock className="text-amber-600" size={30} />
       <p className="font-bold text-lg mt-1">
-        {oxxo ? "Pagá en efectivo en OXXO" : "Transferí por SPEI para completar el pago"}
+        {oxxo ? "Paga en efectivo en OXXO" : "Transferí por SPEI para completar el pago"}
       </p>
       <p className="text-sm text-muted-foreground mt-1">
         {oxxo

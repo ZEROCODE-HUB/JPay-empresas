@@ -52,7 +52,7 @@ Deno.serve(
             .eq("cliente_legajo", legajo)
             .maybeSingle();
           if (!s || s.estado !== "Activa" || (s.moneda && s.moneda !== "MXN")) {
-            throw new HttpError(400, "Elegí una subcuenta activa en pesos");
+            throw new HttpError(400, "Elige una subcuenta activa en pesos");
           }
           const monto = Math.round(Number(body.monto_mxn) * 100) / 100;
           if (!(monto > 0)) throw new HttpError(400, "Monto inválido");

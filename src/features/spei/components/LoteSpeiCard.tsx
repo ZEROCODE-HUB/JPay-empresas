@@ -127,7 +127,7 @@ export function LoteSpeiCard({
   };
 
   const enviar = () => {
-    if (!sub) return toast.error("Elegí la subcuenta de origen");
+    if (!sub) return toast.error("Elige la subcuenta de origen");
     if (total > sub.saldoDisponible) return toast.error("El total supera el saldo disponible");
     m.lote.mutate(
       {

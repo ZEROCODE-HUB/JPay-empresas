@@ -23,7 +23,7 @@ function Page() {
       <>
         <PageHeader title="Puntos físicos" description="Sucursales, cajas y terminales." />
         <Card className="text-sm">
-          Para gestionar puntos físicos primero conectá tu cuenta de Ecart Pay en{" "}
+          Para gestionar puntos físicos primero conecta tu cuenta de Ecart Pay en{" "}
           <Link to="/app/integraciones" className="font-semibold underline">
             Integraciones
           </Link>

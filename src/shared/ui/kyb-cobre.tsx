@@ -60,11 +60,11 @@ export function KybCobreForm(p: Props) {
 
   const guardarEmpresa = async () => {
     const web = normalizarSitioWeb(empresa.sitioWeb);
-    if (!web) return p.onError("Ingresá un sitio web válido");
+    if (!web) return p.onError("Ingresa un sitio web válido");
     if (!/^\+\d{10,15}$/.test(empresa.telefono.replace(/[\s-]/g, ""))) {
       return p.onError("El teléfono va con código de país, por ejemplo +52 55 1234 5678");
     }
-    if (!empresa.industria) return p.onError("Elegí la industria");
+    if (!empresa.industria) return p.onError("Elige la industria");
     setGuardando(true);
     try {
       await p.onGuardarEmpresa({
@@ -189,7 +189,7 @@ export function KybCobreForm(p: Props) {
             value={empresa.industria}
             onChange={(e) => setEmpresa({ ...empresa, industria: e.target.value })}
           >
-            <option value="">Elegí una industria</option>
+            <option value="">Elige una industria</option>
             {INDUSTRIAS_COBRE.map((i) => (
               <option key={i.value} value={i.value}>
                 {i.label}

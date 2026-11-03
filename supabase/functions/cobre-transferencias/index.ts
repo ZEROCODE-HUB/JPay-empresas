@@ -277,7 +277,7 @@ async function consultarVerificacion(ctx: Ctx, legajo: string, b: Body) {
 
 async function verificarOtp(ctx: Ctx, codigo: unknown) {
   if (typeof codigo !== "string" || !/^\d{6}$/.test(codigo)) {
-    throw new HttpError(400, "Ingresá el código de 6 dígitos que te enviamos");
+    throw new HttpError(400, "Ingresa el código de 6 dígitos que te enviamos");
   }
   const token = bearerToken(ctx.req);
   const { data: u } = await ctx.sb.auth.getUser(token ?? "");
@@ -293,7 +293,7 @@ async function verificarOtp(ctx: Ctx, codigo: unknown) {
     .maybeSingle();
   if (!otp || new Date(otp.expires_at).getTime() < Date.now() || (otp.intentos ?? 0) >= 5) {
     if (otp) await ctx.sb.from("otp_transferencias").update({ usado: true }).eq("id", otp.id);
-    throw new HttpError(400, "El código expiró o ya se usó. Pedí uno nuevo.");
+    throw new HttpError(400, "El código expiró o ya se usó. Pide uno nuevo.");
   }
   if (otp.codigo !== codigo) {
     await ctx.sb
@@ -406,7 +406,7 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
       409,
       usd
         ? "Los envíos en dólares salen de tu subcuenta en dólares"
-        : "Elegí una subcuenta en pesos",
+        : "Elige una subcuenta en pesos",
     );
   }
   if (usd) {
@@ -578,7 +578,7 @@ async function lote(ctx: Ctx, legajo: string, b: Body) {
     .eq("id", subcuentaId)
     .maybeSingle();
   if (!sub || sub.cliente_legajo !== legajo) throw new HttpError(404, "Subcuenta inexistente");
-  if (sub.moneda === "USD") throw new HttpError(409, "Elegí una subcuenta en pesos");
+  if (sub.moneda === "USD") throw new HttpError(409, "Elige una subcuenta en pesos");
 
   const { data: conf } = await ctx.sb
     .from("cobre_configuracion")

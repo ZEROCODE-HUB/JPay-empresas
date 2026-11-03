@@ -60,7 +60,7 @@ export function CobrosR2pCard({
   const generar = () => {
     const monto = parseMonto(f.monto);
     const id = f.id.trim().toUpperCase();
-    if (!(monto > 0)) return toast.error("Ingresá un monto");
+    if (!(monto > 0)) return toast.error("Ingresa un monto");
     if (!f.nombre.trim()) return toast.error("Falta el nombre de quien paga");
     const err = id.length === 18 ? validarCurp(id) : validarRfc(id);
     if (err) return toast.error(`RFC o CURP de quien paga: ${err}`);
