@@ -23,7 +23,7 @@ export function ResumenCobro({
         <ShieldCheck size={14} className="text-emerald-600" /> {data.comercio_nombre || brand.name}
       </div>
       <div className="text-3xl font-black tracking-tight text-[color:var(--brand-primary-700)]">
-        {formatMoney(parseMonto(montoPagar) || 0)}
+        {formatMoney(parseMonto(montoPagar) || 0, { moneda: data.moneda })}
       </div>
       <div className="text-xs text-muted-foreground">Total a abonar</div>
 
@@ -34,11 +34,11 @@ export function ResumenCobro({
               <div className="min-w-0">
                 <div className="font-semibold truncate">{p.producto_nombre}</div>
                 <div className="text-[11px] text-muted-foreground">
-                  {p.cantidad} × {formatMoney(p.precio_unitario)}
+                  {p.cantidad} × {formatMoney(p.precio_unitario, { moneda: data.moneda })}
                 </div>
               </div>
               <div className="font-mono tabular-nums font-semibold">
-                {formatMoney(p.precio_unitario * p.cantidad)}
+                {formatMoney(p.precio_unitario * p.cantidad, { moneda: data.moneda })}
               </div>
             </div>
           ))}
@@ -61,7 +61,9 @@ export function ResumenCobro({
             value={montoPagar}
             onChange={(e) => onMontoPagar(e.target.value)}
           />
-          <div className="text-[11px] text-muted-foreground mt-1">Máximo {formatMoney(total)}</div>
+          <div className="text-[11px] text-muted-foreground mt-1">
+            Máximo {formatMoney(total, { moneda: data.moneda })}
+          </div>
         </div>
       )}
     </Card>

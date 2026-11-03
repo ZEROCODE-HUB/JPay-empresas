@@ -114,9 +114,11 @@ function Checkout() {
                           code={code}
                           montoPagar={pago.montoPagar}
                           total={pago.total}
+                          moneda={data.moneda}
                         />
                       )}
-                      {conCobre && (
+                      {/* La CLABE de Cobre cobra en pesos. */}
+                      {conCobre && (data.moneda ?? "MXN") === "MXN" && (
                         <CobreSpeiPagoCard
                           code={code}
                           montoPagar={pago.montoPagar}

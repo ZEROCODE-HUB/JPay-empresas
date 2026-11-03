@@ -9,6 +9,7 @@ import {
 } from "@/hooks/useLinksPago";
 import { buildResolvableUrl } from "@/lib/pay-url";
 import { formatDate } from "@/shared/format";
+import { getPais } from "@/shared/pais";
 import {
   banderasUnicas as calcularBanderasUnicas,
   expiraEnDmy,
@@ -45,6 +46,8 @@ export function useGenerarLink({
   const [expires, setExpires] = useState("");
   const [status, setStatus] = useState<string>("Activo");
   const [reference, setReference] = useState("");
+  // Moneda del cobro: pesos del país; en México también dólares (Ecart Pay, solo tarjeta).
+  const [moneda, setMoneda] = useState(getPais().moneda);
   const [notes, setNotes] = useState("");
   const [comercioId, setComercioId] = useState<string>("");
 
@@ -112,6 +115,7 @@ export function useGenerarLink({
       expira_en: expiraEnIso(expires),
       pagos_parciales: partial,
       metodos_pago: methods,
+      moneda,
     };
     let inserted: { id: string; detalleOk: boolean };
     try {
@@ -178,6 +182,8 @@ export function useGenerarLink({
     setStatus,
     reference,
     setReference,
+    moneda,
+    setMoneda,
     notes,
     setNotes,
   };

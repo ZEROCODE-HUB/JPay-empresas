@@ -1170,6 +1170,7 @@ export type Database = {
           expira_en: string | null
           id: string
           metodos_pago: Json | null
+          moneda: string
           monto: number | null
           notas: string | null
           pagos: number
@@ -1187,6 +1188,7 @@ export type Database = {
           expira_en?: string | null
           id?: string
           metodos_pago?: Json | null
+          moneda?: string
           monto?: number | null
           notas?: string | null
           pagos?: number
@@ -1204,6 +1206,7 @@ export type Database = {
           expira_en?: string | null
           id?: string
           metodos_pago?: Json | null
+          moneda?: string
           monto?: number | null
           notas?: string | null
           pagos?: number

@@ -35,18 +35,22 @@ export function EcartPayPagoCard({
   code,
   montoPagar,
   total,
+  moneda = "MXN",
 }: {
   code: string;
   montoPagar: string;
   total: number;
+  /** En otra moneda que pesos solo se cobra con tarjeta (SPEI y OXXO son en pesos). */
+  moneda?: string;
 }) {
+  const metodos = moneda === "MXN" ? METODOS : METODOS.filter((m) => m.id === "tarjeta");
   const iniciar = useIniciarPagoEcartPay(code);
   const [metodo, setMetodo] = useState<MetodoCheckout>("tarjeta");
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const monto = parseMonto(montoPagar);
-  const actual = METODOS.find((m) => m.id === metodo) ?? METODOS[0];
+  const actual = metodos.find((m) => m.id === metodo) ?? metodos[0];
 
   const pagar = () => {
     if (!nombre.trim()) return setError("Ingresá tu nombre.");
@@ -66,8 +70,8 @@ export function EcartPayPagoCard({
   return (
     <Card className="shadow-xl border-0">
       <Label>Medio de pago</Label>
-      <div className="grid grid-cols-3 gap-2 mt-1.5">
-        {METODOS.map((m) => (
+      <div className={`grid gap-2 mt-1.5 ${metodos.length === 1 ? "grid-cols-1" : "grid-cols-3"}`}>
+        {metodos.map((m) => (
           <button
             key={m.id}
             type="button"

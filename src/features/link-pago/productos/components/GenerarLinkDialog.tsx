@@ -2,6 +2,7 @@ import { Input, Label } from "@/components/portal-shell";
 import { FormDialog } from "@/shared/ui/form-dialog";
 import type { Product } from "@/data/links-pago";
 import { formatMoney } from "@/shared/format";
+import { getPais } from "@/shared/pais";
 import type { GenerarLink } from "../hooks/useGenerarLink";
 import { montoProductos } from "../utils";
 
@@ -121,6 +122,20 @@ export function GenerarLinkDialog({
           </select>
         </div>
       </div>
+      {getPais().codigo === "MX" && (
+        <div>
+          <Label htmlFor="link-moneda">Moneda del cobro</Label>
+          <select
+            id="link-moneda"
+            className="w-full h-10 px-3 rounded-md border bg-card text-sm"
+            value={form.moneda}
+            onChange={(e) => form.setMoneda(e.target.value)}
+          >
+            <option value="MXN">Pesos mexicanos (MXN)</option>
+            <option value="USD">Dólares (USD) · solo tarjeta</option>
+          </select>
+        </div>
+      )}
       <div>
         <Label>Referencia interna</Label>
         <Input

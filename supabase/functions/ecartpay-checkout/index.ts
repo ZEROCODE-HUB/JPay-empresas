@@ -28,6 +28,7 @@ type Link = {
   expira_en: string | null;
   cliente_legajo: string;
   referencia: string | null;
+  moneda?: string;
 };
 
 type Body = {
@@ -132,6 +133,10 @@ async function crear(sb: SupabaseClient, body: Body) {
 
   const metodo: MetodoExterno | null =
     body.metodo === "spei" || body.metodo === "oxxo" ? body.metodo : null;
+  const moneda = link.moneda === "USD" ? "USD" : "MXN";
+  if (metodo && moneda !== "MXN") {
+    throw new HttpError(400, "SPEI y OXXO solo cobran en pesos: este link se paga con tarjeta");
+  }
   const total = Number(link.monto);
   const monto = link.pagos_parciales && body.monto ? Number(body.monto) : total;
   if (!Number.isFinite(monto) || monto <= 0 || monto > total) {
@@ -156,7 +161,7 @@ async function crear(sb: SupabaseClient, body: Body) {
       link_id: link.id,
       entorno: conexion.entorno,
       monto: monto2,
-      moneda: "MXN",
+      moneda,
       pagador_nombre: nombre || null,
       pagador_email: email,
       idempotency_key: clave,
@@ -177,7 +182,7 @@ async function crear(sb: SupabaseClient, body: Body) {
   try {
     const cliente = await clienteDeConexion(sb, conexion);
     const orden = await cliente.post<Record<string, unknown>>("/api/orders", {
-      currency: "MXN",
+      currency: moneda,
       email,
       first_name: nombrePila ?? undefined,
       last_name: apellidos.join(" ") || undefined,

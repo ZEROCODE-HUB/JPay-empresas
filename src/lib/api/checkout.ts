@@ -12,6 +12,8 @@ export type CheckoutLink = {
   metodos_pago: string[];
   cliente_legajo: string;
   monto: number;
+  /** MXN por defecto; en USD solo se cobra con tarjeta. */
+  moneda?: string;
   detalle: Array<{ producto_nombre: string; cantidad: number; precio_unitario: number }>;
   comercio_id: string | null;
   comercio_nombre: string | null;
@@ -30,9 +32,7 @@ export type CheckoutResultado =
  */
 export async function getCheckoutLink(code: string): Promise<CheckoutResultado> {
   const s = requireSupabase();
-  console.log("[Checkout] code:", code);
-  const { data: r, error: rpcErr } = await s.rpc("obtener_link_pago", { p_codigo: code });
-  console.log("[Checkout] rpc result:", r, "error:", rpcErr);
+  const { data: r } = await s.rpc("obtener_link_pago", { p_codigo: code });
   if (!r) return { estado: "notfound" };
   const d = r as unknown as CheckoutLink;
 
