@@ -40,7 +40,7 @@ function Page() {
     <>
       <PageHeader
         title="Subcuentas"
-        description="Una cuenta madre, múltiples CVU. Gestiona fondos, responsables y límites."
+        description="Una cuenta principal y varias subcuentas. Gestiona fondos, responsables y límites."
         action={
           <div className="flex gap-2">
             <BtnOutline onClick={() => transf.setOpen(true)}>
@@ -110,7 +110,7 @@ function Page() {
         closeOnConfirm
         open={confirmarBorrar !== null}
         title="¿Eliminar subcuenta?"
-        message={`Se quitara la subcuenta ${confirmarBorrar?.n} (CVU ${confirmarBorrar?.cbu || "sin asignar"}). Esta accion no se puede deshacer.`}
+        message={`Se quitara la subcuenta ${confirmarBorrar?.n} (CLABE ${confirmarBorrar?.cbu || "sin asignar"}). Esta accion no se puede deshacer.`}
         onClose={() => acciones.setConfirmarBorrar(null)}
         onConfirm={acciones.borrar}
       />

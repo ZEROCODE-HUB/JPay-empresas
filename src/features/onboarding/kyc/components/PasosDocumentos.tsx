@@ -2,7 +2,7 @@ import { FileUpload, WizardNav } from "@/features/onboarding/components";
 import { getPais } from "@/shared/pais";
 import type { KycWizard } from "../hooks/useKycWizard";
 
-/** Pasos 1 a 3: documento de identidad del país (INE, DNI), comprobante de domicilio y selfie. */
+/** Pasos 1 a 3: documento de identidad del país (INE), comprobante de domicilio y selfie. */
 export function PasosDocumentos({ w }: { w: KycWizard }) {
   const { step, setStep, files, setFiles, canNext } = w;
   const doc = getPais().documentoIdentidad;

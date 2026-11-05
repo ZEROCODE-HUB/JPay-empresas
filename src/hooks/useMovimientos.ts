@@ -27,7 +27,8 @@ export function useDashboard(start: Date, end: Date) {
       0,
     ),
     cuentas: d ? d.saldos.length + 1 : 1,
-    cbuLabel: cli ? (cli.alias ? `CVU ${cli.alias}` : cli.cbu ? `CBU ${cli.cbu}` : "") : "",
+    // La CLABE del cliente vive en la columna `cbu`.
+    cuentaLabel: cli?.cbu ? `CLABE ${cli.cbu}` : "",
   };
 }
 

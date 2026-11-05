@@ -14,7 +14,6 @@ export const QUICK: Array<{ k: PeriodKey; l: string; days: number }> = [
 export type FilaDia = {
   date: string;
   depositos: number;
-  cobrosQR: number;
   linkPago: number;
   total: number;
 };
@@ -28,15 +27,11 @@ export type KpisDashboard = {
   cuentas: number;
   cobrosLink: number;
   opsLink: number;
-  cobrosQR: number;
-  opsQR: number;
-  pagosQR: number;
-  opsPagoQR: number;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-/** "aaaa-mm-dd" de la fecha LOCAL (no UTC: en Argentina las 22 h ya serían el día siguiente). */
+/** "aaaa-mm-dd" de la fecha LOCAL (no UTC: en la Ciudad de México las 18 h ya serían el día siguiente). */
 export function toKey(d: Date) {
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
@@ -101,11 +96,11 @@ export function etiquetaPeriodo(period: PeriodKey, day: string, desde: string, h
 
 const monto = (m: MovimientoDashboard) => Math.abs(Number(m.monto_operacion ?? 0));
 
-/** Totales por día (depósitos, cobros QR, link de pago) para el gráfico de barras. */
+/** Totales por día (depósitos y link de pago) para el gráfico de barras. */
 export function agruparPorDia(movs: MovimientoDashboard[], start: Date, end: Date): FilaDia[] {
   const byDate = new Map<string, FilaDia>();
   eachDay(start, end).forEach((d) => {
-    byDate.set(toKey(d), { date: fmtKey(d), depositos: 0, cobrosQR: 0, linkPago: 0, total: 0 });
+    byDate.set(toKey(d), { date: fmtKey(d), depositos: 0, linkPago: 0, total: 0 });
   });
   movs.forEach((m) => {
     const fecha = toDate(m.fecha);
@@ -113,9 +108,8 @@ export function agruparPorDia(movs: MovimientoDashboard[], start: Date, end: Dat
     if (!row) return;
     const amt = monto(m);
     if (m.tipo === "deposito") row.depositos += amt;
-    else if (m.tipo === "cobro_pct") row.cobrosQR += amt;
     else if (m.tipo === "tarjeta") row.linkPago += amt;
-    row.total = row.depositos + row.cobrosQR + row.linkPago;
+    row.total = row.depositos + row.linkPago;
   });
   return Array.from(byDate.values());
 }
@@ -136,9 +130,5 @@ export function calcularKpis(
     cuentas,
     cobrosLink: sum("tarjeta"),
     opsLink: count("tarjeta"),
-    cobrosQR: sum("cobro_pct"),
-    opsQR: count("cobro_pct"),
-    pagosQR: sum("pago_pct"),
-    opsPagoQR: count("pago_pct"),
   };
 }

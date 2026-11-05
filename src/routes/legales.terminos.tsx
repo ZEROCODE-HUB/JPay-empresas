@@ -6,10 +6,10 @@ import { brand, pageTitle } from "@/brand/brand";
 export const Route = createFileRoute("/legales/terminos")({
   head: () => ({
     meta: [
-      { title: pageTitle("Terminos y Condiciones") },
+      { title: pageTitle("Términos y condiciones") },
       {
         name: "description",
-        content: `Terminos y condiciones de uso de la plataforma ${brand.name}.`,
+        content: `Términos y condiciones de uso de la plataforma ${brand.name}.`,
       },
     ],
   }),
@@ -32,27 +32,26 @@ function Page() {
       </header>
       <article className="max-w-3xl mx-auto px-6 py-16 prose prose-sm">
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          Terminos y Condiciones
+          Términos y condiciones
         </h1>
-        <p className="text-sm text-muted-foreground mt-2">ultima actualizacion: 01/06/2026</p>
 
         <section className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">1. Objeto</h2>
             <p>
-              {brand.company.legalName} (en adelante "{brand.company.shortName}") es un Proveedor de
-              Servicios de Pago con Cuentas de Pago (PSPCP) inscripto ante el Banco Central de la
-              Republica Argentina. Estos terminos regulan el uso de la plataforma por parte de
-              personas juridicas.
+              {brand.company.legalName} (en adelante "{brand.company.shortName}") ofrece una
+              plataforma tecnológica de pagos y cobros para empresas en México. Estos términos
+              regulan el uso de la plataforma por parte de personas morales y personas físicas con
+              actividad empresarial.
             </p>
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              2. Registro y verificacion
+              2. Registro y verificación
             </h2>
             <p>
-              El titular debera completar el proceso de conocimiento del cliente (KYC/KYB) y aportar
-              la documentacion societaria requerida.
+              El titular deberá completar el proceso de conocimiento del cliente (KYC/KYB) y aportar
+              la documentación requerida, conforme a la normativa de prevención de lavado de dinero.
             </p>
           </div>
           <div>
@@ -60,10 +59,8 @@ function Page() {
               3. Uso de la cuenta de pago
             </h2>
             <p>
-              Los fondos depositados no constituyen depositos en una entidad financiera ni cuentan
-              con la garantia de la Ley 24.485. {brand.company.shortName} mantiene el 100% de los
-              fondos de los clientes en cuentas de terceros en entidades financieras del sistema
-              argentino.
+              El uso de la cuenta, los límites de operación y la forma en que se resguardan los
+              fondos se rigen por el contrato que la empresa firma con {brand.company.shortName}.
             </p>
           </div>
           <div>
@@ -71,26 +68,26 @@ function Page() {
             <p>
               Las comisiones aplicables se detallan en la{" "}
               <Link to="/legales/comisiones" className="text-primary-ink underline">
-                Tabla de Comisiones
-              </Link>
-              , la cual forma parte integrante de estos terminos.
-            </p>
-          </div>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">5. Rescision</h2>
-            <p>
-              El usuario podra dar de baja la cuenta en cualquier momento a traves del{" "}
-              <Link to="/legales/arrepentimiento" className="text-primary-ink underline">
-                Boton de Arrepentimiento
+                Tabla de comisiones
               </Link>{" "}
-              o comunicandose con nuestro equipo.
+              y en el contrato de cada empresa, que forman parte de estos términos.
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">6. Jurisdiccion</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">5. Cancelación</h2>
             <p>
-              Para cualquier controversia se aplicara la legislacion de la Republica Argentina y
-              seran competentes los tribunales ordinarios de la Ciudad Autonoma de Buenos Aires.
+              El usuario podrá solicitar la cancelación de la cuenta en cualquier momento desde la{" "}
+              <Link to="/legales/arrepentimiento" className="text-primary-ink underline">
+                solicitud de cancelación
+              </Link>{" "}
+              o comunicándose con nuestro equipo.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-foreground mb-2">6. Jurisdicción</h2>
+            <p>
+              Para cualquier controversia se aplicará la legislación de los Estados Unidos Mexicanos
+              y serán competentes los tribunales que se indiquen en el contrato.
             </p>
           </div>
         </section>

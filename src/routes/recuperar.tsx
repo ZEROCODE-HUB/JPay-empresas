@@ -48,7 +48,7 @@ function Recuperar() {
     <AuthShell
       leftEyebrow={`${brand.name} · Acceso`}
       leftTitle="Tu plataforma de pagos, sin intermediarios."
-      leftBody={`${brand.name} opera bajo normativa BCRA. Tus datos viajan cifrados y se almacenan bajo los estándares del sistema financiero argentino.`}
+      leftBody={`En ${brand.name} tus datos viajan cifrados y se almacenan con estándares de seguridad del sector financiero.`}
     >
       {sent ? (
         <SuccessCard

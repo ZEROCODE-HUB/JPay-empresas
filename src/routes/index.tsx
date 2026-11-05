@@ -16,13 +16,13 @@ export const Route = createFileRoute("/")({
       { title: `${brand.name} — Soluciones financieras digitales` },
       {
         name: "description",
-        content: `${brand.name} integra pagos, cobros y remesas para empresas y particulares en América Latina. Plataforma regulada bajo marco normativo BCRA.`,
+        content: `${brand.name} integra pagos y cobros para empresas en México: link de pago, SPEI, OXXO, suscripciones y domiciliación.`,
       },
       { property: "og:title", content: `${brand.name} — Soluciones financieras digitales` },
       {
         property: "og:description",
         content:
-          "Cuenta de pago, Crossborder, CVU Collect y Billetera. Plataforma tecnológica escalable y regulada.",
+          "Cuenta con CLABE, cobros con tarjeta, OXXO y SPEI, pagos en dólares y cobranza recurrente.",
       },
       { property: "og:image", content: brand.assets.ogImage.src },
       { property: "og:image:width", content: String(brand.assets.ogImage.width) },

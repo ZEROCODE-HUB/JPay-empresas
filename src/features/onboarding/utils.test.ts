@@ -30,7 +30,7 @@ describe("esImagen", () => {
   it("cae a la extensión del nombre o la URL", () => {
     expect(esImagen({ name: "Frente.JPG" })).toBe(true);
     expect(esImagen({ name: "", url: "https://x/y.webp" })).toBe(true);
-    expect(esImagen({ name: "dni.pdf" })).toBe(false);
+    expect(esImagen({ name: "ine.pdf" })).toBe(false);
   });
   it("devuelve false sin valor", () => {
     expect(esImagen(null)).toBe(false);

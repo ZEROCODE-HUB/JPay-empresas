@@ -51,10 +51,8 @@ describe("agregados", () => {
   const movs = [
     mov("deposito", 100, "2026-05-01T10:00:00Z"),
     mov("deposito", -50, "2026-05-01T12:00:00Z"),
-    mov("cobro_pct", 30, "2026-05-02T10:00:00Z"),
     mov("tarjeta", 20, "2026-05-02T11:00:00Z"),
     mov("retiro", 70, "2026-05-02T11:00:00Z"),
-    mov("pago_pct", 5, "2026-05-03T11:00:00Z"),
     mov("deposito", 999, "2026-06-01T10:00:00Z"),
   ];
 
@@ -68,10 +66,6 @@ describe("agregados", () => {
       cuentas: 3,
       cobrosLink: 20,
       opsLink: 1,
-      cobrosQR: 30,
-      opsQR: 1,
-      pagosQR: 5,
-      opsPagoQR: 1,
     });
   });
 
@@ -79,8 +73,8 @@ describe("agregados", () => {
     const filas = agruparPorDia(movs, new Date(2026, 4, 1), new Date(2026, 4, 3, 23, 59));
     expect(filas).toHaveLength(3);
     const total = filas.reduce((a, f) => a + f.total, 0);
-    expect(total).toBe(200);
-    expect(filas.every((f) => f.total === f.depositos + f.cobrosQR + f.linkPago)).toBe(true);
+    expect(total).toBe(170);
+    expect(filas.every((f) => f.total === f.depositos + f.linkPago)).toBe(true);
   });
 });
 
@@ -107,6 +101,5 @@ describe("agrupación por fecha local", () => {
     );
     expect(k.cobrosLink).toBe(85001);
     expect(k.opsLink).toBe(2);
-    expect(k.opsQR).toBe(0);
   });
 });

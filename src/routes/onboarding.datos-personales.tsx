@@ -60,7 +60,7 @@ function DatosPersonales() {
     if (!cli) return;
     setF((prev) => ({
       genero: prev.genero || cli.genero || "",
-      taxId: prev.taxId || cli.tax_id || cli.cuit_cuil || "",
+      taxId: prev.taxId || cli.tax_id || "",
       idPersonal: prev.idPersonal || cli.id_personal || "",
       regimenFiscal: prev.regimenFiscal || cli.regimen_fiscal || "",
       cuentaBancaria: prev.cuentaBancaria || cli.cuenta_bancaria || "",

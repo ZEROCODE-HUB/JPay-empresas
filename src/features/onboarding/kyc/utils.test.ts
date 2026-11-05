@@ -13,7 +13,7 @@ const addr: Domicilio = {
   direccion: "Calle 1",
   direccion2: "",
   ciudad: "CABA",
-  provincia: "Buenos Aires",
+  provincia: "Jalisco",
   cp: "1000",
 };
 
@@ -32,7 +32,7 @@ describe("archivosDesdeDocumentos", () => {
 });
 
 describe("puedeAvanzar", () => {
-  it("paso DNI pide frente y dorso", () => {
+  it("paso INE pide frente y reverso", () => {
     expect(puedeAvanzar(0, { ...ARCHIVOS_VACIOS, dniFrente: archivo })).toBe(false);
     expect(puedeAvanzar(0, { ...ARCHIVOS_VACIOS, dniFrente: archivo, dniDorso: archivo })).toBe(
       true,

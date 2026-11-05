@@ -183,11 +183,10 @@ const MEDIOS_VALIDOS: readonly MedioPago[] = [
   "TRANSFERENCIA",
   "TARJETA_CREDITO",
   "TARJETA_DEBITO",
-  "QR",
 ];
 
 /**
- * Interpreta la columna `medios_de_pago` (p. ej. `TRANSFERENCIA|QR`; acepta `|`, `,`, `;`
+ * Interpreta la columna `medios_de_pago` (p. ej. `TRANSFERENCIA|TARJETA_DEBITO`; acepta `|`, `,`, `;`
  * o espacios). Vacía → `undefined` (se usa el valor del lote). Con un medio desconocido → `null`.
  */
 export function parsearMediosPago(valor: string | undefined): MedioPago[] | null | undefined {

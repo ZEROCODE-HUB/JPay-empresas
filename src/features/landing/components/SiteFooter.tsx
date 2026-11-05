@@ -11,9 +11,6 @@ export function SiteFooter() {
           <p className="mt-6 text-sm text-white/50 leading-relaxed max-w-[260px]">
             {copyright().replace(brand.name, brand.name.toUpperCase())}
           </p>
-          <p className="mt-4 font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
-            PSPCP · Marco BCRA
-          </p>
         </div>
         <div>
           <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
@@ -22,7 +19,7 @@ export function SiteFooter() {
           <ul className="mt-5 space-y-3 font-sans text-sm text-white/70">
             <li>
               <Link to="/legales/privacidad" className="hover:text-white transition-colors">
-                Políticas de privacidad
+                Aviso de privacidad
               </Link>
             </li>
             <li>
@@ -37,14 +34,14 @@ export function SiteFooter() {
             </li>
             <li>
               <Link to="/legales/arrepentimiento" className="hover:text-white transition-colors">
-                Botón de arrepentimiento
+                Solicitud de cancelación
               </Link>
             </li>
           </ul>
         </div>
         <div>
           <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
-            Contactanos
+            Contáctanos
           </div>
           <ul className="mt-5 space-y-3 font-sans text-sm text-white/70">
             <li>
@@ -69,22 +66,22 @@ export function SiteFooter() {
         </div>
         <div>
           <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
-            Ente fiscalizador
+            Usuarios financieros
           </div>
           <div className="mt-5 border border-white/10 p-4 bg-black-800">
             <div className="font-sans text-[0.6rem] tracking-[0.14em] uppercase text-primary-400">
-              BCRA
+              CONDUSEF
             </div>
             <div className="mt-1.5 font-sans text-sm text-white/80 leading-relaxed">
-              Banco Central de la República Argentina
+              Protección y defensa de los usuarios de servicios financieros
             </div>
             <a
-              href="https://www.bcra.gob.ar"
+              href="https://www.condusef.gob.mx"
               target="_blank"
               rel="noreferrer"
               className="mt-2 inline-block font-sans text-[0.6rem] tracking-[0.14em] uppercase text-white hover:text-primary-400 transition-colors"
             >
-              bcra.gob.ar →
+              condusef.gob.mx →
             </a>
           </div>
         </div>
@@ -93,10 +90,6 @@ export function SiteFooter() {
         <div className="max-w-6xl mx-auto px-6 py-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between font-sans text-[0.7rem] text-white/40">
           <div>
             {brand.name.toUpperCase()} — {brand.company.taxIdType} {brand.company.taxId}
-          </div>
-          <div>
-            Los fondos depositados no constituyen depósitos en una entidad financiera ni cuentan con
-            la garantía de la Ley 24.485.
           </div>
         </div>
       </div>

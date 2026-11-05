@@ -2,7 +2,7 @@ import { ArrowLeftRight, Copy, Eye, History, Pause, Pencil, Play, Trash2 } from 
 import { Badge } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { ESTADO_SUB_TONE, TIPO_LABEL } from "../estados";
-import { copiarCvu } from "../export";
+import { copiarClabe } from "../export";
 import type { EstadoSub, Sub } from "../types";
 import { esPool, fmtLimite } from "../utils";
 import { RowMenu } from "./RowMenu";
@@ -49,15 +49,15 @@ export function SubcuentaFila({ s, menuAbierto, onToggleMenu, onCerrarMenu, ...a
               {s.cbu}
             </span>
             <button
-              onClick={() => copiarCvu(s.cbu)}
+              onClick={() => copiarClabe(s.cbu)}
               className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
-              title="Copiar CVU"
+              title="Copiar CLABE"
             >
               <Copy size={12} />
             </button>
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground">Sin CVU</span>
+          <span className="text-xs text-muted-foreground">Sin CLABE</span>
         )}
       </td>
       <td className="px-4 py-3 text-right whitespace-nowrap">
@@ -88,7 +88,7 @@ export function SubcuentaFila({ s, menuAbierto, onToggleMenu, onCerrarMenu, ...a
               label: esPool(s) ? "Transferir desde el pool" : "Fondear / transferir",
               onClick: () => acc.onFondear(s),
             },
-            { icon: <Copy size={14} />, label: "Copiar CVU", onClick: () => copiarCvu(s.cbu) },
+            { icon: <Copy size={14} />, label: "Copiar CLABE", onClick: () => copiarClabe(s.cbu) },
             {
               icon: <History size={14} />,
               label: "Ver historial",

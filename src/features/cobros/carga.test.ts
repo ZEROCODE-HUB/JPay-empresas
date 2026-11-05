@@ -97,7 +97,7 @@ describe("validarFilas", () => {
     ],
     [
       { ...base, medios_de_pago: "TRANSFERENCIA|EFECTIVO" },
-      "Fila 2: medios_de_pago invalido (usar TRANSFERENCIA, TARJETA_CREDITO, TARJETA_DEBITO, QR separados por |)",
+      "Fila 2: medios_de_pago invalido (usar TRANSFERENCIA, TARJETA_CREDITO, TARJETA_DEBITO separados por |)",
     ],
     [
       { ...base, pagos_parciales_habilitado: "quizas" },
@@ -126,8 +126,15 @@ describe("helpers de carga", () => {
   });
 
   it("parsea medios de pago y booleanos de la fila", () => {
-    expect(parsearMediosPago("transferencia|QR")).toEqual(["TRANSFERENCIA", "QR"]);
-    expect(parsearMediosPago("TARJETA_CREDITO, QR")).toEqual(["TARJETA_CREDITO", "QR"]);
+    expect(parsearMediosPago("transferencia|tarjeta_debito")).toEqual([
+      "TRANSFERENCIA",
+      "TARJETA_DEBITO",
+    ]);
+    expect(parsearMediosPago("TARJETA_CREDITO, TRANSFERENCIA")).toEqual([
+      "TARJETA_CREDITO",
+      "TRANSFERENCIA",
+    ]);
+    expect(parsearMediosPago("QR")).toBeNull();
     expect(parsearMediosPago("")).toBeUndefined();
     expect(parsearMediosPago("EFECTIVO")).toBeNull();
     expect(parsearBooleano("true")).toBe(true);
@@ -139,14 +146,18 @@ describe("helpers de carga", () => {
 
   it("aplica medios de pago y pagos parciales de cada fila; si faltan usa los del lote", () => {
     const res = validarFilas([
-      { ...base, medios_de_pago: "QR|TARJETA_DEBITO", pagos_parciales_habilitado: "true" },
+      {
+        ...base,
+        medios_de_pago: "TARJETA_CREDITO|TARJETA_DEBITO",
+        pagos_parciales_habilitado: "true",
+      },
       { ...base, pagos_parciales_habilitado: false as unknown as string },
       base,
     ]);
     if (!res.ok) throw new Error(res.error);
     const regs = filasARegistros(res.filas, "LOT-1", ["TRANSFERENCIA"], true, () => "R");
     expect(regs.map((r) => [r.mediosPago, r.pagosParcialesHabilitado])).toEqual([
-      [["QR", "TARJETA_DEBITO"], true],
+      [["TARJETA_CREDITO", "TARJETA_DEBITO"], true],
       [["TRANSFERENCIA"], false],
       [["TRANSFERENCIA"], true],
     ]);

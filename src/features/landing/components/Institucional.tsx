@@ -62,7 +62,7 @@ export function PorQueElegirnos() {
     {
       icon: Plane,
       t: "Alcance Internacional",
-      d: "Operaciones en múltiples países de América Latina con alianzas estratégicas sólidas.",
+      d: "Pagos en dólares a Estados Unidos y a otros países, con aliados financieros sólidos.",
     },
   ];
   return (
@@ -108,24 +108,25 @@ export function RegulatoryStrip() {
       <div className="max-w-6xl mx-auto px-6 py-8 md:py-10 flex flex-col md:flex-row gap-6 md:items-center md:justify-between">
         <div className="flex items-center gap-5">
           <div className="border border-primary-400 px-3 py-1.5 font-sans text-[0.7rem] tracking-[0.14em] uppercase text-white">
-            BCRA
+            CONDUSEF
           </div>
           <div>
             <div className="font-sans text-[0.65rem] tracking-[0.14em] uppercase text-primary-400">
               Usuarios financieros
             </div>
             <div className="mt-1 font-sans text-sm text-white/80">
-              Banco Central de la República Argentina — protección al usuario financiero.
+              Comisión Nacional para la Protección y Defensa de los Usuarios de Servicios
+              Financieros.
             </div>
           </div>
         </div>
         <a
-          href="https://www.usuariosfinancieros.gob.ar"
+          href="https://www.condusef.gob.mx"
           target="_blank"
           rel="noreferrer"
           className="font-sans text-sm text-white border-b border-primary-400 pb-0.5 hover:text-primary-400 transition-colors"
         >
-          usuariosfinancieros.gob.ar →
+          condusef.gob.mx →
         </a>
       </div>
     </section>

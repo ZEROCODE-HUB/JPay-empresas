@@ -6,8 +6,8 @@ import { brand, pageTitle } from "@/brand/brand";
 export const Route = createFileRoute("/legales/privacidad")({
   head: () => ({
     meta: [
-      { title: pageTitle("Politica de Privacidad") },
-      { name: "description", content: "Politica de privacidad y tratamiento de datos personales." },
+      { title: pageTitle("Aviso de privacidad") },
+      { name: "description", content: "Aviso de privacidad y tratamiento de datos personales." },
     ],
   }),
   component: Page,
@@ -28,10 +28,7 @@ function Page() {
         </div>
       </header>
       <article className="max-w-3xl mx-auto px-6 py-16">
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          Politica de Privacidad
-        </h1>
-        <p className="text-sm text-muted-foreground mt-2">ultima actualizacion: 01/06/2026</p>
+        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">Aviso de privacidad</h1>
 
         <section className="mt-8 space-y-6 text-sm leading-relaxed text-muted-foreground">
           <div>
@@ -47,33 +44,31 @@ function Page() {
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">2. Datos recolectados</h2>
             <p>
-              Recolectamos datos identificatorios de la persona juridica y de sus representantes,
-              datos operativos de la cuenta y datos de navegacion con fines de seguridad y
-              prevencion de fraude.
+              Recabamos datos de identificación de la empresa y de sus representantes, datos
+              operativos de la cuenta y datos de navegación con fines de seguridad y prevención de
+              fraude.
             </p>
           </div>
           <div>
             <h2 className="text-lg font-semibold text-foreground mb-2">3. Finalidad</h2>
             <p>
-              Los datos se utilizan para prestar el servicio, cumplir obligaciones regulatorias (Ley
-              25.246 de Prevencion de Lavado de Activos) y comunicaciones vinculadas al servicio.
+              Los datos se utilizan para prestar el servicio, cumplir las obligaciones de prevención
+              de lavado de dinero (PLD) y enviar comunicaciones vinculadas al servicio.
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">4. Derechos del titular</h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">4. Derechos ARCO</h2>
             <p>
-              De acuerdo con la Ley 25.326, el titular podra ejercer los derechos de acceso,
-              rectificacion, actualizacion y supresion de sus datos escribiendo a{" "}
-              {brand.contact.privacy}.
+              Conforme a la legislación mexicana de protección de datos personales en posesión de
+              los particulares, el titular puede ejercer sus derechos de acceso, rectificación,
+              cancelación y oposición (ARCO) escribiendo a {brand.contact.privacy}.
             </p>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground mb-2">
-              5. Autoridad de contralor
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground mb-2">5. Autoridad competente</h2>
             <p>
-              La Agencia de Acceso a la Informacion Publica, en su caracter de organo de Control de
-              la Ley 25.326, tiene la atribucion de atender las denuncias y reclamos.
+              Si consideras que tu derecho a la protección de datos personales fue vulnerado, puedes
+              acudir a la autoridad competente en la materia.
             </p>
           </div>
         </section>

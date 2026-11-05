@@ -82,7 +82,7 @@ function Page() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            API RESTful para integrar cobros desde tu e-commerce: links de pago, QR, tokenizacion de
+            API RESTful para integrar cobros desde tu e-commerce: links de pago, tokenizacion de
             tarjetas y webhooks de notificacion. SDKs para Node, PHP y Python.
           </p>
           <ul className="text-xs text-muted-foreground mt-3 space-y-1">

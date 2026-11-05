@@ -9,7 +9,7 @@ export type OnboardingPayload = {
   nombre: string;
   /** País del cliente (código de `@/shared/pais`). */
   pais: string;
-  /** Identificador fiscal (RFC, CUIT). */
+  /** Identificador fiscal (RFC). */
   taxId: string;
   perfil: Record<string, unknown>;
   kyc: Record<string, { name: string; type: string; data: string } | null>;
@@ -180,7 +180,6 @@ type Cliente = Tables<"clientes">;
 export type ClienteDatosPersonales = Pick<
   Cliente,
   | "genero"
-  | "cuit_cuil"
   | "tax_id"
   | "id_personal"
   | "regimen_fiscal"
@@ -191,7 +190,6 @@ export type ClienteDatosPersonales = Pick<
 >;
 export type ClienteDatosEmpresa = Pick<
   Cliente,
-  | "cuit"
   | "tax_id"
   | "regimen_fiscal"
   | "cuenta_bancaria"
@@ -216,7 +214,7 @@ export async function getClienteDatosPersonales(
   const { data, error } = await sb
     .from("clientes")
     .select(
-      "genero, cuit_cuil, tax_id, id_personal, regimen_fiscal, cuenta_bancaria, ocupacion, origen_fondos, es_pep",
+      "genero, tax_id, id_personal, regimen_fiscal, cuenta_bancaria, ocupacion, origen_fondos, es_pep",
     )
     .eq("correo", email)
     .maybeSingle();
@@ -229,7 +227,7 @@ export async function getClienteDatosEmpresa(email: string): Promise<ClienteDato
   const { data, error } = await sb
     .from("clientes")
     .select(
-      "cuit, tax_id, regimen_fiscal, cuenta_bancaria, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia",
+      "tax_id, regimen_fiscal, cuenta_bancaria, fecha_inscripcion, tipo_sociedad, nombre_legal, nombre_fantasia",
     )
     .eq("correo", email)
     .maybeSingle();

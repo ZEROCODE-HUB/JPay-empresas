@@ -64,16 +64,12 @@ export type MovRow = {
 
 export function prettyTipo(tipo: string): string {
   const map: Record<string, string> = {
-    cobro_pct: "Cobros con QR",
     cobro_link: "Cobros con Tarjeta",
     deposito: "Ingresos",
     transferencia: "Egresos",
     retiro: "Egresos",
     comision: "Comisiones",
     // Operaciones internas registradas por el ledger.
-    liquidacion_lote: "Liquidación de lote",
-    acreditacion_lote: "Acreditación de lote",
-    adelanto: "Adelanto",
     ajuste_manual: "Ajuste de saldo",
   };
   return map[tipo] ?? (tipo ? tipo.charAt(0).toUpperCase() + tipo.slice(1) : "Movimiento");
@@ -261,11 +257,6 @@ export const OPERACIONES: Array<{ k: string; l: string; tipos: string[] | null }
   { k: "Depositos", l: "Depósitos", tipos: ["deposito"] },
   { k: "Retiros", l: "Retiros", tipos: ["retiro"] },
   { k: "Cobros con Tarjeta", l: "Cobros con Tarjeta", tipos: ["cobro_link", "tarjeta"] },
-  { k: "Cobros con QR", l: "Cobros con QR", tipos: ["cobro_pct"] },
-  { k: "Pagos con QR", l: "Pagos con QR", tipos: ["pago_pct"] },
-  { k: "Liquidaciones", l: "Liquidación de lote", tipos: ["liquidacion_lote"] },
-  { k: "Acreditaciones", l: "Acreditación de lote", tipos: ["acreditacion_lote"] },
-  { k: "Adelantos", l: "Adelantos", tipos: ["adelanto"] },
   { k: "Ajustes", l: "Ajustes de saldo", tipos: ["ajuste_manual"] },
 ];
 

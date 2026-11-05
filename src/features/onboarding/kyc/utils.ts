@@ -7,7 +7,7 @@ import type {
 } from "@/lib/onboarding-store";
 import type { DocumentoKyc } from "@/lib/api/onboarding";
 
-/** Pasos del KYC; el primero es el documento de identidad del país (INE, DNI). */
+/** Pasos del KYC; el primero es el documento de identidad del país (INE). */
 export const pasosKyc = (documento: string) => [documento, "Comprobante", "Selfie", "Domicilio"];
 
 export const CLAVES_ARCHIVOS = ["dniFrente", "dniDorso", "servicio", "selfie"] as const;

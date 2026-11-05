@@ -23,7 +23,7 @@ export function SubcuentasFiltros({ q, onQ, tipo, onTipo, estado, onEstado }: Pr
           <Input
             value={q}
             onChange={(e) => onQ(e.target.value)}
-            placeholder="Buscar por nombre o CVU..."
+            placeholder="Buscar por nombre o CLABE..."
             className="pl-9"
           />
         </div>

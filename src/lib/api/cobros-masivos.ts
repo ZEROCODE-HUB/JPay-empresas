@@ -12,13 +12,13 @@ export const toResolvableLinkPagoUrl = toResolvableLinkPagoUrlShared;
 export type LoteEstado =
   "cargado" | "en_proceso" | "finalizado" | "pausado" | "eliminado" | "error";
 
-export type MedioPago = "TRANSFERENCIA" | "TARJETA_CREDITO" | "TARJETA_DEBITO" | "QR";
+export type MedioPago = "TRANSFERENCIA" | "TARJETA_CREDITO" | "TARJETA_DEBITO";
 
 export type RegistroEstado = "pendiente" | "pagado_total" | "pagado_parcial" | "vencido" | "error";
 
 export type PagoEstado = "aprobado" | "pendiente" | "rechazado";
 
-export type TipoOperacion = "TRANSFERENCIA_BANCARIA" | "QR" | "TARJETA_DEBITO_CREDITO";
+export type TipoOperacion = "TRANSFERENCIA_BANCARIA" | "TARJETA_DEBITO_CREDITO";
 
 export interface Lote {
   id: string;
@@ -79,16 +79,6 @@ export interface Pago {
   externalReference: string | null;
 }
 
-export interface CBURecord {
-  id: string;
-  tipoEntidad: string;
-  idEntidad: string;
-  subEntidad: string;
-  cbu: string;
-  alias: string;
-  createdAt: string;
-}
-
 // ===== Helpers =====
 function generateId(prefix: string): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -133,7 +123,6 @@ export const medioPagoLabels: Record<MedioPago, string> = {
   TRANSFERENCIA: "Transferencia",
   TARJETA_CREDITO: "Tarjeta de credito",
   TARJETA_DEBITO: "Tarjeta de debito",
-  QR: "Codigo QR",
 };
 
 // ===== Helper: parsear JSONB que puede venir como string o array =====

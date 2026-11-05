@@ -3,8 +3,6 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Link2,
-  QrCode,
-  Smartphone,
   Users,
   Wallet,
 } from "lucide-react";
@@ -46,14 +44,14 @@ function Kpi({
 }
 
 /** Las dos filas de KPIs del dashboard. */
-export function DashboardKpis({ kpis, cbuLabel }: { kpis: KpisDashboard; cbuLabel: string }) {
+export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuentaLabel: string }) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Kpi
           label="Saldo total de la cuenta"
           value={formatMoney(kpis.saldo)}
-          sub={cbuLabel || "Sin CVU asignada"}
+          sub={cuentaLabel || "Sin CLABE asignada"}
           icon={<Wallet size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
@@ -79,27 +77,13 @@ export function DashboardKpis({ kpis, cbuLabel }: { kpis: KpisDashboard; cbuLabe
           iconClass="bg-info-bg text-info"
         />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Kpi
           label="Cobros mediante Link de Pago"
           value={formatMoney(kpis.cobrosLink)}
           sub={`${kpis.opsLink} transacciones`}
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
-        />
-        <Kpi
-          label="Cobros mediante Código QR"
-          value={formatMoney(kpis.cobrosQR)}
-          sub={`${kpis.opsQR} transacciones`}
-          icon={<QrCode size={18} />}
-          iconClass="bg-warning-bg text-warning"
-        />
-        <Kpi
-          label="Pagos realizados mediante QR"
-          value={formatMoney(kpis.pagosQR)}
-          sub={`${kpis.opsPagoQR} transacciones`}
-          icon={<Smartphone size={18} />}
-          iconClass="bg-plata-200 text-black-600"
         />
       </div>
     </>

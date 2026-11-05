@@ -1,6 +1,6 @@
 import { Building2, Copy } from "lucide-react";
 import { formatMoney } from "@/shared/format";
-import { copiarCvu } from "../export";
+import { copiarClabe } from "../export";
 import type { Sub } from "../types";
 import { fmtLimite } from "../utils";
 
@@ -58,16 +58,16 @@ export function DetalleFinanciera({ sub, totalDepositos, totalRetiros, onFondear
         />
         <div className="bg-muted/30 rounded-lg p-3 sm:col-span-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">CVU</span>
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">CLABE</span>
             <div className="flex items-center gap-1.5 min-w-0">
               <span className="font-mono text-xs font-semibold truncate">
-                {sub.cbu || "Sin CVU"}
+                {sub.cbu || "Sin CLABE"}
               </span>
               {sub.cbu && (
                 <button
-                  onClick={() => copiarCvu(sub.cbu)}
+                  onClick={() => copiarClabe(sub.cbu)}
                   className="h-6 w-6 shrink-0 inline-flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
-                  title="Copiar CVU"
+                  title="Copiar CLABE"
                 >
                   <Copy size={12} />
                 </button>

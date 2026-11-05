@@ -20,15 +20,10 @@ export const ESTADO_SUB_TONE: Record<EstadoSub, Tono> = {
 export const TITULO_MOV: Record<string, string> = {
   deposito: "Depósito",
   transferencia: "Transferencia",
-  cobro_pct: "Cobro QR / Punto de venta",
   retiro: "Retiro",
-  pago_pct: "Pago QR",
   tarjeta: "Cobro con tarjeta",
-  liquidacion_lote: "Liquidación de lote",
-  acreditacion_lote: "Acreditación de lote",
-  adelanto: "Adelanto",
   ajuste_manual: "Ajuste de saldo",
 };
 
 /** Tipos de transacción que restan saldo a la subcuenta. */
-export const TIPOS_EGRESO = ["transferencia", "retiro", "pago_pct"];
+export const TIPOS_EGRESO = ["transferencia", "retiro"];

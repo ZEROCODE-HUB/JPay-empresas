@@ -38,7 +38,7 @@ export function SubcuentasTabla({
             <tr className="text-[11px] uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
               <th className="text-left px-4 py-2.5">Tipo</th>
               <th className="text-left px-4 py-2.5">Nombre / Identificador</th>
-              <th className="text-left px-4 py-2.5">CVU</th>
+              <th className="text-left px-4 py-2.5">CLABE</th>
               <th className="text-right px-4 py-2.5">Saldo</th>
               <th className="text-right px-4 py-2.5">Límite diario</th>
               <th className="text-left px-4 py-2.5">Estado</th>

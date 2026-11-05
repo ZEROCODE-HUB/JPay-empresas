@@ -5,14 +5,12 @@ import type { FilaDia } from "../utils";
 
 const SERIES: Record<string, string> = {
   depositos: "Depósitos",
-  cobrosQR: "Cobros QR",
   linkPago: "Link de Pago",
   total: "Total del día",
 };
 
 const LEYENDA: Array<{ clase: string; label: string }> = [
   { clase: "bg-primary-500", label: "Depósitos" },
-  { clase: "bg-black", label: "Cobros QR" },
   { clase: "bg-secondary-500", label: "Link de Pago" },
   { clase: "bg-warning", label: "Total del día" },
 ];
@@ -82,7 +80,6 @@ export function MovimientosDiariosChart({
                 radius={[2, 2, 0, 0]}
                 maxBarSize={32}
               />
-              <Bar dataKey="cobrosQR" fill="#000000" radius={[2, 2, 0, 0]} maxBarSize={32} />
               <Bar
                 dataKey="linkPago"
                 fill="var(--brand-secondary-500)"

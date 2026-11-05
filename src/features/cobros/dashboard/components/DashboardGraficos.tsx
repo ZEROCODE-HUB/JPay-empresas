@@ -26,7 +26,6 @@ const MEDIO_COLORS: Record<string, string> = {
   TRANSFERENCIA: "var(--brand-secondary-500)",
   TARJETA_CREDITO: "var(--brand-primary-500)",
   TARJETA_DEBITO: "#000000",
-  QR: "#1E8E3E",
 };
 
 const VENC_COLORS = ["var(--success)", "var(--warning)", "var(--danger-500)"];

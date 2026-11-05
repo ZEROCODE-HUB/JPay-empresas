@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { historial, servicios } from "../data";
-import type { Item, SectionTab, Tab } from "../types";
+import type { Item, SectionTab } from "../types";
 import {
   buscarServicios,
   daysUntil,
@@ -12,11 +12,9 @@ import {
   totalAPagar,
 } from "../utils";
 
-/** Estado de la pantalla de servicios: tabs, filtros, alta de suscripción y diálogos. */
+/** Estado de la pantalla de servicios: secciones, filtros, alta de suscripción y diálogos. */
 export function usePantallaServicios() {
   const [pagar, setPagar] = useState<Item | null>(null);
-  const [tab, setTab] = useState<Tab>("servicios");
-  const [remesaOpen, setRemesaOpen] = useState(false);
   const [catFilt, setCatFilt] = useState("Todos");
   const [sort, setSort] = useState("vencimiento");
 
@@ -74,16 +72,12 @@ export function usePantallaServicios() {
   });
 
   return {
-    tab,
-    setTab,
     sectionTab,
     setSectionTab,
     verTodos,
     toggleVerTodos,
     pagar,
     setPagar,
-    remesaOpen,
-    setRemesaOpen,
     editarServicio,
     setEditarServicio,
     scanOpen,

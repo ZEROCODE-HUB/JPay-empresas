@@ -9,17 +9,17 @@ import type { Mov, Sub } from "./types";
 // jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
 applyPlugin(jsPDF);
 
-/** Copia el CVU al portapapeles y avisa con un toast. */
-export const copiarCvu = async (cvu: string) => {
-  if (!cvu) {
-    toast.error("La subcuenta no tiene CVU asignado");
+/** Copia la CLABE al portapapeles y avisa con un toast. */
+export const copiarClabe = async (clabe: string) => {
+  if (!clabe) {
+    toast.error("La subcuenta no tiene CLABE asignada");
     return;
   }
   try {
-    await navigator.clipboard.writeText(cvu);
-    toast.success("CVU copiado");
+    await navigator.clipboard.writeText(clabe);
+    toast.success("CLABE copiada");
   } catch {
-    toast.error("No se pudo copiar el CVU");
+    toast.error("No se pudo copiar la CLABE");
   }
 };
 
@@ -28,7 +28,7 @@ export function descargarReporteSubcuenta(sub: Sub, moves: Mov[], formato: "exce
   const nombre = (sub.n || sub.cbu || "subcuenta").replace(/\s+/g, "_");
   if (formato === "excel") {
     const ws = XLSX.utils.json_to_sheet([
-      { Subcuenta: sub.n, CVU: sub.cbu, Estado: sub.e, Tipo: sub.tipo, Email: sub.email },
+      { Subcuenta: sub.n, CLABE: sub.cbu, Estado: sub.e, Tipo: sub.tipo, Email: sub.email },
       {},
       ...moves.map((m) => ({
         Fecha: m.fecha,
@@ -36,7 +36,7 @@ export function descargarReporteSubcuenta(sub: Sub, moves: Mov[], formato: "exce
         Tipo: m.tipo === "ingreso" ? "Ingreso" : "Egreso",
         Concepto: m.titulo,
         TXID: m.txid,
-        "CVU contraparte": m.cbu,
+        "CLABE contraparte": m.cbu,
         Monto: m.monto,
       })),
     ]);
@@ -54,7 +54,7 @@ export function descargarReporteSubcuenta(sub: Sub, moves: Mov[], formato: "exce
     doc.setTextColor(20, 20, 20);
     doc.setFontSize(10);
     doc.text(`Subcuenta: ${sub.n || sub.cbu}`, 14, 32);
-    doc.text(`Estado: ${sub.e} · CVU: ${sub.cbu}`, 14, 38);
+    doc.text(`Estado: ${sub.e} · CLABE: ${sub.cbu || "—"}`, 14, 38);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (doc as any).autoTable({
       startY: 44,

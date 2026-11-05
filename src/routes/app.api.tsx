@@ -28,7 +28,6 @@ const endpoints: [string, string, string][] = [
   ["GET", "/v1/transfers/:id", "Consultar estado"],
   ["GET", "/v1/balances", "Saldo por subcuenta"],
   ["POST", "/v1/payment-links", "Generar link de pago"],
-  ["POST", "/v1/qr/dynamic", "Generar QR dinamico"],
   ["POST", "/v1/batch-collections", "Lote de cobros"],
   ["GET", "/v1/movements", "Listar movimientos"],
   ["POST", "/v1/webhooks", "Registrar webhook"],

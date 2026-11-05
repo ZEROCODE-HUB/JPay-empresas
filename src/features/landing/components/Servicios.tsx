@@ -15,8 +15,8 @@ import { Eyebrow, GlassCard } from "./primitivos";
 export function LedgerStrip() {
   const items = [
     ["Entidad registrada", brand.company.legalName],
-    ["Cobertura", "América Latina"],
-    ["Compliance", "Marco normativo BCRA"],
+    ["Cobertura", "México"],
+    ["Compliance", "Prevención de lavado de dinero (PLD)"],
     ["Plataforma", "100% digital"],
   ];
   return (
@@ -47,22 +47,22 @@ export function Servicios() {
     {
       icon: Wallet,
       t: "Cuenta de Pago",
-      d: "CVU para enviar y recibir dinero de cuentas bancarias y billeteras virtuales de manera ágil y segura.",
+      d: "CLABE para enviar y recibir dinero por SPEI desde cualquier banco de México, de manera ágil y segura.",
     },
     {
       icon: Globe2,
-      t: "Crossborder",
-      d: "Servicios de transferencias internacionales y remesas con cobertura en América Latina.",
+      t: "Dólares",
+      d: "Conversión de pesos a dólares y pagos a cuentas en Estados Unidos y en otros países.",
     },
     {
       icon: Building2,
-      t: "CVU Collect",
-      d: "Soluciones de recaudación para desarrolladores inmobiliarios, consorcios e inmobiliarias.",
+      t: "Cobranza recurrente",
+      d: "Suscripciones con tarjeta y domiciliación a la CLABE de tus clientes, con su autorización.",
     },
     {
       icon: Smartphone,
-      t: "Billetera",
-      d: "QR, tarjetas prepagas físicas y virtuales, pagos NFC y link de pago para comercios.",
+      t: "Cobros para comercios",
+      d: "Link de pago con tarjeta, OXXO y SPEI, y pagos en efectivo en puntos físicos.",
     },
   ];
   return (

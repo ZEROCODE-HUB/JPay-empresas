@@ -44,11 +44,9 @@ function DatosEmpresa() {
   const { data: cli } = useDatosEmpresaGuardados();
   useEffect(() => {
     if (!cli) return;
-    // No sobrescribir si ya hay valor en store (edición fresca). El `cuit` con prefijo 99
-    // es el número interno provisorio, no un identificador fiscal.
-    const cuitReal = cli.cuit && !cli.cuit.startsWith("99") ? cli.cuit : "";
+    // No sobrescribir si ya hay valor en store (edición fresca).
     setF((prev) => ({
-      taxId: prev.taxId || cli.tax_id || cuitReal,
+      taxId: prev.taxId || cli.tax_id || "",
       regimenFiscal: prev.regimenFiscal || cli.regimen_fiscal || "",
       cuentaBancaria: prev.cuentaBancaria || cli.cuenta_bancaria || "",
       fechaInscripcion: prev.fechaInscripcion || cli.fecha_inscripcion || "",

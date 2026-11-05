@@ -30,8 +30,6 @@ export function exportarDashboard(
       { Resumen: "Depósitos", Valor: formatMoney(kpis.depositos) },
       { Resumen: "Retiros", Valor: formatMoney(kpis.retiros) },
       { Resumen: "Cobros Link de Pago", Valor: formatMoney(kpis.cobrosLink) },
-      { Resumen: "Cobros QR", Valor: formatMoney(kpis.cobrosQR) },
-      { Resumen: "Pagos QR", Valor: formatMoney(kpis.pagosQR) },
       { Resumen: "Cuentas", Valor: String(kpis.cuentas) },
       {},
       ...rows,
@@ -60,8 +58,6 @@ export function exportarDashboard(
         ["Depósitos", formatMoney(kpis.depositos)],
         ["Retiros", formatMoney(kpis.retiros)],
         ["Cobros Link de Pago", formatMoney(kpis.cobrosLink)],
-        ["Cobros QR", formatMoney(kpis.cobrosQR)],
-        ["Pagos QR", formatMoney(kpis.pagosQR)],
         ["Cuentas", String(kpis.cuentas)],
       ],
     });

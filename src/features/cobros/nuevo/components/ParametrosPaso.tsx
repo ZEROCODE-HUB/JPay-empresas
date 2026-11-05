@@ -7,7 +7,6 @@ const MEDIOS_DISPONIBLES: MedioPago[] = [
   "TRANSFERENCIA",
   "TARJETA_CREDITO",
   "TARJETA_DEBITO",
-  "QR",
 ];
 
 /** Paso 1: nombre, período, día de pago, tasa, vencimientos y medios de pago. */
@@ -32,7 +31,7 @@ export function ParametrosPaso({
           <div>
             <Label>Nombre del lote</Label>
             <Input
-              placeholder="Ej. Expensas Abril 2026"
+              placeholder="Ej. Mantenimiento abril 2026"
               value={p.nombre}
               onChange={(e) => set("nombre", e.target.value)}
             />

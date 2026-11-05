@@ -1,4 +1,4 @@
-import type { EstadoPagoServicio, EstadoRemesa, EstadoServicio } from "./types";
+import type { EstadoPagoServicio, EstadoServicio } from "./types";
 
 export type Tono = "neutral" | "success" | "warn" | "danger";
 
@@ -17,10 +17,4 @@ export const ESTADO_PAGO_TONE: Record<EstadoPagoServicio, Tono> = {
   Pagado: "success",
   Cancelado: "neutral",
   Vencido: "danger",
-};
-
-export const ESTADO_REMESA_TONE: Record<EstadoRemesa, Tono> = {
-  Completado: "success",
-  "En proceso": "warn",
-  Rechazado: "danger",
 };

@@ -1,6 +1,7 @@
 import { CreditCard, FileText, Globe, GraduationCap, Wifi, Zap } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { Item, Remesa, TxHist } from "./types";
+import { parseMonto } from "@/shared/format";
+import type { Item, TxHist } from "./types";
 
 /** Filtros de categoría (incluye "Todos"). */
 export const cats = [
@@ -59,8 +60,7 @@ export function textoVencimiento(
   return { texto: `Vence en ${dd} dias`, vencido: false };
 }
 
-/** Monto "$ 1.234,56" → 1234.56 (punto de miles, coma decimal). NaN si no hay número. */
-export const parseMonto = (v: string) => parseFloat(v.replace(/[^0-9,]/g, "").replace(",", "."));
+/** Monto "$1,234.56" → 1234.56, en el formato del país. NaN si no hay número. */
 const montoOrden = parseMonto;
 
 /** Timestamp para ordenar por vencimiento: los que no tienen fecha van al final. */
@@ -91,7 +91,7 @@ export function ordenarServicios(items: Item[], sort: string): Item[] {
 
 export const ordenarPorVencimiento = (items: Item[]) => [...items].sort(compararVenc);
 
-/** Suma de montos a pagar con decimales ("$ 1.234,56" suma 1234.56). */
+/** Suma de montos a pagar con decimales ("$1,234.56" suma 1234.56). */
 export function totalAPagar(items: Item[]) {
   const total = items.reduce((acc, s) => {
     const num = parseMonto(s.v);
@@ -113,30 +113,6 @@ export function filtrarHistorial(
     if (f.desde && parseDate(t.f).getTime() < parseDate(f.desde).getTime()) return false;
     return true;
   });
-}
-
-export interface KpisRemesas {
-  enviadasMes: number;
-  montoMes: number;
-  paises: number;
-  enProceso: number;
-}
-
-/** KPIs de remesas calculados de los datos (fechas dd/mm/aaaa, montos "$ 1.234,56"). */
-export function kpisRemesas(remesas: Remesa[], hoy: Date = new Date()): KpisRemesas {
-  const delMes = remesas.filter((r) => {
-    const d = parseDate(r.f);
-    return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth();
-  });
-  return {
-    enviadasMes: delMes.length,
-    montoMes: delMes.reduce((acc, r) => {
-      const n = parseMonto(r.mARS);
-      return acc + (isNaN(n) ? 0 : n);
-    }, 0),
-    paises: new Set(remesas.map((r) => r.pais)).size,
-    enProceso: remesas.filter((r) => r.e === "En proceso").length,
-  };
 }
 
 /** Arma el servicio recién suscrito desde el formulario de "Suscribir un servicio". */

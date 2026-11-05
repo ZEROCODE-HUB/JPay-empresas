@@ -64,11 +64,6 @@ export function rangoPagina(page: number, pageSize: number, total: number): stri
     : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`;
 }
 
-/** CVU de 22 dígitos: 8 de entidad + 14 de cuenta (como los reales). */
-export function generarCvu(random: () => number = Math.random): string {
-  return "00000031" + Math.floor(10000000000000 + random() * 89999999999999);
-}
-
 export function mapMovimientos(rows: MovimientoSubcuentaRow[], entidad: string): Mov[] {
   return rows.map((m) => ({
     tipo: TIPOS_EGRESO.includes(m.tipo) ? "egreso" : "ingreso",

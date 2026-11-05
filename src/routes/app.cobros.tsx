@@ -10,7 +10,7 @@ function Layout() {
     <>
       <PageHeader
         title="Cobros Masivos"
-        description="Automatiza la generacion de cobros recurrentes: links de pago, codigos QR y CBU para cada deudor."
+        description="Automatiza la generación de cobros recurrentes con un link de pago para cada deudor."
       />
       <Outlet />
     </>

@@ -36,11 +36,8 @@ export const paymentMethods: PaymentMethod[] = [
   { id: "visa-cred", label: "Visa Crédito", category: "credit", enabled: true },
   { id: "mc-cred", label: "Mastercard Crédito", category: "credit", enabled: true },
   { id: "amex", label: "American Express", category: "credit", enabled: true },
-  { id: "cabal-cred", label: "Cabal Crédito", category: "credit", enabled: true },
-  { id: "naranja", label: "Naranja X", category: "credit", enabled: true },
   { id: "diners", label: "Diners Club", category: "credit", enabled: false },
   { id: "visa-deb", label: "Visa Débito", category: "debit", enabled: true },
   { id: "mc-deb", label: "Mastercard Débito", category: "debit", enabled: true },
-  { id: "cabal-deb", label: "Cabal Débito", category: "debit", enabled: true },
   { id: "maestro", label: "Maestro", category: "debit", enabled: true },
 ];

@@ -23,7 +23,7 @@ export function SubcuentaFormDialog({ open, editSub, form, setForm, onClose, onS
       description={
         editSub
           ? "Modifica los datos, el responsable y el límite diario de la subcuenta."
-          : "Genera un CVU adicional asociado a tu cuenta madre."
+          : "Crea una subcuenta asociada a tu cuenta principal, con su propio saldo."
       }
       submitLabel={editSub ? "Guardar cambios" : "Crear subcuenta"}
       onSubmit={onSubmit}

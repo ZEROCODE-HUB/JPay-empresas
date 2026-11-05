@@ -22,11 +22,6 @@ const BANDERA_FALLBACK_METHOD: Record<string, string> = {
   "mastercard prepaga": "mc-deb",
   amex: "amex",
   "american express": "amex",
-  cabal: "cabal-cred",
-  "cabal crédito": "cabal-cred",
-  "cabal débito": "cabal-deb",
-  naranja: "naranja",
-  "naranja x": "naranja",
   diners: "diners",
   maestro: "maestro",
 };

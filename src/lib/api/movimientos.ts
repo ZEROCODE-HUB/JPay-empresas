@@ -14,7 +14,7 @@ export type MovimientoDashboard = Pick<
 >;
 
 export type Dashboard = {
-  cliente: Pick<Tables<"clientes">, "legajo" | "cbu" | "alias">;
+  cliente: Pick<Tables<"clientes">, "legajo" | "cbu">;
   movimientos: MovimientoDashboard[];
   saldos: Saldos[];
 };
@@ -26,7 +26,7 @@ export async function getDashboard(desde: string, hasta: string): Promise<Dashbo
   if (!mail) return null;
   const { data: cli, error: errCli } = await s
     .from("clientes")
-    .select("legajo, cbu, alias")
+    .select("legajo, cbu")
     .eq("correo", mail)
     .maybeSingle();
   if (errCli) throw new DataAccessError(errCli);

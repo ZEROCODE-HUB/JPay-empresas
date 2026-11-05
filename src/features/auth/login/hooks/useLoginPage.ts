@@ -47,7 +47,7 @@ export function useLoginPage(register: "pf" | "pj" | undefined) {
   const handleLoginSuccess = async (estado: EstadoLogin, email: string) => {
     // El store persiste en localStorage y es compartido por todo el browser.
     // Si el email almacenado no coincide con el que está iniciando sesión, lo reiniciamos
-    // para no heredar datos (incluido el CUIT) de otro usuario/sesión.
+    // para no heredar datos (incluido el RFC) de otro usuario/sesión.
     if (store.registro.email && store.registro.email !== email) {
       store.reset();
     }

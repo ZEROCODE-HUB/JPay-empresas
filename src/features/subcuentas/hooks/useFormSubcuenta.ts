@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { createSubcuenta, updateSubcuenta } from "@/lib/api/subcuentas";
 import type { FormSubcuenta, Sub } from "../types";
-import { generarCvu } from "../utils";
 
 const FORM_VACIO: FormSubcuenta = {
   n: "",
@@ -64,8 +63,8 @@ export function useFormSubcuenta(clienteLegajo: string | null, recargar: () => P
         });
         toast.success("Subcuenta actualizada");
       } else {
-        // Antes el CVU daba 19 dígitos y el banco lo rechazaba como origen.
-        // El saldo nace en 0 (trigger en subaccounts); el cliente no puede fijarlo.
+        // La subcuenta nace sin CLABE propia (la columna `cbu` queda vacía): no se inventa
+        // un número de cuenta. El saldo nace en 0 (trigger en subaccounts); el cliente no puede fijarlo.
         await createSubcuenta({
           cliente_legajo: clienteLegajo,
           nombre: form.n,
@@ -74,7 +73,6 @@ export function useFormSubcuenta(clienteLegajo: string | null, recargar: () => P
           tipo: form.tipo,
           responsable: form.resp,
           limite: form.lim || null,
-          cbu: generarCvu(),
           estado: form.activar ? "Activa" : "Pausada",
           ingresos: "",
           egresos: "",

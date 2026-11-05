@@ -14,12 +14,12 @@ export type Registro = {
 /** Identificadores según el país activo (`@/shared/pais`): RFC/CURP/CLABE en México. */
 export type DatosPersonales = {
   genero: string;
-  /** Identificador fiscal (RFC, CUIT/CUIL). */
+  /** Identificador fiscal (RFC). */
   taxId: string;
   /** Identificador personal (CURP); vacío si el país no lo pide. */
   idPersonal: string;
   regimenFiscal: string;
-  /** Cuenta para liquidaciones (CLABE, CBU); opcional. */
+  /** CLABE para liquidaciones; opcional. */
   cuentaBancaria: string;
   ocupacion: string;
   origenFondos: string;

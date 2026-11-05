@@ -6,7 +6,6 @@ import {
   filtrarMovs,
   filtrarSubs,
   fmtLimite,
-  generarCvu,
   mapMovimientos,
   pctSaldo,
   rangoPagina,
@@ -53,7 +52,7 @@ describe("filtrarSubs", () => {
     sub({ n: "Sucursal Sur", cbu: "111", tipo: "Operativa", e: "Activa" }),
     sub({ n: "Pool", cbu: "222", tipo: "Recaudacion", e: "Pausada" }),
   ];
-  it("busca por nombre (sin mayúsculas) o CVU", () => {
+  it("busca por nombre (sin mayúsculas) o CLABE", () => {
     expect(filtrarSubs(subs, "sur", "Todos", "Todos")).toHaveLength(1);
     expect(filtrarSubs(subs, " 222 ", "Todos", "Todos")[0].n).toBe("Pool");
   });
@@ -77,7 +76,7 @@ describe("totales y distribución de saldos", () => {
   });
 });
 
-describe("esPool / rangoPagina / generarCvu", () => {
+describe("esPool / rangoPagina", () => {
   it("solo Recaudación es pool", () => {
     expect(esPool({ tipo: "Recaudacion" })).toBe(true);
     expect(esPool({ tipo: "Sueldos" })).toBe(false);
@@ -85,10 +84,6 @@ describe("esPool / rangoPagina / generarCvu", () => {
   it("rango de la página", () => {
     expect(rangoPagina(1, 10, 0)).toBe("0 registros");
     expect(rangoPagina(2, 10, 15)).toBe("11–15 de 15");
-  });
-  it("CVU de 22 dígitos", () => {
-    expect(generarCvu(() => 0)).toMatch(/^\d{22}$/);
-    expect(generarCvu(() => 0.999999)).toMatch(/^\d{22}$/);
   });
 });
 

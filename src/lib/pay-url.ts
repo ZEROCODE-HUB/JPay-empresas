@@ -1,6 +1,5 @@
 /**
- * Helpers centralizados para construir URLs de pago (checkout público /p/CODE
- * y rutas relacionadas /qr/pdv/ID).
+ * Helpers centralizados para construir URLs de pago (checkout público /p/CODE).
  *
  * Single source of truth: `PAY_APP_ORIGIN` (variable VITE_PUBLIC_APP_URL). Así un link
  * copiado desde localhost o desde un preview siempre apunta al deploy de producción.
@@ -40,9 +39,6 @@ export const buildBrandingUrl = (code: string) => `${PAY_BRAND_BASE}/l/${code}`;
 
 /** Construye la URL resoluble real del checkout público (/p/CODE). */
 export const buildResolvableUrl = (code: string) => `${trimSlash(APP_ORIGIN)}/p/${code}`;
-
-/** Construye la URL resoluble de un QR de punto de venta (/qr/pdv/ID). */
-export const buildQrPdvUrl = (id: string) => `${trimSlash(APP_ORIGIN)}/qr/pdv/${id}`;
 
 /**
  * Dada una URL guardada en DB (que puede ser branding o resoluble), devuelve la

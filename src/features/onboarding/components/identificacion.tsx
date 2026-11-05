@@ -1,7 +1,7 @@
 import { getPais, regimenesPara, type Identificador, type TipoPersona } from "@/shared/pais";
 import { Field, SelectField } from "./campos";
 
-/** Campo de un identificador del país (RFC, CURP, CLABE, CUIT…) con su etiqueta y ayuda. */
+/** Campo de un identificador del país (RFC, CURP, CLABE) con su etiqueta y ayuda. */
 export function CampoIdentificador({
   id,
   value,

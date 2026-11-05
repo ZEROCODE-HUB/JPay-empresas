@@ -41,7 +41,7 @@ function FilaMovimiento({ m }: { m: Mov }) {
           </span>
         </div>
         <div className="text-[11px] text-muted-foreground mt-1 flex flex-wrap gap-x-4 gap-y-0.5">
-          <span>CVU contraparte: {m.cbu}</span>
+          <span>CLABE de la contraparte: {m.cbu}</span>
           <span>{m.entidad}</span>
           <span>
             {m.fecha} · {m.hora}
@@ -93,7 +93,7 @@ export function DetalleMovimientos({ sub, d, onVerHistorial }: Props) {
               <Input
                 value={d.filterSearch}
                 onChange={(e) => d.setFilterSearch(e.target.value)}
-                placeholder="TXID, CVU o entidad..."
+                placeholder="TXID, CLABE o entidad..."
                 className="h-9 text-sm w-full"
               />
             </div>

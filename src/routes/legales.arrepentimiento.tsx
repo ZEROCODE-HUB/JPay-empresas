@@ -8,10 +8,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/legales/arrepentimiento")({
   head: () => ({
     meta: [
-      { title: pageTitle("Boton de Arrepentimiento") },
+      { title: pageTitle("Solicitud de cancelación") },
       {
         name: "description",
-        content: "Ejerce tu derecho de arrepentimiento conforme al articulo 34 de la Ley 24.240.",
+        content: "Solicita la cancelación de tu cuenta o de un servicio contratado.",
       },
     ],
   }),
@@ -38,12 +38,12 @@ function Page() {
           <ShieldAlert size={22} />
         </div>
         <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-          Boton de Arrepentimiento
+          Solicitud de cancelación
         </h1>
         <p className="text-sm text-muted-foreground mt-3">
-          De acuerdo al articulo 34 de la Ley 24.240 de Defensa del Consumidor y a la Resolucion
-          424/2020, tenes derecho a revocar la contratacion dentro de los 10 dias corridos desde la
-          aceptacion del servicio, sin necesidad de invocar causa y sin costo alguno.
+          Puedes solicitar la cancelación de tu cuenta o de un servicio contratado. Las condiciones
+          y los plazos aplicables son los de tu contrato y los que marca la legislación mexicana de
+          protección al consumidor.
         </p>
 
         {!enviado ? (
@@ -52,21 +52,21 @@ function Page() {
             onSubmit={(e) => {
               e.preventDefault();
               setEnviado(true);
-              toast.success("Solicitud de arrepentimiento enviada");
+              toast.success("Solicitud de cancelación enviada");
             }}
           >
             <div>
-              <label className="block text-xs font-semibold mb-1">Razon social</label>
+              <label className="block text-xs font-semibold mb-1">Razón social</label>
               <input
                 required
                 className="w-full h-10 px-3 rounded-md border bg-background text-sm"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1">CUIT</label>
+              <label className="block text-xs font-semibold mb-1">RFC</label>
               <input
                 required
-                className="w-full h-10 px-3 rounded-md border bg-background text-sm font-mono tabular-nums"
+                className="w-full h-10 px-3 rounded-md border bg-background text-sm font-mono uppercase"
               />
             </div>
             <div>
@@ -88,17 +88,17 @@ function Page() {
               type="submit"
               className="w-full h-11 rounded-md bg-primary text-primary-foreground font-semibold text-sm"
             >
-              Enviar solicitud de arrepentimiento
+              Enviar solicitud de cancelación
             </button>
             <p className="text-[11px] text-muted-foreground">
-              {brand.company.shortName} procesara tu solicitud dentro de las 48 hs habiles y te
-              enviara confirmacion por email.
+              {brand.company.shortName} procesará tu solicitud dentro de las 48 horas hábiles y te
+              enviará la confirmación por correo.
             </p>
           </form>
         ) : (
           <div className="mt-8 border rounded-lg p-6 bg-emerald-50 text-emerald-900 text-sm">
-            Recibimos tu solicitud. Un representante se contactara dentro de las proximas 48 hs
-            habiles.
+            Recibimos tu solicitud. Un representante se pondrá en contacto contigo dentro de las
+            próximas 48 horas hábiles.
           </div>
         )}
       </article>

@@ -29,7 +29,7 @@ const FILA_EJEMPLO_EDIFICIO = [
   "UF 3D",
   "Perez, Juan",
   48200,
-  "Expensas mensuales - Edificio 6",
+  "Cuotas de mantenimiento - Edificio 6",
   "juan@email.com",
   "",
   "",
@@ -55,7 +55,7 @@ const FILA_EJEMPLO_CLUB = [
   "2026-04-25",
   "2026-05-10",
   5,
-  "TRANSFERENCIA|QR",
+  "TRANSFERENCIA|TARJETA_DEBITO",
   false,
 ];
 

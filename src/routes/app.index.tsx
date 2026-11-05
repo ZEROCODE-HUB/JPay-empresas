@@ -17,7 +17,7 @@ export const Route = createFileRoute("/app/")({
 function Dashboard() {
   const periodo = usePeriodoDashboard();
   const { range, periodLabel } = periodo;
-  const { movs, saldoTotal, cuentas, cbuLabel } = useDashboard(range.start, range.end);
+  const { movs, saldoTotal, cuentas, cuentaLabel } = useDashboard(range.start, range.end);
 
   const data = useMemo(
     () => agruparPorDia(movs, range.start, range.end),
@@ -42,7 +42,7 @@ function Dashboard() {
         onExport={(fmt) => exportarDashboard(fmt, movs, kpis, periodLabel)}
       />
 
-      <DashboardKpis kpis={kpis} cbuLabel={cbuLabel} />
+      <DashboardKpis kpis={kpis} cuentaLabel={cuentaLabel} />
 
       <MovimientosDiariosChart data={data} periodLabel={periodLabel} />
     </>

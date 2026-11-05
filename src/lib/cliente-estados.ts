@@ -67,7 +67,7 @@ export const LABEL_A_ESTADO: Record<string, EstadoClienteNuevo> = Object.fromEnt
 ) as Record<string, EstadoClienteNuevo>;
 
 export type TransicionContext = {
-  hasCbu: boolean;
+  hasCuenta: boolean;
   hasComision: boolean;
   hasMovimientos: boolean;
   // opcional: flags derivados para auditoría
@@ -101,7 +101,7 @@ const TRANSICIONES: Transicion[] = [
     from: "preactivado",
     to: "activado",
     accion: "activar",
-    requiere: (ctx) => ctx.hasCbu && ctx.hasComision,
+    requiere: (ctx) => ctx.hasCuenta && ctx.hasComision,
     descripcion: `Activación requiere ${CUENTA} + comisión`,
   },
   {
@@ -198,7 +198,7 @@ export function puedeTransicionar(
   if (t.requiere && !t.requiere(ctx)) {
     if (to === "activado") {
       const faltantes: string[] = [];
-      if (!ctx.hasCbu) faltantes.push(CUENTA);
+      if (!ctx.hasCuenta) faltantes.push(CUENTA);
       if (!ctx.hasComision) faltantes.push("comisión");
       return { ok: false, motivo: `No se puede activar: faltan ${faltantes.join(" y ")}.` };
     }
@@ -234,7 +234,7 @@ export function accionesParaEstado(estadoRaw: string, ctx: TransicionContext): A
   }
 
   if (estado === "preactivado") {
-    const canActivar = ctx.hasCbu && ctx.hasComision;
+    const canActivar = ctx.hasCuenta && ctx.hasComision;
     acciones.push({
       key: "activar",
       label: canActivar ? "Activar" : `Activar (requiere ${CUENTA} + comisión)`,
