@@ -112,7 +112,7 @@ function Page() {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por nombre, legajo o email..."
+              placeholder="Buscar por nombre, número de cliente o email..."
               className="pl-9"
             />
           </div>
@@ -148,7 +148,7 @@ function Page() {
               <thead>
                 <tr className="text-[11px] uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
                   <th className="text-left px-4 py-2.5">Comercio</th>
-                  <th className="text-left px-4 py-2.5">Legajo</th>
+                  <th className="text-left px-4 py-2.5">Número de cliente</th>
                   <th className="text-left px-4 py-2.5">Nivel</th>
                   <th className="text-left px-4 py-2.5">Estado</th>
                   <th className="text-left px-4 py-2.5">Email de usuario</th>

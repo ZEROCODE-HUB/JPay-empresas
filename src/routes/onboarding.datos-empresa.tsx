@@ -88,7 +88,7 @@ function DatosEmpresa() {
     <AuthShell
       leftEyebrow="Paso 4 · Empresa"
       leftTitle="Carga los datos societarios."
-      leftBody="Reconstituimos tu legajo con la información que consta en el Registro Público de Comercio."
+      leftBody="Reconstituimos tu número de cliente con la información que consta en el Registro Público de Comercio."
       step={`Paso ${step + 1} de 2`}
     >
       <FormTitle eyebrow="KYB · Empresa" title="Validación de datos de la empresa" />

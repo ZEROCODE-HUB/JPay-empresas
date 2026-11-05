@@ -41,7 +41,7 @@ export function MovimientosTabla({
         <table className="w-full text-sm">
           <thead>
             <tr className="text-xs uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
-              <th className="text-left px-4 py-3 font-semibold">Legajo</th>
+              <th className="text-left px-4 py-3 font-semibold">Número de cliente</th>
               <th className="text-left px-4 py-3 font-semibold">ID transacción</th>
               <th className="text-left px-4 py-3 font-semibold">Tipo</th>
               <th className="text-left px-4 py-3 font-semibold">CLABE</th>

@@ -22,7 +22,7 @@ const nombreArchivo = (ext: string) =>
 /** Excel de las lineas filtradas: resumen arriba y una fila por linea. */
 export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
   const body = lineas.map((l) => ({
-    Legajo: l.legajo,
+    "Número de cliente": l.legajo,
     TXID: l.idTxn,
     Tipo: labelTipoLinea(l.tipoLinea),
     Operacion: prettyTipo(l.tipoOperacion),
