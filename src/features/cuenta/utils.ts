@@ -46,7 +46,6 @@ export function clienteToForm(c: Cliente): ClienteForm {
     apellido: rest.join(" "),
     nombreLegal: c.nombre_legal ?? "",
     nombreFantasia: c.nombre_fantasia ?? "",
-    cuit: c.cuit ?? "",
     tax_id: c.tax_id ?? "",
     id_personal: c.id_personal ?? "",
     tipo_sociedad: c.tipo_sociedad ?? "",
@@ -58,7 +57,6 @@ export function clienteToForm(c: Cliente): ClienteForm {
     telefono: c.telefono ?? "",
     actividad: c.actividad ?? "",
     genero: c.genero ?? "",
-    cuit_cuil: c.cuit_cuil ?? "",
     fecha_nacimiento: c.fecha_nacimiento ?? "",
     ocupacion: c.ocupacion ?? "",
     origen_fondos: c.origen_fondos ?? "",
@@ -71,8 +69,6 @@ export function formToPatch(form: Partial<ClienteForm>): TablesUpdate<"clientes"
     nombre: `${form.nombre ?? ""} ${form.apellido ?? ""}`.trim(),
     nombre_legal: form.nombreLegal || null,
     nombre_fantasia: form.nombreFantasia || null,
-    // `cuit` es NOT NULL en la base: si queda vacío no se envía y se conserva el actual.
-    cuit: form.cuit || undefined,
     // Vacío = no se envía (se conserva el actual).
     tax_id: form.tax_id ? normalizarId(form.tax_id) : undefined,
     id_personal: form.id_personal ? normalizarId(form.id_personal) : undefined,
@@ -85,7 +81,6 @@ export function formToPatch(form: Partial<ClienteForm>): TablesUpdate<"clientes"
     telefono: form.telefono || null,
     actividad: form.actividad || null,
     genero: form.genero || null,
-    cuit_cuil: form.cuit_cuil || null,
     fecha_nacimiento: form.fecha_nacimiento || null,
     ocupacion: form.ocupacion || null,
     origen_fondos: form.origen_fondos || null,

@@ -13,9 +13,7 @@ export type ClienteForm = {
   apellido: string;
   nombreLegal: string;
   nombreFantasia: string;
-  /** Identificador interno (CUIT en Argentina; en otros países, el número con prefijo 99). */
-  cuit: string;
-  /** Identificador fiscal del país (RFC, CUIT). */
+  /** Identificador fiscal (RFC). */
   tax_id: string;
   /** Identificador personal (CURP). */
   id_personal: string;
@@ -28,7 +26,6 @@ export type ClienteForm = {
   telefono: string;
   actividad: string;
   genero: string;
-  cuit_cuil: string;
   fecha_nacimiento: string;
   ocupacion: string;
   origen_fondos: string;

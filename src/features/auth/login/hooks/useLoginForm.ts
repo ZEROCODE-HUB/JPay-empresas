@@ -27,7 +27,7 @@ export function useLoginForm(onSuccess: (estado: EstadoLogin, email: string) => 
   const reenviarVerificacion = async () => {
     const destino = (pendingEmail ?? email).trim();
     if (!destino || !emailValido(destino)) {
-      setResendMsg("Ingresá tu correo arriba para reenviar la verificación.");
+      setResendMsg("Ingresa tu correo arriba para reenviar la verificación.");
       return;
     }
     setResendLoading(true);
@@ -38,7 +38,7 @@ export function useLoginForm(onSuccess: (estado: EstadoLogin, email: string) => 
         setResendMsg(null);
       } else {
         setResendMsg(
-          `Te enviamos el mail de verificación a ${destino}. Revisá tu bandeja y la carpeta de spam.`,
+          `Te enviamos el mail de verificación a ${destino}. Revisa tu bandeja y la carpeta de spam.`,
         );
       }
     } catch (e) {

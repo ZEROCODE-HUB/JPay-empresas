@@ -31,7 +31,7 @@ export const APP_ORIGIN: string = PAY_APP_ORIGIN;
 /**
  * URL canónica de branding de la marca (subdominio pay). Solo marketing, no resuelve.
  * Sale de `brand.web.payLinksBase` (src/brand/brand.json). Si en el futuro se configura
- * DNS y deploy en ese dominio, se puede apuntar acá o leer de una env var.
+ * DNS y deploy en ese dominio, se puede apuntar aquí o leer de una env var.
  */
 export const PAY_BRAND_BASE: string = brand.web.payLinksBase;
 

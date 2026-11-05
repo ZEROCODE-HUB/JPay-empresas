@@ -54,7 +54,7 @@ export function Hero() {
                 href="#servicios"
                 className="inline-flex h-12 items-center gap-2 px-7 rounded-sm text-sm font-medium text-primary-foreground bg-primary-500 hover:bg-primary-400 transition-colors"
               >
-                Conocé más <ArrowRight size={16} />
+                Conoce más <ArrowRight size={16} />
               </a>
               <a
                 href="#contacto"

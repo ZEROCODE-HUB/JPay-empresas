@@ -11,11 +11,11 @@ export function PendienteVerificacion({ f }: { f: LoginFormState }) {
       body={
         <>
           <p>
-            Tu correo aún no está verificado. Revisá tu bandeja de entrada y hacé clic en el enlace
+            Tu correo aún no está verificado. Revisa tu bandeja de entrada y haz clic en el enlace
             para activar tu cuenta.
           </p>
           <p className="mt-3 text-xs text-black-400">
-            Si no lo recibís, revisá spam o reenviá el correo. Si tenés algún problema,{" "}
+            Si no lo recibes, revisa spam o reenvía el correo. Si tienes algún problema,{" "}
             <a
               href={mailto(brand.contact.support)}
               className="underline underline-offset-2 hover:text-primary-ink"

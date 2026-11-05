@@ -75,7 +75,7 @@ export function ClabesCard({
             </p>
           ) : (
             <p className="text-black-400">
-              Cobre está revisando los datos de tu empresa. Cuando la apruebe vas a ver acá tu
+              Cobre está revisando los datos de tu empresa. Cuando la apruebe verás aquí tu
               CLABE.
             </p>
           )}

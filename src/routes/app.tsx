@@ -15,7 +15,6 @@ import {
   List,
   ShoppingCart,
   Code2,
-  Landmark,
   Plug,
   MapPinned,
   FileBarChart2,
@@ -42,12 +41,6 @@ export const Route = createFileRoute("/app")({
 const NAV: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard },
   { to: "/app/historial", label: "Historial", icon: History },
-  {
-    to: "/app/transferencias",
-    label: "Transferir",
-    icon: ArrowLeftRight,
-    modulo: "transferencias_salientes",
-  },
   { to: "/app/subcuentas", label: "Subcuentas", icon: Wallet },
   { to: "/app/mis-comercios", label: "Mis comercios", icon: Store },
   { to: "/app/integraciones", label: "Integraciones", icon: Plug, modulo: "pagos_proveedor" },
@@ -97,7 +90,6 @@ const NAV: NavItem[] = [
       { to: "/app/cobros/gestion", label: "Gestion de lotes", icon: List },
     ],
   },
-  { to: "/app/liquidaciones", label: "Liquidaciones", icon: Landmark },
   { to: "/app/cuenta", label: "Mi cuenta", icon: UserCog },
   { to: "/app/seguridad", label: "Seguridad", icon: Shield },
   { to: "/app/api-config", label: "Config. APIs Externas", icon: Code2 },

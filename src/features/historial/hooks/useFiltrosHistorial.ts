@@ -11,8 +11,8 @@ export function useFiltrosHistorial(subcuentaInicial: string | undefined) {
   const [categoria, setCategoria] = useState("Todas");
   const [tipoLinea, setTipoLinea] = useState<TipoLinea | "Todos">("Todos");
   const [subFiltro, setSubFiltro] = useState(subcuentaInicial ?? "Todas");
-  const [buscarCbu, setBuscarCbu] = useState("");
-  const [buscarCuit, setBuscarCuit] = useState("");
+  const [buscarClabe, setBuscarClabe] = useState("");
+  const [buscarRfc, setBuscarRfc] = useState("");
   const [buscarTxid, setBuscarTxid] = useState("");
   const [buscarTitular, setBuscarTitular] = useState("");
   const [page, setPage] = useState(1);
@@ -25,8 +25,8 @@ export function useFiltrosHistorial(subcuentaInicial: string | undefined) {
     categoria,
     tipoLinea,
     subFiltro,
-    buscarCbu,
-    buscarCuit,
+    buscarClabe,
+    buscarRfc,
     buscarTxid,
     buscarTitular,
   ]);
@@ -37,8 +37,8 @@ export function useFiltrosHistorial(subcuentaInicial: string | undefined) {
     setCategoria("Todas");
     setTipoLinea("Todos");
     setSubFiltro("Todas");
-    setBuscarCbu("");
-    setBuscarCuit("");
+    setBuscarClabe("");
+    setBuscarRfc("");
     setBuscarTxid("");
     setBuscarTitular("");
   }
@@ -51,8 +51,8 @@ export function useFiltrosHistorial(subcuentaInicial: string | undefined) {
     tipos: tiposDeOperacion(categoria),
     tipoLinea: tipoLinea !== "Todos" ? tipoLinea : null,
     subcuenta: subFiltro,
-    cbu: buscarCbu,
-    cuit: buscarCuit,
+    clabe: buscarClabe,
+    rfc: buscarRfc,
     txid: buscarTxid,
     titular: buscarTitular,
   };
@@ -68,10 +68,10 @@ export function useFiltrosHistorial(subcuentaInicial: string | undefined) {
     setTipoLinea,
     subFiltro,
     setSubFiltro,
-    buscarCbu,
-    setBuscarCbu,
-    buscarCuit,
-    setBuscarCuit,
+    buscarClabe,
+    setBuscarClabe,
+    buscarRfc,
+    setBuscarRfc,
     buscarTxid,
     setBuscarTxid,
     buscarTitular,

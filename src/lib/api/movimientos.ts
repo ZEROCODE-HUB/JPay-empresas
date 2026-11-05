@@ -52,7 +52,7 @@ export async function getDashboard(desde: string, hasta: string): Promise<Dashbo
 
 export type ClienteHistorial = Pick<
   Tables<"clientes">,
-  "legajo" | "tipo_persona" | "nombre" | "cuit" | "cuit_cuil" | "correo"
+  "legajo" | "tipo_persona" | "nombre" | "tax_id" | "correo"
 >;
 export type SubcuentaHistorial = { id: string; nombre: string; cbu: string | null };
 
@@ -88,8 +88,9 @@ export type FiltrosHistorial = {
   tipoLinea: string | null;
   /** Nombre de la subcuenta elegida ("Todas" = sin filtro). */
   subcuenta: string;
-  cbu: string;
-  cuit: string;
+  /** CLABE (propia o de la contraparte). */
+  clabe: string;
+  rfc: string;
   txid: string;
   titular: string;
 };
@@ -115,7 +116,7 @@ async function clienteYSubcuentas(
   const mail = await emailSesion();
   const { data: cli, error: errCli } = await sb
     .from("clientes")
-    .select("legajo, tipo_persona, nombre, cuit, cuit_cuil, correo")
+    .select("legajo, tipo_persona, nombre, tax_id, correo")
     .eq("correo", mail ?? "")
     .maybeSingle();
   if (errCli) throw new DataAccessError(errCli);
@@ -161,11 +162,12 @@ function consultaLineas(
     if (match) q = q.eq("subaccount_id", match.id);
   }
 
-  if (f.cbu.trim()) q = q.or(`cvu.ilike.${like(f.cbu)},cvu_propio.ilike.${like(f.cbu)}`);
+  // La cuenta y el identificador fiscal viven en las columnas `cvu`, `cvu_propio` y `cuit`.
+  if (f.clabe.trim()) q = q.or(`cvu.ilike.${like(f.clabe)},cvu_propio.ilike.${like(f.clabe)}`);
   if (f.txid.trim()) q = q.ilike("id_txn", like(f.txid));
   if (f.titular.trim()) q = q.ilike("nombre_destino", like(f.titular));
-  const cuitDigitos = f.cuit.replace(/\D/g, "");
-  if (cuitDigitos) q = q.ilike("cuit", like(cuitDigitos));
+  const rfc = f.rfc.replace(/[\s-]/g, "");
+  if (rfc) q = q.ilike("cuit", like(rfc));
 
   // Más reciente primero; dentro de una operación, en el orden de sus líneas.
   return q

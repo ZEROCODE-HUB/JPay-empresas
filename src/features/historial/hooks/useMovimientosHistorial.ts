@@ -4,7 +4,7 @@ import type { FiltrosHistorial } from "@/lib/api/movimientos";
 import { useHistorial } from "@/hooks/useMovimientos";
 import {
   aLinea,
-  cbuUnico,
+  clabeUnica,
   estadoVista,
   subFiltroDeVista,
   totalesPagina,
@@ -21,8 +21,8 @@ export function useMovimientosHistorial(filtros: FiltrosHistorial) {
   const sinSubcuentas = !!historial.data && (!cli?.legajo || subcuentas.length === 0);
   const cliente: ClienteComprobante = {
     nombre: String(cli?.nombre ?? ""),
-    cuit: String(cli?.cuit ?? "") || String(cli?.cuit_cuil ?? ""),
-    cbu: cbuUnico(subcuentas),
+    rfc: String(cli?.tax_id ?? ""),
+    clabe: clabeUnica(subcuentas),
   };
   const lineas: Linea[] = historial.isError ? [] : (historial.data?.lineas ?? []).map(aLinea);
   const totalCount = historial.isError ? 0 : (historial.data?.total ?? 0);

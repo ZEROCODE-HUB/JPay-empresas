@@ -12,7 +12,7 @@ import {
 
 describe("kindOf", () => {
   it("detecta imagen, pdf u otro por extensión", () => {
-    expect(kindOf("dni.JPG", "")).toBe("image");
+    expect(kindOf("ine.JPG", "")).toBe("image");
     expect(kindOf("", "a/b/constancia.pdf")).toBe("pdf");
     expect(kindOf("archivo.docx", "")).toBe("file");
   });
@@ -30,7 +30,7 @@ describe("mapDocumentos", () => {
       },
     ] as unknown as DocumentoCliente[];
     expect(mapDocumentos(docs)[0]).toMatchObject({
-      tipo: "DNI Frente",
+      tipo: "INE (frente)",
       rawTipo: "id_frente",
       label: "x/frente.png",
       kind: "image",
@@ -70,13 +70,13 @@ describe("labelKyc", () => {
 
 describe("formulario", () => {
   it("separa nombre y apellido y arma el patch", () => {
-    const c = { nombre: "Ana María Pérez", cuit: "", es_pep: null } as unknown as Cliente;
+    const c = { nombre: "Ana María Pérez", tax_id: "", es_pep: null } as unknown as Cliente;
     const f = clienteToForm(c);
     expect(f.nombre).toBe("Ana");
     expect(f.apellido).toBe("María Pérez");
     const patch = formToPatch(f);
     expect(patch.nombre).toBe("Ana María Pérez");
-    expect(patch.cuit).toBeUndefined();
+    expect(patch.tax_id).toBeUndefined();
     expect(patch.direccion).toBeNull();
     expect(patch.es_pep).toBe(false);
   });

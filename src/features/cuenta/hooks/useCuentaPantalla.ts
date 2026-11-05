@@ -35,7 +35,6 @@ export function useCuentaPantalla() {
 
   const dp = {
     genero: cliente?.genero ?? datosPersonales.genero ?? "",
-    cuitCuil: cliente?.cuit_cuil ?? "",
     taxId: cliente?.tax_id ?? datosPersonales.taxId ?? "",
     idPersonal: cliente?.id_personal ?? datosPersonales.idPersonal ?? "",
     ocupacion: cliente?.ocupacion ?? datosPersonales.ocupacion ?? "",
@@ -46,7 +45,6 @@ export function useCuentaPantalla() {
   const empresaInfo = {
     nombreLegal: cliente?.nombre_legal ?? datosEmpresa.nombreLegal ?? "",
     nombreFantasia: cliente?.nombre_fantasia ?? datosEmpresa.nombreFantasia ?? "",
-    cuit: cliente?.cuit ?? "",
     taxId: cliente?.tax_id ?? datosEmpresa.taxId ?? "",
     tipoId: cliente?.tipo_sociedad ?? datosEmpresa.tipoId ?? "",
     fechaInscripcion: cliente?.fecha_inscripcion ?? datosEmpresa.fechaInscripcion ?? "",
@@ -59,7 +57,8 @@ export function useCuentaPantalla() {
     cp: cliente?.cp ?? "",
   };
 
-  const cbu = { cbu: cliente?.cbu ?? "—", alias: cliente?.alias ?? "—" };
+  // La CLABE del cliente vive en la columna `cbu`.
+  const cuenta = { clabe: cliente?.cbu ?? "—" };
 
   const setF = (k: CampoTexto, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -75,7 +74,7 @@ export function useCuentaPantalla() {
     try {
       const patch = formToPatch(form);
       await updateCliente(cliente.legajo, patch);
-      setCliente({ ...cliente, ...patch, cuit: patch.cuit ?? cliente.cuit } as Cliente);
+      setCliente({ ...cliente, ...patch } as Cliente);
       toast.success("Cambios guardados");
     } catch {
       toast.error("No se pudieron guardar los cambios");
@@ -103,7 +102,7 @@ export function useCuentaPantalla() {
     dp,
     empresaInfo,
     dir,
-    cbu,
+    cuenta,
     form,
     setF,
     saving,

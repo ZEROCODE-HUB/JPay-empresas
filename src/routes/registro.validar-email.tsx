@@ -37,23 +37,23 @@ function ValidarEmail() {
         <div className="p-6 sm:p-8">
           <p className="text-xs text-black-400">Asunto</p>
           <p className="mt-1 mb-6 text-sm font-semibold text-black-800">
-            Validá tu cuenta {brand.name}
+            Valida tu cuenta {brand.name}
           </p>
 
           <div className="text-sm text-black-600 space-y-4 leading-relaxed">
             <p>Hola {nombre || "usuario"},</p>
             <p>
               Muchas gracias por registrarte en {brand.name}. Para poder ingresar a la plataforma
-              primero debés validar el email. Para realizarlo hacé clic acá.
+              primero debes validar el email. Para realizarlo haz clic aquí.
             </p>
           </div>
 
           <div className="mt-8">
-            <PrimaryButton onClick={validar}>Validar desde acá</PrimaryButton>
+            <PrimaryButton onClick={validar}>Validar desde aquí</PrimaryButton>
           </div>
 
           <p className="mt-6 text-xs text-black-400 leading-relaxed">
-            Si tenés una duda o inconveniente podés contactarnos en{" "}
+            Si tienes una duda o inconveniente puedes contactarnos en{" "}
             <a
               href={mailto(brand.contact.support)}
               className="underline underline-offset-2 hover:text-primary-ink"

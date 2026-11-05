@@ -47,8 +47,8 @@ function VerificarCorreo() {
   return (
     <AuthShell
       leftEyebrow="Verificación de correo"
-      leftTitle="Confirmamos que sos vos."
-      leftBody={`Tu correo quedó verificado y ya podés continuar con el alta de tu cuenta en ${brand.name}.`}
+      leftTitle="Confirmamos que eres tú."
+      leftBody={`Tu correo quedó verificado y ya puedes continuar con el alta de tu cuenta en ${brand.name}.`}
       step="Correo verificado"
     >
       {estado === "loading" && (
@@ -64,7 +64,7 @@ function VerificarCorreo() {
           title="¡Correo verificado!"
           body={
             <p>
-              Tu dirección de correo fue confirmada correctamente. Ahora podés iniciar sesión y
+              Tu dirección de correo fue confirmada correctamente. Ahora puedes iniciar sesión y
               continuar con el onboarding.
             </p>
           }

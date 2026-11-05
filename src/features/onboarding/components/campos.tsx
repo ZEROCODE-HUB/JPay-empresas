@@ -33,7 +33,7 @@ export function SelectField({
   onChange,
   options,
   error,
-  placeholder = "Seleccioná…",
+  placeholder = "Selecciona…",
 }: {
   label: string;
   value: string;

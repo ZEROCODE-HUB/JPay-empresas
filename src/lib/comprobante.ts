@@ -1,10 +1,10 @@
 /**
  * Comprobante de una transferencia enviada.
  *
- * Acá vive el TEXTO del comprobante (una sola fuente de verdad) y las acciones
- * de compartir. El PDF (`comprobante-pdf.ts`) reusa este mismo texto, así lo que
- * se descarga y lo que se comparte dicen siempre lo mismo.
+ * Aquí viven los datos y los formatos comunes; el PDF (`comprobante-pdf.ts`) y la imagen
+ * (`comprobante-imagen.ts`) muestran los mismos campos.
  */
+import { formatMoney } from "@/shared/format";
 
 export type DatosComprobante = {
   /** ISO. */
@@ -15,23 +15,20 @@ export type DatosComprobante = {
   impuesto?: number;
   estado?: string;
   txid: string;
-  desde: { nombre: string; cuit: string; cbu: string };
+  desde: { nombre: string; rfc: string; clabe: string };
   hacia: {
     nombre: string;
-    cuit: string;
-    cbu: string;
+    rfc: string;
+    clabe: string;
     banco?: string;
     alias?: string;
     tipoCuenta?: string;
   };
 };
 
-/** `1234.5` → `$ 1.234,50` (formato es-AR, sin depender del ICU del runtime). */
+/** Monto con el formato de la moneda del país (siempre positivo). */
 export function formatearMonto(n: number): string {
-  const valor = Number.isFinite(n) ? Math.abs(n) : 0;
-  const [ent, dec] = valor.toFixed(2).split(".");
-  const conMiles = ent.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return `$ ${conMiles},${dec}`;
+  return formatMoney(Number.isFinite(n) ? Math.abs(n) : 0);
 }
 
 /** ISO → `2026-10-16 10:53:14` (hora local del navegador). */
@@ -42,43 +39,9 @@ export function formatearFechaComprobante(iso: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
-/** Solo dígitos (los comprobantes van sin guiones). */
-function soloDigitos(v?: string | null): string {
-  return (v ?? "").replace(/\D/g, "");
-}
-
-/** Texto del comprobante, con el mismo formato que se le muestra al cliente. */
-export function formatearComprobanteTexto(d: DatosComprobante): string {
-  const lineas: string[] = [];
-
-  lineas.push("Enviaste dinero");
-  const fecha = formatearFechaComprobante(d.fecha);
-  if (fecha) lineas.push(fecha);
-  lineas.push("");
-  lineas.push(`Monto de operación: ${formatearMonto(d.monto)}`);
-  lineas.push("");
-
-  lineas.push("Desde:");
-  lineas.push(`Nombre: ${d.desde.nombre || "—"}`);
-  lineas.push(`CUIT: ${soloDigitos(d.desde.cuit) || "—"}`);
-  lineas.push(`CBU/CVU: ${d.desde.cbu || "—"}`);
-  lineas.push("");
-
-  lineas.push("Hacia:");
-  lineas.push(`Nombre: ${d.hacia.nombre || "—"}`);
-  lineas.push(`CUIT: ${soloDigitos(d.hacia.cuit) || "—"}`);
-  lineas.push(`CBU/CVU: ${d.hacia.cbu || "—"}`);
-  if (d.hacia.banco) lineas.push(`Banco: ${d.hacia.banco}`);
-  lineas.push("");
-
-  // El comprobante compartido es breve y consistente: muestra solamente los
-  // datos bancarios principales de la operación.
-  lineas.push(`Estado: ${d.estado || "—"}`);
-  lineas.push(`ID de transacción: ${d.txid}`);
-  lineas.push("");
-  lineas.push("Comprobante no válido como factura");
-
-  return lineas.join("\n");
+/** RFC o CLABE sin espacios ni guiones y en mayúsculas. */
+export function limpiarIdentificador(v?: string | null): string {
+  return (v ?? "").replace(/[\s-]/g, "").toUpperCase();
 }
 
 /** Nombre del archivo a descargar, ej. `comprobante-<TXID>.pdf`. */

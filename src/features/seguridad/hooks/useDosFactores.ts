@@ -36,7 +36,7 @@ export function useDosFactores() {
     if (!enroll) return;
     const code = verifyCode.replace(/\s/g, "");
     if (!/^\d{6}$/.test(code)) {
-      toast.error("Ingresá el código de 6 dígitos de tu app");
+      toast.error("Ingresa el código de 6 dígitos de tu app");
       return;
     }
     try {

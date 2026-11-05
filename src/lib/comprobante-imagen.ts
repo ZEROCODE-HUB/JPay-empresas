@@ -5,6 +5,7 @@
 import {
   formatearMonto,
   formatearFechaComprobante,
+  limpiarIdentificador,
   nombreArchivoComprobante,
   type DatosComprobante,
 } from "./comprobante";
@@ -37,9 +38,6 @@ const ALTO: Record<Bloque["t"], number> = {
   pie: 30,
 };
 
-function soloDigitos(v?: string | null): string {
-  return (v ?? "").replace(/\D/g, "");
-}
 
 function bloques(d: DatosComprobante): Bloque[] {
   return [
@@ -51,15 +49,15 @@ function bloques(d: DatosComprobante): Bloque[] {
     { t: "espacio", h: 20 },
     { t: "seccion", texto: "Desde:" },
     { t: "fila", label: "Nombre:", valor: d.desde.nombre || "—" },
-    { t: "fila", label: "CUIT:", valor: soloDigitos(d.desde.cuit) || "—", mono: true },
-    { t: "fila", label: "CBU/CVU:", valor: d.desde.cbu || "—", mono: true },
+    { t: "fila", label: "RFC:", valor: limpiarIdentificador(d.desde.rfc) || "—", mono: true },
+    { t: "fila", label: "CLABE:", valor: d.desde.clabe || "—", mono: true },
     { t: "espacio", h: 20 },
     { t: "linea" },
     { t: "espacio", h: 20 },
     { t: "seccion", texto: "Hacia:" },
     { t: "fila", label: "Nombre:", valor: d.hacia.nombre || "—" },
-    { t: "fila", label: "CUIT:", valor: soloDigitos(d.hacia.cuit) || "—", mono: true },
-    { t: "fila", label: "CBU/CVU:", valor: d.hacia.cbu || "—", mono: true },
+    { t: "fila", label: "RFC:", valor: limpiarIdentificador(d.hacia.rfc) || "—", mono: true },
+    { t: "fila", label: "CLABE:", valor: d.hacia.clabe || "—", mono: true },
     ...(d.hacia.banco ? [{ t: "fila" as const, label: "Banco:", valor: d.hacia.banco }] : []),
     { t: "espacio", h: 20 },
     { t: "linea" },

@@ -66,7 +66,7 @@ export function CobreSpeiPagoCard({
       {datos?.clabe ? (
         <div className="mt-4 space-y-2 text-sm">
           <p>
-            Transferí desde tu banco exactamente{" "}
+            Transfiere desde tu banco exactamente{" "}
             <span className="font-semibold">{formatMoney(datos.monto)}</span> a esta CLABE:
           </p>
           <button

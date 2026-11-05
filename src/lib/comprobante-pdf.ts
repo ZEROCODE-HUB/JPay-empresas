@@ -2,13 +2,11 @@ import jsPDF from "jspdf";
 import {
   formatearMonto,
   formatearFechaComprobante,
+  limpiarIdentificador,
   nombreArchivoComprobante,
   type DatosComprobante,
 } from "./comprobante";
 
-function soloDigitos(v: string): string {
-  return v.replace(/\D/g, "") || "—";
-}
 
 /** Descargable con el mismo comprobante simple que se comparte como imagen. */
 export function generarComprobantePdf(d: DatosComprobante): jsPDF {
@@ -53,16 +51,16 @@ export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   doc.text("Desde:", izquierda, y);
   y += 8;
   fila("Nombre:", d.desde.nombre);
-  fila("CUIT:", soloDigitos(d.desde.cuit), true);
-  fila("CBU/CVU:", d.desde.cbu || "—", true);
+  fila("RFC:", limpiarIdentificador(d.desde.rfc) || "—", true);
+  fila("CLABE:", d.desde.clabe || "—", true);
   linea();
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.text("Hacia:", izquierda, y);
   y += 8;
   fila("Nombre:", d.hacia.nombre);
-  fila("CUIT:", soloDigitos(d.hacia.cuit), true);
-  fila("CBU/CVU:", d.hacia.cbu || "—", true);
+  fila("RFC:", limpiarIdentificador(d.hacia.rfc) || "—", true);
+  fila("CLABE:", d.hacia.clabe || "—", true);
   if (d.hacia.banco) fila("Banco:", d.hacia.banco);
   linea();
   fila("Estado:", d.estado || "—");

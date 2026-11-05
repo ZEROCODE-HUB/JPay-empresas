@@ -26,11 +26,11 @@ export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
     TXID: l.idTxn,
     Tipo: labelTipoLinea(l.tipoLinea),
     Operacion: prettyTipo(l.tipoOperacion),
-    CVU: l.cvu ?? "",
+    CLABE: l.cvu ?? "",
     Email: l.email ?? "",
     Nombre: l.nombre ?? "",
     Nombre_destino: l.nombreDestino ?? "",
-    CUIT: l.cuit ?? "",
+    RFC: l.cuit ?? "",
     Monto: l.monto,
     Fecha: formatFechaLinea(l.fecha),
     Estado: l.estado,
@@ -79,7 +79,7 @@ export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (doc as any).autoTable({
     startY: 52,
-    head: [["TXID", "Fecha", "Tipo", "Operacion", "Nombre destino", "CUIT", "Monto", "Estado"]],
+    head: [["TXID", "Fecha", "Tipo", "Operacion", "Nombre destino", "RFC", "Monto", "Estado"]],
     body: lineas.map((l) => [
       l.idTxn,
       formatFechaLinea(l.fecha),

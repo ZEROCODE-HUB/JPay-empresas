@@ -35,7 +35,7 @@ function RegistroExito() {
     try {
       const res = await resendVerification(registro.email);
       if (res.demo_token) setDemoUrl(readDemoVerifyUrl(registro.email));
-      else setMsg("Reenviamos el correo. Revisá tu bandeja.");
+      else setMsg("Reenviamos el correo. Revisa tu bandeja.");
     } catch (e) {
       setError(
         getAuthErrorMessage(e instanceof Error ? e.message : "No se pudo reenviar el correo"),
@@ -58,19 +58,19 @@ function RegistroExito() {
             <p>
               Enviamos un correo a{" "}
               <span className="font-semibold text-black-800">{registro.email ?? "tu email"}</span>.
-              Revisá tu bandeja y hacé clic en el link para validar la cuenta.
+              Revisa tu bandeja y haz clic en el link para validar la cuenta.
             </p>
             <p className="mt-3 text-xs text-black-400">
-              Si no lo recibís, revisá spam o{" "}
+              Si no lo recibes, revisa spam o{" "}
               <button
                 type="button"
                 onClick={reenviar}
                 disabled={loading}
                 className="underline underline-offset-2 hover:text-primary-ink disabled:opacity-50"
               >
-                {loading ? "reenviando..." : "reenviá el correo"}
+                {loading ? "reenviando..." : "reenvía el correo"}
               </button>
-              . ¿Tenés un problema?{" "}
+              . ¿Tienes un problema?{" "}
               <Link to="/" className="underline underline-offset-2 hover:text-primary-ink">
                 Contactanos
               </Link>

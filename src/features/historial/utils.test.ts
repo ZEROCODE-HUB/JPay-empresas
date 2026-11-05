@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agruparPorTxid,
-  cbuUnico,
+  clabeUnica,
   comprobanteDeMov,
   estadoVisible,
   estadoVista,
@@ -84,18 +84,18 @@ describe("movimiento y comprobante", () => {
   it("egreso: debita comision e impuesto", () => {
     expect(egreso.tipo).toBe("egreso");
     expect(egreso.categoria).toBe("Egresos");
-    expect(egreso.subcuentaCbu).toBe("999");
+    expect(egreso.subcuentaClabe).toBe("999");
     expect(montoDebitado(egreso)).toBeCloseTo(1012.1);
     expect(montoDetalleTexto(egreso)).toMatch(/^- /);
   });
 
   it("comprobante: en un egreso yo soy el origen", () => {
-    const c = comprobanteDeMov(egreso, { nombre: "Yo", cuit: "30", cbu: "111" });
-    expect(c.desde).toEqual({ nombre: "Yo", cuit: "30", cbu: "999" });
-    expect(c.hacia).toEqual({ nombre: "Ana", cuit: "20-1-1", cbu: "000111", banco: "Banco X" });
+    const c = comprobanteDeMov(egreso, { nombre: "Yo", rfc: "30", clabe: "111" });
+    expect(c.desde).toEqual({ nombre: "Yo", rfc: "30", clabe: "999" });
+    expect(c.hacia).toEqual({ nombre: "Ana", rfc: "20-1-1", clabe: "000111", banco: "Banco X" });
   });
 
-  it("comprobante: en un ingreso sin CVU la contraparte va sin CBU", () => {
+  it("comprobante: en un ingreso sin cuenta la contraparte va sin CLABE", () => {
     const ingreso = mapMov({
       id_txn: "TX2",
       tipo: "cobro_link",
@@ -106,15 +106,15 @@ describe("movimiento y comprobante", () => {
     });
     expect(ingreso.tipo).toBe("ingreso");
     expect(montoDetalleTexto(ingreso)).toMatch(/^\+ /);
-    const c = comprobanteDeMov(ingreso, { nombre: "Yo", cuit: "30", cbu: "111" });
-    expect(c.hacia.cbu).toBe("111");
-    expect(c.desde.cbu).toBe("");
+    const c = comprobanteDeMov(ingreso, { nombre: "Yo", rfc: "30", clabe: "111" });
+    expect(c.hacia.clabe).toBe("111");
+    expect(c.desde.clabe).toBe("");
   });
 
-  it("cbuUnico", () => {
-    expect(cbuUnico([{ cbu: "1" }, { cbu: "1" }, { cbu: null }])).toBe("1");
-    expect(cbuUnico([{ cbu: "1" }, { cbu: "2" }])).toBe("");
-    expect(cbuUnico([])).toBe("");
+  it("clabeUnica", () => {
+    expect(clabeUnica([{ cbu: "1" }, { cbu: "1" }, { cbu: null }])).toBe("1");
+    expect(clabeUnica([{ cbu: "1" }, { cbu: "2" }])).toBe("");
+    expect(clabeUnica([])).toBe("");
   });
 });
 

@@ -84,7 +84,7 @@ export function AuthShell({
         </div>
 
         <footer className="px-6 py-4 text-center text-xs text-black-400">
-          ¿Necesitás ayuda?{" "}
+          ¿Necesitas ayuda?{" "}
           <a
             href={mailto(brand.contact.support)}
             className="underline underline-offset-2 hover:text-primary-ink transition-colors"

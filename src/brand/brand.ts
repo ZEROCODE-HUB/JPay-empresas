@@ -1,6 +1,6 @@
 /**
  * Identidad de marca de la app. Todo texto visible que nombre a la marca, a la empresa o a sus
- * contactos debe salir de acá, nunca escrito a mano en un componente.
+ * contactos debe salir de aquí, nunca escrito a mano en un componente.
  *
  * - Textos, contactos, dominios y colores: `brand.json` (ver BRANDING.md).
  * - Imágenes: `./assets/` (se reemplazan manteniendo el nombre de archivo).

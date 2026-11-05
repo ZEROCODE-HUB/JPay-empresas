@@ -44,11 +44,11 @@ export function MovimientosTabla({
               <th className="text-left px-4 py-3 font-semibold">Legajo</th>
               <th className="text-left px-4 py-3 font-semibold">ID transacción</th>
               <th className="text-left px-4 py-3 font-semibold">Tipo</th>
-              <th className="text-left px-4 py-3 font-semibold">CVU</th>
+              <th className="text-left px-4 py-3 font-semibold">CLABE</th>
               <th className="text-left px-4 py-3 font-semibold">Email</th>
               <th className="text-left px-4 py-3 font-semibold">Nombre</th>
               <th className="text-left px-4 py-3 font-semibold">Nombre destino</th>
-              <th className="text-left px-4 py-3 font-semibold">CUIT</th>
+              <th className="text-left px-4 py-3 font-semibold">RFC</th>
               <th className="text-right px-4 py-3 font-semibold">Monto</th>
               <th className="text-left px-4 py-3 font-semibold">Fecha</th>
               <th className="text-left px-4 py-3 font-semibold">Estado</th>

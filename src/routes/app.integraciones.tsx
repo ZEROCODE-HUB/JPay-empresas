@@ -44,7 +44,7 @@ function Page() {
       ) : !actual ? (
         <Card className="text-sm">
           Tu cuenta todavía no tiene un comercio habilitado. Cuando el equipo de JPay lo dé de alta,
-          vas a poder conectar tus medios de cobro desde acá.
+          podrás conectar tus medios de cobro desde aquí.
         </Card>
       ) : (
         <div className="space-y-4">

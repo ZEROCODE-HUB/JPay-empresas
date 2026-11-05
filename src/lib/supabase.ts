@@ -15,7 +15,7 @@ export const isSupabaseConfigured = supabase !== null;
 export function requireSupabase(): SupabaseClient<Database> {
   if (!supabase) {
     throw new Error(
-      "Supabase no está configurado. Definí VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en el entorno.",
+      "Supabase no está configurado. Define VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en el entorno.",
     );
   }
   return supabase;
@@ -97,7 +97,7 @@ export async function extraerMensajeEdgeFunction(err: unknown): Promise<string |
 
     if (!mensaje) return texto.slice(0, 400);
     if (/testing emails to your own email|verify a domain/i.test(mensaje)) {
-      return "No se pudo enviar el correo de verificación: Resend no tiene un dominio verificado y sólo permite enviar a la dirección de la cuenta. Verificá el dominio en resend.com/domains y ajustá RESEND_FROM.";
+      return "No se pudo enviar el correo de verificación: Resend no tiene un dominio verificado y sólo permite enviar a la dirección de la cuenta. Verifica el dominio en resend.com/domains y ajusta RESEND_FROM.";
     }
     return mensaje;
   } catch {
@@ -147,7 +147,7 @@ const ERROR_MESSAGES: [RegExp, string][] = [
   [/invalid login credentials|invalid credentials/i, "Usuario o contraseña incorrectos."],
   [
     /email not confirmed/i,
-    "El correo aún no está confirmado. Revisá tu bandeja de entrada y confirmá tu email para poder ingresar.",
+    "El correo aún no está confirmado. Revisa tu bandeja de entrada y confirma tu email para poder ingresar.",
   ],
   [/user not found/i, "No existe una cuenta con ese correo."],
   [
@@ -156,16 +156,16 @@ const ERROR_MESSAGES: [RegExp, string][] = [
   ],
   [
     /too many requests|rate limit|too many.*requests/i,
-    "Demasiados intentos fallidos. Esperá unos minutos y volvé a intentar.",
+    "Demasiados intentos fallidos. Espera unos minutos y vuelve a intentar.",
   ],
-  [/invalid email/i, "Ingresá un correo electrónico válido."],
+  [/invalid email/i, "Ingresa un correo electrónico válido."],
   [
     /network|fetch failed|failed to fetch/i,
-    "No se pudo conectar. Verificá tu conexión e intentá de nuevo.",
+    "No se pudo conectar. Verifica tu conexión e intenta de nuevo.",
   ],
   [
     /email.*not.*confirmed|confirm.*email/i,
-    "El correo aún no está confirmado. Revisá tu bandeja de entrada.",
+    "El correo aún no está confirmado. Revisa tu bandeja de entrada.",
   ],
   [
     /confirmation.*expired|token.*expired|expired/i,

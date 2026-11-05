@@ -52,12 +52,12 @@ function Recuperar() {
     >
       {sent ? (
         <SuccessCard
-          title="Revisá tu correo"
+          title="Revisa tu correo"
           body={
             <p>
               Enviamos un enlace de recuperación a{" "}
-              <span className="font-semibold text-black-700">{email}</span>. Hacé clic en él para
-              crear una nueva contraseña. Si no lo encontrás, revisá la carpeta de spam.
+              <span className="font-semibold text-black-700">{email}</span>. Haz clic en él para
+              crear una nueva contraseña. Si no lo encuentras, revisa la carpeta de spam.
             </p>
           }
         >
@@ -70,7 +70,7 @@ function Recuperar() {
           <FormTitle
             eyebrow="Recuperar contraseña"
             title="¿Olvidaste tu contraseña?"
-            subtitle="Ingresá el correo asociado a tu cuenta y te enviaremos un enlace para crear una nueva."
+            subtitle="Ingresa el correo asociado a tu cuenta y te enviaremos un enlace para crear una nueva."
           />
           <form className="space-y-4" onSubmit={submit}>
             <Field

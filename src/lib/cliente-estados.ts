@@ -4,11 +4,10 @@
 //        + Eliminado = borrado físico (no es estado almacenado, solo si no tiene movimientos)
 // Compartible entre ambos proyectos (sin dependencias de UI).
 
-import { cuentaDelPais } from "@/lib/cuenta-pais";
 import { getPais } from "@/shared/pais";
 
-/** CBU/CVU en Argentina, CLABE en México. */
-const CUENTA = getPais().codigo === "AR" ? "CBU" : cuentaDelPais();
+/** Cuenta bancaria del cliente (CLABE). */
+const CUENTA = getPais().cuentaBancaria.tipo;
 
 export const ESTADOS_CLIENTE = [
   "pendiente_verificacion",
@@ -175,7 +174,7 @@ export function puedeTransicionar(
       return {
         ok: false,
         motivo:
-          "No se puede eliminar: el usuario tiene movimientos. Solo puede deshabilitarse (BCRA auditoría).",
+          "No se puede eliminar: el usuario tiene movimientos. Solo puede deshabilitarse (se conserva para auditoría).",
       };
     }
     if (from === "eliminado" || from === "deshabilitado") {

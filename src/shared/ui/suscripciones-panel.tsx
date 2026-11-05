@@ -208,7 +208,7 @@ export function SuscripcionesPanel({
             { ...v, idempotency_key: nuevaClave() },
             {
               onSuccess: (s) => {
-                toast.success("Suscripción creada: copiá el link y compártelo con el suscriptor");
+                toast.success("Suscripción creada: copia el link y compártelo con el suscriptor");
                 setNueva(false);
                 if (s.checkout_link) void copiar(s.checkout_link);
               },

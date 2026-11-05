@@ -73,16 +73,12 @@ export function InfoEmpresaCard({ c }: { c: CuentaPantalla }) {
           campo="nombreFantasia"
           fallback={empresaInfo.nombreFantasia}
         />
-        {getPais().codigo === "AR" ? (
-          <Campo c={c} label="CUIT" campo="cuit" fallback={empresaInfo.cuit} />
-        ) : (
-          <Campo
-            c={c}
-            label={getPais().fiscal.moral.etiqueta}
-            campo="tax_id"
-            fallback={empresaInfo.taxId}
-          />
-        )}
+        <Campo
+          c={c}
+          label={getPais().fiscal.moral.etiqueta}
+          campo="tax_id"
+          fallback={empresaInfo.taxId}
+        />
         <div>
           <Label>Tipo de sociedad</Label>
           <select

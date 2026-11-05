@@ -85,12 +85,12 @@ export function DetalleMovimientoDialog({
                 <div className="font-medium truncate">{detalle.senderName}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">CUIT</div>
-                <div className="font-mono text-xs">{detalle.senderCuit}</div>
+                <div className="text-xs text-muted-foreground">RFC</div>
+                <div className="font-mono text-xs">{detalle.senderRfc}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">CBU / CVU</div>
-                <div className="font-mono text-xs truncate">{detalle.senderCbu}</div>
+                <div className="text-xs text-muted-foreground">CLABE</div>
+                <div className="font-mono text-xs truncate">{detalle.senderClabe}</div>
               </div>
             </div>
           </div>
@@ -108,12 +108,12 @@ export function DetalleMovimientoDialog({
                 <div className="font-medium truncate">{detalle.receiverName}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">CUIT</div>
-                <div className="font-mono text-xs">{detalle.receiverCuit}</div>
+                <div className="text-xs text-muted-foreground">RFC</div>
+                <div className="font-mono text-xs">{detalle.receiverRfc}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground">CBU / CVU</div>
-                <div className="font-mono text-xs truncate">{detalle.receiverCbu}</div>
+                <div className="text-xs text-muted-foreground">CLABE</div>
+                <div className="font-mono text-xs truncate">{detalle.receiverClabe}</div>
               </div>
               <div>
                 <div className="text-xs text-muted-foreground">Banco</div>

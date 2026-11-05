@@ -42,21 +42,21 @@ export function SiteHeader() {
             to="/login"
             className={`hidden md:inline-flex h-10 items-center px-4 rounded-sm text-sm font-medium border transition-colors ${outline}`}
           >
-            Iniciá sesión
+            Inicia sesión
           </Link>
           <Link
             to="/login"
             search={{ register: "pf" }}
             className={`hidden sm:inline-flex h-10 items-center px-4 rounded-sm text-sm font-medium border transition-colors ${outline}`}
           >
-            Registrate
+            Regístrate
           </Link>
           <Link
             to="/login"
             search={{ register: "pj" }}
             className="inline-flex h-9 sm:h-10 items-center px-3 sm:px-4 rounded-sm text-sm font-medium text-primary-foreground bg-primary-500 hover:bg-primary-400 transition-colors whitespace-nowrap"
           >
-            <span className="hidden sm:inline">Registrá tu empresa</span>
+            <span className="hidden sm:inline">Registra tu empresa</span>
             <span className="sm:hidden">Registrar</span>
           </Link>
         </div>

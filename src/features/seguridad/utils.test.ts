@@ -11,7 +11,7 @@ import {
 describe("validarCambioPassword", () => {
   it("exige todos los campos, 12 caracteres y que coincidan", () => {
     expect(validarCambioPassword({ actual: "", nueva: "x", repetir: "x" })).toBe(
-      "Completá todos los campos",
+      "Completa todos los campos",
     );
     expect(validarCambioPassword({ actual: "a", nueva: "corta", repetir: "corta" })).toBe(
       "Mínimo 12 caracteres",
@@ -27,12 +27,12 @@ describe("validarCambioPassword", () => {
 
 describe("validarInvitacion", () => {
   it("valida email, duplicados y nombre en ese orden", () => {
-    expect(validarInvitacion("no-es-mail", "", EQUIPO_INICIAL)).toBe("Ingresá un email válido");
+    expect(validarInvitacion("no-es-mail", "", EQUIPO_INICIAL)).toBe("Ingresa un email válido");
     expect(validarInvitacion("carla@empresademo.com", "", EQUIPO_INICIAL)).toBe(
       "Ese email ya es miembro del equipo",
     );
     expect(validarInvitacion("nuevo@x.com", "", EQUIPO_INICIAL)).toBe(
-      "Ingresá el nombre del miembro",
+      "Ingresa el nombre del miembro",
     );
     expect(validarInvitacion("nuevo@x.com", "Juan", EQUIPO_INICIAL)).toBeNull();
   });

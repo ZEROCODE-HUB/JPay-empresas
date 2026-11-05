@@ -13,26 +13,26 @@ const faqs = [
   "¿Cómo transfiero dinero?",
   "¿Cómo agrego una subcuenta?",
   "¿Cómo pago un servicio?",
-  "¿Qué es el débito directo?",
+  "¿Qué es la domiciliación?",
 ];
 
 const botResponses: Record<string, string> = {
   "¿Cómo creo un link de pago?":
-    "Para crear un link de pago: 1) Andá a la sección 'Link de pago' > 'Productos'. 2) Agregá los productos que querés cobrar. 3) Seleccionálos y hacé clic en 'Generar link'. 4) Configurá los métodos de pago y la fecha de expiración. 5) Confirmá y compartí el link con tu cliente.",
+    "Para crear un link de pago: 1) Ve a 'Link de pago' > 'Productos'. 2) Agrega los productos que quieres cobrar. 3) Selecciónalos y haz clic en 'Generar link'. 4) Configura los métodos de pago y la fecha de expiración. 5) Confirma y comparte el link con tu cliente.",
   "¿Cómo transfiero dinero?":
-    "Para transferir dinero: 1) Andá a la sección 'Transferir'. 2) Elegí el tipo de transferencia (única, programada). 3) Ingresá el CBU/CVU o seleccioná un destinatario. 4) Indicá el monto y la subcuenta de origen. 5) Revisá los datos y confirmá.",
+    "Para transferir dinero: 1) Ve a 'Transferencias SPEI'. 2) Captura la CLABE del destinatario o elige uno guardado. 3) Indica el monto y el concepto. 4) Confirma con el código de verificación que te llega por correo.",
   "¿Cómo agrego una subcuenta?":
-    "Podés agregar una subcuenta desde 'Subcuentas' > 'Nueva subcuenta'. Completá el nombre, tipo (Operativa, Recaudación, etc.), responsable y límite diario. Cada subcuenta tiene su propio CBU.",
+    "Puedes agregar una subcuenta desde 'Subcuentas' > 'Nueva subcuenta'. Completa el nombre, el tipo (Operativa, Recaudación, etc.), el responsable y el límite diario. Cada subcuenta lleva su propio saldo.",
   "¿Cómo pago un servicio?":
-    "Andá a 'Pago de servicios'. Encontrás tres vistas: Próximos pagos, Servicios suscritos e Historial. Seleccioná el servicio que querés pagar y hacé clic en 'Pagar'. Podés elegir la subcuenta de origen y la fecha de pago.",
-  "¿Qué es el débito directo?":
-    "El débito directo permite que el cobro de un servicio se realice automáticamente desde tu cuenta en la fecha de vencimiento. Activá la opción 'DD' (Débito Directo) en los servicios compatibles. Solo algunos proveedores lo soportan.",
+    "Ve a 'Pago de servicios'. Encuentras tres vistas: Próximos pagos, Servicios suscritos e Historial. Selecciona el servicio que quieres pagar y haz clic en 'Pagar'. Puedes elegir la subcuenta de origen y la fecha de pago.",
+  "¿Qué es la domiciliación?":
+    "La domiciliación te permite cobrar de forma recurrente con cargo a la CLABE de tu cliente, con su autorización. La configuras desde la sección 'Domiciliación'.",
 };
 
 function botReply(text: string): string {
   return (
     botResponses[text] ||
-    `No encontré una respuesta específica para tu consulta. ¿Podrías reformularla? También podés contactar a nuestro equipo de soporte en ${brand.contact.support}.`
+    `No encontré una respuesta específica para tu consulta. ¿Podrías reformularla? También puedes contactar a nuestro equipo de soporte en ${brand.contact.support}.`
   );
 }
 
@@ -125,7 +125,7 @@ export function SupportBot() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send(input)}
-              placeholder="Escribí tu consulta..."
+              placeholder="Escribe tu consulta..."
               className="h-9 text-sm"
             />
             <BtnPrimary className="h-9 w-9 px-0 shrink-0" onClick={() => send(input)}>
@@ -134,7 +134,7 @@ export function SupportBot() {
           </div>
 
           <div className="px-3 pb-2 text-[10px] text-muted-foreground">
-            También podés escribir a <span className="font-semibold">{brand.contact.support}</span>
+            También puedes escribir a <span className="font-semibold">{brand.contact.support}</span>
           </div>
         </div>
       )}

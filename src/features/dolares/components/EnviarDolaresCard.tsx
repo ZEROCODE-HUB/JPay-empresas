@@ -76,7 +76,7 @@ export function EnviarDolaresCard({
 
   const enviar = () => {
     const importe = parseMonto(monto);
-    if (!usd) return toast.error("Primero convertí pesos a dólares");
+    if (!usd) return toast.error("Primero convierte pesos a dólares");
     if (!d) return toast.error("Elige un beneficiario");
     if (!(importe >= 1)) return toast.error("El mínimo es 1.00 USD");
     if (importe > usd.saldoDisponible) return toast.error("El monto supera tu saldo en dólares");

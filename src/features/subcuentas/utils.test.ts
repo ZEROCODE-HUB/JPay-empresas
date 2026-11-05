@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { setPaisActivo } from "@/shared/pais";
 import type { MovimientoSubcuentaRow } from "@/lib/api/subcuentas";
 import type { Mov, Sub } from "./types";
 import {
@@ -45,8 +44,6 @@ describe("fmtLimite", () => {
   });
   it("acepta el formato del país y plano", () => {
     expect(fmtLimite("50,000.00")).toBe(fmtLimite("50000"));
-    setPaisActivo("AR");
-    expect(fmtLimite("50.000,00")).toBe(fmtLimite("50000"));
     expect(fmtLimite("50000")).not.toBe("Sin límite");
   });
 });

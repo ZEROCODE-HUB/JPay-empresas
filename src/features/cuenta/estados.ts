@@ -14,8 +14,8 @@ export const ESTADO_CUENTA_TONE: Record<EstadoClienteNuevo, Tono> = {
 };
 
 export const TIPO_DOC_LABEL: Record<string, string> = {
-  id_frente: "DNI Frente",
-  id_dorso: "DNI Dorso",
-  servicio: "Comprobante de servicio",
-  selfie: "Selfie con DNI",
+  id_frente: "INE (frente)",
+  id_dorso: "INE (reverso)",
+  servicio: "Comprobante de domicilio",
+  selfie: "Selfie con INE",
 };

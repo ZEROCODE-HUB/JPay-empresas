@@ -48,42 +48,23 @@ export function InfoUsuarioCard({ c }: { c: CuentaPantalla }) {
         <FileText size={14} /> Datos personales
       </h4>
       <div className="grid sm:grid-cols-2 gap-4">
-        {pais.codigo === "AR" ? (
-          <>
-            <div>
-              <Label>CUIL / CUIT</Label>
-              <Input
-                value={form.cuit_cuil ?? dp.cuitCuil}
-                onChange={(e) => setF("cuit_cuil", e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>DNI</Label>
-              {/* `clientes` no tiene columna de DNI: no hay dato real que mostrar. */}
-              <Input value="—" readOnly />
-            </div>
-          </>
-        ) : (
-          <>
-            <div>
-              <Label>{pais.fiscal.fisica.etiqueta}</Label>
-              <Input
-                className="uppercase"
-                value={form.tax_id ?? dp.taxId}
-                onChange={(e) => setF("tax_id", e.target.value)}
-              />
-            </div>
-            {pais.personal && (
-              <div>
-                <Label>{pais.personal.etiqueta}</Label>
-                <Input
-                  className="uppercase"
-                  value={form.id_personal ?? dp.idPersonal}
-                  onChange={(e) => setF("id_personal", e.target.value)}
-                />
-              </div>
-            )}
-          </>
+        <div>
+          <Label>{pais.fiscal.fisica.etiqueta}</Label>
+          <Input
+            className="uppercase"
+            value={form.tax_id ?? dp.taxId}
+            onChange={(e) => setF("tax_id", e.target.value)}
+          />
+        </div>
+        {pais.personal && (
+          <div>
+            <Label>{pais.personal.etiqueta}</Label>
+            <Input
+              className="uppercase"
+              value={form.id_personal ?? dp.idPersonal}
+              onChange={(e) => setF("id_personal", e.target.value)}
+            />
+          </div>
         )}
         <div>
           <Label>Genero</Label>

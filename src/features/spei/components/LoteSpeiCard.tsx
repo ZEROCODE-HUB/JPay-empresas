@@ -272,7 +272,7 @@ export function LoteSpeiCard({
               <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-black-400">
                   {filas.length} pagos · {formatMoney(total)}
-                  {conError > 0 && ` · ${conError} con error (corregí el archivo)`}
+                  {conError > 0 && ` · ${conError} con error (corrige el archivo)`}
                 </p>
                 <div className="flex gap-2">
                   {nuevas.length > 0 && (

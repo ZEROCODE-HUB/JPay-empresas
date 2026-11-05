@@ -192,7 +192,7 @@ function AvisoContracargo({ estado, venceAt }: { estado: string; venceAt: string
       </Badge>
       {abierto && venceAt && (
         <span className="block text-danger-600 mt-0.5">
-          Presentá pruebas en Ecart Pay antes del {formatDateTime(venceAt)}
+          Presenta pruebas en Ecart Pay antes del {formatDateTime(venceAt)}
         </span>
       )}
     </span>

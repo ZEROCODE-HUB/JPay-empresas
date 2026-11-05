@@ -36,7 +36,7 @@ export function useAccionesSubcuenta(setSubs: (fn: (prev: Sub[]) => Sub[]) => vo
   /** Guarda el email editado en el detalle; devuelve false si no se pudo. */
   const guardarEmail = async (id: string, email: string): Promise<boolean> => {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error("Ingresá un email válido");
+      toast.error("Ingresa un email válido");
       return false;
     }
     try {

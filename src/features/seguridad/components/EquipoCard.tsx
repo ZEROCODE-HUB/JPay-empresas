@@ -39,7 +39,7 @@ export function InvitarMiembroDialog({ eq }: { eq: Equipo }) {
       open={eq.inviteOpen}
       onClose={() => eq.setInviteOpen(false)}
       title="Invitar miembro del equipo"
-      description="Enviá una invitación por email para que se una a tu empresa."
+      description="Envía una invitación por email para que se una a tu empresa."
       submitLabel="Enviar invitación"
       onSubmit={eq.invitar}
     >

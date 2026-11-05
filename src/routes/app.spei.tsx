@@ -19,7 +19,7 @@ function Page() {
     <>
       <PageHeader
         title="Transferencias SPEI"
-        description="Recibí dinero en la CLABE de tu cuenta y transferí a cualquier banco de México, uno a uno o en lote."
+        description="Recibe dinero en la CLABE de tu cuenta y transfiere a cualquier banco de México, uno a uno o en lote."
       />
       {cuenta.isLoading || subcuentas.isLoading || destinatarios.isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>

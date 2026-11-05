@@ -237,7 +237,7 @@ export function ReporteCobrosView({ rango, data, isLoading, error, conComercio =
           />
           {data.detalle.length >= LIMITE_DETALLE && (
             <p className="text-xs text-muted-foreground">
-              El detalle se corta en {formatNumber(LIMITE_DETALLE)} cobros: elegí un período más
+              El detalle se corta en {formatNumber(LIMITE_DETALLE)} cobros: elige un período más
               corto para exportarlos todos. Los totales sí incluyen todo el período.
             </p>
           )}

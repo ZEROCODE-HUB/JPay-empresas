@@ -1,5 +1,4 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { cuentaDelPais } from "@/lib/cuenta-pais";
 import { getPais } from "@/shared/pais";
 import {
   AuthShell,
@@ -70,18 +69,18 @@ function EnProceso() {
               {norm === "registrado" &&
                 "Tu documentacion esta en revision. Permaneceras en Registrado hasta que Admin apruebe."}
               {norm === "preactivado" &&
-                `Documentacion aprobada (Preactivado). Falta generar tu ${getPais().codigo === "AR" ? "CBU" : cuentaDelPais()} y cargar tu comision para activar.`}
-              {norm === "activado" && "Tu cuenta ya esta Activada. Podes operar."}
+                `Documentación aprobada (Preactivado). Falta generar tu ${getPais().cuentaBancaria.tipo} y cargar tu comisión para activar.`}
+              {norm === "activado" && "Tu cuenta ya está Activada. Ya puedes operar."}
               {norm === "suspendido" &&
                 "Tu cuenta esta Suspendida temporalmente. Contacta a soporte."}
               {norm === "deshabilitado" &&
-                "Tu cuenta fue Deshabilitada. CBU cancelado, historial conservado para auditoria BCRA."}
+                "Tu cuenta fue Deshabilitada. La CLABE quedó cancelada y el historial se conserva para auditoría."}
               {norm === "eliminado" && "Tu cuenta fue Eliminada."}
               {!norm &&
                 "Tu alta fue registrada y esta siendo validada por nuestro equipo de compliance. Este proceso puede demorar hasta 24 horas habiles. Te avisaremos por correo cuando quede habilitada."}
             </p>
             <p className="mt-3 text-xs text-black-400">
-              Si tenés algún problema,{" "}
+              Si tienes algún problema,{" "}
               <a
                 href={mailto(brand.contact.support)}
                 className="underline underline-offset-2 hover:text-primary-ink"

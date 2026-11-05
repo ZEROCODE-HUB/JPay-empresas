@@ -11,7 +11,7 @@ export function PasosDocumentos({ w }: { w: KycWizard }) {
       {step === 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-black-800">
-            Cargá tu {doc} de frente y de reverso
+            Sube tu {doc} de frente y de reverso
           </h2>
           <FileUpload
             label={`${doc} frente`}
@@ -30,7 +30,7 @@ export function PasosDocumentos({ w }: { w: KycWizard }) {
       {step === 1 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-black-800">
-            Cargá un comprobante de domicilio a tu nombre
+            Sube un comprobante de domicilio a tu nombre
           </h2>
           <FileUpload
             label="Recibo de servicio (luz, agua, teléfono)"
@@ -49,7 +49,7 @@ export function PasosDocumentos({ w }: { w: KycWizard }) {
 
       {step === 2 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-black-800">Cargá una selfie</h2>
+          <h2 className="text-lg font-semibold text-black-800">Sube una selfie</h2>
           <FileUpload
             label="Selfie"
             hint="De frente, en un lugar bien iluminado, sin anteojos ni sombreros."

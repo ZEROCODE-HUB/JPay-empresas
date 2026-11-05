@@ -10,7 +10,7 @@ const METODOS: { id: MetodoCheckout; label: string; detalle: string; icon: typeo
   {
     id: "tarjeta",
     label: "Tarjeta",
-    detalle: "Pagás en la página segura de Ecart Pay y volvés acá al terminar.",
+    detalle: "Pagas en la página segura de Ecart Pay y regresas aquí al terminar.",
     icon: CreditCard,
   },
   {

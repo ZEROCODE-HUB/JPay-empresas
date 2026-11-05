@@ -110,7 +110,7 @@ function ResetPassword() {
         <SuccessCard
           variant="error"
           title="Enlace no válido"
-          body={<p>{errMsg} Solicitá uno nuevo para continuar.</p>}
+          body={<p>{errMsg} Solicita uno nuevo para continuar.</p>}
         >
           <PrimaryButton onClick={() => nav({ to: "/recuperar" })}>
             Solicitar nuevo enlace
@@ -121,7 +121,7 @@ function ResetPassword() {
       {mode === "done" && (
         <SuccessCard
           title="Contraseña actualizada"
-          body={<p>Tu contraseña se cambió correctamente. Ya podés iniciar sesión con la nueva.</p>}
+          body={<p>Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con la nueva.</p>}
         >
           <PrimaryButton onClick={() => nav({ to: "/login" })}>Iniciar sesión</PrimaryButton>
         </SuccessCard>
@@ -131,8 +131,8 @@ function ResetPassword() {
         <>
           <FormTitle
             eyebrow="Nueva contraseña"
-            title="Creá tu nueva contraseña"
-            subtitle="Elegí una contraseña segura que no hayas utilizado antes."
+            title="Crea tu nueva contraseña"
+            subtitle="Elige una contraseña segura que no hayas utilizado antes."
           />
           <form className="space-y-4" onSubmit={submit}>
             <PasswordField label="Nueva contraseña" value={pw} onChange={setPw} showRules />

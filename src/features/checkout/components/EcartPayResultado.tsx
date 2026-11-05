@@ -32,7 +32,7 @@ export function EcartPayResultado({
         <XCircle className="text-danger-600" size={32} />
         <p className="font-bold text-lg mt-2">No pudimos confirmar el pago</p>
         <p className="text-sm text-muted-foreground mt-1">
-          {(error as Error | null)?.message ?? "Intentá de nuevo en unos minutos."}
+          {(error as Error | null)?.message ?? "Intenta de nuevo en unos minutos."}
         </p>
       </CenterCard>
     );
@@ -96,12 +96,12 @@ function InstruccionesPago({ pago, data }: { pago: PagoEcart; data: CheckoutLink
     <CenterCard>
       <Clock className="text-amber-600" size={30} />
       <p className="font-bold text-lg mt-1">
-        {oxxo ? "Paga en efectivo en OXXO" : "Transferí por SPEI para completar el pago"}
+        {oxxo ? "Paga en efectivo en OXXO" : "Transfiere por SPEI para completar el pago"}
       </p>
       <p className="text-sm text-muted-foreground mt-1">
         {oxxo
-          ? "Mostrá la referencia o el código de barras en caja. El pago es solo en efectivo."
-          : "Transferí el monto exacto a esta CLABE desde tu banco. Es única para este pago."}
+          ? "Muestra la referencia o el código de barras en caja. El pago es solo en efectivo."
+          : "Transfiere el monto exacto a esta CLABE desde tu banco. Es única para este pago."}
       </p>
       <div className="text-2xl font-black tracking-tight text-[color:var(--brand-primary-700)] mt-3">
         {formatMoney(pago.monto)}

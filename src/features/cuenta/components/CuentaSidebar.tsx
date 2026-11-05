@@ -39,8 +39,8 @@ function LimitesCard({ c }: { c: CuentaPantalla }) {
 }
 
 /**
- * Columna derecha de "Mi cuenta": CVU y límites. Plan, facturación, representantes
- * legales y constancia de CBU no tienen datos ni funciones en el backend todavía.
+ * Columna derecha de "Mi cuenta": CLABE y límites. Plan, facturación, representantes
+ * legales y constancia de la cuenta no tienen datos ni funciones en el backend todavía.
  */
 export function CuentaSidebar({ c }: { c: CuentaPantalla }) {
   return (
@@ -48,16 +48,12 @@ export function CuentaSidebar({ c }: { c: CuentaPantalla }) {
       <Card>
         <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
           <Landmark size={16} className="shrink-0 text-primary-ink" />
-          Informacion de CVU
+          Cuenta CLABE
         </h3>
         <div className="text-xs space-y-2">
           <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">CVU</span>
-            <span className="font-mono font-semibold truncate">{c.cbu.cbu}</span>
-          </div>
-          <div className="flex justify-between gap-2">
-            <span className="text-muted-foreground">Alias</span>
-            <span className="font-mono font-semibold truncate">{c.cbu.alias}</span>
+            <span className="text-muted-foreground">CLABE</span>
+            <span className="font-mono font-semibold truncate">{c.cuenta.clabe}</span>
           </div>
         </div>
       </Card>

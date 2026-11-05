@@ -33,7 +33,7 @@ type Props = {
   personas: PersonaKyb[];
   /** Lo que todavía falta para el alta (lo calcula el servidor). */
   faltan?: string[];
-  /** Con el alta ya enviada o aprobada, los datos no se cambian desde acá. */
+  /** Con el alta ya enviada o aprobada, los datos no se cambian desde aquí. */
   soloLectura?: boolean;
   onGuardarEmpresa: (e: EmpresaKyb) => Promise<void>;
   onGuardarPersona: (p: PersonaKyb) => Promise<void>;

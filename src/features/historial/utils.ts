@@ -10,8 +10,8 @@ export type Mov = {
   tipo: "ingreso" | "egreso";
   categoria: string;
   titular: string;
-  cuit: string;
-  cbuCvu: string;
+  rfc: string;
+  clabe: string;
   fecha: string;
   /** Fecha cruda (ISO) para el comprobante, que la formatea él mismo. */
   fechaISO: string;
@@ -26,21 +26,21 @@ export type Mov = {
   canal: "Web" | "API" | "Movil";
   subcuenta: string;
   senderName: string;
-  senderCuit: string;
-  senderCbu: string;
+  senderRfc: string;
+  senderClabe: string;
   receiverName: string;
-  receiverCuit: string;
-  receiverCbu: string;
+  receiverRfc: string;
+  receiverClabe: string;
   receiverBanco: string;
   /**
    * La contraparte del movimiento, sin importar el sentido: en un egreso es el
    * destinatario y en un ingreso es quien transfirio.
    */
   contraparteNombre: string;
-  contraparteCuit: string;
+  contraparteRfc: string;
   contraparteBanco: string;
-  /** CBU/CVU de la cuenta PROPIA que intervino (la de origen en un egreso). */
-  subcuentaCbu: string;
+  /** CLABE de la cuenta PROPIA que intervino (la de origen en un egreso). */
+  subcuentaClabe: string;
 };
 
 export type MovRow = {
@@ -99,8 +99,8 @@ export function mapMov(r: MovRow): Mov {
     tipo,
     categoria,
     titular: r.legajo,
-    cuit: "—",
-    cbuCvu: r.cvu ?? "—",
+    rfc: "—",
+    clabe: r.cvu ?? "—",
     fecha: formatDateTime(r.fecha),
     fechaISO: r.fecha ?? "",
     monto: Number(r.monto_operacion) || 0,
@@ -114,17 +114,17 @@ export function mapMov(r: MovRow): Mov {
     canal: "Web",
     subcuenta: "—",
     senderName: tipo === "ingreso" ? r.legajo : brand.name,
-    senderCuit: "—",
-    senderCbu: r.cvu ?? "—",
+    senderRfc: "—",
+    senderClabe: r.cvu ?? "—",
     receiverName: tipo === "ingreso" ? brand.name : (r.destinatario_nombre ?? ""),
-    receiverCuit: tipo === "ingreso" ? "—" : (r.destinatario_cuit ?? ""),
-    receiverCbu: r.cvu ?? "—",
+    receiverRfc: tipo === "ingreso" ? "—" : (r.destinatario_cuit ?? ""),
+    receiverClabe: r.cvu ?? "—",
     receiverBanco: tipo === "ingreso" ? "" : (r.destinatario_banco ?? ""),
     // Mismo dato sin importar el sentido: el comprobante lo usa para la contraparte.
     contraparteNombre: r.destinatario_nombre ?? "",
-    contraparteCuit: r.destinatario_cuit ?? "",
+    contraparteRfc: r.destinatario_cuit ?? "",
     contraparteBanco: r.destinatario_banco ?? "",
-    subcuentaCbu: (Array.isArray(r.subcuentas) ? r.subcuentas[0]?.cbu : r.subcuentas?.cbu) ?? "",
+    subcuentaClabe: (Array.isArray(r.subcuentas) ? r.subcuentas[0]?.cbu : r.subcuentas?.cbu) ?? "",
   };
 }
 
@@ -149,24 +149,28 @@ export function movDeOperacion(r: OperacionRow): Mov {
   });
 }
 
-export type ClienteComprobante = { nombre: string; cuit: string; cbu: string };
+export type ClienteComprobante = { nombre: string; rfc: string; clabe: string };
 
 /**
  * Datos del comprobante de un movimiento del historial.
  *
  * Solo se completan los datos que realmente tenemos: la contraparte de una
- * transferencia (nombre y CUIT del destinatario) no se guarda en `movimientos`,
+ * transferencia (nombre y RFC del destinatario) no se guarda en `movimientos`,
  * así que va vacía — nunca se inventa.
  */
 export function comprobanteDeMov(m: Mov, cliente: ClienteComprobante): DatosComprobante {
   const esEgreso = m.tipo === "egreso";
   // La cuenta propia sale del movimiento (migracion 1020); si es viejo y no la
-  // tiene, se usa el CBU del cliente que se pudo resolver.
-  const yo = { nombre: cliente.nombre, cuit: cliente.cuit, cbu: m.subcuentaCbu || cliente.cbu };
+  // tiene, se usa la CLABE del cliente que se pudo resolver.
+  const yo = {
+    nombre: cliente.nombre,
+    rfc: cliente.rfc,
+    clabe: m.subcuentaClabe || cliente.clabe,
+  };
   const otro = {
     nombre: m.contraparteNombre,
-    cuit: m.contraparteCuit,
-    cbu: m.cbuCvu === "—" ? "" : m.cbuCvu,
+    rfc: m.contraparteRfc,
+    clabe: m.clabe === "—" ? "" : m.clabe,
     banco: m.contraparteBanco || undefined,
   };
   return {
@@ -199,13 +203,13 @@ export function montoDetalleTexto(m: Mov): string {
 }
 
 /**
- * CBU para el comprobante: si el cliente tiene una sola cuenta (o todas con
- * el mismo CVU, como en el sandbox) se usa esa; si tiene varias distintas no
+ * CLABE para el comprobante: si el cliente tiene una sola cuenta (o todas con
+ * la misma CLABE, como en el sandbox) se usa esa; si tiene varias distintas no
  * se puede saber cual se uso, asi que queda vacio (el movimiento no la guarda).
  */
-export function cbuUnico(subcuentas: Array<{ cbu: string | null }>): string {
-  const cbues = [...new Set(subcuentas.map((s) => s.cbu).filter(Boolean))];
-  return cbues.length === 1 ? String(cbues[0]) : "";
+export function clabeUnica(subcuentas: Array<{ cbu: string | null }>): string {
+  const clabes = [...new Set(subcuentas.map((s) => s.cbu).filter(Boolean))];
+  return clabes.length === 1 ? String(clabes[0]) : "";
 }
 
 // ---------------------------------------------------------------------------

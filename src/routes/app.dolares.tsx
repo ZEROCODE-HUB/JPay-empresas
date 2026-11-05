@@ -14,13 +14,13 @@ function Page() {
   const { cuenta, subcuentas, destinatarios, transferencias } = useCuentaSpei();
   const { conversiones } = useDolares();
   const error = cuenta.error ?? subcuentas.error ?? destinatarios.error;
-  // Los dólares son por la cuenta de JPay: un comercio con instancia Cobre propia no los usa acá.
+  // Los dólares son por la cuenta de JPay: un comercio con instancia Cobre propia no los usa aquí.
   const habilitada = !!cuenta.data?.cuenta && !cuenta.data.instanciaPropia;
   return (
     <>
       <PageHeader
         title="Dólares"
-        description="Convertí pesos a dólares y pagá a cuentas en Estados Unidos (Fedwire) o en otros países (SWIFT)."
+        description="Convierte pesos a dólares y paga a cuentas en Estados Unidos (Fedwire) o en otros países (SWIFT)."
       />
       {cuenta.isLoading || subcuentas.isLoading || destinatarios.isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>

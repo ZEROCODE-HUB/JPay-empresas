@@ -82,7 +82,7 @@ export function RegisterForm({
         value={f.email}
         onChange={(e) => setF({ ...f, email: e.target.value })}
         placeholder="nombre@dominio.com"
-        error={touched && !emailOk ? "Ingresá un email válido" : undefined}
+        error={touched && !emailOk ? "Ingresa un email válido" : undefined}
       />
       <PasswordField
         label="Contraseña"
@@ -126,13 +126,13 @@ export function RegisterForm({
 
       <div className="text-center text-xs text-black-400 space-y-2 pt-2">
         <p>
-          ¿Ya tenés una cuenta?{" "}
+          ¿Ya tienes una cuenta?{" "}
           <button
             type="button"
             onClick={onSwitchToLogin}
             className="text-primary-ink underline underline-offset-2 hover:opacity-80"
           >
-            Iniciá sesión
+            Inicia sesión
           </button>
         </p>
         <p>
@@ -142,7 +142,7 @@ export function RegisterForm({
               search={{ register: "pf" }}
               className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors"
             >
-              ¿Sos persona física? Registrate como persona física
+              ¿Eres persona física? Regístrate como persona física
             </Link>
           ) : (
             <Link
@@ -150,7 +150,7 @@ export function RegisterForm({
               search={{ register: "pj" }}
               className="text-black-400 hover:text-primary-ink underline underline-offset-2 transition-colors"
             >
-              ¿Querés registrar tu empresa? Registrar empresa
+              ¿Quieres registrar tu empresa? Registrar empresa
             </Link>
           )}
         </p>

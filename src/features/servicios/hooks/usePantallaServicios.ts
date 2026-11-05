@@ -26,7 +26,7 @@ export function usePantallaServicios() {
   const [hBusqueda, setHBusqueda] = useState("");
   const [busqueda, setBusqueda] = useState("");
   const [sectionTab, setSectionTab] = useState<SectionTab>("proximos");
-  // "Ver todos" de cada sección; vive acá para que no se pierda al cambiar de sección.
+  // "Ver todos" de cada sección; vive aquí para que no se pierda al cambiar de sección.
   const [verTodos, setVerTodos] = useState<Record<SectionTab, boolean>>({
     proximos: false,
     suscritos: false,

@@ -224,7 +224,7 @@ export function validarPersonaKyb(p: PersonaKyb): string | null {
   const id = p.idNumero.trim().toUpperCase();
   const err = p.idTipo === "curp" ? validarCurp(id) : validarRfc(id);
   if (err) return err;
-  if (!p.nacionalidades.length) return "Elegí al menos una nacionalidad";
+  if (!p.nacionalidades.length) return "Elige al menos una nacionalidad";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(p.fechaNacimiento)) return "Falta la fecha de nacimiento";
   const edad = (Date.now() - Date.parse(p.fechaNacimiento)) / (365.25 * 86_400_000);
   if (!(edad >= 18 && edad < 120)) return "La persona debe ser mayor de edad";

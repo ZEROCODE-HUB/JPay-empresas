@@ -7,7 +7,7 @@ export function DemoVerifyBox({ url }: { url: string }) {
     <div className="mt-4 rounded-md border border-highlight-300 bg-highlight-50 p-4 text-left">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-black-800">Modo demo</p>
       <p className="mt-1 text-xs text-black-500">
-        El envío de correos todavía no está configurado. Validá tu cuenta desde acá:
+        El envío de correos todavía no está configurado. Valida tu cuenta desde aquí:
       </p>
       <a
         href={url}

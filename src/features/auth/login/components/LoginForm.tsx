@@ -46,7 +46,7 @@ export function LoginForm({
             search={{ register: "pf" }}
             className="text-primary-ink underline underline-offset-2 hover:opacity-80"
           >
-            Registrate
+            Regístrate
           </Link>
         </p>
         <p>

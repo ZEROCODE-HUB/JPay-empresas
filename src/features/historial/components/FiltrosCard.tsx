@@ -105,19 +105,19 @@ export function FiltrosCard({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">CBU / CVU</label>
+            <label className="block text-xs text-muted-foreground mb-1">CLABE</label>
             <Input
-              placeholder="Buscar por CBU/CVU..."
-              value={f.buscarCbu}
-              onChange={(e) => f.setBuscarCbu(e.target.value)}
+              placeholder="Buscar por CLABE..."
+              value={f.buscarClabe}
+              onChange={(e) => f.setBuscarClabe(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">CUIT</label>
+            <label className="block text-xs text-muted-foreground mb-1">RFC</label>
             <Input
-              placeholder="Buscar por CUIT..."
-              value={f.buscarCuit}
-              onChange={(e) => f.setBuscarCuit(e.target.value)}
+              placeholder="Buscar por RFC..."
+              value={f.buscarRfc}
+              onChange={(e) => f.setBuscarRfc(e.target.value)}
             />
           </div>
           <div>

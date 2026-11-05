@@ -104,7 +104,7 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
         message={
           <>
             JPay deja de cobrar en tu cuenta de Ecart Pay y borra las claves guardadas. Para quitar
-            también el permiso, revocá la aplicación JPay desde tu panel de Ecart Pay.
+            también el permiso, revoca la aplicación JPay desde tu panel de Ecart Pay.
           </>
         }
         onConfirm={() =>

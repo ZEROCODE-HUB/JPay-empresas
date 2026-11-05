@@ -114,7 +114,7 @@ export function useDetalleLote(id: string) {
       await navigator.clipboard.writeText(linkParaCopiar(url));
       toast.success("Link copiado al portapapeles");
     } catch {
-      toast.error("No se pudo copiar. Seleccioná el link y copialo manualmente.");
+      toast.error("No se pudo copiar. Selecciona el link y cópialo manualmente.");
     }
   };
 

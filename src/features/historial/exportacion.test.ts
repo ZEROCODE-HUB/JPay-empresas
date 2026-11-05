@@ -40,8 +40,8 @@ const f = {
   tipos: null,
   tipoLinea: null,
   subcuenta: "Caja",
-  cbu: "",
-  cuit: "",
+  clabe: "",
+  rfc: "",
   txid: "",
   titular: "",
 };

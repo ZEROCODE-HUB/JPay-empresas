@@ -6,7 +6,7 @@ export const Route = createFileRoute("/registro")({
   head: () => ({
     meta: [
       { title: pageTitle("Crear una cuenta") },
-      { name: "description", content: `Registrate en ${brand.name}.` },
+      { name: "description", content: `Regístrate en ${brand.name}.` },
       { name: "robots", content: "noindex" },
     ],
   }),

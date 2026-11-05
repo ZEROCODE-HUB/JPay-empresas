@@ -57,7 +57,7 @@ export function FileUpload({
               {isExisting && <span className="text-[10px] text-black-400">(existente)</span>}
             </p>
             <p className="text-[11px] text-black-400">
-              {isExisting ? "Se mantendrá si no la reemplazás" : "Listo para enviar"}
+              {isExisting ? "Se mantendrá si no la reemplazas" : "Listo para enviar"}
             </p>
             <p className="text-[11px] text-black-400 truncate">{value.name}</p>
           </div>
@@ -113,7 +113,7 @@ export function FileUpload({
         </div>
         <span className="text-sm font-semibold text-black-700">
           <UploadCloud size={14} className="inline mr-1" />
-          Arrastrá o hacé clic para subir
+          Arrastra o haz clic para subir
         </span>
         {hint && <span className="text-xs text-black-400">{hint}</span>}
         <span className="text-[10px] text-black-300 uppercase tracking-wider">
