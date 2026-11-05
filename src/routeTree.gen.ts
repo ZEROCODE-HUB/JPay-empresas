@@ -54,6 +54,7 @@ import { Route as RegistroEmpresaRouteImport } from './routes/registro.empresa'
 import { Route as RegistroExitoRouteImport } from './routes/registro.exito'
 import { Route as RegistroValidacionExitosaRouteImport } from './routes/registro.validacion-exitosa'
 import { Route as RegistroValidarEmailRouteImport } from './routes/registro.validar-email'
+import { Route as SuscripcionListaRouteImport } from './routes/suscripcion.lista'
 import { Route as AppCobrosIndexRouteImport } from './routes/app.cobros.index'
 import { Route as AppCobrosGestionRouteImport } from './routes/app.cobros.gestion'
 import { Route as AppCobrosNuevoRouteImport } from './routes/app.cobros.nuevo'
@@ -291,6 +292,11 @@ const RegistroValidarEmailRoute = RegistroValidarEmailRouteImport.update({
   path: '/validar-email',
   getParentRoute: () => RegistroRoute,
 } as any)
+const SuscripcionListaRoute = SuscripcionListaRouteImport.update({
+  id: '/suscripcion/lista',
+  path: '/suscripcion/lista',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppCobrosIndexRoute = AppCobrosIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
   '/registro/validar-email': typeof RegistroValidarEmailRoute
+  '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
@@ -436,6 +443,7 @@ export interface FileRoutesByTo {
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
   '/registro/validar-email': typeof RegistroValidarEmailRoute
+  '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app': typeof AppIndexRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
@@ -493,6 +501,7 @@ export interface FileRoutesById {
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
   '/registro/validar-email': typeof RegistroValidarEmailRoute
+  '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/registro/exito'
     | '/registro/validacion-exitosa'
     | '/registro/validar-email'
+    | '/suscripcion/lista'
     | '/app/'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
@@ -605,6 +615,7 @@ export interface FileRouteTypes {
     | '/registro/exito'
     | '/registro/validacion-exitosa'
     | '/registro/validar-email'
+    | '/suscripcion/lista'
     | '/app'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
@@ -661,6 +672,7 @@ export interface FileRouteTypes {
     | '/registro/exito'
     | '/registro/validacion-exitosa'
     | '/registro/validar-email'
+    | '/suscripcion/lista'
     | '/app/'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
@@ -690,6 +702,7 @@ export interface RootRouteChildren {
   OnboardingEnProcesoRoute: typeof OnboardingEnProcesoRoute
   OnboardingKycRoute: typeof OnboardingKycRoute
   PCodeRoute: typeof PCodeRoute
+  SuscripcionListaRoute: typeof SuscripcionListaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1009,6 +1022,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistroValidarEmailRouteImport
       parentRoute: typeof RegistroRoute
     }
+    '/suscripcion/lista': {
+      id: '/suscripcion/lista'
+      path: '/suscripcion/lista'
+      fullPath: '/suscripcion/lista'
+      preLoaderRoute: typeof SuscripcionListaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/cobros/': {
       id: '/app/cobros/'
       path: '/'
@@ -1214,6 +1234,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingEnProcesoRoute: OnboardingEnProcesoRoute,
   OnboardingKycRoute: OnboardingKycRoute,
   PCodeRoute: PCodeRoute,
+  SuscripcionListaRoute: SuscripcionListaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

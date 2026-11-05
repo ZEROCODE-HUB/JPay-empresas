@@ -51,6 +51,17 @@ export function urlAvisos(): string {
 export const esAmbiguo = (e: unknown) =>
   !(e instanceof EcartPayError) || e.status >= 500 || e.status === 408 || e.status === 429;
 
+/** Página del portal a la que Ecart Pay manda al suscriptor después de poner su tarjeta. */
+export function urlVueltaSuscriptor(): string {
+  let base = "";
+  try {
+    base = Deno.env.get("APP_URL") ?? "";
+  } catch {
+    // Sin permiso de entorno (tests): la URL queda relativa.
+  }
+  return `${base.replace(/\/+$/, "")}/suscripcion/lista`;
+}
+
 // ── Customer ─────────────────────────────────────────────────────────────────
 
 /** Customer de Ecart Pay para ese correo (lo crea la primera vez). */
@@ -175,6 +186,8 @@ export function suscripcionAEcart(customerId: string, d: NuevaSuscripcion): Obj 
     // Que Ecart Pay también avise al suscriptor (invitación, cobro fallido) por correo.
     mixed_management: true,
     notify_url: urlAvisos(),
+    // Obligatorio para Ecart Pay (422 "redirect_url is required" sin él).
+    redirect_url: urlVueltaSuscriptor(),
   };
 }
 

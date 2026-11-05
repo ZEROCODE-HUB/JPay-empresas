@@ -81,6 +81,7 @@ Deno.test("suscripción: cuerpo para Ecart Pay (merchant management, sin benefic
   assertEquals(b.trial_period_days, 7);
   assertEquals(b.billing_cycle, { day: 15, month: 1 });
   assertEquals("end_date" in b, false);
+  assertEquals(String(b.redirect_url).endsWith("/suscripcion/lista"), true);
 });
 
 Deno.test("suscripción: estado y link desde la respuesta de Ecart Pay", () => {
