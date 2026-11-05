@@ -75,8 +75,7 @@ export function ClabesCard({
             </p>
           ) : (
             <p className="text-black-400">
-              Cobre está revisando los datos de tu empresa. Cuando la apruebe verás aquí tu
-              CLABE.
+              Cobre está revisando los datos de tu empresa. Cuando la apruebe verás aquí tu CLABE.
             </p>
           )}
           {cuenta.faltan.length > 0 && !cuenta.alta && (

@@ -179,11 +179,7 @@ export function csvAFilas(text: string): FilaCruda[] | null {
   return rawRows;
 }
 
-const MEDIOS_VALIDOS: readonly MedioPago[] = [
-  "TRANSFERENCIA",
-  "TARJETA_CREDITO",
-  "TARJETA_DEBITO",
-];
+const MEDIOS_VALIDOS: readonly MedioPago[] = ["TRANSFERENCIA", "TARJETA_CREDITO", "TARJETA_DEBITO"];
 
 /**
  * Interpreta la columna `medios_de_pago` (p. ej. `TRANSFERENCIA|TARJETA_DEBITO`; acepta `|`, `,`, `;`

@@ -121,7 +121,9 @@ function ResetPassword() {
       {mode === "done" && (
         <SuccessCard
           title="Contraseña actualizada"
-          body={<p>Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con la nueva.</p>}
+          body={
+            <p>Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con la nueva.</p>
+          }
         >
           <PrimaryButton onClick={() => nav({ to: "/login" })}>Iniciar sesión</PrimaryButton>
         </SuccessCard>

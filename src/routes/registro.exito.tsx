@@ -72,7 +72,7 @@ function RegistroExito() {
               </button>
               . ¿Tienes un problema?{" "}
               <Link to="/" className="underline underline-offset-2 hover:text-primary-ink">
-                Contactanos
+                Contáctanos
               </Link>
               .
             </p>

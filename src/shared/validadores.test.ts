@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  digitoClabe,
-  validarClabe,
-  validarCurp,
-  validarRfc,
-} from "./validadores";
+import { digitoClabe, validarClabe, validarCurp, validarRfc } from "./validadores";
 
 describe("validarRfc", () => {
   it("acepta RFC reales de persona física y moral", () => {

@@ -38,7 +38,6 @@ const ALTO: Record<Bloque["t"], number> = {
   pie: 30,
 };
 
-
 function bloques(d: DatosComprobante): Bloque[] {
   return [
     { t: "encabezado", titulo: "Enviaste dinero", fecha: formatearFechaComprobante(d.fecha) },

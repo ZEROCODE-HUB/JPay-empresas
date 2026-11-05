@@ -4,7 +4,7 @@ import type { useDetalleSubcuenta } from "../hooks/useDetalleSubcuenta";
 import type { EstadoSub, Sub } from "../types";
 
 const confirmAction = (accion: string, detalle: string): boolean =>
-  window.confirm(`¿Estas seguro de que queres ${accion}?\n\n${detalle}`);
+  window.confirm(`¿Seguro que quieres ${accion}?\n\n${detalle}`);
 
 type Props = {
   sub: Sub;

@@ -32,7 +32,7 @@ function Campo({
   );
 }
 
-/** Dirección, ciudad, provincia y código postal (PF y PJ). */
+/** Dirección, ciudad, estado y código postal (PF y PJ). El estado vive en la columna `provincia`. */
 export function InfoAdicionalCard({ c }: { c: CuentaPantalla }) {
   const { dir } = c;
   return (
@@ -49,7 +49,12 @@ export function InfoAdicionalCard({ c }: { c: CuentaPantalla }) {
           className="sm:col-span-2"
         />
         <Campo c={c} label="Ciudad" campo="ciudad" fallback={dir.ciudad} />
-        <Campo c={c} label="Provincia" campo="provincia" fallback={dir.provincia} />
+        <Campo
+          c={c}
+          label={getPais().domicilio.region}
+          campo="provincia"
+          fallback={dir.provincia}
+        />
         <Campo c={c} label="Codigo Postal" campo="cp" fallback={dir.cp} />
         <BotonesGuardar c={c} className="sm:col-span-2 flex gap-2 justify-end" />
       </div>

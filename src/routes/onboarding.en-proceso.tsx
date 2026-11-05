@@ -85,7 +85,7 @@ function EnProceso() {
                 href={mailto(brand.contact.support)}
                 className="underline underline-offset-2 hover:text-primary-ink"
               >
-                contactanos
+                contáctanos
               </a>
               .
             </p>

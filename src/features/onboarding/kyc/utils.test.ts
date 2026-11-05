@@ -12,7 +12,7 @@ const archivo = { name: "x.png", url: "blob:x" };
 const addr: Domicilio = {
   direccion: "Calle 1",
   direccion2: "",
-  ciudad: "CABA",
+  ciudad: "Guadalajara",
   provincia: "Jalisco",
   cp: "1000",
 };

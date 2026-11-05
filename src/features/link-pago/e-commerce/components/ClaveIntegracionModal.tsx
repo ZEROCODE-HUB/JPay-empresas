@@ -42,8 +42,8 @@ export function ClaveIntegracionModal({ s }: { s: IntegracionesEcom }) {
             />
           </div>
           <div className="text-xs text-muted-foreground pt-1 leading-relaxed">
-            Las credenciales se cifran y almacenan de forma segura. Podes actualizarlas en cualquier
-            momento.
+            Las credenciales se cifran y almacenan de forma segura. Puedes actualizarlas en
+            cualquier momento.
           </div>
           <BtnOutline
             className="w-full mt-2"

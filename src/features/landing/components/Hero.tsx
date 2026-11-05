@@ -60,7 +60,7 @@ export function Hero() {
                 href="#contacto"
                 className="inline-flex h-12 items-center px-7 rounded-sm text-sm font-medium text-white border border-white/40 hover:bg-white/10 transition-colors"
               >
-                Contactanos
+                Contáctanos
               </a>
             </div>
           </div>

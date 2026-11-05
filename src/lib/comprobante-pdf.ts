@@ -7,7 +7,6 @@ import {
   type DatosComprobante,
 } from "./comprobante";
 
-
 /** Descargable con el mismo comprobante simple que se comparte como imagen. */
 export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   const doc = new jsPDF();

@@ -1,11 +1,5 @@
 import type { ReactNode } from "react";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Link2,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Link2, Users, Wallet } from "lucide-react";
 import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import type { KpisDashboard } from "../utils";

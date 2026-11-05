@@ -7,13 +7,7 @@
  * Para sumar un país: agregar su configuración a `PAISES` y la fila en `paises`.
  */
 import brandData from "@/brand/brand.json";
-import {
-  normalizarId,
-  validarClabe,
-  validarCurp,
-  validarRfc,
-  type Validador,
-} from "./validadores";
+import { normalizarId, validarClabe, validarCurp, validarRfc, type Validador } from "./validadores";
 
 export type CodigoPais = "MX";
 export type TipoPersona = "fisica" | "moral";

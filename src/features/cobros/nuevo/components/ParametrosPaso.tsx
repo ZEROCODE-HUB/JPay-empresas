@@ -3,11 +3,7 @@ import { BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-
 import { medioPagoLabels, type MedioPago } from "@/lib/api/cobros-masivos";
 import type { ParametrosLote } from "../../utils";
 
-const MEDIOS_DISPONIBLES: MedioPago[] = [
-  "TRANSFERENCIA",
-  "TARJETA_CREDITO",
-  "TARJETA_DEBITO",
-];
+const MEDIOS_DISPONIBLES: MedioPago[] = ["TRANSFERENCIA", "TARJETA_CREDITO", "TARJETA_DEBITO"];
 
 /** Paso 1: nombre, período, día de pago, tasa, vencimientos y medios de pago. */
 export function ParametrosPaso({
