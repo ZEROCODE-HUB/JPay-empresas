@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
-import { enviarOtpTransferencia } from "@/lib/api/transferencias";
+import { enviarOtpTransferencia } from "@/lib/api/otp";
 import type { DestinatarioSpei, LoteSpei, SubcuentaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney, parseMonto } from "@/shared/format";
 import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";

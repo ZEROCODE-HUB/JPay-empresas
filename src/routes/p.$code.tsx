@@ -1,12 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Lock } from "lucide-react";
+import { AlertCircle, Lock } from "lucide-react";
 import { BrandLogo } from "@/components/brand-logo";
 import { CheckoutEstado } from "@/features/checkout/components/CheckoutEstado";
 import { CobreSpeiPagoCard } from "@/features/checkout/components/CobreSpeiPagoCard";
 import { EcartPayPagoCard } from "@/features/checkout/components/EcartPayPagoCard";
 import { EcartPayResultado } from "@/features/checkout/components/EcartPayResultado";
-import { PagoCard } from "@/features/checkout/components/PagoCard";
-import { PagoExitoso } from "@/features/checkout/components/PagoExitoso";
+import { CenterCard } from "@/features/checkout/components/CenterCard";
 import { ResumenCobro } from "@/features/checkout/components/ResumenCobro";
 import { useCobreDisponible } from "@/features/checkout/hooks/useCheckoutCobre";
 import { useEcartPayDisponible } from "@/features/checkout/hooks/useCheckoutEcartPay";
@@ -62,7 +61,7 @@ function Checkout() {
   const navigate = useNavigate();
   const pago = useCheckoutPago(code);
   const ecart = useEcartPayDisponible(code);
-  const { status, data, result } = pago;
+  const { status, data } = pago;
   const cobre = useCobreDisponible(code);
   const conEcartPay = ecart.data?.disponible === true;
   const conCobre = cobre.data?.disponible === true;
@@ -93,8 +92,6 @@ function Checkout() {
                   status === "ready" && (ecart.isLoading || cobre.isLoading) ? "loading" : status
                 }
               />
-
-              {status === "success" && result && <PagoExitoso result={result} data={data} />}
 
               {status === "ready" && data && !ecart.isLoading && !cobre.isLoading && (
                 <div className="grid md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] gap-6 items-start">
@@ -127,7 +124,14 @@ function Checkout() {
                       )}
                     </div>
                   ) : (
-                    <PagoCard pago={pago} />
+                    <CenterCard>
+                      <AlertCircle className="text-amber-500" size={28} />
+                      <p className="font-semibold mt-3">Pago no disponible</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Este comercio todavía no tiene medios de pago habilitados. Comunícate con
+                        quien te compartió el link.
+                      </p>
+                    </CenterCard>
                   )}
                 </div>
               )}

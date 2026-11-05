@@ -28,8 +28,6 @@ export function conSaldos<T extends { subaccount_balances?: unknown }>(
 }
 
 export type SubcuentaConSaldos = Tables<"subaccounts"> & Saldos;
-export type SubcuentaOrigen = Pick<Tables<"subaccounts">, "id" | "nombre" | "cbu"> & Saldos;
-export type SubcuentaOrigenTipada = SubcuentaOrigen & Pick<Tables<"subaccounts">, "tipo">;
 
 /** Legajo del cliente de la sesión (null si no hay sesión o cliente). */
 export async function legajoSesion(): Promise<string | null> {
@@ -65,36 +63,6 @@ export async function listSubcuentasCliente(): Promise<{
     .eq("cliente_legajo", cli?.legajo ?? "");
   if (error) throw new DataAccessError(error);
   return { legajo: cli?.legajo ?? null, rows: (data ?? []).map(conSaldos) };
-}
-
-/** Subcuentas de origen (id, nombre, cbu + saldos) ordenadas por nombre. */
-export async function listSubcuentasOrigen(legajo: string): Promise<SubcuentaOrigen[]> {
-  const sb = requireSupabase();
-  const { data, error } = await sb
-    .from("subaccounts")
-    .select(
-      "id, nombre, cbu, subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)",
-    )
-    .eq("cliente_legajo", legajo)
-    .order("nombre", { ascending: true });
-  if (error) throw new DataAccessError(error);
-  return (data ?? []).map(conSaldos);
-}
-
-/** Igual que `listSubcuentasOrigen` pero incluye el tipo de subcuenta. */
-export async function listSubcuentasOrigenConTipo(
-  legajo: string,
-): Promise<SubcuentaOrigenTipada[]> {
-  const sb = requireSupabase();
-  const { data, error } = await sb
-    .from("subaccounts")
-    .select(
-      "id, nombre, cbu, tipo, subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)",
-    )
-    .eq("cliente_legajo", legajo)
-    .order("nombre", { ascending: true });
-  if (error) throw new DataAccessError(error);
-  return (data ?? []).map(conSaldos);
 }
 
 export async function createSubcuenta(input: TablesInsert<"subaccounts">): Promise<void> {

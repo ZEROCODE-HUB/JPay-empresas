@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
-import { enviarOtpTransferencia } from "@/lib/api/transferencias";
+import { enviarOtpTransferencia } from "@/lib/api/otp";
 import {
   nuevoTxid,
   type DestinatarioSpei,

@@ -19,16 +19,13 @@ export type CheckoutLink = {
   comercio_nombre: string | null;
 };
 
-export type CheckoutBandera = { id: string; bandera: string };
-
 export type CheckoutResultado =
   | { estado: "notfound" }
   | { estado: "inactive" | "expired"; link: CheckoutLink }
-  | { estado: "ready"; link: CheckoutLink; banderas: CheckoutBandera[] | null };
+  | { estado: "ready"; link: CheckoutLink };
 
 /**
- * Resuelve el link público por código. Si está vigente suma una vista y trae
- * las banderas activas del comercio (`banderas` es null si el link no tiene comercio).
+ * Resuelve el link público por código. Si está vigente suma una vista.
  */
 export async function getCheckoutLink(code: string): Promise<CheckoutResultado> {
   const s = requireSupabase();
@@ -53,12 +50,5 @@ export async function getCheckoutLink(code: string): Promise<CheckoutResultado> 
   }
   await s.rpc("incrementar_vistas_link", { p_link_id: d.id });
 
-  if (!d.comercio_id) return { estado: "ready", link: d, banderas: null };
-  const { data: bandas } = await s
-    .from("comercio_banderas")
-    .select("id, bandera")
-    .eq("comercio_id", d.comercio_id)
-    .eq("estado", "Activo");
-  console.log("[Checkout] bandas:", bandas);
-  return { estado: "ready", link: d, banderas: bandas ?? [] };
+  return { estado: "ready", link: d };
 }

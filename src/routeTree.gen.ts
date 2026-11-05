@@ -22,17 +22,14 @@ import { Route as AppApiConfigRouteImport } from './routes/app.api-config'
 import { Route as AppCobrarSpeiRouteImport } from './routes/app.cobrar-spei'
 import { Route as AppCobrosRouteImport } from './routes/app.cobros'
 import { Route as AppCuentaRouteImport } from './routes/app.cuenta'
-import { Route as AppDestinatariosRouteImport } from './routes/app.destinatarios'
 import { Route as AppDolaresRouteImport } from './routes/app.dolares'
 import { Route as AppDomiciliacionRouteImport } from './routes/app.domiciliacion'
 import { Route as AppEcommerceRouteImport } from './routes/app.ecommerce'
 import { Route as AppHistorialRouteImport } from './routes/app.historial'
 import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones'
 import { Route as AppLinkPagoRouteImport } from './routes/app.link-pago'
-import { Route as AppLiquidacionesRouteImport } from './routes/app.liquidaciones'
 import { Route as AppMisComerciosRouteImport } from './routes/app.mis-comercios'
 import { Route as AppPuntosFisicosRouteImport } from './routes/app.puntos-fisicos'
-import { Route as AppQrRouteImport } from './routes/app.qr'
 import { Route as AppReportesRouteImport } from './routes/app.reportes'
 import { Route as AppRetirosRouteImport } from './routes/app.retiros'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
@@ -40,7 +37,6 @@ import { Route as AppServiciosRouteImport } from './routes/app.servicios'
 import { Route as AppSpeiRouteImport } from './routes/app.spei'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
 import { Route as AppSuscripcionesRouteImport } from './routes/app.suscripciones'
-import { Route as AppTransferenciasRouteImport } from './routes/app.transferencias'
 import { Route as LegalesArrepentimientoRouteImport } from './routes/legales.arrepentimiento'
 import { Route as LegalesComisionesRouteImport } from './routes/legales.comisiones'
 import { Route as LegalesPrivacidadRouteImport } from './routes/legales.privacidad'
@@ -61,8 +57,6 @@ import { Route as AppCobrosNuevoRouteImport } from './routes/app.cobros.nuevo'
 import { Route as AppLinkPagoDashboardRouteImport } from './routes/app.link-pago.dashboard'
 import { Route as AppLinkPagoECommerceRouteImport } from './routes/app.link-pago.e-commerce'
 import { Route as AppLinkPagoProductosRouteImport } from './routes/app.link-pago.productos'
-import { Route as AppQrDashboardRouteImport } from './routes/app.qr.dashboard'
-import { Route as AppQrPuntosDeVentaRouteImport } from './routes/app.qr.puntos-de-venta'
 import { Route as AppCobrosLoteIdRouteImport } from './routes/app.cobros.lote.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -130,11 +124,6 @@ const AppCuentaRoute = AppCuentaRouteImport.update({
   path: '/cuenta',
   getParentRoute: () => AppRoute,
 } as any)
-const AppDestinatariosRoute = AppDestinatariosRouteImport.update({
-  id: '/destinatarios',
-  path: '/destinatarios',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDolaresRoute = AppDolaresRouteImport.update({
   id: '/dolares',
   path: '/dolares',
@@ -165,11 +154,6 @@ const AppLinkPagoRoute = AppLinkPagoRouteImport.update({
   path: '/link-pago',
   getParentRoute: () => AppRoute,
 } as any)
-const AppLiquidacionesRoute = AppLiquidacionesRouteImport.update({
-  id: '/liquidaciones',
-  path: '/liquidaciones',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppMisComerciosRoute = AppMisComerciosRouteImport.update({
   id: '/mis-comercios',
   path: '/mis-comercios',
@@ -178,11 +162,6 @@ const AppMisComerciosRoute = AppMisComerciosRouteImport.update({
 const AppPuntosFisicosRoute = AppPuntosFisicosRouteImport.update({
   id: '/puntos-fisicos',
   path: '/puntos-fisicos',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppQrRoute = AppQrRouteImport.update({
-  id: '/qr',
-  path: '/qr',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportesRoute = AppReportesRouteImport.update({
@@ -218,11 +197,6 @@ const AppSubcuentasRoute = AppSubcuentasRouteImport.update({
 const AppSuscripcionesRoute = AppSuscripcionesRouteImport.update({
   id: '/suscripciones',
   path: '/suscripciones',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTransferenciasRoute = AppTransferenciasRouteImport.update({
-  id: '/transferencias',
-  path: '/transferencias',
   getParentRoute: () => AppRoute,
 } as any)
 const LegalesArrepentimientoRoute = LegalesArrepentimientoRouteImport.update({
@@ -327,16 +301,6 @@ const AppLinkPagoProductosRoute = AppLinkPagoProductosRouteImport.update({
   path: '/productos',
   getParentRoute: () => AppLinkPagoRoute,
 } as any)
-const AppQrDashboardRoute = AppQrDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AppQrRoute,
-} as any)
-const AppQrPuntosDeVentaRoute = AppQrPuntosDeVentaRouteImport.update({
-  id: '/puntos-de-venta',
-  path: '/puntos-de-venta',
-  getParentRoute: () => AppQrRoute,
-} as any)
 const AppCobrosLoteIdRoute = AppCobrosLoteIdRouteImport.update({
   id: '/lote/$id',
   path: '/lote/$id',
@@ -356,17 +320,14 @@ export interface FileRoutesByFullPath {
   '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
-  '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
-  '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
-  '/app/qr': typeof AppQrRouteWithChildren
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
@@ -374,7 +335,6 @@ export interface FileRoutesByFullPath {
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
-  '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
   '/legales/privacidad': typeof LegalesPrivacidadRoute
@@ -395,8 +355,6 @@ export interface FileRoutesByFullPath {
   '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
   '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
   '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
-  '/app/qr/dashboard': typeof AppQrDashboardRoute
-  '/app/qr/puntos-de-venta': typeof AppQrPuntosDeVentaRoute
   '/app/cobros/': typeof AppCobrosIndexRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
@@ -411,17 +369,14 @@ export interface FileRoutesByTo {
   '/app/api-config': typeof AppApiConfigRoute
   '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cuenta': typeof AppCuentaRoute
-  '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
-  '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
-  '/app/qr': typeof AppQrRouteWithChildren
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
@@ -429,7 +384,6 @@ export interface FileRoutesByTo {
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
-  '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
   '/legales/privacidad': typeof LegalesPrivacidadRoute
@@ -450,8 +404,6 @@ export interface FileRoutesByTo {
   '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
   '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
   '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
-  '/app/qr/dashboard': typeof AppQrDashboardRoute
-  '/app/qr/puntos-de-venta': typeof AppQrPuntosDeVentaRoute
   '/app/cobros': typeof AppCobrosIndexRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
@@ -469,17 +421,14 @@ export interface FileRoutesById {
   '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
-  '/app/destinatarios': typeof AppDestinatariosRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
   '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
-  '/app/liquidaciones': typeof AppLiquidacionesRoute
   '/app/mis-comercios': typeof AppMisComerciosRoute
   '/app/puntos-fisicos': typeof AppPuntosFisicosRoute
-  '/app/qr': typeof AppQrRouteWithChildren
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
@@ -487,7 +436,6 @@ export interface FileRoutesById {
   '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
-  '/app/transferencias': typeof AppTransferenciasRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
   '/legales/comisiones': typeof LegalesComisionesRoute
   '/legales/privacidad': typeof LegalesPrivacidadRoute
@@ -508,8 +456,6 @@ export interface FileRoutesById {
   '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
   '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
   '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
-  '/app/qr/dashboard': typeof AppQrDashboardRoute
-  '/app/qr/puntos-de-venta': typeof AppQrPuntosDeVentaRoute
   '/app/cobros/': typeof AppCobrosIndexRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
@@ -528,17 +474,14 @@ export interface FileRouteTypes {
     | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
-    | '/app/destinatarios'
     | '/app/dolares'
     | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
-    | '/app/liquidaciones'
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
-    | '/app/qr'
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
@@ -546,7 +489,6 @@ export interface FileRouteTypes {
     | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
-    | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
     | '/legales/privacidad'
@@ -567,8 +509,6 @@ export interface FileRouteTypes {
     | '/app/link-pago/dashboard'
     | '/app/link-pago/e-commerce'
     | '/app/link-pago/productos'
-    | '/app/qr/dashboard'
-    | '/app/qr/puntos-de-venta'
     | '/app/cobros/'
     | '/app/cobros/lote/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -583,17 +523,14 @@ export interface FileRouteTypes {
     | '/app/api-config'
     | '/app/cobrar-spei'
     | '/app/cuenta'
-    | '/app/destinatarios'
     | '/app/dolares'
     | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
-    | '/app/liquidaciones'
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
-    | '/app/qr'
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
@@ -601,7 +538,6 @@ export interface FileRouteTypes {
     | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
-    | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
     | '/legales/privacidad'
@@ -622,8 +558,6 @@ export interface FileRouteTypes {
     | '/app/link-pago/dashboard'
     | '/app/link-pago/e-commerce'
     | '/app/link-pago/productos'
-    | '/app/qr/dashboard'
-    | '/app/qr/puntos-de-venta'
     | '/app/cobros'
     | '/app/cobros/lote/$id'
   id:
@@ -640,17 +574,14 @@ export interface FileRouteTypes {
     | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
-    | '/app/destinatarios'
     | '/app/dolares'
     | '/app/domiciliacion'
     | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
-    | '/app/liquidaciones'
     | '/app/mis-comercios'
     | '/app/puntos-fisicos'
-    | '/app/qr'
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
@@ -658,7 +589,6 @@ export interface FileRouteTypes {
     | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
-    | '/app/transferencias'
     | '/legales/arrepentimiento'
     | '/legales/comisiones'
     | '/legales/privacidad'
@@ -679,8 +609,6 @@ export interface FileRouteTypes {
     | '/app/link-pago/dashboard'
     | '/app/link-pago/e-commerce'
     | '/app/link-pago/productos'
-    | '/app/qr/dashboard'
-    | '/app/qr/puntos-de-venta'
     | '/app/cobros/'
     | '/app/cobros/lote/$id'
   fileRoutesById: FileRoutesById
@@ -798,13 +726,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCuentaRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/destinatarios': {
-      id: '/app/destinatarios'
-      path: '/destinatarios'
-      fullPath: '/app/destinatarios'
-      preLoaderRoute: typeof AppDestinatariosRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/dolares': {
       id: '/app/dolares'
       path: '/dolares'
@@ -847,13 +768,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLinkPagoRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/liquidaciones': {
-      id: '/app/liquidaciones'
-      path: '/liquidaciones'
-      fullPath: '/app/liquidaciones'
-      preLoaderRoute: typeof AppLiquidacionesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/mis-comercios': {
       id: '/app/mis-comercios'
       path: '/mis-comercios'
@@ -866,13 +780,6 @@ declare module '@tanstack/react-router' {
       path: '/puntos-fisicos'
       fullPath: '/app/puntos-fisicos'
       preLoaderRoute: typeof AppPuntosFisicosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/qr': {
-      id: '/app/qr'
-      path: '/qr'
-      fullPath: '/app/qr'
-      preLoaderRoute: typeof AppQrRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/reportes': {
@@ -922,13 +829,6 @@ declare module '@tanstack/react-router' {
       path: '/suscripciones'
       fullPath: '/app/suscripciones'
       preLoaderRoute: typeof AppSuscripcionesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/transferencias': {
-      id: '/app/transferencias'
-      path: '/transferencias'
-      fullPath: '/app/transferencias'
-      preLoaderRoute: typeof AppTransferenciasRouteImport
       parentRoute: typeof AppRoute
     }
     '/legales/arrepentimiento': {
@@ -1071,20 +971,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLinkPagoProductosRouteImport
       parentRoute: typeof AppLinkPagoRoute
     }
-    '/app/qr/dashboard': {
-      id: '/app/qr/dashboard'
-      path: '/dashboard'
-      fullPath: '/app/qr/dashboard'
-      preLoaderRoute: typeof AppQrDashboardRouteImport
-      parentRoute: typeof AppQrRoute
-    }
-    '/app/qr/puntos-de-venta': {
-      id: '/app/qr/puntos-de-venta'
-      path: '/puntos-de-venta'
-      fullPath: '/app/qr/puntos-de-venta'
-      preLoaderRoute: typeof AppQrPuntosDeVentaRouteImport
-      parentRoute: typeof AppQrRoute
-    }
     '/app/cobros/lote/$id': {
       id: '/app/cobros/lote/$id'
       path: '/lote/$id'
@@ -1129,35 +1015,20 @@ const AppLinkPagoRouteWithChildren = AppLinkPagoRoute._addFileChildren(
   AppLinkPagoRouteChildren,
 )
 
-interface AppQrRouteChildren {
-  AppQrDashboardRoute: typeof AppQrDashboardRoute
-  AppQrPuntosDeVentaRoute: typeof AppQrPuntosDeVentaRoute
-}
-
-const AppQrRouteChildren: AppQrRouteChildren = {
-  AppQrDashboardRoute: AppQrDashboardRoute,
-  AppQrPuntosDeVentaRoute: AppQrPuntosDeVentaRoute,
-}
-
-const AppQrRouteWithChildren = AppQrRoute._addFileChildren(AppQrRouteChildren)
-
 interface AppRouteChildren {
   AppApiRoute: typeof AppApiRoute
   AppApiConfigRoute: typeof AppApiConfigRoute
   AppCobrarSpeiRoute: typeof AppCobrarSpeiRoute
   AppCobrosRoute: typeof AppCobrosRouteWithChildren
   AppCuentaRoute: typeof AppCuentaRoute
-  AppDestinatariosRoute: typeof AppDestinatariosRoute
   AppDolaresRoute: typeof AppDolaresRoute
   AppDomiciliacionRoute: typeof AppDomiciliacionRoute
   AppEcommerceRoute: typeof AppEcommerceRoute
   AppHistorialRoute: typeof AppHistorialRoute
   AppIntegracionesRoute: typeof AppIntegracionesRoute
   AppLinkPagoRoute: typeof AppLinkPagoRouteWithChildren
-  AppLiquidacionesRoute: typeof AppLiquidacionesRoute
   AppMisComerciosRoute: typeof AppMisComerciosRoute
   AppPuntosFisicosRoute: typeof AppPuntosFisicosRoute
-  AppQrRoute: typeof AppQrRouteWithChildren
   AppReportesRoute: typeof AppReportesRoute
   AppRetirosRoute: typeof AppRetirosRoute
   AppSeguridadRoute: typeof AppSeguridadRoute
@@ -1165,7 +1036,6 @@ interface AppRouteChildren {
   AppSpeiRoute: typeof AppSpeiRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
   AppSuscripcionesRoute: typeof AppSuscripcionesRoute
-  AppTransferenciasRoute: typeof AppTransferenciasRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -1175,17 +1045,14 @@ const AppRouteChildren: AppRouteChildren = {
   AppCobrarSpeiRoute: AppCobrarSpeiRoute,
   AppCobrosRoute: AppCobrosRouteWithChildren,
   AppCuentaRoute: AppCuentaRoute,
-  AppDestinatariosRoute: AppDestinatariosRoute,
   AppDolaresRoute: AppDolaresRoute,
   AppDomiciliacionRoute: AppDomiciliacionRoute,
   AppEcommerceRoute: AppEcommerceRoute,
   AppHistorialRoute: AppHistorialRoute,
   AppIntegracionesRoute: AppIntegracionesRoute,
   AppLinkPagoRoute: AppLinkPagoRouteWithChildren,
-  AppLiquidacionesRoute: AppLiquidacionesRoute,
   AppMisComerciosRoute: AppMisComerciosRoute,
   AppPuntosFisicosRoute: AppPuntosFisicosRoute,
-  AppQrRoute: AppQrRouteWithChildren,
   AppReportesRoute: AppReportesRoute,
   AppRetirosRoute: AppRetirosRoute,
   AppSeguridadRoute: AppSeguridadRoute,
@@ -1193,7 +1060,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppSpeiRoute: AppSpeiRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,
   AppSuscripcionesRoute: AppSuscripcionesRoute,
-  AppTransferenciasRoute: AppTransferenciasRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
