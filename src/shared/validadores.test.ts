@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   digitoClabe,
-  validarCbu,
   validarClabe,
-  validarCuit,
   validarCurp,
   validarRfc,
 } from "./validadores";
@@ -51,17 +49,5 @@ describe("validarClabe", () => {
     expect(validarClabe("03218000011835971")).toMatch(/18 dígitos/);
     expect(validarClabe("03218000011835971A")).toMatch(/18 dígitos/);
     expect(validarClabe("032180000118359718")).toMatch(/control/);
-  });
-});
-
-describe("Argentina", () => {
-  it("CUIT con dígito verificador", () => {
-    expect(validarCuit("20-12345678-6")).toBeNull();
-    expect(validarCuit("20-12345678-5")).toMatch(/verificador/);
-    expect(validarCuit("2012345678")).toMatch(/11 dígitos/);
-  });
-  it("CBU con sus dos dígitos verificadores", () => {
-    expect(validarCbu("0170099220000067797370")).toBeNull();
-    expect(validarCbu("0170099220000067797371")).toMatch(/verificadores/);
   });
 });

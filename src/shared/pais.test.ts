@@ -17,11 +17,10 @@ describe("pais", () => {
     expect(PAIS_INSTALACION).toBe("MX");
   });
 
-  it("cambia el país activo", () => {
-    setPaisActivo("AR");
-    expect(getPais().moneda).toBe("ARS");
+  it("el país activo es México", () => {
     setPaisActivo("MX");
     expect(getPais().moneda).toBe("MXN");
+    expect(getPais().cuentaBancaria.tipo).toBe("CLABE");
   });
 
   it("valida con los identificadores del país", () => {
@@ -55,39 +54,35 @@ describe("módulos por país", () => {
   type Item = { label: string; modulo?: Modulo; items?: Item[] };
   const menu: Item[] = [
     { label: "Inicio" },
-    { label: "Transferir", modulo: "transferencias_salientes" },
     { label: "Puntos físicos", modulo: "pos" },
+    { label: "Facturas", modulo: "cfdi" },
     {
-      label: "Impuestos",
+      label: "Cobros",
       items: [
-        { label: "IIBB", modulo: "iibb" },
-        { label: "Débitos y créditos", modulo: "debitos_creditos" },
+        { label: "Suscripciones", modulo: "suscripciones" },
+        { label: "Domiciliación", modulo: "domiciliacion" },
       ],
     },
+    { label: "Impuestos", items: [{ label: "CFDI", modulo: "cfdi" }] },
   ];
   const etiquetas = (xs: Item[]) =>
     xs.map((x) => (x.items ? `${x.label}[${x.items.map((i) => i.label).join(",")}]` : x.label));
 
-  it("México y Argentina muestran cosas distintas, y los grupos vacíos desaparecen", () => {
-    expect(etiquetas(filtrarPorModulo(menu, PAISES.MX))).toEqual(["Inicio", "Puntos físicos"]);
-    expect(etiquetas(filtrarPorModulo(menu, PAISES.AR))).toEqual([
+  it("oculta lo que el país no tiene, y los grupos vacíos desaparecen", () => {
+    expect(etiquetas(filtrarPorModulo(menu, PAISES.MX))).toEqual([
       "Inicio",
-      "Transferir",
-      "Impuestos[IIBB,Débitos y créditos]",
+      "Puntos físicos",
+      "Cobros[Suscripciones,Domiciliación]",
     ]);
   });
 
   it("los módulos guardados en la base pisan los del archivo, solo claves conocidas", () => {
-    const mx = conModulos(PAISES.MX, { pos: false, iibb: true, inventado: true, spei: "si" });
+    const mx = conModulos(PAISES.MX, { pos: false, cfdi: true, inventado: true, spei: "si" });
     expect(tieneModulo("pos", mx)).toBe(false);
-    expect(tieneModulo("iibb", mx)).toBe(true);
+    expect(tieneModulo("cfdi", mx)).toBe(true);
     expect(tieneModulo("spei", mx)).toBe(true);
     expect("inventado" in mx.modulos).toBe(false);
     expect(PAISES.MX.modulos.pos).toBe(true);
     expect(conModulos(PAISES.MX, null)).toBe(PAISES.MX);
-  });
-
-  it("los dos países definen las mismas claves", () => {
-    expect(Object.keys(PAISES.AR.modulos).sort()).toEqual(Object.keys(PAISES.MX.modulos).sort());
   });
 });

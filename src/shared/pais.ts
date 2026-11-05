@@ -9,15 +9,13 @@
 import brandData from "@/brand/brand.json";
 import {
   normalizarId,
-  validarCbu,
   validarClabe,
-  validarCuit,
   validarCurp,
   validarRfc,
   type Validador,
 } from "./validadores";
 
-export type CodigoPais = "MX" | "AR";
+export type CodigoPais = "MX";
 export type TipoPersona = "fisica" | "moral";
 
 /** Un identificador (fiscal, personal o bancario) con su etiqueta y su validador. */
@@ -42,23 +40,12 @@ export type Modulo =
   | "pos"
   | "cfdi"
   | "pld_mx"
-  | "iibb"
-  | "debitos_creditos"
-  | "bcra"
-  | "afip"
-  | "repet"
   /** Cobros con un proveedor externo conectado por OAuth (Ecart Pay). */
   | "pagos_proveedor"
   /** Retiros a la cuenta bancaria desde el proveedor (consulta). */
   | "retiros_proveedor"
-  /** Tarjetas con Payway y sus conciliaciones (BLP). */
-  | "payway"
-  /** Transferencias salientes por BDC / Coelsa. */
-  | "transferencias_salientes"
   /** Cuenta con Cobre: CLABE del comercio, cobros y transferencias SPEI, dólares (Fedwire/SWIFT). */
   | "transferencias_cobre"
-  /** Pagos y cobros con QR / pago con transferencia (PCT). */
-  | "qr"
   /** Alertas y bloqueos automáticos por reglas, y la pestaña de riesgo del cliente. */
   | "monitoreo_automatico"
   /** Suscripciones con tarjeta (Ecart Pay). */
@@ -73,14 +60,14 @@ export type ConfigPais = {
   nombre: string;
   locale: string;
   moneda: string;
-  /** Símbolo y si va separado del número ("$ 1.234,50" vs "$1,234.50"). */
+  /** Símbolo y si va separado del número ("$1,234.50" o "$ 1,234.50"). */
   simboloMoneda: string;
   espacioMoneda: boolean;
   timezone: string;
   prefijoTelefono: string;
   /** Identificador fiscal según el tipo de persona. */
   fiscal: Record<TipoPersona, Identificador>;
-  /** Identificador personal de la persona física (CURP, DNI). */
+  /** Identificador personal de la persona física (CURP). */
   personal: Identificador | null;
   cuentaBancaria: Identificador;
   /** Documento de identidad que se sube en el KYC. */
@@ -262,17 +249,9 @@ const MX: ConfigPais = {
     pos: true,
     cfdi: false,
     pld_mx: true,
-    iibb: false,
-    debitos_creditos: false,
-    bcra: false,
-    afip: false,
-    repet: false,
     pagos_proveedor: true,
     retiros_proveedor: true,
-    payway: false,
-    transferencias_salientes: false,
     transferencias_cobre: true,
-    qr: false,
     monitoreo_automatico: true,
     suscripciones: true,
     domiciliacion: true,
@@ -287,116 +266,7 @@ const MX: ConfigPais = {
   },
 };
 
-const AR: ConfigPais = {
-  codigo: "AR",
-  nombre: "Argentina",
-  locale: "es-AR",
-  moneda: "ARS",
-  simboloMoneda: "$",
-  espacioMoneda: true,
-  timezone: "America/Argentina/Buenos_Aires",
-  prefijoTelefono: "+54",
-  fiscal: {
-    fisica: id("CUIT", "CUIT / CUIL", "20-12345678-9", validarCuit, "11 dígitos"),
-    moral: id("CUIT", "CUIT de la empresa", "30-12345678-9", validarCuit, "11 dígitos"),
-  },
-  personal: null,
-  cuentaBancaria: id("CBU", "CBU / CVU", "0000000000000000000000", validarCbu, "22 dígitos"),
-  documentoIdentidad: "DNI",
-  domicilio: {
-    region: "Provincia",
-    regiones: [
-      "Buenos Aires",
-      "CABA",
-      "Catamarca",
-      "Chaco",
-      "Chubut",
-      "Córdoba",
-      "Corrientes",
-      "Entre Ríos",
-      "Formosa",
-      "Jujuy",
-      "La Pampa",
-      "La Rioja",
-      "Mendoza",
-      "Misiones",
-      "Neuquén",
-      "Río Negro",
-      "Salta",
-      "San Juan",
-      "San Luis",
-      "Santa Cruz",
-      "Santa Fe",
-      "Santiago del Estero",
-      "Tierra del Fuego",
-      "Tucumán",
-    ],
-    linea2: "Piso / Depto",
-    codigoPostal: "Código postal",
-    largoCodigoPostal: null,
-  },
-  tiposSociedad: [
-    "Sociedad Anónima (SA)",
-    "Sociedad de Responsabilidad Limitada (SRL)",
-    "Sociedad por Acciones Simplificada (SAS)",
-    "Sociedad Colectiva",
-    "Sociedad en Comandita",
-    "Cooperativa",
-    "Asociación Civil",
-    "Otro",
-  ],
-  ocupaciones: [
-    "Empleado en relación de dependencia",
-    "Autónomo / Monotributista",
-    "Empresario",
-    "Profesional independiente",
-    "Jubilado / Pensionado",
-    "Estudiante",
-    "Otro",
-  ],
-  origenFondos: [
-    "Sueldo",
-    "Ahorros",
-    "Venta de activos",
-    "Herencia",
-    "Inversiones",
-    "Actividad comercial",
-    "Otro",
-  ],
-  regimenesFiscales: [],
-  modulos: {
-    spei: false,
-    oxxo: false,
-    msi: false,
-    pos: false,
-    cfdi: false,
-    pld_mx: false,
-    iibb: true,
-    debitos_creditos: true,
-    bcra: true,
-    afip: true,
-    repet: true,
-    pagos_proveedor: false,
-    retiros_proveedor: false,
-    payway: true,
-    transferencias_salientes: true,
-    transferencias_cobre: false,
-    qr: true,
-    monitoreo_automatico: true,
-    suscripciones: false,
-    domiciliacion: false,
-  },
-  textos: {
-    notaRegulatoria: "Operamos bajo normativa BCRA.",
-    normativaPld:
-      "Estos datos son requeridos por normativa antilavado (UIF) y solo se comparten con las autoridades competentes.",
-    normativaDocumentos:
-      "Tus documentos se procesan en un entorno cifrado y se conservan según normativa BCRA y Ley 25.246.",
-    pep: "Se consideran PEPs a los Funcionarios Públicos Nacionales, Provinciales y Municipales (tanto Nacionales como Extranjeros) de los Poderes Ejecutivo, Legislativo y Judicial, que ocupan o que ocuparon altos cargos jerárquicos, así como también a sus familiares hasta el segundo grado de consanguinidad. Los funcionarios calificados como PEPs continúan siéndolo hasta dos años después de haber cesado en sus funciones.",
-  },
-};
-
-export const PAISES: Record<CodigoPais, ConfigPais> = { MX, AR };
+export const PAISES: Record<CodigoPais, ConfigPais> = { MX };
 
 const esCodigo = (c: unknown): c is CodigoPais => typeof c === "string" && c in PAISES;
 

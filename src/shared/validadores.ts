@@ -107,36 +107,3 @@ export function validarClabe(valor: string): string | null {
   if (digitoClabe(clabe) !== clabe[17]) return "El dígito de control de la CLABE no coincide.";
   return null;
 }
-
-// ── Argentina ───────────────────────────────────────────────────────────────
-
-/** Dígito verificador de CUIT/CUIL (módulo 11). `null` si el número no tiene dígito posible. */
-export function digitoCuit(cuit: string): string | null {
-  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-  const suma = pesos.reduce((s, p, i) => s + p * Number(cuit[i]), 0);
-  const d = 11 - (suma % 11);
-  if (d === 11) return "0";
-  return d === 10 ? null : String(d);
-}
-
-/** CUIT/CUIL (11 dígitos) con dígito verificador. */
-export function validarCuit(valor: string): string | null {
-  const cuit = soloDigitos(valor);
-  if (!cuit) return "Requerido";
-  if (cuit.length !== 11) return "El CUIT tiene 11 dígitos.";
-  if (digitoCuit(cuit) !== cuit[10]) return "El dígito verificador del CUIT no coincide.";
-  return null;
-}
-
-/** CBU/CVU (22 dígitos) con sus dos dígitos verificadores. */
-export function validarCbu(valor: string): string | null {
-  const cbu = soloDigitos(valor);
-  if (!cbu) return "Requerido";
-  if (cbu.length !== 22) return "El CBU tiene 22 dígitos.";
-  const control = (bloque: string, pesos: number[]) =>
-    String((10 - (pesos.reduce((s, p, i) => s + p * Number(bloque[i]), 0) % 10)) % 10);
-  const b1 = control(cbu.slice(0, 7), [7, 1, 3, 9, 7, 1, 3]);
-  const b2 = control(cbu.slice(8, 21), [3, 9, 7, 1, 3, 9, 7, 1, 3, 9, 7, 1, 3]);
-  if (b1 !== cbu[7] || b2 !== cbu[21]) return "Los dígitos verificadores del CBU no coinciden.";
-  return null;
-}

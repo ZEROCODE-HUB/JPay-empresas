@@ -1,6 +1,6 @@
 /**
  * Formato de números, montos, porcentajes, fechas e identificadores para toda la UI, según el
- * país activo (`@/shared/pais`): "$1,234.50" en México, "$ 1.234,50" en Argentina.
+ * país activo (`@/shared/pais`): "$1,234.50" en México.
  *
  * Archivo compartido: es idéntico en los repos del panel admin y del portal empresas (`npm run shared:check`).
  * Los valores vacíos (null, undefined, NaN, fecha inválida) se muestran como "—".
@@ -15,7 +15,7 @@ type Fecha = string | Date | null | undefined;
 
 const esNumero = (n: Numero): n is number => typeof n === "number" && Number.isFinite(n);
 
-/** 1234.5 → "1,234.5" (MX) / "1.234,5" (AR) (decimales fijos: `decimals`). */
+/** 1234.5 → "1,234.5" (decimales fijos: `decimals`). */
 export function formatNumber(n: Numero, decimals = 0): string {
   if (!esNumero(n)) return VACIO;
   return n.toLocaleString(getPais().locale, {
@@ -25,7 +25,7 @@ export function formatNumber(n: Numero, decimals = 0): string {
 }
 
 /**
- * 1234.5 → "$1,234.50" (MX) / "$ 1.234,50" (AR); negativos "-$…". `signo` agrega "+" a los
+ * 1234.5 → "$1,234.50"; negativos "-$…". `signo` agrega "+" a los
  * positivos. Con `moneda` distinta de la del país (p. ej. "USD") va el código: "US$ 1,234.50".
  */
 export function formatMoney(
@@ -42,16 +42,16 @@ export function formatMoney(
   return `${prefijo}${simbolo}${espacio ? " " : ""}${formatNumber(Math.abs(n), decimals)}`;
 }
 
-/** Código ISO de la moneda del país activo ("MXN", "ARS"), para columnas y exportaciones. */
+/** Código ISO de la moneda del país activo ("MXN"), para columnas y exportaciones. */
 export function monedaActiva(): string {
   return getPais().moneda;
 }
 
 /**
  * Monto tipeado por el usuario → número (NaN si no es un número). Acepta el formato del país
- * activo ("1,234.50" en México, "1.234,50" en Argentina), sin separadores ("1234.5") y con "$".
- * Con un solo tipo de separador: si agrupa de a 3 dígitos son miles ("1,500" / "1.500"); si
- * aparece una vez es el decimal ("1500,5" / "1500.5").
+ * activo ("1,234.50" en México), sin separadores ("1234.5") y con "$". Con un solo tipo de
+ * separador: si agrupa de a 3 dígitos son miles ("1,500"); si aparece una vez es el decimal
+ * ("1500.5", y también "1500,5").
  */
 export function parseMonto(texto: string | null | undefined): number {
   const t = (texto ?? "").replace(/[\s$]/g, "").replace(/^(-?)[A-Z]{3}/i, "$1");
@@ -77,7 +77,7 @@ export function parseMonto(texto: string | null | undefined): number {
   return /^-?\d+(\.\d+)?$/.test(normal) ? Number(normal) : NaN;
 }
 
-/** 3.5 → "3.5%" (MX) / "3,5%" (AR) (hasta `maxDecimals` decimales, sin ceros de relleno). El valor ya viene en %. */
+/** 3.5 → "3.5%" (hasta `maxDecimals` decimales, sin ceros de relleno). El valor ya viene en %. */
 export function formatPercent(n: Numero, maxDecimals = 2): string {
   if (!esNumero(n)) return VACIO;
   return `${n.toLocaleString(getPais().locale, { maximumFractionDigits: maxDecimals })}%`;
@@ -123,21 +123,11 @@ export function formatTime(v: Fecha): string {
   return d ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : VACIO;
 }
 
-/** "20123456789" → "20-12345678-9". Si no tiene 11 dígitos se devuelve tal cual. */
-export function formatCuit(cuit: string | null | undefined): string {
-  if (!cuit) return VACIO;
-  const d = cuit.replace(/\D/g, "");
-  return d.length === 11 ? `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}` : cuit;
-}
-
 /**
- * Identificador fiscal para mostrar: CUIT con guiones, RFC/CURP/CLABE en mayúsculas y sin
- * espacios. `tipo` es el de la columna `tax_id_tipo` (si falta, se deduce del valor).
+ * Identificador fiscal o bancario para mostrar (RFC, CURP, CLABE): en mayúsculas y sin espacios
+ * ni guiones. `tipo` es el de la columna `tax_id_tipo`; hoy todos se muestran igual.
  */
-export function formatTaxId(valor: string | null | undefined, tipo?: string | null): string {
+export function formatTaxId(valor: string | null | undefined, _tipo?: string | null): string {
   if (!valor) return VACIO;
-  const t = tipo?.toUpperCase();
-  if (t === "CUIT" || t === "CUIL" || (!t && /^\d{2}-?\d{8}-?\d$/.test(valor)))
-    return formatCuit(valor);
   return valor.replace(/[\s-]/g, "").toUpperCase();
 }
