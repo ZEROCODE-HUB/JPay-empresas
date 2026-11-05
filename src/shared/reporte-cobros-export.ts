@@ -5,7 +5,7 @@
  */
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { brand } from "@/brand/brand";
 import { resolveColor } from "@/brand/colors";
 import { formatDate, formatDateTime, formatMoney, formatNumber } from "./format";
@@ -16,6 +16,9 @@ import {
   filasDetalleCobros,
   type ReporteCobros,
 } from "./reporte-cobros";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 
 const nombreArchivo = (r: ReporteCobros, ext: string) =>
   `reporte-cobros-${r.desde}-a-${r.hasta}.${ext}`;

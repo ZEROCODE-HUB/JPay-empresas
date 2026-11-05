@@ -1,10 +1,13 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { toast } from "sonner";
 import { brand } from "@/brand/brand";
 import { resolveColor } from "@/brand/colors";
 import type { Mov, Sub } from "./types";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 
 /** Copia el CVU al portapapeles y avisa con un toast. */
 export const copiarCvu = async (cvu: string) => {

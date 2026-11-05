@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import {
   medioPagoLabels,
   type DashboardKPI,
@@ -15,6 +15,9 @@ import { formatMoney } from "@/shared/format";
 import { COLUMNAS_PLANTILLA } from "./carga";
 import { ESTADO_LOTE_LABEL, REGISTRO_ESTADO_BADGE } from "./estados";
 import { porcentaje } from "./utils";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 
 type AutoTableDoc = jsPDF & { autoTable: (opts: Record<string, unknown>) => void };
 

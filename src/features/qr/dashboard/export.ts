@@ -1,7 +1,10 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import type { DashboardQrCalculado } from "./utils";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 
 export function exportarDashboardQrExcel(d: DashboardQrCalculado, presetLabel: string) {
   const ws = XLSX.utils.json_to_sheet([

@@ -17,8 +17,11 @@ import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
 import { formatMoney, monedaActiva } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { useClienteActual, useDashboardLinksPago } from "@/hooks/useLinksPago";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 
 export const Route = createFileRoute("/app/link-pago/dashboard")({ component: Dashboard });
 

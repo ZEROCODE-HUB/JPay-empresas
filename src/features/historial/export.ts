@@ -1,6 +1,6 @@
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { brand } from "@/brand/brand";
 import { resolveColor } from "@/brand/colors";
 import { formatMoney } from "@/shared/format";
@@ -13,6 +13,9 @@ import {
 } from "./utils";
 
 import { getPais } from "@/shared/pais";
+
+// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+applyPlugin(jsPDF);
 const nombreArchivo = (ext: string) =>
   `historial-movimientos-${new Date().toISOString().slice(0, 10)}.${ext}`;
 
