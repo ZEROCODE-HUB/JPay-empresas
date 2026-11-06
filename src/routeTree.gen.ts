@@ -17,14 +17,11 @@ import { Route as RegistroRouteImport } from './routes/registro'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VerificarCorreoRouteImport } from './routes/verificar-correo'
 import { Route as AppIndexRouteImport } from './routes/app.index'
-import { Route as AppApiRouteImport } from './routes/app.api'
 import { Route as AppApiConfigRouteImport } from './routes/app.api-config'
-import { Route as AppCobrarSpeiRouteImport } from './routes/app.cobrar-spei'
 import { Route as AppCobrosRouteImport } from './routes/app.cobros'
 import { Route as AppCuentaRouteImport } from './routes/app.cuenta'
 import { Route as AppDolaresRouteImport } from './routes/app.dolares'
 import { Route as AppDomiciliacionRouteImport } from './routes/app.domiciliacion'
-import { Route as AppEcommerceRouteImport } from './routes/app.ecommerce'
 import { Route as AppHistorialRouteImport } from './routes/app.historial'
 import { Route as AppIntegracionesRouteImport } from './routes/app.integraciones'
 import { Route as AppLinkPagoRouteImport } from './routes/app.link-pago'
@@ -34,7 +31,6 @@ import { Route as AppReportesRouteImport } from './routes/app.reportes'
 import { Route as AppRetirosRouteImport } from './routes/app.retiros'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
 import { Route as AppServiciosRouteImport } from './routes/app.servicios'
-import { Route as AppSpeiRouteImport } from './routes/app.spei'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
 import { Route as AppSuscripcionesRouteImport } from './routes/app.suscripciones'
 import { Route as LegalesArrepentimientoRouteImport } from './routes/legales.arrepentimiento'
@@ -51,12 +47,21 @@ import { Route as RegistroExitoRouteImport } from './routes/registro.exito'
 import { Route as RegistroValidacionExitosaRouteImport } from './routes/registro.validacion-exitosa'
 import { Route as RegistroValidarEmailRouteImport } from './routes/registro.validar-email'
 import { Route as SuscripcionListaRouteImport } from './routes/suscripcion.lista'
+import { Route as AppviejasCobrarSpeiRouteImport } from './routes/app.(viejas).cobrar-spei'
+import { Route as AppviejasSpeiRouteImport } from './routes/app.(viejas).spei'
+import { Route as AppCobrarIndexRouteImport } from './routes/app.cobrar.index'
+import { Route as AppCobrarLinksRouteImport } from './routes/app.cobrar.links'
+import { Route as AppCobrarSpeiRouteImport } from './routes/app.cobrar.spei'
+import { Route as AppCobrarTarjetaRouteImport } from './routes/app.cobrar.tarjeta'
 import { Route as AppCobrosIndexRouteImport } from './routes/app.cobros.index'
 import { Route as AppCobrosGestionRouteImport } from './routes/app.cobros.gestion'
 import { Route as AppCobrosNuevoRouteImport } from './routes/app.cobros.nuevo'
-import { Route as AppLinkPagoDashboardRouteImport } from './routes/app.link-pago.dashboard'
-import { Route as AppLinkPagoECommerceRouteImport } from './routes/app.link-pago.e-commerce'
-import { Route as AppLinkPagoProductosRouteImport } from './routes/app.link-pago.productos'
+import { Route as AppEnviarIndexRouteImport } from './routes/app.enviar.index'
+import { Route as AppEnviarDolaresRouteImport } from './routes/app.enviar.dolares'
+import { Route as AppEnviarSpeiRouteImport } from './routes/app.enviar.spei'
+import { Route as AppLinkPagoSplatRouteImport } from './routes/app.link-pago.$'
+import { Route as AppCobrarLinksDashboardRouteImport } from './routes/app.cobrar.links.dashboard'
+import { Route as AppCobrarLinksProductosRouteImport } from './routes/app.cobrar.links.productos'
 import { Route as AppCobrosLoteIdRouteImport } from './routes/app.cobros.lote.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -99,19 +104,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppApiRoute = AppApiRouteImport.update({
-  id: '/api',
-  path: '/api',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppApiConfigRoute = AppApiConfigRouteImport.update({
   id: '/api-config',
   path: '/api-config',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCobrarSpeiRoute = AppCobrarSpeiRouteImport.update({
-  id: '/cobrar-spei',
-  path: '/cobrar-spei',
   getParentRoute: () => AppRoute,
 } as any)
 const AppCobrosRoute = AppCobrosRouteImport.update({
@@ -132,11 +127,6 @@ const AppDolaresRoute = AppDolaresRouteImport.update({
 const AppDomiciliacionRoute = AppDomiciliacionRouteImport.update({
   id: '/domiciliacion',
   path: '/domiciliacion',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppEcommerceRoute = AppEcommerceRouteImport.update({
-  id: '/ecommerce',
-  path: '/ecommerce',
   getParentRoute: () => AppRoute,
 } as any)
 const AppHistorialRoute = AppHistorialRouteImport.update({
@@ -182,11 +172,6 @@ const AppSeguridadRoute = AppSeguridadRouteImport.update({
 const AppServiciosRoute = AppServiciosRouteImport.update({
   id: '/servicios',
   path: '/servicios',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSpeiRoute = AppSpeiRouteImport.update({
-  id: '/spei',
-  path: '/spei',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSubcuentasRoute = AppSubcuentasRouteImport.update({
@@ -271,6 +256,36 @@ const SuscripcionListaRoute = SuscripcionListaRouteImport.update({
   path: '/suscripcion/lista',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppviejasCobrarSpeiRoute = AppviejasCobrarSpeiRouteImport.update({
+  id: '/(viejas)/cobrar-spei',
+  path: '/cobrar-spei',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppviejasSpeiRoute = AppviejasSpeiRouteImport.update({
+  id: '/(viejas)/spei',
+  path: '/spei',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCobrarIndexRoute = AppCobrarIndexRouteImport.update({
+  id: '/cobrar/',
+  path: '/cobrar/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCobrarLinksRoute = AppCobrarLinksRouteImport.update({
+  id: '/cobrar/links',
+  path: '/cobrar/links',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCobrarSpeiRoute = AppCobrarSpeiRouteImport.update({
+  id: '/cobrar/spei',
+  path: '/cobrar/spei',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCobrarTarjetaRoute = AppCobrarTarjetaRouteImport.update({
+  id: '/cobrar/tarjeta',
+  path: '/cobrar/tarjeta',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppCobrosIndexRoute = AppCobrosIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -286,20 +301,35 @@ const AppCobrosNuevoRoute = AppCobrosNuevoRouteImport.update({
   path: '/nuevo',
   getParentRoute: () => AppCobrosRoute,
 } as any)
-const AppLinkPagoDashboardRoute = AppLinkPagoDashboardRouteImport.update({
+const AppEnviarIndexRoute = AppEnviarIndexRouteImport.update({
+  id: '/enviar/',
+  path: '/enviar/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEnviarDolaresRoute = AppEnviarDolaresRouteImport.update({
+  id: '/enviar/dolares',
+  path: '/enviar/dolares',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEnviarSpeiRoute = AppEnviarSpeiRouteImport.update({
+  id: '/enviar/spei',
+  path: '/enviar/spei',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLinkPagoSplatRoute = AppLinkPagoSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => AppLinkPagoRoute,
+} as any)
+const AppCobrarLinksDashboardRoute = AppCobrarLinksDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AppLinkPagoRoute,
+  getParentRoute: () => AppCobrarLinksRoute,
 } as any)
-const AppLinkPagoECommerceRoute = AppLinkPagoECommerceRouteImport.update({
-  id: '/e-commerce',
-  path: '/e-commerce',
-  getParentRoute: () => AppLinkPagoRoute,
-} as any)
-const AppLinkPagoProductosRoute = AppLinkPagoProductosRouteImport.update({
+const AppCobrarLinksProductosRoute = AppCobrarLinksProductosRouteImport.update({
   id: '/productos',
   path: '/productos',
-  getParentRoute: () => AppLinkPagoRoute,
+  getParentRoute: () => AppCobrarLinksRoute,
 } as any)
 const AppCobrosLoteIdRoute = AppCobrosLoteIdRouteImport.update({
   id: '/lote/$id',
@@ -315,14 +345,11 @@ export interface FileRoutesByFullPath {
   '/registro': typeof RegistroRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/verificar-correo': typeof VerificarCorreoRoute
-  '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
-  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
-  '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
@@ -332,7 +359,6 @@ export interface FileRoutesByFullPath {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
-  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -350,12 +376,21 @@ export interface FileRoutesByFullPath {
   '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
+  '/app/cobrar-spei': typeof AppviejasCobrarSpeiRoute
+  '/app/spei': typeof AppviejasSpeiRoute
+  '/app/cobrar/links': typeof AppCobrarLinksRouteWithChildren
+  '/app/cobrar/spei': typeof AppCobrarSpeiRoute
+  '/app/cobrar/tarjeta': typeof AppCobrarTarjetaRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
-  '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
-  '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
-  '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
+  '/app/enviar/dolares': typeof AppEnviarDolaresRoute
+  '/app/enviar/spei': typeof AppEnviarSpeiRoute
+  '/app/link-pago/$': typeof AppLinkPagoSplatRoute
+  '/app/cobrar/': typeof AppCobrarIndexRoute
   '/app/cobros/': typeof AppCobrosIndexRoute
+  '/app/enviar/': typeof AppEnviarIndexRoute
+  '/app/cobrar/links/dashboard': typeof AppCobrarLinksDashboardRoute
+  '/app/cobrar/links/productos': typeof AppCobrarLinksProductosRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
 export interface FileRoutesByTo {
@@ -365,13 +400,10 @@ export interface FileRoutesByTo {
   '/registro': typeof RegistroRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/verificar-correo': typeof VerificarCorreoRoute
-  '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
-  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cuenta': typeof AppCuentaRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
-  '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
@@ -381,7 +413,6 @@ export interface FileRoutesByTo {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
-  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -399,12 +430,21 @@ export interface FileRoutesByTo {
   '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app': typeof AppIndexRoute
+  '/app/cobrar-spei': typeof AppviejasCobrarSpeiRoute
+  '/app/spei': typeof AppviejasSpeiRoute
+  '/app/cobrar/links': typeof AppCobrarLinksRouteWithChildren
+  '/app/cobrar/spei': typeof AppCobrarSpeiRoute
+  '/app/cobrar/tarjeta': typeof AppCobrarTarjetaRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
-  '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
-  '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
-  '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
+  '/app/enviar/dolares': typeof AppEnviarDolaresRoute
+  '/app/enviar/spei': typeof AppEnviarSpeiRoute
+  '/app/link-pago/$': typeof AppLinkPagoSplatRoute
+  '/app/cobrar': typeof AppCobrarIndexRoute
   '/app/cobros': typeof AppCobrosIndexRoute
+  '/app/enviar': typeof AppEnviarIndexRoute
+  '/app/cobrar/links/dashboard': typeof AppCobrarLinksDashboardRoute
+  '/app/cobrar/links/productos': typeof AppCobrarLinksProductosRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
 export interface FileRoutesById {
@@ -416,14 +456,11 @@ export interface FileRoutesById {
   '/registro': typeof RegistroRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/verificar-correo': typeof VerificarCorreoRoute
-  '/app/api': typeof AppApiRoute
   '/app/api-config': typeof AppApiConfigRoute
-  '/app/cobrar-spei': typeof AppCobrarSpeiRoute
   '/app/cobros': typeof AppCobrosRouteWithChildren
   '/app/cuenta': typeof AppCuentaRoute
   '/app/dolares': typeof AppDolaresRoute
   '/app/domiciliacion': typeof AppDomiciliacionRoute
-  '/app/ecommerce': typeof AppEcommerceRoute
   '/app/historial': typeof AppHistorialRoute
   '/app/integraciones': typeof AppIntegracionesRoute
   '/app/link-pago': typeof AppLinkPagoRouteWithChildren
@@ -433,7 +470,6 @@ export interface FileRoutesById {
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
   '/app/servicios': typeof AppServiciosRoute
-  '/app/spei': typeof AppSpeiRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -451,12 +487,21 @@ export interface FileRoutesById {
   '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
+  '/app/(viejas)/cobrar-spei': typeof AppviejasCobrarSpeiRoute
+  '/app/(viejas)/spei': typeof AppviejasSpeiRoute
+  '/app/cobrar/links': typeof AppCobrarLinksRouteWithChildren
+  '/app/cobrar/spei': typeof AppCobrarSpeiRoute
+  '/app/cobrar/tarjeta': typeof AppCobrarTarjetaRoute
   '/app/cobros/gestion': typeof AppCobrosGestionRoute
   '/app/cobros/nuevo': typeof AppCobrosNuevoRoute
-  '/app/link-pago/dashboard': typeof AppLinkPagoDashboardRoute
-  '/app/link-pago/e-commerce': typeof AppLinkPagoECommerceRoute
-  '/app/link-pago/productos': typeof AppLinkPagoProductosRoute
+  '/app/enviar/dolares': typeof AppEnviarDolaresRoute
+  '/app/enviar/spei': typeof AppEnviarSpeiRoute
+  '/app/link-pago/$': typeof AppLinkPagoSplatRoute
+  '/app/cobrar/': typeof AppCobrarIndexRoute
   '/app/cobros/': typeof AppCobrosIndexRoute
+  '/app/enviar/': typeof AppEnviarIndexRoute
+  '/app/cobrar/links/dashboard': typeof AppCobrarLinksDashboardRoute
+  '/app/cobrar/links/productos': typeof AppCobrarLinksProductosRoute
   '/app/cobros/lote/$id': typeof AppCobrosLoteIdRoute
 }
 export interface FileRouteTypes {
@@ -469,14 +514,11 @@ export interface FileRouteTypes {
     | '/registro'
     | '/reset-password'
     | '/verificar-correo'
-    | '/app/api'
     | '/app/api-config'
-    | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
     | '/app/dolares'
     | '/app/domiciliacion'
-    | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
@@ -486,7 +528,6 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
-    | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -504,12 +545,21 @@ export interface FileRouteTypes {
     | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app/'
+    | '/app/cobrar-spei'
+    | '/app/spei'
+    | '/app/cobrar/links'
+    | '/app/cobrar/spei'
+    | '/app/cobrar/tarjeta'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
-    | '/app/link-pago/dashboard'
-    | '/app/link-pago/e-commerce'
-    | '/app/link-pago/productos'
+    | '/app/enviar/dolares'
+    | '/app/enviar/spei'
+    | '/app/link-pago/$'
+    | '/app/cobrar/'
     | '/app/cobros/'
+    | '/app/enviar/'
+    | '/app/cobrar/links/dashboard'
+    | '/app/cobrar/links/productos'
     | '/app/cobros/lote/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -519,13 +569,10 @@ export interface FileRouteTypes {
     | '/registro'
     | '/reset-password'
     | '/verificar-correo'
-    | '/app/api'
     | '/app/api-config'
-    | '/app/cobrar-spei'
     | '/app/cuenta'
     | '/app/dolares'
     | '/app/domiciliacion'
-    | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
@@ -535,7 +582,6 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
-    | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -553,12 +599,21 @@ export interface FileRouteTypes {
     | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app'
+    | '/app/cobrar-spei'
+    | '/app/spei'
+    | '/app/cobrar/links'
+    | '/app/cobrar/spei'
+    | '/app/cobrar/tarjeta'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
-    | '/app/link-pago/dashboard'
-    | '/app/link-pago/e-commerce'
-    | '/app/link-pago/productos'
+    | '/app/enviar/dolares'
+    | '/app/enviar/spei'
+    | '/app/link-pago/$'
+    | '/app/cobrar'
     | '/app/cobros'
+    | '/app/enviar'
+    | '/app/cobrar/links/dashboard'
+    | '/app/cobrar/links/productos'
     | '/app/cobros/lote/$id'
   id:
     | '__root__'
@@ -569,14 +624,11 @@ export interface FileRouteTypes {
     | '/registro'
     | '/reset-password'
     | '/verificar-correo'
-    | '/app/api'
     | '/app/api-config'
-    | '/app/cobrar-spei'
     | '/app/cobros'
     | '/app/cuenta'
     | '/app/dolares'
     | '/app/domiciliacion'
-    | '/app/ecommerce'
     | '/app/historial'
     | '/app/integraciones'
     | '/app/link-pago'
@@ -586,7 +638,6 @@ export interface FileRouteTypes {
     | '/app/retiros'
     | '/app/seguridad'
     | '/app/servicios'
-    | '/app/spei'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -604,12 +655,21 @@ export interface FileRouteTypes {
     | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app/'
+    | '/app/(viejas)/cobrar-spei'
+    | '/app/(viejas)/spei'
+    | '/app/cobrar/links'
+    | '/app/cobrar/spei'
+    | '/app/cobrar/tarjeta'
     | '/app/cobros/gestion'
     | '/app/cobros/nuevo'
-    | '/app/link-pago/dashboard'
-    | '/app/link-pago/e-commerce'
-    | '/app/link-pago/productos'
+    | '/app/enviar/dolares'
+    | '/app/enviar/spei'
+    | '/app/link-pago/$'
+    | '/app/cobrar/'
     | '/app/cobros/'
+    | '/app/enviar/'
+    | '/app/cobrar/links/dashboard'
+    | '/app/cobrar/links/productos'
     | '/app/cobros/lote/$id'
   fileRoutesById: FileRoutesById
 }
@@ -691,25 +751,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/api': {
-      id: '/app/api'
-      path: '/api'
-      fullPath: '/app/api'
-      preLoaderRoute: typeof AppApiRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/api-config': {
       id: '/app/api-config'
       path: '/api-config'
       fullPath: '/app/api-config'
       preLoaderRoute: typeof AppApiConfigRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/cobrar-spei': {
-      id: '/app/cobrar-spei'
-      path: '/cobrar-spei'
-      fullPath: '/app/cobrar-spei'
-      preLoaderRoute: typeof AppCobrarSpeiRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/cobros': {
@@ -738,13 +784,6 @@ declare module '@tanstack/react-router' {
       path: '/domiciliacion'
       fullPath: '/app/domiciliacion'
       preLoaderRoute: typeof AppDomiciliacionRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/ecommerce': {
-      id: '/app/ecommerce'
-      path: '/ecommerce'
-      fullPath: '/app/ecommerce'
-      preLoaderRoute: typeof AppEcommerceRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/historial': {
@@ -808,13 +847,6 @@ declare module '@tanstack/react-router' {
       path: '/servicios'
       fullPath: '/app/servicios'
       preLoaderRoute: typeof AppServiciosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/spei': {
-      id: '/app/spei'
-      path: '/spei'
-      fullPath: '/app/spei'
-      preLoaderRoute: typeof AppSpeiRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/subcuentas': {
@@ -929,6 +961,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuscripcionListaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/(viejas)/cobrar-spei': {
+      id: '/app/(viejas)/cobrar-spei'
+      path: '/cobrar-spei'
+      fullPath: '/app/cobrar-spei'
+      preLoaderRoute: typeof AppviejasCobrarSpeiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/(viejas)/spei': {
+      id: '/app/(viejas)/spei'
+      path: '/spei'
+      fullPath: '/app/spei'
+      preLoaderRoute: typeof AppviejasSpeiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cobrar/': {
+      id: '/app/cobrar/'
+      path: '/cobrar'
+      fullPath: '/app/cobrar/'
+      preLoaderRoute: typeof AppCobrarIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cobrar/links': {
+      id: '/app/cobrar/links'
+      path: '/cobrar/links'
+      fullPath: '/app/cobrar/links'
+      preLoaderRoute: typeof AppCobrarLinksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cobrar/spei': {
+      id: '/app/cobrar/spei'
+      path: '/cobrar/spei'
+      fullPath: '/app/cobrar/spei'
+      preLoaderRoute: typeof AppCobrarSpeiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/cobrar/tarjeta': {
+      id: '/app/cobrar/tarjeta'
+      path: '/cobrar/tarjeta'
+      fullPath: '/app/cobrar/tarjeta'
+      preLoaderRoute: typeof AppCobrarTarjetaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/cobros/': {
       id: '/app/cobros/'
       path: '/'
@@ -950,26 +1024,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCobrosNuevoRouteImport
       parentRoute: typeof AppCobrosRoute
     }
-    '/app/link-pago/dashboard': {
-      id: '/app/link-pago/dashboard'
+    '/app/enviar/': {
+      id: '/app/enviar/'
+      path: '/enviar'
+      fullPath: '/app/enviar/'
+      preLoaderRoute: typeof AppEnviarIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/enviar/dolares': {
+      id: '/app/enviar/dolares'
+      path: '/enviar/dolares'
+      fullPath: '/app/enviar/dolares'
+      preLoaderRoute: typeof AppEnviarDolaresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/enviar/spei': {
+      id: '/app/enviar/spei'
+      path: '/enviar/spei'
+      fullPath: '/app/enviar/spei'
+      preLoaderRoute: typeof AppEnviarSpeiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/link-pago/$': {
+      id: '/app/link-pago/$'
+      path: '/$'
+      fullPath: '/app/link-pago/$'
+      preLoaderRoute: typeof AppLinkPagoSplatRouteImport
+      parentRoute: typeof AppLinkPagoRoute
+    }
+    '/app/cobrar/links/dashboard': {
+      id: '/app/cobrar/links/dashboard'
       path: '/dashboard'
-      fullPath: '/app/link-pago/dashboard'
-      preLoaderRoute: typeof AppLinkPagoDashboardRouteImport
-      parentRoute: typeof AppLinkPagoRoute
+      fullPath: '/app/cobrar/links/dashboard'
+      preLoaderRoute: typeof AppCobrarLinksDashboardRouteImport
+      parentRoute: typeof AppCobrarLinksRoute
     }
-    '/app/link-pago/e-commerce': {
-      id: '/app/link-pago/e-commerce'
-      path: '/e-commerce'
-      fullPath: '/app/link-pago/e-commerce'
-      preLoaderRoute: typeof AppLinkPagoECommerceRouteImport
-      parentRoute: typeof AppLinkPagoRoute
-    }
-    '/app/link-pago/productos': {
-      id: '/app/link-pago/productos'
+    '/app/cobrar/links/productos': {
+      id: '/app/cobrar/links/productos'
       path: '/productos'
-      fullPath: '/app/link-pago/productos'
-      preLoaderRoute: typeof AppLinkPagoProductosRouteImport
-      parentRoute: typeof AppLinkPagoRoute
+      fullPath: '/app/cobrar/links/productos'
+      preLoaderRoute: typeof AppCobrarLinksProductosRouteImport
+      parentRoute: typeof AppCobrarLinksRoute
     }
     '/app/cobros/lote/$id': {
       id: '/app/cobros/lote/$id'
@@ -1000,30 +1095,37 @@ const AppCobrosRouteWithChildren = AppCobrosRoute._addFileChildren(
 )
 
 interface AppLinkPagoRouteChildren {
-  AppLinkPagoDashboardRoute: typeof AppLinkPagoDashboardRoute
-  AppLinkPagoECommerceRoute: typeof AppLinkPagoECommerceRoute
-  AppLinkPagoProductosRoute: typeof AppLinkPagoProductosRoute
+  AppLinkPagoSplatRoute: typeof AppLinkPagoSplatRoute
 }
 
 const AppLinkPagoRouteChildren: AppLinkPagoRouteChildren = {
-  AppLinkPagoDashboardRoute: AppLinkPagoDashboardRoute,
-  AppLinkPagoECommerceRoute: AppLinkPagoECommerceRoute,
-  AppLinkPagoProductosRoute: AppLinkPagoProductosRoute,
+  AppLinkPagoSplatRoute: AppLinkPagoSplatRoute,
 }
 
 const AppLinkPagoRouteWithChildren = AppLinkPagoRoute._addFileChildren(
   AppLinkPagoRouteChildren,
 )
 
+interface AppCobrarLinksRouteChildren {
+  AppCobrarLinksDashboardRoute: typeof AppCobrarLinksDashboardRoute
+  AppCobrarLinksProductosRoute: typeof AppCobrarLinksProductosRoute
+}
+
+const AppCobrarLinksRouteChildren: AppCobrarLinksRouteChildren = {
+  AppCobrarLinksDashboardRoute: AppCobrarLinksDashboardRoute,
+  AppCobrarLinksProductosRoute: AppCobrarLinksProductosRoute,
+}
+
+const AppCobrarLinksRouteWithChildren = AppCobrarLinksRoute._addFileChildren(
+  AppCobrarLinksRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppApiRoute: typeof AppApiRoute
   AppApiConfigRoute: typeof AppApiConfigRoute
-  AppCobrarSpeiRoute: typeof AppCobrarSpeiRoute
   AppCobrosRoute: typeof AppCobrosRouteWithChildren
   AppCuentaRoute: typeof AppCuentaRoute
   AppDolaresRoute: typeof AppDolaresRoute
   AppDomiciliacionRoute: typeof AppDomiciliacionRoute
-  AppEcommerceRoute: typeof AppEcommerceRoute
   AppHistorialRoute: typeof AppHistorialRoute
   AppIntegracionesRoute: typeof AppIntegracionesRoute
   AppLinkPagoRoute: typeof AppLinkPagoRouteWithChildren
@@ -1033,21 +1135,26 @@ interface AppRouteChildren {
   AppRetirosRoute: typeof AppRetirosRoute
   AppSeguridadRoute: typeof AppSeguridadRoute
   AppServiciosRoute: typeof AppServiciosRoute
-  AppSpeiRoute: typeof AppSpeiRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
   AppSuscripcionesRoute: typeof AppSuscripcionesRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppviejasCobrarSpeiRoute: typeof AppviejasCobrarSpeiRoute
+  AppviejasSpeiRoute: typeof AppviejasSpeiRoute
+  AppCobrarLinksRoute: typeof AppCobrarLinksRouteWithChildren
+  AppCobrarSpeiRoute: typeof AppCobrarSpeiRoute
+  AppCobrarTarjetaRoute: typeof AppCobrarTarjetaRoute
+  AppEnviarDolaresRoute: typeof AppEnviarDolaresRoute
+  AppEnviarSpeiRoute: typeof AppEnviarSpeiRoute
+  AppCobrarIndexRoute: typeof AppCobrarIndexRoute
+  AppEnviarIndexRoute: typeof AppEnviarIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppApiRoute: AppApiRoute,
   AppApiConfigRoute: AppApiConfigRoute,
-  AppCobrarSpeiRoute: AppCobrarSpeiRoute,
   AppCobrosRoute: AppCobrosRouteWithChildren,
   AppCuentaRoute: AppCuentaRoute,
   AppDolaresRoute: AppDolaresRoute,
   AppDomiciliacionRoute: AppDomiciliacionRoute,
-  AppEcommerceRoute: AppEcommerceRoute,
   AppHistorialRoute: AppHistorialRoute,
   AppIntegracionesRoute: AppIntegracionesRoute,
   AppLinkPagoRoute: AppLinkPagoRouteWithChildren,
@@ -1057,10 +1164,18 @@ const AppRouteChildren: AppRouteChildren = {
   AppRetirosRoute: AppRetirosRoute,
   AppSeguridadRoute: AppSeguridadRoute,
   AppServiciosRoute: AppServiciosRoute,
-  AppSpeiRoute: AppSpeiRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,
   AppSuscripcionesRoute: AppSuscripcionesRoute,
   AppIndexRoute: AppIndexRoute,
+  AppviejasCobrarSpeiRoute: AppviejasCobrarSpeiRoute,
+  AppviejasSpeiRoute: AppviejasSpeiRoute,
+  AppCobrarLinksRoute: AppCobrarLinksRouteWithChildren,
+  AppCobrarSpeiRoute: AppCobrarSpeiRoute,
+  AppCobrarTarjetaRoute: AppCobrarTarjetaRoute,
+  AppEnviarDolaresRoute: AppEnviarDolaresRoute,
+  AppEnviarSpeiRoute: AppEnviarSpeiRoute,
+  AppCobrarIndexRoute: AppCobrarIndexRoute,
+  AppEnviarIndexRoute: AppEnviarIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

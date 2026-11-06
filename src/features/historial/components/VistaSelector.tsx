@@ -1,6 +1,12 @@
 import { Wallet } from "lucide-react";
 import { Card } from "@/components/portal-shell";
+import { SeccionTabs } from "@/shared/ui/seccion-tabs";
 import type { VistaHistorial } from "../hooks/useMovimientosHistorial";
+
+const VISTAS = [
+  { id: "principal", label: "Cuenta principal" },
+  { id: "sub", label: "Por subcuenta" },
+] as const;
 
 export function VistaSelector({
   vista,
@@ -18,26 +24,7 @@ export function VistaSelector({
           <Wallet size={14} className="text-muted-foreground" />
           <span className="font-semibold">Vista:</span>
         </div>
-        <div className="flex gap-1.5">
-          {(
-            [
-              ["principal", "Cuenta principal"],
-              ["sub", "Por subcuenta"],
-            ] as const
-          ).map(([k, l]) => (
-            <button
-              key={k}
-              onClick={() => vista.setVista(k)}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition ${
-                vista.vista === k
-                  ? "bg-[color:var(--brand-primary-50)] text-[color:var(--brand-primary-700)] border-transparent"
-                  : "bg-card hover:bg-muted"
-              }`}
-            >
-              {l}
-            </button>
-          ))}
-        </div>
+        <SeccionTabs tabs={VISTAS} value={vista.vista} onChange={vista.setVista} className="" />
         {vista.vista === "sub" &&
           (sinSubcuentas ? (
             <span className="text-xs text-muted-foreground">Sin subcuentas asociadas</span>

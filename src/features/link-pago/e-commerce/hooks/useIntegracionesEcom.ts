@@ -72,7 +72,7 @@ export function useIntegracionesEcom() {
     setTimeout(async () => {
       if (legajo) await integraciones.refetch();
       setRefreshing(false);
-      toast.success("Catalogo de integraciones actualizado");
+      toast.success("Catálogo de integraciones actualizado");
     }, 600);
   };
 

@@ -8,6 +8,7 @@ import {
   etiquetaPeriodo,
   fmtKey,
   toKey,
+  totalesSpei,
 } from "./utils";
 
 const mov = (tipo: string, monto: number, fecha: string) =>
@@ -101,5 +102,41 @@ describe("agrupación por fecha local", () => {
     );
     expect(k.cobrosLink).toBe(85001);
     expect(k.opsLink).toBe(2);
+  });
+});
+
+describe("totalesSpei", () => {
+  it("suma lo del período y no cuenta envíos fallidos ni en dólares", () => {
+    const start = new Date(2026, 4, 1);
+    const end = new Date(2026, 4, 31, 23, 59, 59);
+    const t = totalesSpei(
+      [
+        { monto: 100, recibidoAt: new Date(2026, 4, 2).toISOString() },
+        { monto: 50, recibidoAt: new Date(2026, 3, 30).toISOString() },
+      ],
+      [
+        {
+          monto: 30,
+          moneda: "MXN",
+          estado: "completada",
+          creadaAt: new Date(2026, 4, 3).toISOString(),
+        },
+        {
+          monto: 20,
+          moneda: "MXN",
+          estado: "fallida",
+          creadaAt: new Date(2026, 4, 3).toISOString(),
+        },
+        {
+          monto: 10,
+          moneda: "USD",
+          estado: "completada",
+          creadaAt: new Date(2026, 4, 3).toISOString(),
+        },
+      ],
+      start,
+      end,
+    );
+    expect(t).toEqual({ recibido: 100, opsRecibido: 1, enviado: 30, opsEnviado: 1 });
   });
 });

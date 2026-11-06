@@ -132,3 +132,33 @@ export function calcularKpis(
     opsLink: count("tarjeta"),
   };
 }
+
+/** Estados de una transferencia SPEI que no salieron de la cuenta (no cuentan como enviadas). */
+const SIN_SALIDA = new Set(["rechazada", "fallida", "cancelada", "error_envio", "devuelta"]);
+
+/**
+ * SPEI del período: depósitos recibidos y transferencias en pesos enviadas (las que no fallaron),
+ * con su cantidad.
+ */
+export function totalesSpei(
+  depositos: Array<{ monto: number; recibidoAt: string }>,
+  transferencias: Array<{ monto: number; moneda: string; estado: string; creadaAt: string }>,
+  start: Date,
+  end: Date,
+) {
+  const enRango = (f: string) => {
+    const t = new Date(f).getTime();
+    return t >= start.getTime() && t <= end.getTime();
+  };
+  const dep = depositos.filter((d) => enRango(d.recibidoAt));
+  const env = transferencias.filter(
+    (t) => t.moneda === "MXN" && !SIN_SALIDA.has(t.estado) && enRango(t.creadaAt),
+  );
+  const suma = (xs: Array<{ monto: number }>) => xs.reduce((a, x) => a + x.monto, 0);
+  return {
+    recibido: suma(dep),
+    opsRecibido: dep.length,
+    enviado: suma(env),
+    opsEnviado: env.length,
+  };
+}

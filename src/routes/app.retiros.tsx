@@ -1,13 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { Badge, BtnOutline, Card, PageHeader } from "@/components/portal-shell";
-import { useComerciosCliente } from "@/hooks/useComercios";
-import { useConexionEcartPay, useRetirosEcartPay } from "@/hooks/useIntegraciones";
+import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
+import { useRetirosEcartPay } from "@/hooks/useIntegraciones";
 import { formatDateTime, formatMoney } from "@/shared/format";
 import { KpiCard } from "@/shared/ui/kpi-card";
 
 export const Route = createFileRoute("/app/retiros")({
-  head: () => ({ meta: [{ title: "Retiros" }] }),
+  head: () => ({ meta: [{ title: "Retiros a tu banco" }] }),
   component: Page,
 });
 
@@ -21,32 +21,30 @@ const ESTADO: Record<string, { label: string; tone: "success" | "warn" | "danger
 };
 const TIPO_CUENTA: Record<string, string> = { clabe: "CLABE", tarjeta: "Tarjeta de débito" };
 
+const DESCRIPCION =
+  "Lo que pasaste de tu cuenta de Ecart Pay a tu banco. Los retiros se piden desde el panel de Ecart Pay.";
+
 function Page() {
-  const { rows, isLoading: cargandoComercios } = useComerciosCliente();
-  const comercioId = rows?.[0]?.id ?? null;
-  const conexion = useConexionEcartPay(comercioId);
-  const conectado = conexion.data?.estado === "conectado";
+  return (
+    <RequiereEcartPay
+      titulo="Retiros a tu banco"
+      descripcion={DESCRIPCION}
+      aviso="Para ver tus retiros primero conecta tu cuenta de Ecart Pay en"
+    >
+      {() => <Retiros />}
+    </RequiereEcartPay>
+  );
+}
+
+function Retiros() {
   const [pagina, setPagina] = useState(1);
-  const { data, isLoading, isFetching, error } = useRetirosEcartPay(pagina, conectado);
+  const { data, isLoading, isFetching, error } = useRetirosEcartPay(pagina, true);
   const cuentas = new Map((data?.cuentas ?? []).map((c) => [c.id, c]));
 
   return (
     <>
-      <PageHeader
-        title="Retiros"
-        description="Lo que pasaste de tu cuenta de Ecart Pay a tu banco. Los retiros se piden desde el panel de Ecart Pay."
-      />
-      {cargandoComercios || conexion.isLoading ? (
-        <Card className="text-sm text-black-400">Cargando…</Card>
-      ) : !conectado ? (
-        <Card className="text-sm">
-          Para ver tus retiros primero conecta tu cuenta de Ecart Pay en{" "}
-          <Link to="/app/integraciones" className="font-semibold text-secondary hover:underline">
-            Integraciones
-          </Link>
-          .
-        </Card>
-      ) : isLoading ? (
+      <PageHeader title="Retiros a tu banco" description={DESCRIPCION} />
+      {isLoading ? (
         <Card className="text-sm text-black-400">Consultando Ecart Pay…</Card>
       ) : error ? (
         <Card className="text-sm text-danger-600">

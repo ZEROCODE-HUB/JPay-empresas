@@ -1,7 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card, PageHeader } from "@/components/portal-shell";
-import { useComerciosCliente } from "@/hooks/useComercios";
-import { useConexionEcartPay } from "@/hooks/useIntegraciones";
+import { createFileRoute } from "@tanstack/react-router";
+import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
 import { PuntosFisicosPanel } from "@/shared/ui/puntos-fisicos-panel";
 
 export const Route = createFileRoute("/app/puntos-fisicos")({
@@ -10,33 +8,19 @@ export const Route = createFileRoute("/app/puntos-fisicos")({
 });
 
 function Page() {
-  const { rows, isLoading: cargandoComercios } = useComerciosCliente();
-  const comercioId = rows?.[0]?.id ?? null;
-  const conexion = useConexionEcartPay(comercioId);
-  const conectado = conexion.data?.estado === "conectado";
-
-  if (cargandoComercios || conexion.isLoading) {
-    return <Card className="text-sm text-black-400">Cargando…</Card>;
-  }
-  if (!comercioId || !conectado) {
-    return (
-      <>
-        <PageHeader title="Puntos físicos" description="Sucursales, cajas y terminales." />
-        <Card className="text-sm">
-          Para gestionar puntos físicos primero conecta tu cuenta de Ecart Pay en{" "}
-          <Link to="/app/integraciones" className="font-semibold underline">
-            Integraciones
-          </Link>
-          .
-        </Card>
-      </>
-    );
-  }
   return (
-    <PuntosFisicosPanel
-      comercioId={comercioId}
+    <RequiereEcartPay
       titulo="Puntos físicos"
-      descripcion="Sucursales, cajas y terminales de tu cuenta de Ecart Pay."
-    />
+      descripcion="Sucursales, cajas y terminales."
+      aviso="Para gestionar puntos físicos primero conecta tu cuenta de Ecart Pay en"
+    >
+      {(comercioId) => (
+        <PuntosFisicosPanel
+          comercioId={comercioId}
+          titulo="Puntos físicos"
+          descripcion="Sucursales, cajas y terminales de tu cuenta de Ecart Pay."
+        />
+      )}
+    </RequiereEcartPay>
   );
 }

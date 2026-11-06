@@ -1,5 +1,6 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/portal-shell";
+import { createFileRoute } from "@tanstack/react-router";
+import { Receipt } from "lucide-react";
+import { Card, PageHeader } from "@/components/portal-shell";
 import { BarcodeScanModal } from "@/features/servicios/components/BarcodeScanModal";
 import { HistorialServicios } from "@/features/servicios/components/HistorialServicios";
 import { ProximosPagos } from "@/features/servicios/components/ProximosPagos";
@@ -12,17 +13,42 @@ import { ServiciosKpis } from "@/features/servicios/components/ServiciosKpis";
 import { ServiciosSuscritos } from "@/features/servicios/components/ServiciosSuscritos";
 import { SeccionesServicios } from "@/features/servicios/components/ServiciosTabs";
 import { usePantallaServicios } from "@/features/servicios/hooks/usePantallaServicios";
+import { usePaisConModulos } from "@/shared/modulos-pais";
+import { EmptyState } from "@/shared/ui/empty-state";
 
-export const Route = createFileRoute("/app/servicios")({ component: Page });
+export const Route = createFileRoute("/app/servicios")({
+  head: () => ({ meta: [{ title: "Pago de servicios" }] }),
+  component: Page,
+});
 
+/** Se muestra solo con el módulo `servicios` prendido (todavía no tiene backend). */
 function Page() {
+  const pais = usePaisConModulos();
+  if (!pais.modulos.servicios) {
+    return (
+      <>
+        <PageHeader title="Pago de servicios" />
+        <Card>
+          <EmptyState
+            icon={<Receipt size={48} strokeWidth={1.5} />}
+            title="Pago de servicios todavía no está disponible"
+            description="Te avisaremos cuando puedas pagar tus servicios desde tu cuenta."
+          />
+        </Card>
+      </>
+    );
+  }
+  return <PantallaServicios />;
+}
+
+function PantallaServicios() {
   const p = usePantallaServicios();
 
   return (
     <>
       <PageHeader
-        title="Servicios y pagos"
-        description="Pago de servicios e historial de operaciones."
+        title="Pago de servicios"
+        description="Paga tus servicios y consulta el historial de operaciones."
       />
 
       <ServiciosKpis

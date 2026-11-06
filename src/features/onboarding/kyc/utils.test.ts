@@ -91,7 +91,7 @@ describe("armarAlta", () => {
       fechaNacimiento: "1990-01-01",
     });
   });
-  it("persona jurídica usa el identificador fiscal y la razón social de la empresa", () => {
+  it("persona moral usa el identificador fiscal y la razón social de la empresa", () => {
     const r = armarAlta(
       addr,
       "juridica",

@@ -13,8 +13,17 @@ import { BrandLogo } from "./brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
 import type { Modulo } from "@/shared/pais";
 
-/** `modulo`: el ítem solo aparece si el país lo tiene (ver `filtrarPorModulo`). */
-export type NavLeaf = { to: string; label: string; icon: LucideIcon; modulo?: Modulo };
+/**
+ * `modulo`: el ítem solo aparece si el país lo tiene (ver `filtrarPorModulo`).
+ * `exact`: se marca activo solo en su ruta exacta; si no, también en sus sub-rutas.
+ */
+export type NavLeaf = {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  modulo?: Modulo;
+  exact?: boolean;
+};
 export type NavGroup = { label: string; icon: LucideIcon; items: NavLeaf[]; modulo?: Modulo };
 export type NavItem = NavLeaf | NavGroup;
 
@@ -23,14 +32,31 @@ const isGroup = (item: NavItem): item is NavGroup => (item as NavGroup).items !=
 const flattenLeaves = (nav: NavItem[]): NavLeaf[] =>
   nav.flatMap((i) => (isGroup(i) ? i.items : [i]));
 
+/**
+ * El ítem activo para la ruta: el de ruta exacta o, si no es `exact`, el que la contiene como
+ * prefijo (`/app/cobros` en `/app/cobros/nuevo`); si hay varios, el más específico.
+ */
+export function rutaActiva(leaves: NavLeaf[], path: string): string | null {
+  const p = path.length > 1 ? path.replace(/\/$/, "") : path;
+  let mejor: string | null = null;
+  for (const l of leaves) {
+    const coincide = p === l.to || (!l.exact && p.startsWith(`${l.to}/`));
+    if (coincide && (!mejor || l.to.length > mejor.length)) mejor = l.to;
+  }
+  return mejor;
+}
+
 export function PortalShell({
   nav,
+  mobileNav,
   title,
   userName,
   userEmail,
   children,
 }: {
   nav: NavItem[];
+  /** Accesos de la barra inferior en móvil (por defecto, los 4 primeros ítems del menú). */
+  mobileNav?: NavLeaf[];
   title: string;
   userName?: string;
   userEmail?: string;
@@ -43,8 +69,10 @@ export function PortalShell({
   const navigate = useNavigate();
 
   const leaves = useMemo(() => flattenLeaves(nav), [nav]);
-  const mainNav = leaves.slice(0, 4);
-  const more = leaves.slice(4);
+  const mainNav = mobileNav ?? leaves.slice(0, 4);
+  const more = mobileNav ? leaves : leaves.slice(4);
+  const activa = rutaActiva(leaves, path);
+  const activaMovil = rutaActiva(mainNav, path);
 
   const onLogout = () => {
     setRole(null);
@@ -118,7 +146,7 @@ export function PortalShell({
             </button>
           </div>
           <nav className="p-3 flex-1 overflow-y-auto">
-            <SidebarNav nav={nav} path={path} collapsed={collapsed} />
+            <SidebarNav nav={nav} activa={activa} collapsed={collapsed} />
           </nav>
         </aside>
 
@@ -130,7 +158,7 @@ export function PortalShell({
                 <BrandLogo variant="light" />
               </div>
               <nav className="p-3 flex-1 overflow-y-auto">
-                <SidebarNav nav={nav} path={path} onNavigate={() => setOpen(false)} />
+                <SidebarNav nav={nav} activa={activa} onNavigate={() => setOpen(false)} />
               </nav>
             </aside>
           </div>
@@ -143,7 +171,7 @@ export function PortalShell({
 
       <nav className="lg:hidden fixed bottom-0 inset-x-0 h-16 bg-white border-t border-black-100 flex items-stretch z-30">
         {mainNav.map((item) => {
-          const active = path === item.to;
+          const active = activaMovil === item.to;
           const Icon = item.icon;
           return (
             <Link
@@ -174,12 +202,12 @@ export function PortalShell({
 
 function SidebarNav({
   nav,
-  path,
+  activa,
   collapsed,
   onNavigate,
 }: {
   nav: NavItem[];
-  path: string;
+  activa: string | null;
   collapsed?: boolean;
   onNavigate?: () => void;
 }) {
@@ -192,7 +220,7 @@ function SidebarNav({
               <SidebarLink
                 key={leaf.to}
                 item={leaf}
-                active={path === leaf.to}
+                active={activa === leaf.to}
                 onNavigate={onNavigate}
                 collapsed
               />
@@ -201,7 +229,7 @@ function SidebarNav({
             <SidebarLink
               key={item.to}
               item={item}
-              active={path === item.to}
+              active={activa === item.to}
               onNavigate={onNavigate}
               collapsed
             />
@@ -218,14 +246,14 @@ function SidebarNav({
           <SidebarGroup
             key={`g-${idx}-${item.label}`}
             group={item}
-            path={path}
+            activa={activa}
             onNavigate={onNavigate}
           />
         ) : (
           <SidebarLink
             key={item.to}
             item={item}
-            active={path === item.to}
+            active={activa === item.to}
             onNavigate={onNavigate}
           />
         ),
@@ -292,14 +320,14 @@ function SidebarLink({
 
 function SidebarGroup({
   group,
-  path,
+  activa,
   onNavigate,
 }: {
   group: NavGroup;
-  path: string;
+  activa: string | null;
   onNavigate?: () => void;
 }) {
-  const containsActive = group.items.some((i) => i.to === path);
+  const containsActive = group.items.some((i) => i.to === activa);
   const [open, setOpen] = useState(containsActive);
   const Icon = group.icon;
   const expanded = open || containsActive;
@@ -325,7 +353,7 @@ function SidebarGroup({
             <SidebarLink
               key={it.to}
               item={it}
-              active={path === it.to}
+              active={activa === it.to}
               onNavigate={onNavigate}
               nested
             />

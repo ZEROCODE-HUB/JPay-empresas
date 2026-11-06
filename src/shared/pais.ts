@@ -45,7 +45,9 @@ export type Modulo =
   /** Suscripciones con tarjeta (Ecart Pay). */
   | "suscripciones"
   /** Domiciliación: cargos recurrentes a la CLABE del cliente (Ecart Pay). */
-  | "domiciliacion";
+  | "domiciliacion"
+  /** Pago de servicios desde el portal (apagado hasta que tenga backend). */
+  | "servicios";
 
 export type RegimenFiscal = { codigo: string; nombre: string; persona: TipoPersona | "ambas" };
 
@@ -249,6 +251,7 @@ const MX: ConfigPais = {
     monitoreo_automatico: true,
     suscripciones: true,
     domiciliacion: true,
+    servicios: false,
   },
   textos: {
     notaRegulatoria: null,

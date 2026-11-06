@@ -32,7 +32,7 @@ export function IntegracionesTabla({ s }: { s: IntegracionesEcom }) {
             <tr className="text-[11px] uppercase tracking-wide text-muted-foreground border-b bg-muted/30">
               <th className="text-left px-5 py-2.5">E-commerce</th>
               <th className="text-left px-5 py-2.5">Estado</th>
-              <th className="text-left px-5 py-2.5">Fecha de Creacion</th>
+              <th className="text-left px-5 py-2.5">Fecha de creación</th>
               <th className="text-right px-5 py-2.5">Acciones</th>
             </tr>
           </thead>

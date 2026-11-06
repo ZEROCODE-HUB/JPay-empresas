@@ -4,7 +4,7 @@ import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import type { KpisDashboard } from "../utils";
 
-function Kpi({
+export function Kpi({
   label,
   value,
   sub,
@@ -37,8 +37,16 @@ function Kpi({
   );
 }
 
-/** Las dos filas de KPIs del dashboard. */
-export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuentaLabel: string }) {
+/** Las dos filas de KPIs del inicio; `children` suma KPIs a la segunda fila (por proveedor). */
+export function DashboardKpis({
+  kpis,
+  cuentaLabel,
+  children,
+}: {
+  kpis: KpisDashboard;
+  cuentaLabel: string;
+  children?: ReactNode;
+}) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -57,7 +65,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           iconClass="bg-success-bg text-success"
         />
         <Kpi
-          label="Retiros del período"
+          label="Salidas del período"
           value={formatMoney(kpis.retiros)}
           sub={`${kpis.opsRet} operaciones`}
           icon={<ArrowUpRight size={18} />}
@@ -79,6 +87,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
+        {children}
       </div>
     </>
   );

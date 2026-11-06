@@ -10,7 +10,7 @@
 
 ## 1. Objetivo
 
-El cliente empresarial genera **links de pago** desde el portal (`/app/link-pago/productos`). Cada link lleva a una
+El cliente empresarial genera **links de pago** desde el portal (`/app/cobrar/links/productos`). Cada link lleva a una
 **página de checkout pública e independiente** (Hosted Payment Page, HPP) donde un pagador anónimo puede abonar con
 los métodos habilitados y branding JPay. Hoy el pago es **simulado**, pero la arquitectura deja la puerta abierta
 para enchufar un PSP real sin tocar la UI.

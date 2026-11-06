@@ -1,6 +1,5 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageHeader } from "@/components/portal-shell";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
 import { useClienteActual } from "@/hooks/useLinksPago";
 import { GenerarLinkDialog } from "@/features/link-pago/productos/components/GenerarLinkDialog";
@@ -13,7 +12,7 @@ import { useCatalogoProductos } from "@/features/link-pago/productos/hooks/useCa
 import { useGenerarLink } from "@/features/link-pago/productos/hooks/useGenerarLink";
 import { useListaLinks } from "@/features/link-pago/productos/hooks/useListaLinks";
 
-export const Route = createFileRoute("/app/link-pago/productos")({ component: Page });
+export const Route = createFileRoute("/app/cobrar/links/productos")({ component: Page });
 
 const TABS = [
   ["productos", "Productos"],
@@ -40,11 +39,6 @@ function Page() {
 
   return (
     <>
-      <PageHeader
-        title="Productos"
-        description="Crea productos y genera links de cobro para compartir con tus clientes."
-      />
-
       <div className="flex gap-6 border-b border-black-100 mb-6">
         {TABS.map(([k, l]) => (
           <button
@@ -85,7 +79,7 @@ function Page() {
             closeOnConfirm
             open={catalogo.confirmarEliminarId !== null}
             title="¿Eliminar producto?"
-            message="Esta accion no se puede deshacer."
+            message="Esta acción no se puede deshacer."
             onClose={() => catalogo.setConfirmarEliminarId(null)}
             onConfirm={() => {
               if (catalogo.confirmarEliminarId)
@@ -115,7 +109,7 @@ function Page() {
         closeOnConfirm
         open={eliminarLinkId !== null}
         title="¿Eliminar link de pago?"
-        message="El enlace dejara de funcionar y no se podra recuperar. Esta accion no se puede deshacer."
+        message="El enlace dejará de funcionar y no se podrá recuperar. Esta acción no se puede deshacer."
         onClose={() => lista.setConfirmarEliminarId(null)}
         onConfirm={() => {
           if (eliminarLinkId) lista.deleteLink(eliminarLinkId);

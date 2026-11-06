@@ -1,4 +1,3 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import {
   PieChart,
@@ -13,24 +12,19 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Download, FileSpreadsheet } from "lucide-react";
-import { Card, BtnOutline, PageHeader } from "@/components/portal-shell";
+import { Card, BtnOutline } from "@/components/portal-shell";
 import { formatMoney, monedaActiva } from "@/shared/format";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { applyPlugin } from "jspdf-autotable";
 import { useClienteActual, useDashboardLinksPago } from "@/hooks/useLinksPago";
 
-// jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
-applyPlugin(jsPDF);
-
-export const Route = createFileRoute("/app/link-pago/dashboard")({ component: Dashboard });
-
 const presets = [
   { label: "Hoy", days: 0 },
-  { label: "15 dias", days: 15 },
-  { label: "30 dias", days: 30 },
-  { label: "60 dias", days: 60 },
-  { label: "90 dias", days: 90 },
+  { label: "15 días", days: 15 },
+  { label: "30 días", days: 30 },
+  { label: "60 días", days: 60 },
+  { label: "90 días", days: 90 },
 ];
 
 const COLORS: Record<string, string> = {
@@ -52,7 +46,8 @@ const METHOD_COLORS = [
   "#ca8a04",
 ];
 
-function Dashboard() {
+/** Resumen de cobros con links de pago: KPIs, gráficos y exportación (Links de pago y Reportes). */
+export function LinksPagoResumen() {
   const [days, setDays] = useState(30);
   const { data: cliente } = useClienteActual();
   const { data } = useDashboardLinksPago(cliente?.legajo, days);
@@ -96,43 +91,42 @@ function Dashboard() {
     { label: "Pendientes", value: metrics.pending.toString() },
     { label: "Rechazadas", value: metrics.rejected.toString() },
     { label: "Reembolsos", value: metrics.refunds.toString() },
-    { label: "Tasa de conversion", value: metrics.conversionRate + "%" },
+    { label: "Tasa de conversión", value: metrics.conversionRate + "%" },
     { label: "Ticket promedio", value: formatMoney(metrics.avgTicket, { decimals: 0 }) },
   ];
 
-  const label = presets.find((p) => p.days === days)?.label ?? `${days} dias`;
+  const label = presets.find((p) => p.days === days)?.label ?? `${days} días`;
 
   const exportExcel = () => {
     const ws = XLSX.utils.json_to_sheet([
-      { Metrica: "Total aprobado", Valor: formatMoney(metrics.totalApproved) },
-      { Metrica: "Transacciones totales", Valor: metrics.totalTx },
-      { Metrica: "Pendientes", Valor: metrics.pending },
-      { Metrica: "Rechazadas", Valor: metrics.rejected },
-      { Metrica: "Reembolsos", Valor: metrics.refunds },
-      { Metrica: "Tasa de conversion", Valor: metrics.conversionRate + "%" },
-      { Metrica: "Ticket promedio", Valor: formatMoney(metrics.avgTicket) },
-      ...linkData.map((d) => ({ Metrica: "Monto " + d.name, Valor: formatMoney(d.amount) })),
+      { Métrica: "Total aprobado", Valor: formatMoney(metrics.totalApproved) },
+      { Métrica: "Transacciones totales", Valor: metrics.totalTx },
+      { Métrica: "Pendientes", Valor: metrics.pending },
+      { Métrica: "Rechazadas", Valor: metrics.rejected },
+      { Métrica: "Reembolsos", Valor: metrics.refunds },
+      { Métrica: "Tasa de conversión", Valor: metrics.conversionRate + "%" },
+      { Métrica: "Ticket promedio", Valor: formatMoney(metrics.avgTicket) },
+      ...linkData.map((d) => ({ Métrica: "Monto " + d.name, Valor: formatMoney(d.amount) })),
     ]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dashboard");
+    XLSX.utils.book_append_sheet(wb, ws, "Resumen");
     XLSX.writeFile(wb, "links-pago-dashboard-" + label + ".xlsx");
   };
 
   const exportPDF = () => {
+    // jspdf-autotable 5 ya no se engancha solo a jsPDF: sin esto `doc.autoTable` no existe.
+    // Se engancha al exportar (no al cargar el módulo) para que el render en el servidor no falle.
+    applyPlugin(jsPDF);
     const doc = new jsPDF();
-    doc.text("Dashboard - Links de Pago", 14, 20);
-    doc.text("Periodo: " + label, 14, 30);
+    doc.text("Resumen - Links de pago", 14, 20);
+    doc.text("Período: " + label, 14, 30);
     const body = kpis.map((k) => [k.label, k.value]);
-    (doc as any).autoTable({ startY: 38, head: [["Metrica", "Valor"]], body });
+    (doc as any).autoTable({ startY: 38, head: [["Métrica", "Valor"]], body });
     doc.save("links-pago-dashboard-" + label + ".pdf");
   };
 
   return (
     <div>
-      <PageHeader
-        title="Links de Pago"
-        description="Genera y administra links de cobro, productos e integraciones con tu tienda."
-      />
       <div className="flex flex-wrap gap-2 mb-6">
         {presets.map((p) => (
           <button

@@ -1,63 +1,52 @@
-﻿import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { brand, pageTitle } from "@/brand/brand";
 import { useState } from "react";
 import { ExternalLink, BookOpen, X } from "lucide-react";
-import { Card, BtnPrimary, BtnOutline } from "@/components/portal-shell";
+import { Card, BtnPrimary, BtnOutline, PageHeader } from "@/components/portal-shell";
+import { CapacidadesCard } from "@/features/link-pago/e-commerce/components/CapacidadesCard";
+import { ClaveIntegracionModal } from "@/features/link-pago/e-commerce/components/ClaveIntegracionModal";
+import { IntegracionesTabla } from "@/features/link-pago/e-commerce/components/IntegracionesTabla";
+import { useIntegracionesEcom } from "@/features/link-pago/e-commerce/hooks/useIntegracionesEcom";
 
 export const Route = createFileRoute("/app/api-config")({
   head: () => ({
-    meta: [
-      { title: pageTitle("Configuracion de APIs Externas") },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: pageTitle("APIs y e-commerce") }, { name: "robots", content: "noindex" }],
   }),
   component: Page,
 });
 
 function Page() {
   const [modalOpen, setModalOpen] = useState(false);
+  const ecom = useIntegracionesEcom();
 
   return (
     <>
-      {/* Breadcrumb */}
-      <nav className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
-        <Link to="/app" className="hover:text-foreground transition">
-          Inicio
-        </Link>
-        <span>/</span>
-        <span className="text-foreground font-semibold">Configuracion de APIs Externas</span>
-      </nav>
-
-      {/* Title */}
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold">Configuracion de APIs Externas</h1>
-        <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
-          Gestione el acceso a las APIs externas de la plataforma. Para consultar la documentacion
-          tecnica, visite nuestro sitio de documentacion.
-        </p>
-      </div>
+      <PageHeader
+        title="APIs y e-commerce"
+        description="Integra tus sistemas con las APIs de la plataforma y conecta tu tienda en línea para cobrar con links de pago."
+      />
 
       {/* Action card */}
-      <Card className="max-w-xl">
+      <Card className="max-w-xl mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
           <div className="flex-1">
-            <h2 className="text-sm font-semibold">Modulo de APIs Externas</h2>
+            <h2 className="text-sm font-semibold">Módulo de APIs externas</h2>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Este modulo le permite integrar sus sistemas con las APIs externas de {brand.name}.
-              Actualmente no esta habilitado para su cuenta.
+              Este módulo te permite integrar tus sistemas con las APIs externas de {brand.name}.
+              Todavía no está habilitado para tu cuenta.
             </p>
           </div>
           <div className="flex flex-col gap-2 shrink-0">
             <a
-              href={`${window.location.origin}/docs`}
+              href="/docs"
               target="_blank"
               rel="noreferrer"
               className="inline-flex h-9 items-center gap-2 px-4 text-sm font-semibold rounded-md border bg-card hover:bg-muted transition whitespace-nowrap"
             >
-              <BookOpen size={14} /> Ver documentacion
+              <BookOpen size={14} /> Ver documentación
             </a>
             <BtnPrimary onClick={() => setModalOpen(true)}>
-              <ExternalLink size={14} /> Solicitar habilitacion
+              <ExternalLink size={14} /> Solicitar habilitación
             </BtnPrimary>
           </div>
         </div>
@@ -83,9 +72,11 @@ function Page() {
               </div>
             </div>
             <h3 className="text-base font-semibold mb-2">
-              El modulo de APIs externas no esta habilitado para su cuenta.
+              El módulo de APIs externas no está habilitado para tu cuenta.
             </h3>
-            <p className="text-sm text-muted-foreground mb-6">¿Desea solicitar su habilitacion?</p>
+            <p className="text-sm text-muted-foreground mb-6">
+              ¿Quieres solicitar su habilitación?
+            </p>
             <div className="flex gap-3 justify-center">
               <BtnOutline onClick={() => setModalOpen(false)}>Cancelar</BtnOutline>
               <BtnPrimary
@@ -98,12 +89,16 @@ function Page() {
                   setModalOpen(false);
                 }}
               >
-                Solicitar habilitacion
+                Solicitar habilitación
               </BtnPrimary>
             </div>
           </div>
         </div>
       )}
+
+      <CapacidadesCard />
+      <IntegracionesTabla s={ecom} />
+      <ClaveIntegracionModal s={ecom} />
     </>
   );
 }

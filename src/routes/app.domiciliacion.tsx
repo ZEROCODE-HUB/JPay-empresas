@@ -1,7 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { Card, PageHeader } from "@/components/portal-shell";
-import { useComerciosCliente } from "@/hooks/useComercios";
-import { useConexionEcartPay } from "@/hooks/useIntegraciones";
+import { createFileRoute } from "@tanstack/react-router";
+import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
 import { DomiciliacionesPanel } from "@/shared/ui/domiciliaciones-panel";
 
 export const Route = createFileRoute("/app/domiciliacion")({
@@ -9,37 +7,18 @@ export const Route = createFileRoute("/app/domiciliacion")({
   component: Page,
 });
 
-function Page() {
-  const { rows, isLoading: cargandoComercios } = useComerciosCliente();
-  const comercioId = rows?.[0]?.id ?? null;
-  const conexion = useConexionEcartPay(comercioId);
-  const conectado = conexion.data?.estado === "conectado";
+const DESCRIPCION = "Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación.";
 
-  if (cargandoComercios || conexion.isLoading) {
-    return <Card className="text-sm text-black-400">Cargando…</Card>;
-  }
-  if (!comercioId || !conectado) {
-    return (
-      <>
-        <PageHeader
-          title="Domiciliación"
-          description="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación."
-        />
-        <Card className="text-sm">
-          Primero conecta tu cuenta de Ecart Pay en{" "}
-          <Link to="/app/integraciones" className="font-semibold underline">
-            Integraciones
-          </Link>
-          .
-        </Card>
-      </>
-    );
-  }
+function Page() {
   return (
-    <DomiciliacionesPanel
-      comercioId={comercioId}
-      titulo="Domiciliación"
-      descripcion="Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación."
-    />
+    <RequiereEcartPay titulo="Domiciliación" descripcion={DESCRIPCION}>
+      {(comercioId) => (
+        <DomiciliacionesPanel
+          comercioId={comercioId}
+          titulo="Domiciliación"
+          descripcion={DESCRIPCION}
+        />
+      )}
+    </RequiereEcartPay>
   );
 }

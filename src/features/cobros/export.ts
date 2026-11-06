@@ -135,7 +135,7 @@ export function exportarLotesExcel(lotes: LoteGestionRow[]) {
 
 export function exportarLotesPdf(lotes: LoteGestionRow[]) {
   const doc = new jsPDF("landscape");
-  doc.text("Reporte de Lotes - Cobros Masivos", 14, 20);
+  doc.text("Reporte de lotes - Cobros masivos", 14, 20);
   const total = lotes.reduce((s, l) => s + l.montoTotal, 0);
   const cobrado = lotes.reduce((s, l) => s + l.montoCobrado, 0);
   doc.text(
@@ -197,7 +197,7 @@ export function exportarDashboardExcel(d: DatosDashboard, periodo: string) {
 
 export function exportarDashboardPdf(kpi: DashboardKPI, periodo: string) {
   const doc = new jsPDF();
-  doc.text("Dashboard - Cobros Masivos", 14, 20);
+  doc.text("Resumen - Cobros masivos", 14, 20);
   doc.text(`Periodo: ${periodo}`, 14, 30);
   const body = [
     ["Total de lotes", String(kpi.totalLotes)],

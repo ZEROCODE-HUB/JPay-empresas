@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Plug } from "lucide-react";
 import { toast } from "sonner";
 import { Card, PageHeader } from "@/components/portal-shell";
-import { CobrosEcartPayCard } from "@/features/integraciones/components/CobrosEcartPayCard";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { useComerciosCliente } from "@/hooks/useComercios";
+import { EmptyState } from "@/shared/ui/empty-state";
 
 type Busqueda = { ecartpay?: "conectado" | "error"; motivo?: string };
 
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/app/integraciones")({
     ecartpay: s.ecartpay === "conectado" || s.ecartpay === "error" ? s.ecartpay : undefined,
     motivo: typeof s.motivo === "string" ? s.motivo : undefined,
   }),
-  head: () => ({ meta: [{ title: "Integraciones" }] }),
+  head: () => ({ meta: [{ title: "Conexiones" }] }),
   component: Page,
 });
 
@@ -36,15 +37,18 @@ function Page() {
   return (
     <>
       <PageHeader
-        title="Integraciones"
-        description="Conecta las cuentas con las que cobras tus ventas."
+        title="Conexiones"
+        description="Conecta las cuentas con las que cobras tus ventas. Lo que cobras con Ecart Pay lo ves en Cobrar › Cobros con tarjeta."
       />
       {isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>
       ) : !actual ? (
-        <Card className="text-sm">
-          Tu cuenta todavía no tiene un comercio habilitado. Cuando el equipo de JPay lo dé de alta,
-          podrás conectar tus medios de cobro desde aquí.
+        <Card>
+          <EmptyState
+            icon={<Plug size={48} strokeWidth={1.5} />}
+            title="Todavía no tienes un comercio habilitado"
+            description="Cuando el equipo de JPay lo dé de alta, podrás conectar tus medios de cobro desde aquí."
+          />
         </Card>
       ) : (
         <div className="space-y-4">
@@ -65,7 +69,6 @@ function Page() {
             </label>
           )}
           <EcartPayCard comercioId={actual} />
-          <CobrosEcartPayCard />
         </div>
       )}
     </>

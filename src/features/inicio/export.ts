@@ -28,7 +28,7 @@ export function exportarDashboard(
     const ws = XLSX.utils.json_to_sheet([
       { Resumen: "Saldo total", Valor: formatMoney(kpis.saldo) },
       { Resumen: "Depósitos", Valor: formatMoney(kpis.depositos) },
-      { Resumen: "Retiros", Valor: formatMoney(kpis.retiros) },
+      { Resumen: "Salidas", Valor: formatMoney(kpis.retiros) },
       { Resumen: "Cobros Link de Pago", Valor: formatMoney(kpis.cobrosLink) },
       { Resumen: "Cuentas", Valor: String(kpis.cuentas) },
       {},
@@ -56,7 +56,7 @@ export function exportarDashboard(
       body: [
         ["Saldo total", formatMoney(kpis.saldo)],
         ["Depósitos", formatMoney(kpis.depositos)],
-        ["Retiros", formatMoney(kpis.retiros)],
+        ["Salidas", formatMoney(kpis.retiros)],
         ["Cobros Link de Pago", formatMoney(kpis.cobrosLink)],
         ["Cuentas", String(kpis.cuentas)],
       ],
