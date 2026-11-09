@@ -16,6 +16,9 @@ export function EquipoCard({ eq }: { eq: Equipo }) {
         </BtnOutline>
       </div>
       <div className="divide-y">
+        {eq.team.length === 0 && (
+          <p className="py-3 text-sm text-muted-foreground">Todavía no invitaste a nadie.</p>
+        )}
         {eq.team.map((u) => (
           <div key={u.e} className="flex items-center justify-between py-3">
             <div>

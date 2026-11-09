@@ -4,7 +4,7 @@ import { enviarInvitacion } from "@/lib/api/auth";
 import { EQUIPO_INICIAL } from "../estados";
 import { validarInvitacion } from "../utils";
 
-/** Miembros del equipo (de ejemplo) y diálogo de invitación. */
+/** Miembros del equipo (todavía sin cargar de la base) y diálogo de invitación. */
 export function useEquipo() {
   const [team, setTeam] = useState(EQUIPO_INICIAL);
   const [inviteOpen, setInviteOpen] = useState(false);

@@ -45,7 +45,6 @@ import { Route as PCodeRouteImport } from './routes/p.$code'
 import { Route as RegistroEmpresaRouteImport } from './routes/registro.empresa'
 import { Route as RegistroExitoRouteImport } from './routes/registro.exito'
 import { Route as RegistroValidacionExitosaRouteImport } from './routes/registro.validacion-exitosa'
-import { Route as RegistroValidarEmailRouteImport } from './routes/registro.validar-email'
 import { Route as SuscripcionListaRouteImport } from './routes/suscripcion.lista'
 import { Route as AppviejasCobrarSpeiRouteImport } from './routes/app.(viejas).cobrar-spei'
 import { Route as AppviejasSpeiRouteImport } from './routes/app.(viejas).spei'
@@ -246,11 +245,6 @@ const RegistroValidacionExitosaRoute =
     path: '/validacion-exitosa',
     getParentRoute: () => RegistroRoute,
   } as any)
-const RegistroValidarEmailRoute = RegistroValidarEmailRouteImport.update({
-  id: '/validar-email',
-  path: '/validar-email',
-  getParentRoute: () => RegistroRoute,
-} as any)
 const SuscripcionListaRoute = SuscripcionListaRouteImport.update({
   id: '/suscripcion/lista',
   path: '/suscripcion/lista',
@@ -373,7 +367,6 @@ export interface FileRoutesByFullPath {
   '/registro/empresa': typeof RegistroEmpresaRoute
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
-  '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
   '/app/cobrar-spei': typeof AppviejasCobrarSpeiRoute
@@ -427,7 +420,6 @@ export interface FileRoutesByTo {
   '/registro/empresa': typeof RegistroEmpresaRoute
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
-  '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app': typeof AppIndexRoute
   '/app/cobrar-spei': typeof AppviejasCobrarSpeiRoute
@@ -484,7 +476,6 @@ export interface FileRoutesById {
   '/registro/empresa': typeof RegistroEmpresaRoute
   '/registro/exito': typeof RegistroExitoRoute
   '/registro/validacion-exitosa': typeof RegistroValidacionExitosaRoute
-  '/registro/validar-email': typeof RegistroValidarEmailRoute
   '/suscripcion/lista': typeof SuscripcionListaRoute
   '/app/': typeof AppIndexRoute
   '/app/(viejas)/cobrar-spei': typeof AppviejasCobrarSpeiRoute
@@ -542,7 +533,6 @@ export interface FileRouteTypes {
     | '/registro/empresa'
     | '/registro/exito'
     | '/registro/validacion-exitosa'
-    | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app/'
     | '/app/cobrar-spei'
@@ -596,7 +586,6 @@ export interface FileRouteTypes {
     | '/registro/empresa'
     | '/registro/exito'
     | '/registro/validacion-exitosa'
-    | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app'
     | '/app/cobrar-spei'
@@ -652,7 +641,6 @@ export interface FileRouteTypes {
     | '/registro/empresa'
     | '/registro/exito'
     | '/registro/validacion-exitosa'
-    | '/registro/validar-email'
     | '/suscripcion/lista'
     | '/app/'
     | '/app/(viejas)/cobrar-spei'
@@ -947,13 +935,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegistroValidacionExitosaRouteImport
       parentRoute: typeof RegistroRoute
     }
-    '/registro/validar-email': {
-      id: '/registro/validar-email'
-      path: '/validar-email'
-      fullPath: '/registro/validar-email'
-      preLoaderRoute: typeof RegistroValidarEmailRouteImport
-      parentRoute: typeof RegistroRoute
-    }
     '/suscripcion/lista': {
       id: '/suscripcion/lista'
       path: '/suscripcion/lista'
@@ -1184,14 +1165,12 @@ interface RegistroRouteChildren {
   RegistroEmpresaRoute: typeof RegistroEmpresaRoute
   RegistroExitoRoute: typeof RegistroExitoRoute
   RegistroValidacionExitosaRoute: typeof RegistroValidacionExitosaRoute
-  RegistroValidarEmailRoute: typeof RegistroValidarEmailRoute
 }
 
 const RegistroRouteChildren: RegistroRouteChildren = {
   RegistroEmpresaRoute: RegistroEmpresaRoute,
   RegistroExitoRoute: RegistroExitoRoute,
   RegistroValidacionExitosaRoute: RegistroValidacionExitosaRoute,
-  RegistroValidarEmailRoute: RegistroValidarEmailRoute,
 }
 
 const RegistroRouteWithChildren = RegistroRoute._addFileChildren(

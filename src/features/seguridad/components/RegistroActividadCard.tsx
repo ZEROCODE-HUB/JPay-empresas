@@ -9,6 +9,11 @@ export function RegistroActividadCard() {
         <AlertTriangle size={16} /> Registro de actividad
       </h3>
       <div className="divide-y">
+        {LOG_ACTIVIDAD.length === 0 && (
+          <p className="py-2.5 text-sm text-muted-foreground">
+            Todavía no hay actividad registrada.
+          </p>
+        )}
         {LOG_ACTIVIDAD.map((l, i) => (
           <div key={i} className="flex items-center justify-between py-2.5">
             <div className="flex items-center gap-2.5">
@@ -25,7 +30,7 @@ export function RegistroActividadCard() {
           </div>
         ))}
       </div>
-      <BtnOutline className="mt-4">Ver historial completo</BtnOutline>
+      {LOG_ACTIVIDAD.length > 0 && <BtnOutline className="mt-4">Ver historial completo</BtnOutline>}
     </Card>
   );
 }

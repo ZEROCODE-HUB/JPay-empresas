@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EQUIPO_INICIAL, OPCIONES_TIEMPO_SESION } from "./estados";
+import { OPCIONES_TIEMPO_SESION, type Miembro } from "./estados";
 import {
   mfaActivo,
   SIN_EXPIRACION,
@@ -7,6 +7,8 @@ import {
   validarCambioPassword,
   validarInvitacion,
 } from "./utils";
+
+const EQUIPO: Miembro[] = [{ n: "Carla Rivas", e: "carla@empresa.com", r: "Owner", a: "Activa" }];
 
 describe("validarCambioPassword", () => {
   it("exige todos los campos, 12 caracteres y que coincidan", () => {
@@ -27,14 +29,12 @@ describe("validarCambioPassword", () => {
 
 describe("validarInvitacion", () => {
   it("valida email, duplicados y nombre en ese orden", () => {
-    expect(validarInvitacion("no-es-mail", "", EQUIPO_INICIAL)).toBe("Ingresa un email válido");
-    expect(validarInvitacion("carla@empresademo.com", "", EQUIPO_INICIAL)).toBe(
+    expect(validarInvitacion("no-es-mail", "", EQUIPO)).toBe("Ingresa un email válido");
+    expect(validarInvitacion("carla@empresa.com", "", EQUIPO)).toBe(
       "Ese email ya es miembro del equipo",
     );
-    expect(validarInvitacion("nuevo@x.com", "", EQUIPO_INICIAL)).toBe(
-      "Ingresa el nombre del miembro",
-    );
-    expect(validarInvitacion("nuevo@x.com", "Juan", EQUIPO_INICIAL)).toBeNull();
+    expect(validarInvitacion("nuevo@x.com", "", EQUIPO)).toBe("Ingresa el nombre del miembro");
+    expect(validarInvitacion("nuevo@x.com", "Juan", EQUIPO)).toBeNull();
   });
 });
 
