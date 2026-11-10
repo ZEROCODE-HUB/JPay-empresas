@@ -50,16 +50,8 @@ export function Kpi({
   );
 }
 
-/** Las dos filas de KPIs del inicio; `children` suma KPIs a la segunda fila (por proveedor). */
-export function DashboardKpis({
-  kpis,
-  cuentaLabel,
-  children,
-}: {
-  kpis: KpisDashboard;
-  cuentaLabel: string;
-  children?: ReactNode;
-}) {
+/** Las dos filas de KPIs del dashboard. */
+export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuentaLabel: string }) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
@@ -80,10 +72,10 @@ export function DashboardKpis({
           iconClass="bg-success-bg text-success"
         />
         <Kpi
-          label="Salidas del período"
+          label="Retiros del período"
           value={formatMoney(kpis.retiros)}
           sub={`${kpis.opsRet} operaciones`}
-          info="Suma de los retiros registrados en tu cuenta JPay en el período elegido, en cualquier estado. Las transferencias SPEI enviadas no se cuentan aquí: las ves en «SPEI enviado»."
+          info="Suma de los retiros registrados en tu cuenta JPay en el período elegido, en cualquier estado. No incluye las transferencias SPEI enviadas: esas las ves en Transferencias SPEI."
           icon={<ArrowUpRight size={18} />}
           iconClass="bg-error-bg text-error"
         />
@@ -106,7 +98,6 @@ export function DashboardKpis({
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
-        {children}
       </div>
     </>
   );

@@ -42,7 +42,7 @@ export const Route = createFileRoute("/app")({
 // Menú por intención: Saldo, Cobrar (PayIn), Enviar (PayOut), Reportes y Configuración.
 // Cada ítem con `modulo` aparece solo si el país lo tiene prendido (`paises.modulos`).
 const NAV: NavItem[] = [
-  { to: "/app", label: "Inicio", icon: LayoutDashboard, exact: true },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   {
     label: "Saldo",
     icon: Wallet,
@@ -121,7 +121,7 @@ const NAV: NavItem[] = [
 
 // Barra inferior en móvil: lo más usado; el resto queda en «Más».
 const NAV_MOVIL: NavLeaf[] = [
-  { to: "/app", label: "Inicio", icon: LayoutDashboard, exact: true },
+  { to: "/app", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { to: "/app/cobrar", label: "Cobrar", icon: HandCoins },
   { to: "/app/enviar", label: "Enviar", icon: ArrowUpRight, modulo: "transferencias_cobre" },
   { to: "/app/historial", label: "Movimientos", icon: History },

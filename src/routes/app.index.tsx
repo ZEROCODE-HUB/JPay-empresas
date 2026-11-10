@@ -1,11 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { Clock } from "lucide-react";
 import { PageHeader } from "@/components/portal-shell";
 import { useDashboard } from "@/hooks/useMovimientos";
-import { AccesosRapidos } from "@/features/inicio/components/AccesosRapidos";
 import { DashboardKpis } from "@/features/inicio/components/DashboardKpis";
-import { KpisProveedores } from "@/features/inicio/components/KpisProveedores";
 import { MovimientosDiariosChart } from "@/features/inicio/components/MovimientosDiariosChart";
 import { PeriodoSelector } from "@/features/inicio/components/PeriodoSelector";
 import { exportarDashboard } from "@/features/inicio/export";
@@ -30,7 +28,7 @@ function Dashboard() {
   return (
     <>
       <PageHeader
-        title="Inicio"
+        title="Dashboard"
         description="Panel ejecutivo — estado de tu operación financiera."
         action={
           <div className="hidden md:flex items-center gap-2 text-xs text-black-400">
@@ -39,16 +37,12 @@ function Dashboard() {
         }
       />
 
-      <AccesosRapidos />
-
       <PeriodoSelector
         p={periodo}
         onExport={(fmt) => exportarDashboard(fmt, movs, kpis, periodLabel)}
       />
 
-      <DashboardKpis kpis={kpis} cuentaLabel={cuentaLabel}>
-        <KpisProveedores range={range} />
-      </DashboardKpis>
+      <DashboardKpis kpis={kpis} cuentaLabel={cuentaLabel} />
 
       <MovimientosDiariosChart data={data} periodLabel={periodLabel} />
     </>
