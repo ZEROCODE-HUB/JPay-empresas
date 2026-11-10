@@ -127,13 +127,29 @@ export async function crearBalanceComercio(
 ): Promise<string> {
   const { data: existente } = await sb
     .from("cobre_cuentas")
-    .select("id")
+    .select("id, clabe, subcuenta_id")
     .eq("tipo", "cliente")
     .eq("cliente_legajo", fila.cliente_legajo)
     .eq("modo", conexion.modo)
     .eq("estado", "activa")
     .maybeSingle();
-  if (existente) return "Balance ya creado";
+  if (existente) {
+    // Balance creado cuando el cliente todavía no tenía subcuenta: la CLABE quedó sin dueño.
+    if (existente.clabe && !existente.subcuenta_id) {
+      const sub = await subcuentaReceptora(sb, fila.cliente_legajo);
+      await sb.from("cobre_cuentas").update({ subcuenta_id: sub }).eq("id", existente.id);
+      await asignarClabeReceptora(
+        sb,
+        conexion.modo,
+        existente.id,
+        sub,
+        fila.cliente_legajo,
+        existente.clabe,
+      );
+      return `Balance ya creado; CLABE ${existente.clabe} asignada a la subcuenta`;
+    }
+    return "Balance ya creado";
+  }
 
   // Toma del pedido: si otro proceso lo está creando (aviso y consulta a la vez), no se duplica.
   const hace5min = new Date(Date.now() - 5 * 60_000).toISOString();
@@ -159,9 +175,12 @@ export async function crearBalanceComercio(
       .eq("estado", "Activa")
       .order("created_at"),
   ]);
-  const receptora = ((subs ?? []) as { id: string; moneda: string | null }[]).find(
+  const existentes = ((subs ?? []) as { id: string; moneda: string | null }[]).find(
     (s) => !s.moneda || s.moneda === "MXN",
   );
+  // Un cliente recién dado de alta todavía no tiene subcuenta: se le crea la principal, que es
+  // la que recibe la CLABE (y con eso cumple el requisito para activarlo).
+  const receptora = existentes ?? { id: await subcuentaReceptora(sb, fila.cliente_legajo) };
   const nombre = (cli?.nombre_fantasia || cli?.nombre || fila.cliente_legajo).slice(0, 20);
   const alias = `JPAY ${nombre}`.slice(0, 32);
   const etiqueta = `jpay-${fila.cliente_legajo}`;
@@ -217,6 +236,26 @@ export async function crearBalanceComercio(
       clabe,
     );
   return clabe ? `Balance ${cuenta.id}, CLABE ${clabe}` : `Balance ${cuenta.id}`;
+}
+
+/** Subcuenta en pesos que recibe la CLABE del Balance; si el cliente no tiene, crea la principal. */
+async function subcuentaReceptora(sb: SupabaseClient, legajo: string): Promise<string> {
+  const { data: subs } = await sb
+    .from("subaccounts")
+    .select("id, moneda")
+    .eq("cliente_legajo", legajo)
+    .eq("estado", "Activa")
+    .order("created_at");
+  const enPesos = ((subs ?? []) as { id: string; moneda: string | null }[]).find(
+    (x) => !x.moneda || x.moneda === "MXN",
+  );
+  if (enPesos) return enPesos.id;
+  const { data, error } = await sb.rpc("_ensure_subaccount", {
+    p_legajo: legajo,
+    p_tipo: "Operativa",
+  });
+  if (error || !data) throw new Error(`No se pudo crear la subcuenta principal: ${error?.message}`);
+  return String(data);
 }
 
 /** La CLABE del Balance pasa a la subcuenta receptora (y deja la anterior, si había otra). */
