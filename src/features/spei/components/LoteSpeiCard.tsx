@@ -1,23 +1,13 @@
+import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
 import { enviarOtpTransferencia } from "@/lib/api/otp";
 import type { DestinatarioSpei, LoteSpei, SubcuentaSpei } from "@/lib/api/cobre";
-import { formatDateTime, formatMoney, parseMonto } from "@/shared/format";
-import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";
+import { formatDateTime, formatMoney } from "@/shared/format";
 import { VERIFICACION } from "../estados";
-
-type Fila = {
-  n: number;
-  clabe: string;
-  titular: string;
-  idNumero: string;
-  monto: number;
-  concepto: string;
-  error: string | null;
-  destinatario: DestinatarioSpei | null;
-};
+import { archivoATexto, descargarPlantillaLoteSpei, leerLoteSpei, LARGO_CONCEPTO } from "../lote";
 
 const ESTADO_LOTE: Record<
   string,
@@ -32,39 +22,6 @@ const ESTADO_LOTE: Record<
   canceled: { label: "Cancelado", tone: "neutral" },
   error_envio: { label: "No enviado", tone: "danger" },
 };
-
-/** Columnas: CLABE, titular, RFC o CURP, monto, concepto (con o sin encabezado; coma o punto y coma). */
-function leerArchivo(texto: string, destinatarios: DestinatarioSpei[]): Fila[] {
-  const lineas = texto
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  if (lineas.length && /clabe/i.test(lineas[0])) lineas.shift();
-  return lineas.map((l, i) => {
-    const [clabe = "", titular = "", id = "", monto = "", ...resto] = l
-      .split(/[;,\t]/)
-      .map((c) => c.trim().replace(/^"|"$/g, ""));
-    const numero = clabe.replace(/\D/g, "");
-    const idNumero = id.toUpperCase();
-    const importe = parseMonto(monto);
-    const error =
-      validarClabe(numero) ??
-      (idNumero.length === 18 ? validarCurp(idNumero) : validarRfc(idNumero)) ??
-      (!titular ? "Falta el titular" : null) ??
-      (!(importe > 0) ? "Monto inválido" : null);
-    return {
-      n: i + 1,
-      clabe: numero,
-      titular,
-      idNumero,
-      monto: importe,
-      concepto: resto.join(" ").slice(0, 40) || "Pago",
-      error,
-      destinatario:
-        destinatarios.find((d) => d.numero === numero && d.idNumero === idNumero) ?? null,
-    };
-  });
-}
 
 /**
  * Envío masivo por SPEI (`/bulk_money_movements` de Cobre): se carga un archivo, se registran los
@@ -89,7 +46,7 @@ export function LoteSpeiCard({
   const [codigo, setCodigo] = useState<string | null>(null);
   const [idLote, setIdLote] = useState(() => `LT${Date.now().toString(36).toUpperCase()}`);
 
-  const filas = useMemo(() => leerArchivo(texto, destinatarios), [texto, destinatarios]);
+  const filas = useMemo(() => leerLoteSpei(texto, destinatarios), [texto, destinatarios]);
   const sub = pesos.find((s) => s.id === (origen || pesos[0]?.id));
   const total = filas.reduce((s, f) => s + (f.error ? 0 : f.monto), 0);
   const conError = filas.filter((f) => f.error).length;
@@ -100,7 +57,7 @@ export function LoteSpeiCard({
   const cargar = (f: File | undefined) => {
     if (!f) return;
     if (f.size > 1_000_000) return toast.error("El archivo es muy grande (máximo 1 MB)");
-    f.text().then(setTexto, () => toast.error("No se pudo leer el archivo"));
+    archivoATexto(f).then(setTexto, () => toast.error("No se pudo leer el archivo"));
   };
 
   const registrar = async () => {
@@ -172,9 +129,30 @@ export function LoteSpeiCard({
     <Card>
       <h2 className="font-semibold">Envío masivo por SPEI</h2>
       <p className="text-xs text-black-400 mt-1">
-        Archivo CSV con una fila por pago: CLABE, titular, RFC o CURP, monto y concepto. Cada
-        destinatario nuevo se verifica antes de pagar.
+        Un archivo CSV o Excel con una fila por pago. Descarga la plantilla, reemplaza las filas de
+        ejemplo y súbela. Cada destinatario nuevo se verifica antes de pagar.
       </p>
+      <ul className="mt-2 text-xs text-black-400 list-disc pl-4 space-y-0.5">
+        <li>
+          <b>clabe</b>: 18 dígitos · <b>titular</b>: nombre como figura en el banco ·{" "}
+          <b>rfc_o_curp</b>: del titular
+        </li>
+        <li>
+          <b>monto</b>: en pesos, con punto decimal (1500.00) · <b>concepto</b>: hasta{" "}
+          {LARGO_CONCEPTO} caracteres (opcional)
+        </li>
+      </ul>
+      <div className="mt-3">
+        <BtnOutline
+          className="h-9 px-3 text-xs"
+          onClick={() => {
+            descargarPlantillaLoteSpei();
+            toast.success("Plantilla descargada");
+          }}
+        >
+          <Download size={14} /> Descargar plantilla
+        </BtnOutline>
+      </div>
       {!habilitada || pesos.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
           Vas a poder enviar lotes cuando tu cuenta en Cobre esté activa.
@@ -184,7 +162,7 @@ export function LoteSpeiCard({
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <input
               type="file"
-              accept=".csv,.txt"
+              accept=".csv,.txt,.xlsx,.xls"
               onChange={(e) => cargar(e.target.files?.[0])}
               className="text-sm"
             />
