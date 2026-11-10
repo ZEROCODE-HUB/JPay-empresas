@@ -132,11 +132,25 @@ describe("lineas", () => {
       ["a", true, 2],
       ["c", true, 0],
     ]);
+    // El desglose queda pegado debajo de su operacion.
     const abiertas = agruparPorTxid(lineas, true, new Set(["T1"]));
-    expect(abiertas.map((f) => f.lineId)).toEqual(["a", "b", "c", "d"]);
+    expect(abiertas.map((f) => f.lineId)).toEqual(["a", "b", "d", "c"]);
     const planas = agruparPorTxid(lineas, false, new Set());
     expect(planas.every((f) => !f.esCabeza && f.hijas === 0)).toBe(true);
     expect(planas).toHaveLength(4);
+  });
+
+  it("encabeza el ingreso aunque el impuesto y la comision lleguen antes (mas nuevos)", () => {
+    // Asi llegan de la base: por fecha, de la mas nueva a la mas vieja.
+    const ops = [
+      linea({ lineId: "imp", idTxn: "T9", tipoLinea: "impuesto", monto: -0.16, lineNo: 3 }),
+      linea({ lineId: "com", idTxn: "T9", tipoLinea: "comision", monto: -1, lineNo: 2 }),
+      linea({ lineId: "ing", idTxn: "T9", tipoLinea: "ingreso", monto: 100, lineNo: 1 }),
+    ];
+    const cerrada = agruparPorTxid(ops, true, new Set());
+    expect(cerrada.map((f) => [f.lineId, f.esCabeza, f.hijas])).toEqual([["ing", true, 2]]);
+    const abierta = agruparPorTxid(ops, true, new Set(["T9"]));
+    expect(abierta.map((f) => f.lineId)).toEqual(["ing", "com", "imp"]);
   });
 
   it("totales de la pagina", () => {

@@ -291,24 +291,50 @@ export const aLinea = (r: LineaMovimientoRow): Linea => ({
 });
 
 /**
- * Agrupacion por TXID dentro de la pagina: la primera linea de cada operacion
- * encabeza el grupo y el resto (comision, impuesto, ...) se despliega.
+ * Orden dentro de una operacion: primero el movimiento principal (el ingreso o
+ * egreso de la plata) y despues lo que sale de el (comision, impuesto, ...).
+ */
+const ORDEN_LINEA: Record<TipoLinea, number> = {
+  ingreso: 0,
+  egreso: 0,
+  reverso: 1,
+  interes: 2,
+  comision: 3,
+  impuesto: 4,
+};
+
+/**
+ * Agrupacion por TXID dentro de la pagina: encabeza el grupo la linea principal
+ * de la operacion (ingreso o egreso; si no hay, la de menor numero de linea) y el
+ * resto (comision, impuesto, ...) se despliega debajo de ella. El grupo queda en
+ * el lugar donde aparece por primera vez en la pagina.
  */
 export function agruparPorTxid(
   lineas: Linea[],
   agrupar: boolean,
   abiertos: ReadonlySet<string>,
 ): FilaLinea[] {
-  const cantidad = new Map<string, number>();
-  for (const l of lineas) cantidad.set(l.idTxn, (cantidad.get(l.idTxn) ?? 0) + 1);
-  const vistos = new Set<string>();
-  const out: FilaLinea[] = [];
+  if (!agrupar) return lineas.map((l) => ({ ...l, esCabeza: false, hijas: 0 }));
+  const grupos = new Map<string, Linea[]>();
   for (const l of lineas) {
-    const esCabeza = !vistos.has(l.idTxn);
-    vistos.add(l.idTxn);
-    if (!agrupar) out.push({ ...l, esCabeza: false, hijas: 0 });
-    else if (esCabeza) out.push({ ...l, esCabeza: true, hijas: (cantidad.get(l.idTxn) ?? 1) - 1 });
-    else if (abiertos.has(l.idTxn)) out.push({ ...l, esCabeza: false, hijas: 0 });
+    const g = grupos.get(l.idTxn);
+    if (g) g.push(l);
+    else grupos.set(l.idTxn, [l]);
+  }
+  const out: FilaLinea[] = [];
+  for (const [idTxn, grupo] of grupos) {
+    const ordenado = grupo
+      .map((l, i) => ({ l, i }))
+      .sort(
+        (a, b) =>
+          (ORDEN_LINEA[a.l.tipoLinea] ?? 9) - (ORDEN_LINEA[b.l.tipoLinea] ?? 9) ||
+          a.l.lineNo - b.l.lineNo ||
+          a.i - b.i,
+      )
+      .map((x) => x.l);
+    const [cabeza, ...resto] = ordenado;
+    out.push({ ...cabeza, esCabeza: true, hijas: resto.length });
+    if (abiertos.has(idTxn)) for (const l of resto) out.push({ ...l, esCabeza: false, hijas: 0 });
   }
   return out;
 }
