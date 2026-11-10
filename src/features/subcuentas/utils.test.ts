@@ -29,6 +29,7 @@ const sub = (p: Partial<Sub>): Sub => ({
   lim: "",
   color: "#000",
   retirosHab: true,
+  moneda: "MXN",
   ...p,
 });
 
@@ -66,8 +67,14 @@ describe("filtrarSubs", () => {
 describe("totales y distribución de saldos", () => {
   const subs = [sub({ disp: 300, ret: 100 }), sub({ disp: 600, ret: 0 })];
   it("suma disponible, retenido y total", () => {
-    expect(totalesSubs(subs)).toEqual({ total: 1000, disp: 900, ret: 100 });
-    expect(totalesSubs([])).toEqual({ total: 0, disp: 0, ret: 0 });
+    expect(totalesSubs(subs)).toMatchObject({ total: 1000, disp: 900, ret: 100, hayUsd: false });
+    expect(totalesSubs([])).toMatchObject({ total: 0, disp: 0, ret: 0, totalUsd: 0 });
+  });
+  it("no suma la subcuenta en dólares con las de pesos", () => {
+    const t = totalesSubs([...subs, sub({ disp: 6.91, ret: 0, moneda: "USD" })]);
+    expect(t.total).toBe(1000);
+    expect(t.totalUsd).toBeCloseTo(6.91);
+    expect(t.hayUsd).toBe(true);
   });
   it("porcentaje con un decimal y 0.0 si no hay saldo", () => {
     expect(pctSaldo(subs[0], 1000)).toBe("40.0");

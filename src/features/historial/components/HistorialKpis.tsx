@@ -47,7 +47,7 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
             Ingresos menos egresos de los movimientos que ves en esta página de la tabla. Se suma en
             pesos, o en dólares si filtras tu subcuenta en dólares; lo de la otra moneda se muestra
             abajo, aparte: no se mezclan pesos con dólares. Una conversión en proceso se ve en tu
-            subcuenta en pesos como pendiente; los dólares aparecen cuando Cobre la termina.
+            subcuenta en pesos como pendiente; los dólares aparecen cuando termina.
           </InfoTip>
         </div>
         <div

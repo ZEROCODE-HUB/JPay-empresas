@@ -29,8 +29,8 @@ function Page() {
   // Resultado de la vuelta desde Ecart Pay: avisar y limpiar la URL.
   useEffect(() => {
     if (!ecartpay) return;
-    if (ecartpay === "conectado") toast.success("Tu cuenta de Ecart Pay quedó conectada");
-    else toast.error(`No se pudo conectar Ecart Pay${motivo ? `: ${motivo}` : ""}`);
+    if (ecartpay === "conectado") toast.success("Tus cobros con tarjeta quedaron activados");
+    else toast.error(`No se pudieron activar los cobros con tarjeta${motivo ? `: ${motivo}` : ""}`);
     void navigate({ to: "/app/integraciones", search: {}, replace: true });
   }, [ecartpay, motivo, navigate]);
 
@@ -38,7 +38,7 @@ function Page() {
     <>
       <PageHeader
         title="Conexiones"
-        description="Conecta las cuentas con las que cobras tus ventas. Lo que cobras con Ecart Pay lo ves en Cobrar › Cobros con tarjeta."
+        description="Conecta las cuentas con las que cobras tus ventas. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
       />
       {isLoading ? (
         <Card className="text-sm text-black-400">Cargando…</Card>

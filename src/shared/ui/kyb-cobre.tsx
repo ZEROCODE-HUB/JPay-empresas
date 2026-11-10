@@ -157,7 +157,7 @@ export function KybCobreForm(p: Props) {
     <div>
       {p.faltan && p.faltan.length > 0 && (
         <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-          <p className="font-semibold">Falta completar para el alta en Cobre:</p>
+          <p className="font-semibold">Falta completar para la apertura de tu cuenta:</p>
           <ul className="mt-1 list-disc pl-4">
             {p.faltan.map((f) => (
               <li key={f}>{f}</li>

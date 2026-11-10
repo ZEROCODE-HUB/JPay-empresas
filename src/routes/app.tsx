@@ -75,7 +75,6 @@ const NAV: NavItem[] = [
         to: "/app/domiciliacion",
         label: "Domiciliación",
         icon: CalendarClock,
-        modulo: "domiciliacion",
       },
       { to: "/app/puntos-fisicos", label: "Puntos físicos", icon: MapPinned, modulo: "pos" },
     ],

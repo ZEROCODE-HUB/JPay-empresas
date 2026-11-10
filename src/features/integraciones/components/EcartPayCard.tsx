@@ -41,13 +41,13 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="font-semibold flex items-center gap-2">
-            Ecart Pay
+            Cobros con tarjeta
             <Badge tone={estado.tone}>{estado.label}</Badge>
             {conectado && c.entorno === "sandbox" && <Badge tone="warn">Pruebas</Badge>}
           </h2>
           <p className="text-sm text-black-400 mt-1 max-w-xl">
-            Conecta tu cuenta de Ecart Pay para cobrar con tarjeta, transferencia y efectivo. El
-            dinero de cada cobro llega a tu cuenta de Ecart Pay.
+            Activa tu cuenta de cobros para cobrar con tarjeta, transferencia y efectivo. El dinero
+            de cada cobro llega a tu cuenta de cobros con tarjeta.
           </p>
         </div>
         {conectado ? (
@@ -58,10 +58,10 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
           <BtnPrimary onClick={iniciar} disabled={conectar.isPending}>
             <Link2 size={16} />
             {conectar.isPending
-              ? "Abriendo Ecart Pay…"
+              ? "Abriendo…"
               : c.estado === "revocado" || c.estado === "error"
-                ? "Volver a conectar"
-                : "Conectar Ecart Pay"}
+                ? "Volver a activar"
+                : "Activar cobros con tarjeta"}
           </BtnPrimary>
         )}
       </div>
@@ -73,7 +73,7 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
             <dd>{c.conectadoAt ? formatDateTime(c.conectadoAt) : "—"}</dd>
           </div>
           <div>
-            <dt className="text-xs text-black-400">Cuenta Ecart Pay</dt>
+            <dt className="text-xs text-black-400">Cuenta de cobros</dt>
             <dd className="font-mono text-xs break-all">{c.cuentaExternaId ?? "—"}</dd>
           </div>
           <div>
@@ -97,20 +97,21 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
       <ConfirmDialog
         open={confirmar}
         onClose={() => setConfirmar(false)}
-        title="Desconectar Ecart Pay"
+        title="Desactivar cobros con tarjeta"
         variant="danger"
         confirmLabel="Desconectar"
         closeOnConfirm
         message={
           <>
-            JPay deja de cobrar en tu cuenta de Ecart Pay y borra las claves guardadas. Para quitar
-            también el permiso, revoca la aplicación JPay desde tu panel de Ecart Pay.
+            JPay deja de cobrar en tu cuenta de cobros con tarjeta y borra las claves guardadas.
+            Para quitar también el permiso, revoca el acceso de JPay desde el panel de tu procesador
+            de pagos.
           </>
         }
         onConfirm={() =>
           desconectar.mutateAsync(comercioId).then(
             () => {
-              toast.success("Cuenta de Ecart Pay desconectada");
+              toast.success("Cobros con tarjeta desactivados");
             },
             (e) => {
               toast.error((e as Error).message);

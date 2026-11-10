@@ -87,7 +87,10 @@ Deno.serve(
       }
     } catch (e) {
       if (e instanceof CobreError) {
-        throw new HttpError(e.status >= 400 && e.status < 500 ? 422 : 502, `Cobre: ${e.message}`);
+        throw new HttpError(
+          e.status >= 400 && e.status < 500 ? 422 : 502,
+          `No se pudo completar la operación: ${e.message}`,
+        );
       }
       throw e;
     }

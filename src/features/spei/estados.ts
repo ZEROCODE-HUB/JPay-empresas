@@ -11,7 +11,7 @@ export const VERIFICACION: Record<DestinatarioSpei["verificacion"], { label: str
     unmatched: { label: "El titular no coincide", tone: "danger" },
     unresolved: { label: "No se pudo verificar (se reintenta en 12 h)", tone: "warn" },
     verified: { label: "Verificado", tone: "success" },
-    rejected: { label: "Rechazado por Cobre", tone: "danger" },
+    rejected: { label: "Rechazado", tone: "danger" },
     failed: { label: "No se pudo verificar", tone: "danger" },
   };
 

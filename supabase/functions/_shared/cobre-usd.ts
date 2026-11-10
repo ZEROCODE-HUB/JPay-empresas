@@ -82,7 +82,7 @@ export async function balanceComercio(
     .eq("estado", "activa")
     .maybeSingle();
   if (!data)
-    throw new CobreError(409, "El comercio todavía no tiene su cuenta en Cobre (alta pendiente)");
+    throw new CobreError(409, "El comercio todavía no tiene su cuenta JPay (apertura pendiente)");
   return { cuentaExterna: data.cuenta_externa_id, subcuentaId: data.subcuenta_id };
 }
 
@@ -109,7 +109,7 @@ export async function cotizarCruce(
   const destino = Number(q.destination_amount);
   const tasa = Number(q.fx_rate);
   if (!(destino > 0) || !(tasa > 0) || !s(q.id) || !s(q.valid_until)) {
-    throw new CobreError(502, "Cobre devolvió una cotización incompleta");
+    throw new CobreError(502, "No se pudo obtener la cotización; intenta de nuevo");
   }
   const montoMxn = deCentavos(Number(q.source_amount ?? aCentavos(o.montoMxn)));
   // Comisión de JPay (tipo Conversión de las comisiones del cliente); se cobra aparte del monto.

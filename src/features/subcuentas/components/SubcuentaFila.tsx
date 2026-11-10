@@ -61,10 +61,12 @@ export function SubcuentaFila({ s, menuAbierto, onToggleMenu, onCerrarMenu, ...a
         )}
       </td>
       <td className="px-4 py-3 text-right whitespace-nowrap">
-        <div className="font-display tabular-nums font-semibold">{formatMoney(s.disp)}</div>
+        <div className="font-display tabular-nums font-semibold">
+          {formatMoney(s.disp, { moneda: s.moneda })}
+        </div>
         {s.ret > 0 && (
           <div className="text-[11px] text-muted-foreground tabular-nums">
-            Retenido {formatMoney(s.ret)}
+            Retenido {formatMoney(s.ret, { moneda: s.moneda })}
           </div>
         )}
       </td>

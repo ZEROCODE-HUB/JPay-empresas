@@ -32,7 +32,7 @@ export function TransferenciasSpeiCard({
         Transferencias enviadas
         <InfoTip className="ml-1">
           Tus transferencias SPEI en pesos más recientes (hasta 50), sueltas o en lote, con el
-          estado que informa Cobre. El monto no incluye la comisión.
+          estado actual. El monto no incluye la comisión.
         </InfoTip>
       </h2>
       {transferencias.length === 0 ? (
@@ -93,8 +93,8 @@ export function DepositosSpeiCard({ depositos }: { depositos: DepositoSpei[] }) 
       <h2 className="font-semibold">
         Depósitos recibidos
         <InfoTip align="right" className="ml-1">
-          Tus depósitos SPEI más recientes (hasta 50) que llegaron a tu CLABE de Cobre: directos («A
-          tu CLABE») o pagos de tus cobros por SPEI.
+          Tus depósitos SPEI más recientes (hasta 50) que llegaron a tu CLABE: directos («A tu
+          CLABE») o pagos de tus cobros por SPEI.
         </InfoTip>
       </h2>
       {depositos.length === 0 ? (

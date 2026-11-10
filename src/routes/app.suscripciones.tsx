@@ -8,7 +8,7 @@ export const Route = createFileRoute("/app/suscripciones")({
 });
 
 const DESCRIPCION =
-  "Cobra en forma recurrente con tarjeta: tu cliente agrega su tarjeta en el link de Ecart Pay.";
+  "Cobra en forma recurrente con tarjeta: tu cliente agrega su tarjeta en un link de pago seguro.";
 
 function Page() {
   return (

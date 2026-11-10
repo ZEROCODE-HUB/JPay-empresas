@@ -80,8 +80,8 @@ export function DomiciliacionesPanel({
         <Card className="text-sm text-danger-600">{(lista.error as Error).message}</Card>
       ) : filas.length === 0 ? (
         <Card className="text-sm text-muted-foreground">
-          Todavía no hay domiciliaciones. Crea una con la CLABE del cliente: Ecart Pay le pide que
-          la acepte y valida la cuenta antes del primer cargo.
+          Todavía no hay domiciliaciones. Crea una con la CLABE del cliente: le pedimos que la
+          acepte y validamos la cuenta antes del primer cargo.
         </Card>
       ) : (
         <div className="space-y-3">
@@ -168,7 +168,7 @@ export function DomiciliacionesPanel({
             { ...v, idempotency_key: nuevaClave() },
             {
               onSuccess: () => {
-                toast.success("Domiciliación creada: Ecart Pay le pide al cliente que la acepte");
+                toast.success("Domiciliación creada: le pedimos al cliente que la acepte");
                 setNueva(false);
               },
               onError: avisar,
@@ -266,7 +266,7 @@ function NuevaDomiciliacionDialog({
         onClose();
       }}
       title="Nueva domiciliación"
-      description="Cargo a la CLABE del cliente. Ecart Pay le pide que lo acepte y valida la cuenta antes del primer cargo (solo pesos)."
+      description="Cargo a la CLABE del cliente. Le pedimos que lo acepte y validamos la cuenta antes del primer cargo (solo pesos)."
       onSubmit={guardar}
       submitLabel="Crear domiciliación"
       isSubmitting={guardando}

@@ -9,7 +9,7 @@ export const Route = createFileRoute("/app/cobrar/tarjeta")({
 });
 
 const DESCRIPCION =
-  "Lo que te pagaron con Ecart Pay (tarjeta, SPEI y OXXO). Los pagos con tarjeta se pueden reembolsar.";
+  "Lo que te pagaron en tus links (tarjeta, SPEI y OXXO). Los pagos con tarjeta se pueden reembolsar.";
 
 function Page() {
   return (

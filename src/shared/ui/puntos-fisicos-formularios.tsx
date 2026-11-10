@@ -68,7 +68,7 @@ export function SucursalDialog({
       open={open}
       onClose={onClose}
       title={sucursal ? "Editar sucursal" : "Nueva sucursal"}
-      description="Se crea también en tu cuenta de Ecart Pay."
+      description="Se crea también en tu cuenta de cobros con tarjeta."
       submitLabel={guardando ? "Guardando…" : sucursal ? "Guardar" : "Crear"}
       isSubmitting={guardando}
       onSubmit={() => onGuardar({ ...f, id: sucursal?.id })}
@@ -167,7 +167,7 @@ export function CajaDialog({
       open={open}
       onClose={onClose}
       title={caja ? "Editar caja" : "Nueva caja"}
-      description="Se crea también en tu cuenta de Ecart Pay."
+      description="Se crea también en tu cuenta de cobros con tarjeta."
       submitLabel={guardando ? "Guardando…" : caja ? "Guardar" : "Crear"}
       isSubmitting={guardando}
       onSubmit={() =>

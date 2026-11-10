@@ -66,7 +66,7 @@ Deno.serve(
     }
 
     if (!pago.proveedor_orden_id || !pago.conexion_id) {
-      throw new HttpError(409, "El pago no tiene una orden en Ecart Pay");
+      throw new HttpError(409, "El pago no tiene una orden asociada");
     }
     const { data: con } = await sb
       .from("comercio_proveedores")
@@ -113,7 +113,7 @@ Deno.serve(
       if (!rechazoClaro) {
         throw new HttpError(
           502,
-          `No hubo respuesta clara de Ecart Pay (${msg}). El reembolso queda en verificación; no lo repitas.`,
+          `No hubo una respuesta clara (${msg}). El reembolso queda en verificación; no lo repitas.`,
         );
       }
       const { error: errFin } = await sb.rpc("finalizar_reembolso", {
@@ -123,7 +123,7 @@ Deno.serve(
         p_respuesta: e.cuerpo ?? {},
       });
       if (errFin) throw new HttpError(500, errFin.message);
-      throw new HttpError(422, `Ecart Pay rechazó el reembolso: ${msg}`);
+      throw new HttpError(422, `Se rechazó el reembolso: ${msg}`);
     }
 
     const idExterno =

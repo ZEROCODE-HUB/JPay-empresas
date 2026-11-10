@@ -50,7 +50,7 @@ export function CobrosEcartPayCard() {
       { pagoId: cobro.id, monto: m, motivo, nota: nota.trim() || undefined },
       {
         onSuccess: () => {
-          toast.success("Reembolso solicitado a Ecart Pay");
+          toast.success("Reembolso solicitado");
           setCobro(null);
         },
         onError: (e) => toast.error((e as Error).message),
@@ -63,13 +63,13 @@ export function CobrosEcartPayCard() {
       <h2 className="font-semibold">
         Cobros recibidos
         <InfoTip className="ml-1">
-          Tus 50 cobros más recientes con Ecart Pay (sin los que dieron error), con el estado que
-          Ecart Pay informa. Debajo del monto ves lo ya reembolsado.
+          Tus 50 cobros con tarjeta más recientes (sin los que dieron error), con su estado actual.
+          Debajo del monto ves lo ya reembolsado.
         </InfoTip>
       </h2>
       <p className="text-xs text-black-400 mt-1">
-        Cobros de tus links de pago con Ecart Pay. Los pagos con tarjeta se pueden reembolsar; los
-        de SPEI y OXXO no.
+        Cobros de tus links de pago con tarjeta, SPEI y OXXO. Los pagos con tarjeta se pueden
+        reembolsar; los de SPEI y OXXO no.
       </p>
       {isLoading ? (
         <p className="mt-4 text-sm text-black-400">Cargando…</p>
@@ -199,7 +199,7 @@ function AvisoContracargo({ estado, venceAt }: { estado: string; venceAt: string
       </Badge>
       {abierto && venceAt && (
         <span className="block text-danger-600 mt-0.5">
-          Presenta pruebas en Ecart Pay antes del {formatDateTime(venceAt)}
+          Presenta pruebas antes del {formatDateTime(venceAt)}
         </span>
       )}
     </span>

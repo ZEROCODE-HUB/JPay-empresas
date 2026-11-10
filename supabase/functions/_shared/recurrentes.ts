@@ -88,7 +88,7 @@ export async function clienteEcart(
     phone: p.telefono?.replace(/\D/g, "") || undefined,
   });
   const externo = s(r.id) ?? s(r._id);
-  if (!externo) throw new HttpError(502, "Ecart Pay no devolvió el id del cliente");
+  if (!externo) throw new HttpError(502, "No se pudo registrar al cliente; intenta de nuevo");
   const { data, error } = await ctx.sb
     .from("proveedor_clientes")
     .upsert(
@@ -283,7 +283,7 @@ export async function crearSuscripcion(ctx: Contexto, d: NuevaSuscripcion): Prom
         .from("suscripciones")
         .update({ estado: "error", ultimo_error: msg.slice(0, 300), updated_at: ahora() })
         .eq("id", fila.id);
-      throw new HttpError(422, `Ecart Pay rechazó la suscripción: ${msg}`);
+      throw new HttpError(422, `Se rechazó la suscripción: ${msg}`);
     }
     await ctx.sb
       .from("suscripciones")
@@ -291,7 +291,7 @@ export async function crearSuscripcion(ctx: Contexto, d: NuevaSuscripcion): Prom
       .eq("id", fila.id);
     throw new HttpError(
       502,
-      "Ecart Pay no respondió con claridad. La suscripción queda en verificación; no la repitas.",
+      "No hubo una respuesta clara. La suscripción queda en verificación; no la repitas.",
     );
   }
 }
@@ -327,7 +327,7 @@ export async function sincronizarSuscripcion(ctx: Contexto, fila: Obj): Promise<
       // Pasado el margen y sin rastro en Ecart Pay: no se creó.
       const { data } = await ctx.sb
         .from("suscripciones")
-        .update({ estado: "error", ultimo_error: "Ecart Pay no la registró", updated_at: ahora() })
+        .update({ estado: "error", ultimo_error: "No se registró", updated_at: ahora() })
         .eq("id", String(fila.id))
         .eq("estado", "creando")
         .select("*")
@@ -354,7 +354,7 @@ export async function cambiarEstadoSuscripcion(
   fila: Obj,
   estado: "active" | "paused" | "cancelled",
 ): Promise<Obj> {
-  if (!s(fila.id_externo)) throw new HttpError(409, "La suscripción todavía no está en Ecart Pay");
+  if (!s(fila.id_externo)) throw new HttpError(409, "La suscripción todavía no está registrada");
   if (fila.estado === "cancelada" || fila.estado === "terminada")
     throw new HttpError(409, "La suscripción ya terminó");
   const r = await ctx.ecart.request<Obj>(
@@ -524,7 +524,7 @@ export async function crearDomiciliacion(ctx: Contexto, d: NuevaDomiciliacion): 
         .from("domiciliaciones")
         .update({ estado: "error", ultimo_error: msg.slice(0, 300), updated_at: ahora() })
         .eq("id", fila.id);
-      throw new HttpError(422, `Ecart Pay rechazó la domiciliación: ${msg}`);
+      throw new HttpError(422, `Se rechazó la domiciliación: ${msg}`);
     }
     await ctx.sb
       .from("domiciliaciones")
@@ -532,7 +532,7 @@ export async function crearDomiciliacion(ctx: Contexto, d: NuevaDomiciliacion): 
       .eq("id", fila.id);
     throw new HttpError(
       502,
-      "Ecart Pay no respondió con claridad. La domiciliación queda en verificación; no la repitas.",
+      "No hubo una respuesta clara. La domiciliación queda en verificación; no la repitas.",
     );
   }
 }
@@ -566,7 +566,7 @@ export async function sincronizarDomiciliacion(ctx: Contexto, fila: Obj): Promis
     if (!r && Date.now() - Date.parse(String(fila.created_at)) > 15 * 60_000) {
       const { data } = await ctx.sb
         .from("domiciliaciones")
-        .update({ estado: "error", ultimo_error: "Ecart Pay no la registró", updated_at: ahora() })
+        .update({ estado: "error", ultimo_error: "No se registró", updated_at: ahora() })
         .eq("id", String(fila.id))
         .eq("estado", "creando")
         .select("*")
@@ -586,8 +586,7 @@ export async function sincronizarDomiciliacion(ctx: Contexto, fila: Obj): Promis
 }
 
 export async function cancelarDomiciliacion(ctx: Contexto, fila: Obj): Promise<Obj> {
-  if (!s(fila.id_externo))
-    throw new HttpError(409, "La domiciliación todavía no está en Ecart Pay");
+  if (!s(fila.id_externo)) throw new HttpError(409, "La domiciliación todavía no está registrada");
   if (["cancelled", "completed", "error", "rechazada"].includes(String(fila.estado)))
     throw new HttpError(409, "La domiciliación ya no está activa");
   const r = await ctx.ecart.request<Obj>(
@@ -732,7 +731,7 @@ export async function procesarAvisoRecurrente(
       .from("domiciliaciones")
       .update({
         estado: "rechazada",
-        ultimo_error: "Ecart Pay rechazó la validación de la cuenta",
+        ultimo_error: "Se rechazó la validación de la cuenta",
         updated_at: ahora(),
       })
       .eq("id", act.id)
@@ -781,7 +780,7 @@ export async function contextoDeSolicitud(
 ): Promise<Contexto> {
   const comercioId = await comercioDeLaSolicitud(req, sb, comercioPedido);
   const conexion = await conexionEcartPay(sb, [comercioId]);
-  if (!conexion) throw new HttpError(409, "El comercio no tiene Ecart Pay conectado");
+  if (!conexion) throw new HttpError(409, "El comercio no tiene activados los cobros con tarjeta");
   const { data: comercio } = await sb
     .from("comercios")
     .select("legajo")

@@ -66,7 +66,7 @@ export function ConvertirCard({
       <h2 className="font-semibold">Convertir pesos a dólares</h2>
       {!habilitada ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder convertir cuando tu cuenta en Cobre esté activa.
+          Vas a poder convertir cuando tu cuenta JPay esté activa.
         </p>
       ) : (
         <div className="mt-4 grid gap-3 md:grid-cols-3 items-end">

@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
   if (errorProveedor || !code) {
     return volver({
       ecartpay: "error",
-      motivo: errorProveedor ?? "Ecart Pay no devolvió el código",
+      motivo: errorProveedor ?? "No se recibió la autorización",
     });
   }
 
@@ -111,6 +111,6 @@ Deno.serve(async (req) => {
 
 /** Página mínima para los errores en los que no se sabe a dónde volver. */
 function pagina(mensaje: string, status: number): Response {
-  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Conexión con Ecart Pay</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5"><h1 style="font-size:1.25rem">No se pudo conectar la cuenta</h1><p>${mensaje}</p></body></html>`;
+  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cobros con tarjeta - JPay</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5"><h1 style="font-size:1.25rem">No se pudo conectar la cuenta</h1><p>${mensaje}</p></body></html>`;
   return new Response(html, { status, headers: { "content-type": "text/html; charset=utf-8" } });
 }

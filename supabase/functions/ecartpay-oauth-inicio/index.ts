@@ -27,10 +27,10 @@ Deno.serve(
       .eq("codigo", "ecartpay")
       .maybeSingle();
     if (error) throw new HttpError(500, error.message);
-    if (!proveedor?.activo) throw new HttpError(409, "Ecart Pay no está habilitado");
+    if (!proveedor?.activo) throw new HttpError(409, "Los cobros con tarjeta no están habilitados");
 
     const app = appOAuth();
-    if (!app) throw new HttpError(500, "Falta configurar la aplicación OAuth de Ecart Pay");
+    if (!app) throw new HttpError(500, "Los cobros con tarjeta todavía no están configurados");
 
     // Limpieza oportunista de intentos vencidos.
     await sb.from("oauth_estados").delete().lt("vence_at", new Date().toISOString());

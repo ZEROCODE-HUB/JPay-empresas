@@ -149,7 +149,10 @@ export class EcartPayCliente {
           await esperar(intento);
           continue;
         }
-        throw new EcartPayError(503, `Sin respuesta de Ecart Pay: ${(e as Error).message}`);
+        throw new EcartPayError(
+          503,
+          `Sin respuesta del procesador de pagos: ${(e as Error).message}`,
+        );
       }
 
       if (res.status === 401 && !(renovado && probadoOtroModo)) {
@@ -203,7 +206,7 @@ function mensajeError(cuerpo: unknown, status: number): string {
       if (typeof c[k] === "string" && c[k]) return c[k] as string;
     }
   }
-  return `Ecart Pay respondió ${status}`;
+  return `El procesador de pagos respondió ${status}`;
 }
 
 const esperar = (intento: number) =>

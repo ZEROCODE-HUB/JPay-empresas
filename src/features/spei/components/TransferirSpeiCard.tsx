@@ -122,7 +122,7 @@ export function TransferirSpeiCard({
       <h2 className="font-semibold">Transferir por SPEI</h2>
       {!habilitada || conClabe.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder transferir cuando tu cuenta en Cobre esté activa.
+          Vas a poder transferir cuando tu cuenta JPay esté activa.
         </p>
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-2">

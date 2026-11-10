@@ -64,7 +64,7 @@ export function PuntosFisicosPanel({
           <div className="flex gap-2">
             <BtnOutline onClick={sincronizar} disabled={ocupado}>
               <RefreshCw size={15} className={m.sincronizar.isPending ? "animate-spin" : ""} />
-              Sincronizar con Ecart Pay
+              Sincronizar
             </BtnOutline>
             <BtnPrimary onClick={() => setSucursalForm({ s: null })} disabled={ocupado}>
               <Plus size={15} /> Nueva sucursal
@@ -81,7 +81,8 @@ export function PuntosFisicosPanel({
         <div className="space-y-4">
           {sucursales.length === 0 && (
             <Card className="text-sm text-muted-foreground">
-              Todavía no hay sucursales. Crea una o sincroniza las que haya en Ecart Pay.
+              Todavía no hay sucursales. Crea una o sincroniza las que ya tengas en tu cuenta de
+              cobros con tarjeta.
             </Card>
           )}
           {sucursales.map((s) => (
@@ -111,12 +112,11 @@ export function PuntosFisicosPanel({
           <Card>
             <h2 className="font-semibold">Terminales</h2>
             <p className="text-xs text-muted-foreground mt-1">
-              Las terminales que Ecart Pay asignó a la cuenta. Vincula cada una a una caja.
+              Las terminales asignadas a la cuenta. Vincula cada una a una caja.
             </p>
             {terminales.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">
-                No hay terminales en la cuenta. Cuando Ecart Pay asigne una, toca "Sincronizar con
-                Ecart Pay".
+                No hay terminales en la cuenta. Cuando se asigne una, toca "Sincronizar".
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-border text-sm">
@@ -132,8 +132,7 @@ export function PuntosFisicosPanel({
             )}
           </Card>
           <p className="text-xs text-muted-foreground">
-            Cobrar desde una caja todavía no está disponible: Ecart Pay no publicó cómo enviar un
-            cobro a una terminal.
+            Cobrar desde una caja todavía no está disponible.
           </p>
         </div>
       )}
@@ -178,8 +177,8 @@ export function PuntosFisicosPanel({
         confirmLabel="Dar de baja"
         message={
           baja?.tipo === "sucursal"
-            ? `Se da de baja "${baja.s.nombre}" y sus cajas, también en Ecart Pay.`
-            : `Se da de baja "${baja?.tipo === "caja" ? baja.c.nombre : ""}", también en Ecart Pay.`
+            ? `Se da de baja "${baja.s.nombre}" y sus cajas, también en tu cuenta de cobros con tarjeta.`
+            : `Se da de baja "${baja?.tipo === "caja" ? baja.c.nombre : ""}", también en tu cuenta de cobros con tarjeta.`
         }
         onConfirm={async () => {
           if (!baja) return;

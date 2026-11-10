@@ -21,7 +21,7 @@ export const nombreArchivoLote = (loteId: string) => `jpay-lote-${loteId}.json`;
 export function archivoLote(nombre: string, items: Obj[]): FormData {
   const json = JSON.stringify(items);
   if (new TextEncoder().encode(json).length > MAX_BYTES_LOTE) {
-    throw new CobreError(400, "El lote supera el tamaño máximo de Cobre (4.7 MB): dividilo");
+    throw new CobreError(400, "El lote supera el tamaño máximo (4.7 MB): divídelo");
   }
   const fd = new FormData();
   fd.append("file", new File([json], nombre, { type: "application/json" }));
@@ -57,7 +57,7 @@ export async function enviarLote(
         sb,
         conexion.modo,
         lote.id,
-        `Cobre rechazó el lote: ${e.message}`,
+        `Se rechazó el lote: ${e.message}`,
       );
       await sb
         .from("cobre_lotes")
@@ -115,8 +115,7 @@ export async function aplicarEstadoLote(sb: SupabaseClient, bat: unknown): Promi
       sb,
       lote.modo as ModoCobre,
       lote.id,
-      motivo ??
-        (estado === "failed" ? "El archivo no pasó la validación de Cobre" : "Lote cancelado"),
+      motivo ?? (estado === "failed" ? "El archivo no pasó la validación" : "Lote cancelado"),
     );
   }
   return estado;

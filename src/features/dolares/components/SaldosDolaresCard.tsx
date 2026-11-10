@@ -64,7 +64,7 @@ export function SaldosDolaresCard({
             Dólares disponibles
             <InfoTip className="ml-1">
               Saldo de tu subcuenta en dólares. «Por recibir» son los dólares de las conversiones
-              que Cobre todavía procesa: se suman aquí cuando terminan, en unos minutos.
+              que todavía están en proceso: se suman aquí cuando terminan, en unos minutos.
             </InfoTip>
           </div>
           <div className="mt-1 text-xl font-bold tabular-nums">

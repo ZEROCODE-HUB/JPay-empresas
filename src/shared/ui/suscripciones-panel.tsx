@@ -105,8 +105,8 @@ export function SuscripcionesPanel({
         <Card className="text-sm text-danger-600">{(lista.error as Error).message}</Card>
       ) : filas.length === 0 ? (
         <Card className="text-sm text-muted-foreground">
-          Todavía no hay suscripciones. Crea una: Ecart Pay te da un link para que el suscriptor
-          cargue su tarjeta y se le cobre en cada período.
+          Todavía no hay suscripciones. Crea una: te damos un link para que el suscriptor cargue su
+          tarjeta y se le cobre en cada período.
         </Card>
       ) : (
         <div className="space-y-3">
@@ -302,7 +302,7 @@ function NuevaSuscripcionDialog({
         onClose();
       }}
       title="Nueva suscripción"
-      description="Ecart Pay devuelve un link para que el suscriptor cargue su tarjeta; el primer cobro se hace ahí (o al terminar la prueba)."
+      description="Te damos un link para que el suscriptor cargue su tarjeta; el primer cobro se hace ahí (o al terminar la prueba)."
       onSubmit={guardar}
       submitLabel="Crear suscripción"
       isSubmitting={guardando}

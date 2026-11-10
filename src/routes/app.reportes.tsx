@@ -17,7 +17,7 @@ const TABS: { id: Tab; label: string; descripcion: string; modulo?: Modulo }[] =
     id: "tarjeta",
     label: "Cobros con tarjeta",
     descripcion:
-      "Lo que cobraste con Ecart Pay: por día, medio de pago, sucursal y caja, con comisiones, reembolsos y contracargos.",
+      "Lo que cobraste con tarjeta, SPEI y OXXO: por día, medio de pago, sucursal y caja, con comisiones, reembolsos y contracargos.",
     modulo: "pagos_proveedor",
   },
   {

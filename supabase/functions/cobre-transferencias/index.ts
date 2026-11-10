@@ -84,7 +84,10 @@ Deno.serve(
       }
     } catch (e) {
       if (e instanceof CobreError) {
-        throw new HttpError(e.status >= 400 && e.status < 500 ? 422 : 502, `Cobre: ${e.message}`);
+        throw new HttpError(
+          e.status >= 400 && e.status < 500 ? 422 : 502,
+          `No se pudo completar la operación: ${e.message}`,
+        );
       }
       throw e;
     }
@@ -315,9 +318,9 @@ async function balanceDelComercio(ctx: Ctx, legajo: string): Promise<string> {
     .eq("modo", ctx.conexion.modo)
     .eq("estado", "activa")
     .maybeSingle();
-  if (!data) throw new HttpError(409, "Tu cuenta en Cobre todavía no está habilitada");
+  if (!data) throw new HttpError(409, "Tu cuenta JPay todavía no está habilitada");
   if (data.conectividad && data.conectividad !== "connected") {
-    throw new HttpError(409, "Tu cuenta en Cobre todavía no está activa");
+    throw new HttpError(409, "Tu cuenta JPay todavía no está activa");
   }
   return data.cuenta_externa_id;
 }
@@ -414,7 +417,7 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
       throw new HttpError(409, "Los envíos en dólares son por la cuenta de JPay");
     if (monto < 1) throw new HttpError(400, "El mínimo por envío en dólares es 1.00 USD");
     if (cp.verificacion !== "verified")
-      throw new HttpError(409, "Cobre todavía no verificó a este beneficiario");
+      throw new HttpError(409, "Todavía estamos verificando a este beneficiario");
   } else if (cp.tipo === "clabe" && cp.verificacion !== "matched") {
     throw new HttpError(
       409,

@@ -8,7 +8,7 @@ import { formatMoney } from "@/shared/format";
 
 const ALTA: Record<string, { label: string; tone: "success" | "warn" | "danger" | "neutral" }> = {
   enviando: { label: "Enviando el alta", tone: "warn" },
-  processing: { label: "En revisión por Cobre", tone: "warn" },
+  processing: { label: "En revisión", tone: "warn" },
   approved: { label: "Aprobada", tone: "success" },
   rejected: { label: "Rechazada", tone: "danger" },
   failed: { label: "Con error", tone: "danger" },
@@ -56,18 +56,18 @@ export function ClabesCard({
         <div className="mt-3 text-sm">
           {!cuenta.alta ? (
             <p className="text-black-400">
-              Todavía no tienes tu cuenta en Cobre. Completa los datos de la empresa, sus
-              representantes y beneficiarios en{" "}
+              Todavía no tienes tu cuenta JPay. Completa los datos de la empresa, sus representantes
+              y beneficiarios en{" "}
               <Link to="/app/cuenta" className="font-semibold text-secondary hover:underline">
                 Mi cuenta
               </Link>{" "}
-              y JPay envía el alta.
+              y JPay solicita la apertura de tu cuenta.
             </p>
           ) : cuenta.alta.estado === "rejected" ||
             cuenta.alta.estado === "failed" ||
             cuenta.alta.estado === "error_envio" ? (
             <p className="text-danger-600">
-              {cuenta.alta.motivo ?? "Cobre no aprobó el alta"}. Corrige los datos en{" "}
+              {cuenta.alta.motivo ?? "No se aprobó la apertura de tu cuenta"}. Corrige los datos en{" "}
               <Link to="/app/cuenta" className="font-semibold hover:underline">
                 Mi cuenta
               </Link>{" "}
@@ -75,7 +75,7 @@ export function ClabesCard({
             </p>
           ) : (
             <p className="text-black-400">
-              Cobre está revisando los datos de tu empresa. Cuando la apruebe verás aquí tu CLABE.
+              Estamos revisando los datos de tu empresa. Cuando se aprueben verás aquí tu CLABE.
             </p>
           )}
           {cuenta.faltan.length > 0 && !cuenta.alta && (
@@ -97,7 +97,7 @@ export function ClabesCard({
                 <Copy size={16} />
               </button>
             ) : (
-              <p className="mt-1 text-sm text-black-400">Cobre todavía no asignó la CLABE.</p>
+              <p className="mt-1 text-sm text-black-400">Tu CLABE todavía se está asignando.</p>
             )}
           </div>
           <div>

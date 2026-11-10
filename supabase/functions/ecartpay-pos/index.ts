@@ -39,7 +39,8 @@ Deno.serve(
     const sb = serviceClient();
     const comercioId = await comercioDeLaSolicitud(req, sb, body.comercio_id);
     const conexion = await conexionEcartPay(sb, [comercioId]);
-    if (!conexion) throw new HttpError(409, "El comercio no tiene Ecart Pay conectado");
+    if (!conexion)
+      throw new HttpError(409, "El comercio no tiene activados los cobros con tarjeta");
     const ctx: Ctx = { sb, ecart: await clienteDeConexion(sb, conexion), comercioId };
 
     try {
@@ -66,7 +67,7 @@ Deno.serve(
     } catch (e) {
       if (e instanceof EcartPayError) {
         const status = e.status >= 400 && e.status < 500 ? 422 : 502;
-        throw new HttpError(status, `Ecart Pay: ${e.message}`);
+        throw new HttpError(status, `No se pudo completar la operación: ${e.message}`);
       }
       throw e;
     }
@@ -76,7 +77,8 @@ Deno.serve(
 const idCreado = (r: unknown): string => {
   const d = ((r ?? {}) as { data?: Record<string, unknown> }).data ?? {};
   const id = d._id ?? d.id;
-  if (typeof id !== "string" || !id) throw new EcartPayError(502, "Ecart Pay no devolvió el id", r);
+  if (typeof id !== "string" || !id)
+    throw new EcartPayError(502, "No se pudo registrar en tu cuenta de cobros con tarjeta", r);
   return id;
 };
 
@@ -222,7 +224,7 @@ async function guardarCaja(ctx: Ctx, b: Body) {
     return { id: actual.id };
   }
   const suc = await sucursalDelComercio(ctx, b.sucursal_id);
-  if (!suc.id_externo) throw new HttpError(409, "La sucursal no está sincronizada con Ecart Pay");
+  if (!suc.id_externo) throw new HttpError(409, "La sucursal no está sincronizada");
   const idLocal = crypto.randomUUID();
   const r = await ctx.ecart.post(
     "/api/pos/sales-registers",
@@ -254,7 +256,7 @@ async function borrarCaja(ctx: Ctx, b: Body) {
 
 async function vincularTerminal(ctx: Ctx, b: Body, vincular: boolean) {
   const caja = await cajaDelComercio(ctx, b.caja_id);
-  if (!caja.id_externo) throw new HttpError(409, "La caja no está sincronizada con Ecart Pay");
+  if (!caja.id_externo) throw new HttpError(409, "La caja no está sincronizada");
   const terminalId = vincular ? b.terminal_id : caja.terminal_id;
   if (typeof terminalId !== "string") throw new HttpError(400, "Falta la terminal");
   const { data: t } = await ctx.sb

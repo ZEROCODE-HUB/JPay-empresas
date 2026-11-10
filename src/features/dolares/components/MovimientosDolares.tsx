@@ -62,8 +62,8 @@ export function EnviosDolaresCard({ envios }: { envios: TransferenciaSpei[] }) {
       <h2 className="font-semibold">
         Envíos en dólares
         <InfoTip className="ml-1">
-          Tus envíos en dólares más recientes por Fedwire o SWIFT, con el estado que informa Cobre.
-          Se toman de tus últimas 50 transferencias.
+          Tus envíos en dólares más recientes por Fedwire o SWIFT, con su estado actual. Se toman de
+          tus últimas 50 transferencias.
         </InfoTip>
       </h2>
       {envios.length === 0 ? (

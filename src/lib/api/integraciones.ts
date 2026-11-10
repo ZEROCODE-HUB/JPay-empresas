@@ -75,7 +75,8 @@ export async function iniciarConexionEcartPay(comercioId: string): Promise<strin
     body: { comercio_id: comercioId, volver_a: volverA },
   });
   if (error) throw await errorDeFuncion(error);
-  if (!data?.url) throw new DataAccessError(new Error("No se recibió la URL de Ecart Pay"));
+  if (!data?.url)
+    throw new DataAccessError(new Error("No se pudo abrir la activación de cobros con tarjeta"));
   return data.url;
 }
 
@@ -228,6 +229,6 @@ export async function getRetirosEcartPay(pagina = 1): Promise<Retiros> {
     body: { pagina },
   });
   if (error) throw await errorDeFuncion(error);
-  if (!data) throw new Error("Respuesta vacía de Ecart Pay");
+  if (!data) throw new Error("No se recibió respuesta del procesador de pagos");
   return data;
 }

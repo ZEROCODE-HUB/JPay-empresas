@@ -224,8 +224,7 @@ export async function crearBalanceComercio(
     })
     .select("id")
     .single();
-  if (error)
-    throw new Error(`Balance ${cuenta.id} creado en Cobre pero no guardado: ${error.message}`);
+  if (error) throw new Error(`Cuenta ${cuenta.id} creada pero no guardada: ${error.message}`);
   if (clabe && receptora)
     await asignarClabeReceptora(
       sb,

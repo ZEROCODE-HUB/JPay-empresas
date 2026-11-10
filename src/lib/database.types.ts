@@ -6712,6 +6712,83 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitudes_contacto: {
+        Row: {
+          atendida_at: string | null
+          atendida_por: string | null
+          cliente_legajo: string
+          correo: string
+          created_at: string
+          estado: string
+          id: string
+          mensaje: string | null
+          nombre: string
+          nota: string | null
+          servicio: string
+          telefono: string
+          updated_at: string
+        }
+        Insert: {
+          atendida_at?: string | null
+          atendida_por?: string | null
+          cliente_legajo: string
+          correo: string
+          created_at?: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          nombre: string
+          nota?: string | null
+          servicio: string
+          telefono: string
+          updated_at?: string
+        }
+        Update: {
+          atendida_at?: string | null
+          atendida_por?: string | null
+          cliente_legajo?: string
+          correo?: string
+          created_at?: string
+          estado?: string
+          id?: string
+          mensaje?: string | null
+          nombre?: string
+          nota?: string | null
+          servicio?: string
+          telefono?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_contacto_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "solicitudes_contacto_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "solicitudes_contacto_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "solicitudes_contacto_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+        ]
+      }
       subaccount_balances: {
         Row: {
           saldo_conciliado: number
@@ -8331,6 +8408,10 @@ export type Database = {
         }
         Returns: Json
       }
+      atender_solicitud_contacto: {
+        Args: { p_estado: string; p_id: string; p_nota?: string }
+        Returns: undefined
+      }
       buscar_asignacion_impuesto: {
         Args: { p_codigo_impuesto: string; p_legajo: string }
         Returns: {
@@ -9087,6 +9168,16 @@ export type Database = {
           p_titular_origen?: string
         }
         Returns: Json
+      }
+      solicitar_contacto: {
+        Args: {
+          p_correo: string
+          p_mensaje?: string
+          p_nombre: string
+          p_servicio: string
+          p_telefono: string
+        }
+        Returns: string
       }
       sumar_dias_habiles:
         | { Args: { p_dias: number; p_fecha: string }; Returns: string }

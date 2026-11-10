@@ -23,6 +23,7 @@ export const mapSubs = (rows: SubcuentaConSaldos[]): Sub[] =>
     lim: r.limite ?? "",
     color: PALETTE[i % PALETTE.length],
     retirosHab: !!r.retiros_habilitados,
+    moneda: (r as { moneda?: string | null }).moneda === "USD" ? "USD" : "MXN",
   }));
 
 /** `limite` es texto libre: puede venir "50000", "50.000,00" o vacío. */
@@ -46,10 +47,24 @@ export function filtrarSubs(subs: Sub[], q: string, tipo: string, estado: string
   );
 }
 
-export function totalesSubs(subs: Pick<Sub, "disp" | "ret">[]) {
-  const disp = subs.reduce((a, s) => a + s.disp, 0);
-  const ret = subs.reduce((a, s) => a + s.ret, 0);
-  return { total: subs.reduce((a, s) => a + s.disp + s.ret, 0), disp, ret };
+/**
+ * Totales en pesos (las subcuentas en dólares no se suman con las de pesos) y, aparte, el total
+ * en dólares.
+ */
+export function totalesSubs(subs: Pick<Sub, "disp" | "ret" | "moneda">[]) {
+  const pesos = subs.filter((s) => s.moneda !== "USD");
+  const usd = subs.filter((s) => s.moneda === "USD");
+  const disp = pesos.reduce((a, s) => a + s.disp, 0);
+  const ret = pesos.reduce((a, s) => a + s.ret, 0);
+  return {
+    total: disp + ret,
+    disp,
+    ret,
+    totalUsd: usd.reduce((a, s) => a + s.disp + s.ret, 0),
+    dispUsd: usd.reduce((a, s) => a + s.disp, 0),
+    retUsd: usd.reduce((a, s) => a + s.ret, 0),
+    hayUsd: usd.length > 0,
+  };
 }
 
 /** Porcentaje (con un decimal, como texto) del saldo de la subcuenta sobre el total. */

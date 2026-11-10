@@ -39,7 +39,9 @@ function SelectSubcuenta({
   );
 }
 
-export function TransferirSubcuentasDialog({ subs, t }: Props) {
+export function TransferirSubcuentasDialog({ subs: todas, t }: Props) {
+  // Solo entre subcuentas en pesos: a la de dólares se llega convirtiendo (Dólares).
+  const subs = todas.filter((s) => s.moneda !== "USD");
   return (
     <FormDialog
       open={t.open}

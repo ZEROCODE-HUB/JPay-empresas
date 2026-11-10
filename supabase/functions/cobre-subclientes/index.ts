@@ -64,7 +64,10 @@ Deno.serve(
       }
     } catch (e) {
       if (e instanceof CobreError) {
-        throw new HttpError(e.status >= 400 && e.status < 500 ? 422 : 502, `Cobre: ${e.message}`);
+        throw new HttpError(
+          e.status >= 400 && e.status < 500 ? 422 : 502,
+          `No se pudo completar la operación: ${e.message}`,
+        );
       }
       throw e;
     }
@@ -112,7 +115,7 @@ Deno.serve(
       if (await instanciaDeCliente(sb, l)) {
         throw new HttpError(
           409,
-          "El comercio opera con su propia instancia de Cobre: no lleva Subcliente",
+          "El comercio ya opera con su propia cuenta: no necesita esta apertura",
         );
       }
       const previa = await ultima();
@@ -165,7 +168,8 @@ Deno.serve(
         throw e;
       }
       const externo = typeof sc.id === "string" ? sc.id : null;
-      if (!externo) throw new HttpError(502, "Cobre no devolvió el id del Subcliente");
+      if (!externo)
+        throw new HttpError(502, "No se pudo registrar la apertura de la cuenta; intenta de nuevo");
       await sb
         .from("cobre_subclientes")
         .update({

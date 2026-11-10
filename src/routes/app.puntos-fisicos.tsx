@@ -12,13 +12,13 @@ function Page() {
     <RequiereEcartPay
       titulo="Puntos físicos"
       descripcion="Sucursales, cajas y terminales."
-      aviso="Para gestionar puntos físicos primero conecta tu cuenta de Ecart Pay en"
+      aviso="Para gestionar puntos físicos primero activa los cobros con tarjeta en"
     >
       {(comercioId) => (
         <PuntosFisicosPanel
           comercioId={comercioId}
           titulo="Puntos físicos"
-          descripcion="Sucursales, cajas y terminales de tu cuenta de Ecart Pay."
+          descripcion="Sucursales, cajas y terminales de tu cuenta de cobros con tarjeta."
         />
       )}
     </RequiereEcartPay>

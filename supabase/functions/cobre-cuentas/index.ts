@@ -68,7 +68,10 @@ Deno.serve(
       }
     } catch (e) {
       if (e instanceof CobreError) {
-        throw new HttpError(e.status >= 400 && e.status < 500 ? 422 : 502, `Cobre: ${e.message}`);
+        throw new HttpError(
+          e.status >= 400 && e.status < 500 ? 422 : 502,
+          `No se pudo completar la operación: ${e.message}`,
+        );
       }
       throw e;
     }
@@ -136,11 +139,7 @@ async function balancesMatriz(ctx: Ctx) {
       })
       .select("id, tipo, cuenta_externa_id, conectividad")
       .single();
-    if (error)
-      throw new HttpError(
-        500,
-        `Balance ${c.id} creado en Cobre pero no guardado: ${error.message}`,
-      );
+    if (error) throw new HttpError(500, `Cuenta ${c.id} creada pero no guardada: ${error.message}`);
     await sb
       .from("cobre_configuracion")
       .update({
@@ -201,7 +200,7 @@ async function cambiarReceptora(ctx: Ctx, subcuentaId: string, legajoSesion: str
     .eq("modo", ctx.conexion.modo)
     .eq("estado", "activa")
     .maybeSingle();
-  if (!cuenta?.clabe) throw new HttpError(409, "El comercio todavía no tiene su cuenta en Cobre");
+  if (!cuenta?.clabe) throw new HttpError(409, "El comercio todavía no tiene su cuenta JPay");
   await asignarClabeReceptora(
     ctx.sb,
     ctx.conexion.modo,

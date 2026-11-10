@@ -15,10 +15,10 @@ const ESTADO_LOTE: Record<
 > = {
   preparando: { label: "Esperando aprobación", tone: "warn" },
   enviando: { label: "Enviando", tone: "warn" },
-  validating: { label: "Cobre lo está validando", tone: "warn" },
+  validating: { label: "En validación", tone: "warn" },
   processing: { label: "En proceso", tone: "warn" },
   completed: { label: "Procesado", tone: "success" },
-  failed: { label: "Rechazado por Cobre", tone: "danger" },
+  failed: { label: "Rechazado", tone: "danger" },
   canceled: { label: "Cancelado", tone: "neutral" },
   error_envio: { label: "No enviado", tone: "danger" },
 };
@@ -78,9 +78,7 @@ export function LoteSpeiCard({
     }
     setRegistrando(false);
     if (ok)
-      toast.success(
-        `${ok} destinatarios registrados; Cobre verifica los titulares en unos minutos`,
-      );
+      toast.success(`${ok} destinatarios registrados; verificamos los titulares en unos minutos`);
   };
 
   const enviar = () => {
@@ -99,9 +97,7 @@ export function LoteSpeiCard({
       },
       {
         onSuccess: (l) => {
-          toast.success(
-            l.requiereAprobacion ? "Lote enviado a aprobación" : "Lote enviado a Cobre",
-          );
+          toast.success(l.requiereAprobacion ? "Lote enviado a aprobación" : "Lote enviado");
           setTexto("");
           setCodigo(null);
           setIdLote(`LT${Date.now().toString(36).toUpperCase()}`);
@@ -155,7 +151,7 @@ export function LoteSpeiCard({
       </div>
       {!habilitada || pesos.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder enviar lotes cuando tu cuenta en Cobre esté activa.
+          Vas a poder enviar lotes cuando tu cuenta JPay esté activa.
         </p>
       ) : (
         <>

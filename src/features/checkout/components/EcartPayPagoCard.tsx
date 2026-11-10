@@ -10,7 +10,7 @@ const METODOS: { id: MetodoCheckout; label: string; detalle: string; icon: typeo
   {
     id: "tarjeta",
     label: "Tarjeta",
-    detalle: "Pagas en la página segura de Ecart Pay y regresas aquí al terminar.",
+    detalle: "Pagas en una página segura y regresas aquí al terminar.",
     icon: CreditCard,
   },
   {
@@ -116,7 +116,7 @@ export function EcartPayPagoCard({
         {iniciar.isPending ? (
           <>
             <Loader2 size={16} className="animate-spin" />
-            {metodo === "tarjeta" ? "Conectando con Ecart Pay…" : "Generando referencia…"}
+            {metodo === "tarjeta" ? "Abriendo el pago seguro…" : "Generando referencia…"}
           </>
         ) : (
           <>

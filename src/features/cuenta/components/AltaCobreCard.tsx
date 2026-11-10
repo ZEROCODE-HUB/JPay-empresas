@@ -5,7 +5,7 @@ import { KybCobreForm } from "@/shared/ui/kyb-cobre";
 
 const ALTA: Record<string, { label: string; tone: "success" | "warn" | "danger" | "neutral" }> = {
   enviando: { label: "Alta enviada", tone: "warn" },
-  processing: { label: "En revisión por Cobre", tone: "warn" },
+  processing: { label: "En revisión", tone: "warn" },
   approved: { label: "Aprobada", tone: "success" },
   rejected: { label: "Rechazada", tone: "danger" },
   failed: { label: "Con error", tone: "danger" },
@@ -26,7 +26,7 @@ export function AltaCobreCard() {
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold">Cuenta en Cobre (SPEI y dólares)</h2>
+          <h2 className="font-semibold">Tu cuenta JPay (SPEI y dólares)</h2>
           <p className="text-xs text-black-400 mt-1">
             Datos de la empresa, representantes legales y beneficiarios finales para abrir tu
             cuenta.

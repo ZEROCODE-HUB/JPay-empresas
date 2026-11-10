@@ -154,7 +154,7 @@ export class CobreCliente {
               : undefined,
         });
       } catch (e) {
-        throw new CobreError(503, `Sin respuesta de Cobre: ${(e as Error).message}`);
+        throw new CobreError(503, `Sin respuesta del servicio: ${(e as Error).message}`);
       }
       if (res.status === 401 && intento === 0) {
         await res.body?.cancel();
@@ -162,7 +162,7 @@ export class CobreCliente {
         continue;
       }
       const cuerpo = await leerCuerpo(res);
-      if (!res.ok) throw errorDe(res.status, cuerpo, `Cobre respondió ${res.status}`);
+      if (!res.ok) throw errorDe(res.status, cuerpo, `El servicio respondió ${res.status}`);
       return cuerpo as T;
     }
   }
@@ -230,13 +230,13 @@ export const SIN_DEBITO: EstadoTransferencia[] = ["rechazada", "fallida", "cance
 
 /** Motivos en español para los códigos más comunes (catálogo "Money Movement Statuses"). */
 const MOTIVOS: Record<string, string> = {
-  F001: "No se pudo procesar la transferencia; intentá de nuevo",
+  F001: "No se pudo procesar la transferencia; intenta de nuevo",
   F002: "Fondos insuficientes en la cuenta de origen",
   F003: "La solicitud de pago venció",
   F004: "Se alcanzó el límite diario de transferencias",
   F005: "El monto supera el máximo permitido por transferencia",
-  F098: "Cobre no pudo procesarla en este momento; se reintenta más tarde",
-  F099: "Cobre no pudo procesarla en este momento; se reintenta más tarde",
+  F098: "No se pudo procesar en este momento; se reintenta más tarde",
+  F099: "No se pudo procesar en este momento; se reintenta más tarde",
   R000: "Transferencia rechazada",
   R001: "La cuenta de destino está inactiva o bloqueada",
   R002: "La cuenta y la identificación del titular no coinciden",

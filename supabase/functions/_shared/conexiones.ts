@@ -147,7 +147,10 @@ export async function clienteDeConexion(
       })
       .eq("id", c.id)
       .neq("estado", "revocado");
-    throw new HttpError(409, "La conexión con Ecart Pay no tiene claves; hay que reconectarla");
+    throw new HttpError(
+      409,
+      "La cuenta de cobros con tarjeta no tiene claves; hay que volver a activarla",
+    );
   }
   const cliente = new EcartPayCliente({
     baseUrl: baseUrlEcartPay(c.entorno === "sandbox"),

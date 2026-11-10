@@ -22,14 +22,14 @@ const ESTADO: Record<string, { label: string; tone: "success" | "warn" | "danger
 const TIPO_CUENTA: Record<string, string> = { clabe: "CLABE", tarjeta: "Tarjeta de débito" };
 
 const DESCRIPCION =
-  "Lo que pasaste de tu cuenta de Ecart Pay a tu banco. Los retiros se piden desde el panel de Ecart Pay.";
+  "Lo que pasaste de tu cuenta de cobros con tarjeta a tu banco. Los retiros se piden desde el panel de tu procesador de pagos.";
 
 function Page() {
   return (
     <RequiereEcartPay
       titulo="Retiros a tu banco"
       descripcion={DESCRIPCION}
-      aviso="Para ver tus retiros primero conecta tu cuenta de Ecart Pay en"
+      aviso="Para ver tus retiros primero activa los cobros con tarjeta en"
     >
       {() => <Retiros />}
     </RequiereEcartPay>
@@ -45,7 +45,7 @@ function Retiros() {
     <>
       <PageHeader title="Retiros a tu banco" description={DESCRIPCION} />
       {isLoading ? (
-        <Card className="text-sm text-black-400">Consultando Ecart Pay…</Card>
+        <Card className="text-sm text-black-400">Consultando tu cuenta…</Card>
       ) : error ? (
         <Card className="text-sm text-danger-600">
           No se pudieron consultar los retiros: {(error as Error).message}
@@ -54,25 +54,25 @@ function Retiros() {
         <div className="space-y-4">
           {data.errores.length > 0 && (
             <Card className="text-xs text-warning">
-              Ecart Pay no devolvió parte de la información ({data.errores.join(" · ")}).
+              No se pudo obtener parte de la información ({data.errores.join(" · ")}).
             </Card>
           )}
           {data.saldo && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <KpiCard
-                label="Disponible en Ecart Pay"
+                label="Disponible por cobros con tarjeta"
                 value={formatMoney(data.saldo.disponible)}
-                info="Saldo que Ecart Pay reporta hoy para tu cuenta, en pesos: lo que puedes retirar a tu banco."
+                info="Saldo de tu cuenta de cobros con tarjeta hoy, en pesos: lo que puedes retirar a tu banco."
               />
               <KpiCard
                 label="Cobrado"
                 value={formatMoney(data.saldo.cobrado)}
-                info="Total de pagos recibidos en tu cuenta de Ecart Pay, según su resumen. Es el acumulado de la cuenta, no de un período."
+                info="Total de pagos recibidos en tu cuenta de cobros con tarjeta. Es el acumulado de la cuenta, no de un período."
               />
               <KpiCard
                 label="Retiros, reembolsos y comisiones"
                 value={formatMoney(data.saldo.cargos)}
-                info="Total de cargos que Ecart Pay descontó de tu cuenta: retiros a tu banco, reembolsos y comisiones. Es el acumulado de la cuenta, no de un período."
+                info="Total de cargos descontados de tu cuenta de cobros con tarjeta: retiros a tu banco, reembolsos y comisiones. Es el acumulado de la cuenta, no de un período."
               />
             </div>
           )}
@@ -81,7 +81,8 @@ function Retiros() {
             <h2 className="font-semibold">Cuentas de retiro</h2>
             {data.cuentas.length === 0 ? (
               <p className="mt-2 text-sm text-black-400">
-                No tienes cuentas de retiro cargadas. Agrega tu CLABE en el panel de Ecart Pay.
+                No tienes cuentas de retiro cargadas. Agrega tu CLABE en el panel de tu procesador
+                de pagos.
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-black-100 text-sm">
@@ -143,7 +144,7 @@ function Retiros() {
                             <Badge tone={e.tone}>{e.label}</Badge>
                             {r.enRevision && (
                               <span className="block text-[11px] text-black-400 mt-0.5">
-                                En revisión por Ecart Pay
+                                En revisión
                               </span>
                             )}
                           </td>

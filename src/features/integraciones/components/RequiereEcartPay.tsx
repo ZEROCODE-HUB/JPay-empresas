@@ -12,7 +12,7 @@ import { useConexionEcartPay } from "@/hooks/useIntegraciones";
 export function RequiereEcartPay({
   titulo,
   descripcion,
-  aviso = "Primero conecta tu cuenta de Ecart Pay en",
+  aviso = "Primero activa los cobros con tarjeta en",
   children,
 }: {
   titulo: string;

@@ -89,7 +89,7 @@ export function CobrosR2pCard({
         <h2 className="font-semibold">Nuevo cobro por SPEI</h2>
         {!habilitada ? (
           <p className="mt-2 text-sm text-black-400">
-            Vas a poder cobrar cuando tu cuenta en Cobre esté activa.
+            Vas a poder cobrar cuando tu cuenta JPay esté activa.
           </p>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">

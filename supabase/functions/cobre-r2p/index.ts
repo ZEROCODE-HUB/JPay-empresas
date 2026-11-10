@@ -47,7 +47,10 @@ Deno.serve(
       }
     } catch (e) {
       if (e instanceof CobreError) {
-        throw new HttpError(e.status >= 400 && e.status < 500 ? 422 : 502, `Cobre: ${e.message}`);
+        throw new HttpError(
+          e.status >= 400 && e.status < 500 ? 422 : 502,
+          `No se pudo completar la operación: ${e.message}`,
+        );
       }
       throw e;
     }
@@ -129,7 +132,7 @@ async function crear(
   const pagador = pagadorValido(b.pagador);
   const conexion = await conexionDeCliente(sb, legajo);
   const d = await destino(sb, conexion, legajo, b.subcuenta_id);
-  if (!d) throw new HttpError(409, "La cuenta del comercio en Cobre todavía no está habilitada");
+  if (!d) throw new HttpError(409, "La cuenta JPay del comercio todavía no está habilitada");
   const externo = nuevoExternalR2p();
   const { data: fila, error } = await sb
     .from("cobre_cobros_r2p")
@@ -161,7 +164,7 @@ async function crear(
   } catch (e) {
     // Sin respuesta clara: queda `creando` y la revisión de pendientes reenvía con la misma clave.
     if (e instanceof CobreError && (e.status >= 500 || e.status === 408 || e.status === 429)) {
-      return { ...fila, aviso: "Cobre no respondió; la CLABE se genera en unos minutos" };
+      return { ...fila, aviso: "La CLABE se genera en unos minutos" };
     }
     throw e;
   }

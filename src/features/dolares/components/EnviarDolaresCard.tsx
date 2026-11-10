@@ -67,7 +67,7 @@ export function EnviarDolaresCard({
     }
     m.crearDestinatarioUsd.mutate(nuevo, {
       onSuccess: (r) => {
-        toast.success("Beneficiario guardado; Cobre lo verifica antes del primer pago");
+        toast.success("Beneficiario guardado; lo verificamos antes del primer pago");
         setDestino(r.id);
         setNuevo(null);
       },
@@ -155,7 +155,7 @@ export function EnviarDolaresCard({
       </div>
       {!habilitada ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder enviar dólares cuando tu cuenta en Cobre esté activa.
+          Vas a poder enviar dólares cuando tu cuenta JPay esté activa.
         </p>
       ) : (
         <>

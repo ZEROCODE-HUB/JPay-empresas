@@ -128,13 +128,13 @@ Deno.serve(
         ) {
           await sb.rpc("cancelar_transferencia_bdc", {
             p_origin_id: t.id_txn,
-            p_motivo: "Cobre no recibió la transferencia",
+            p_motivo: "La transferencia no se recibió",
           });
           await sb
             .from("cobre_transferencias")
             .update({
               estado: t.lote_id ? "fallida" : "error_envio",
-              motivo: "Cobre no recibió la transferencia; no se debitó",
+              motivo: "La transferencia no se recibió; no se debitó",
               updated_at: new Date().toISOString(),
             })
             .eq("id", t.id);

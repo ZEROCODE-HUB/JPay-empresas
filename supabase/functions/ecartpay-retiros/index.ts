@@ -24,7 +24,8 @@ Deno.serve(
     const sb = serviceClient();
     const comercioId = await comercioDeLaSolicitud(req, sb, body.comercio_id);
     const conexion = await conexionEcartPay(sb, [comercioId]);
-    if (!conexion) throw new HttpError(409, "El comercio no tiene Ecart Pay conectado");
+    if (!conexion)
+      throw new HttpError(409, "El comercio no tiene activados los cobros con tarjeta");
     const ecart = await clienteDeConexion(sb, conexion);
     const { data: pais } = await sb
       .from("paises")
@@ -72,7 +73,8 @@ Deno.serve(
         ].filter(Boolean),
       });
     } catch (e) {
-      if (e instanceof EcartPayError) throw new HttpError(502, `Ecart Pay: ${e.message}`);
+      if (e instanceof EcartPayError)
+        throw new HttpError(502, `No se pudo completar la operación: ${e.message}`);
       throw e;
     }
   }),

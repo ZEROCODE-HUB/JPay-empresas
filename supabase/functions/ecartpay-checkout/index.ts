@@ -129,7 +129,8 @@ async function crear(sb: SupabaseClient, body: Body) {
 
   const { link, conexion, comercio } = await contexto(sb, body.code);
   if (!vigente(link)) throw new HttpError(409, "El link de pago no está disponible");
-  if (!conexion) throw new HttpError(409, "Este comercio no tiene Ecart Pay conectado");
+  if (!conexion)
+    throw new HttpError(409, "Este comercio no tiene activados los cobros con tarjeta");
 
   const metodo: MetodoExterno | null =
     body.metodo === "spei" || body.metodo === "oxxo" ? body.metodo : null;
@@ -212,7 +213,7 @@ async function crear(sb: SupabaseClient, body: Body) {
       `/api/orders/public/${encodeURIComponent(ordenId)}`,
     );
     const ref = leerReferenciaPago(publica, metodo);
-    if (!ref) throw new EcartPayError(502, "Ecart Pay no devolvió la referencia de pago", publica);
+    if (!ref) throw new EcartPayError(502, "No se pudo generar la referencia de pago", publica);
     const { error: e3 } = await sb
       .from("pagos")
       .update({
@@ -238,9 +239,9 @@ async function crear(sb: SupabaseClient, body: Body) {
       p_motivo: motivo.slice(0, 500),
     });
     if (e instanceof EcartPayError && (e.status === 400 || e.status === 422)) {
-      throw new HttpError(422, `Ecart Pay rechazó los datos: ${e.message}`);
+      throw new HttpError(422, `Se rechazaron los datos del pago: ${e.message}`);
     }
-    throw new HttpError(502, "No se pudo iniciar el pago con Ecart Pay. Prueba de nuevo.");
+    throw new HttpError(502, "No se pudo iniciar el pago. Prueba de nuevo.");
   }
 }
 

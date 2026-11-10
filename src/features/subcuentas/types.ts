@@ -19,6 +19,8 @@ export type Sub = {
   lim: string;
   color: string;
   retirosHab: boolean;
+  /** La subcuenta en dólares guarda USD; el resto, pesos. Nunca se suman entre sí. */
+  moneda: "MXN" | "USD";
 };
 
 /** Movimiento de una subcuenta en el modal de detalle. */

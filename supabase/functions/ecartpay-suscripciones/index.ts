@@ -85,7 +85,7 @@ Deno.serve(
       if (e instanceof EcartPayError) {
         throw new HttpError(
           e.status >= 400 && e.status < 500 ? 422 : 502,
-          `Ecart Pay: ${e.message}`,
+          `No se pudo completar la operación: ${e.message}`,
         );
       }
       throw e;

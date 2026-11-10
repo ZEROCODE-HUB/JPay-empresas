@@ -82,7 +82,7 @@ export async function instanciaCobre(
   const d = data as Record<string, unknown> | null;
   if (!d || d.estado !== "activa" || d.modo !== modoCobre()) return null;
   if (typeof d.user_id !== "string" || typeof d.secret !== "string" || !d.secret) {
-    throw new CobreError(409, "La instancia Cobre del comercio no tiene credenciales cargadas");
+    throw new CobreError(409, "La cuenta del comercio no tiene credenciales cargadas");
   }
   return {
     id,

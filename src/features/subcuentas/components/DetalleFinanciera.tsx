@@ -58,19 +58,19 @@ export function DetalleFinanciera({ sub, totalDepositos, totalRetiros, onFondear
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Dato
           label="Balance actual"
-          value={formatMoney(sub.disp)}
+          value={formatMoney(sub.disp, { moneda: sub.moneda })}
           info="Saldo disponible de esta subcuenta hoy. No incluye lo retenido por operaciones en curso."
         />
         <Dato
           label="Total depositos"
-          value={formatMoney(totalDepositos)}
+          value={formatMoney(totalDepositos, { moneda: sub.moneda })}
           className="text-emerald-700"
           info="Suma de las entradas de esta subcuenta (depósitos, conversiones y otros ingresos) entre sus 200 movimientos más recientes, en cualquier estado."
           infoAlign="right"
         />
         <Dato
           label="Total retiros"
-          value={formatMoney(totalRetiros)}
+          value={formatMoney(totalRetiros, { moneda: sub.moneda })}
           className="text-danger-700"
           info="Suma de las transferencias y retiros de esta subcuenta entre sus 200 movimientos más recientes, en cualquier estado."
         />

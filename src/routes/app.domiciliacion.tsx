@@ -1,24 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
-import { DomiciliacionesPanel } from "@/shared/ui/domiciliaciones-panel";
+import { PageHeader } from "@/components/portal-shell";
+import { SolicitudDomiciliacion } from "@/features/domiciliacion/components/SolicitudDomiciliacion";
 
 export const Route = createFileRoute("/app/domiciliacion")({
   head: () => ({ meta: [{ title: "Domiciliación" }] }),
   component: Page,
 });
 
-const DESCRIPCION = "Cargos recurrentes o únicos a la CLABE de tus clientes, con su aceptación.";
-
 function Page() {
   return (
-    <RequiereEcartPay titulo="Domiciliación" descripcion={DESCRIPCION}>
-      {(comercioId) => (
-        <DomiciliacionesPanel
-          comercioId={comercioId}
-          titulo="Domiciliación"
-          descripcion={DESCRIPCION}
-        />
-      )}
-    </RequiereEcartPay>
+    <>
+      <PageHeader
+        title="Domiciliación"
+        description="Cobra de forma recurrente o única a la cuenta de tus clientes, con su autorización."
+      />
+      <SolicitudDomiciliacion />
+    </>
   );
 }
