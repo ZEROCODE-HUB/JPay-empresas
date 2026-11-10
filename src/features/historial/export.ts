@@ -32,6 +32,7 @@ export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
     Nombre_destino: l.nombreDestino ?? "",
     RFC: l.cuit ?? "",
     Monto: l.monto,
+    Moneda: l.moneda,
     Fecha: formatFechaLinea(l.fecha),
     Estado: l.estado,
   }));
@@ -39,6 +40,9 @@ export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
     { Resumen: "Ingresos", Valor: formatMoney(t.totalIngresos) },
     { Resumen: "Egresos", Valor: formatMoney(t.totalEgresos) },
     { Resumen: "Neto", Valor: formatMoney(t.totalIngresos - t.totalEgresos) },
+    ...(t.lineasUsd
+      ? [{ Resumen: "Neto en dólares", Valor: formatMoney(t.netoUsd, { moneda: "USD" }) }]
+      : []),
     { Resumen: "Pendientes/Rechazados", Valor: String(t.totalPendientes) },
     {},
     ...body,
@@ -71,7 +75,8 @@ export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie
       [
         formatMoney(t.totalIngresos),
         formatMoney(t.totalEgresos),
-        formatMoney(t.totalIngresos - t.totalEgresos),
+        formatMoney(t.totalIngresos - t.totalEgresos) +
+          (t.lineasUsd ? ` (${formatMoney(t.netoUsd, { signo: true, moneda: "USD" })})` : ""),
         String(t.totalPendientes),
       ],
     ],
@@ -87,7 +92,7 @@ export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie
       prettyTipo(l.tipoOperacion),
       l.nombreDestino ?? "-",
       l.cuit ?? "-",
-      l.monto.toFixed(2),
+      formatMoney(l.monto, { moneda: l.moneda }),
       l.estado,
     ]),
     styles: { fontSize: 7 },

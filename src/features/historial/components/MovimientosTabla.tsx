@@ -139,7 +139,7 @@ export function MovimientosTabla({
                     <td
                       className={`px-4 py-3 font-mono tabular-nums text-right font-semibold whitespace-nowrap text-sm ${l.monto >= 0 ? "text-emerald-700" : "text-danger-700"}`}
                     >
-                      {formatMoney(l.monto, { signo: true })}
+                      {formatMoney(l.monto, { signo: true, moneda: l.moneda })}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono text-muted-foreground whitespace-nowrap">
                       {formatFechaLinea(l.fecha)}

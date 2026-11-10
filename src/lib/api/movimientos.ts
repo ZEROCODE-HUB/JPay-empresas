@@ -16,7 +16,7 @@ export type MovimientoDashboard = Pick<
 export type Dashboard = {
   cliente: Pick<Tables<"clientes">, "legajo" | "cbu">;
   movimientos: MovimientoDashboard[];
-  saldos: Saldos[];
+  saldos: (Saldos & { moneda: string | null })[];
 };
 
 /** Movimientos del período y saldos de las subcuentas del cliente de la sesión. */
@@ -40,7 +40,7 @@ export async function getDashboard(desde: string, hasta: string): Promise<Dashbo
   if (errMov) throw new DataAccessError(errMov);
   const { data: subs, error: errSubs } = await s
     .from("subaccounts")
-    .select("subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)")
+    .select("moneda, subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)")
     .eq("cliente_legajo", cli.legajo);
   if (errSubs) throw new DataAccessError(errSubs);
   return { cliente: cli, movimientos: m ?? [], saldos: (subs ?? []).map(conSaldos) };
@@ -54,7 +54,12 @@ export type ClienteHistorial = Pick<
   Tables<"clientes">,
   "legajo" | "tipo_persona" | "nombre" | "tax_id" | "correo"
 >;
-export type SubcuentaHistorial = { id: string; nombre: string; cbu: string | null };
+export type SubcuentaHistorial = {
+  id: string;
+  nombre: string;
+  cbu: string | null;
+  moneda: "MXN" | "USD";
+};
 
 export type LineaMovimientoRow = Pick<
   Tables<"v_transaction_lines">,
@@ -74,7 +79,11 @@ export type LineaMovimientoRow = Pick<
   | "cuit"
   | "estado_codigo"
   | "estado_nombre"
->;
+  | "subaccount_id"
+> & {
+  /** Moneda de la subcuenta de la línea (la subcuenta en dólares mueve USD). */
+  moneda: "MXN" | "USD";
+};
 
 export type FiltrosHistorial = {
   page: number;
@@ -107,7 +116,7 @@ const like = (v: string) => `%${v.trim().replace(/[%_,()]/g, "\\$&")}%`;
 type Supabase = ReturnType<typeof requireSupabase>;
 
 const COLUMNAS_LINEA =
-  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre";
+  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre, subaccount_id";
 
 /** Cliente de la sesión y sus subcuentas (ordenadas por nombre). */
 async function clienteYSubcuentas(
@@ -124,7 +133,7 @@ async function clienteYSubcuentas(
 
   const { data: subs, error: errSubs } = await sb
     .from("subaccounts")
-    .select("id, nombre, cbu")
+    .select("id, nombre, cbu, moneda")
     .eq("cliente_legajo", cli.legajo)
     .order("nombre", { ascending: true });
   if (errSubs) throw new DataAccessError(errSubs);
@@ -132,8 +141,21 @@ async function clienteYSubcuentas(
     id: s.id,
     nombre: s.nombre || "Sin nombre",
     cbu: s.cbu ?? null,
+    moneda: (s.moneda === "USD" ? "USD" : "MXN") as "MXN" | "USD",
   }));
   return { cliente: cli, subcuentas };
+}
+
+/** Agrega a cada línea la moneda de su subcuenta. */
+function conMoneda(
+  filas: Omit<LineaMovimientoRow, "moneda">[],
+  subcuentas: SubcuentaHistorial[],
+): LineaMovimientoRow[] {
+  const usd = new Set(subcuentas.filter((s) => s.moneda === "USD").map((s) => s.id));
+  return filas.map((f) => ({
+    ...f,
+    moneda: f.subaccount_id && usd.has(f.subaccount_id) ? "USD" : "MXN",
+  }));
 }
 
 /** Consulta de líneas con todos los filtros aplicados, ordenada, sin rango. */
@@ -191,7 +213,7 @@ export async function getHistorial(f: FiltrosHistorial): Promise<Historial> {
   );
   if (error) throw new DataAccessError(error);
 
-  return { cliente: cli, subcuentas, lineas: data ?? [], total: count ?? 0 };
+  return { cliente: cli, subcuentas, lineas: conMoneda(data ?? [], subcuentas), total: count ?? 0 };
 }
 
 /** Tope de filas de una exportación. */
@@ -229,7 +251,7 @@ export async function getHistorialExportacion(
     // Se corta solo con un lote vacío: si el servidor tiene un `max-rows`
     // menor que el lote, un lote corto no significa que no haya más filas.
     if (lote.length === 0) break;
-    lineas.push(...lote);
+    lineas.push(...conMoneda(lote, subcuentas));
   }
   return { lineas: lineas.slice(0, limite), truncado: lineas.length > limite };
 }

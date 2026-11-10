@@ -22,10 +22,10 @@ export function useDashboard(start: Date, end: Date) {
   const cli = d?.cliente;
   return {
     movs: d?.movimientos ?? SIN_MOVIMIENTOS,
-    saldoTotal: (d?.saldos ?? []).reduce(
-      (a, x) => a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0),
-      0,
-    ),
+    // Saldo en pesos: la subcuenta en dólares no se suma (no se mezclan monedas).
+    saldoTotal: (d?.saldos ?? [])
+      .filter((x) => x.moneda !== "USD")
+      .reduce((a, x) => a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0), 0),
     cuentas: d ? d.saldos.length + 1 : 1,
     // La CLABE del cliente vive en la columna `cbu`.
     cuentaLabel: cli?.cbu ? `CLABE ${cli.cbu}` : "",

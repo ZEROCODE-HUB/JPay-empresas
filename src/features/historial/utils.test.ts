@@ -34,6 +34,7 @@ const linea = (p: Partial<Linea>): Linea => ({
   nombreDestino: null,
   cuit: null,
   estado: "Acreditado",
+  moneda: "MXN",
   ...p,
 });
 
@@ -157,12 +158,25 @@ describe("lineas", () => {
     expect(totalesPagina(lineas)).toEqual({
       totalIngresos: 100,
       totalEgresos: 46,
+      netoUsd: 0,
+      lineasUsd: 0,
       lineasIngreso: 1,
       lineasEgreso: 3,
       txPendientes: 1,
       txRechazadas: 1,
       totalPendientes: 2,
     });
+  });
+
+  it("no suma dolares con pesos: el neto en USD va aparte", () => {
+    const t = totalesPagina([
+      linea({ idTxn: "D1", tipoLinea: "ingreso", monto: 250 }),
+      linea({ idTxn: "FX1", tipoLinea: "egreso", monto: -50 }),
+      linea({ idTxn: "FX1-USD", tipoLinea: "ingreso", monto: 2.7, moneda: "USD" }),
+    ]);
+    expect(t.totalIngresos - t.totalEgresos).toBe(200);
+    expect(t.netoUsd).toBeCloseTo(2.7);
+    expect(t.lineasUsd).toBe(1);
   });
 
   it("rango de pagina", () => {

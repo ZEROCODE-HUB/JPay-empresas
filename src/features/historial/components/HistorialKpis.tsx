@@ -12,8 +12,9 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
         <div className="text-xs text-muted-foreground mb-1">
           Ingresos del periodo
           <InfoTip className="ml-1">
-            Suma de los movimientos a favor que ves en esta página de la tabla, con los filtros que
-            elegiste. Si hay más páginas, sus movimientos no entran en la suma.
+            Suma en pesos de los movimientos a favor que ves en esta página de la tabla, con los
+            filtros que elegiste. Si hay más páginas, sus movimientos no entran en la suma. Los
+            movimientos de tu subcuenta en dólares no se suman aquí.
           </InfoTip>
         </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
@@ -25,8 +26,8 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
         <div className="text-xs text-muted-foreground mb-1">
           Egresos del periodo
           <InfoTip className="ml-1">
-            Suma de los movimientos en contra (salidas, comisiones e impuestos) que ves en esta
-            página de la tabla, con los filtros que elegiste.
+            Suma en pesos de los movimientos en contra (salidas, comisiones e impuestos) que ves en
+            esta página de la tabla, con los filtros que elegiste.
           </InfoTip>
         </div>
         <div className="text-xl md:text-2xl font-bold text-foreground">
@@ -40,7 +41,9 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
         <div className="text-xs text-muted-foreground mb-1">
           Neto
           <InfoTip className="ml-1">
-            Ingresos menos egresos de los movimientos que ves en esta página de la tabla.
+            Ingresos menos egresos en pesos de los movimientos que ves en esta página de la tabla.
+            Lo que entra o sale de tu subcuenta en dólares se muestra abajo, aparte: no se mezclan
+            pesos con dólares.
           </InfoTip>
         </div>
         <div
@@ -49,6 +52,11 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
           {neto >= 0 ? "+ " : "- "}
           {formatMoney(Math.abs(neto))}
         </div>
+        {t.lineasUsd > 0 && (
+          <div className="text-xs text-muted-foreground mt-1">
+            En dólares: {formatMoney(t.netoUsd, { signo: true, moneda: "USD" })}
+          </div>
+        )}
       </Card>
       <Card className="p-5">
         <div className="text-xs text-muted-foreground mb-1">

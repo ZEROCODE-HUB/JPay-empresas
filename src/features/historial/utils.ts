@@ -231,6 +231,8 @@ export type Linea = {
   nombreDestino: string | null;
   cuit: string | null;
   estado: EstadoMov;
+  /** La subcuenta en dólares mueve USD; el resto, pesos. */
+  moneda: "MXN" | "USD";
 };
 
 export type FilaLinea = Linea & { esCabeza: boolean; hijas: number };
@@ -288,6 +290,7 @@ export const aLinea = (r: LineaMovimientoRow): Linea => ({
   nombreDestino: r.nombre_destino,
   cuit: r.cuit,
   estado: estadoVisible(r.estado_nombre ?? r.estado_codigo),
+  moneda: r.moneda === "USD" ? "USD" : "MXN",
 });
 
 /**
@@ -339,9 +342,13 @@ export function agruparPorTxid(
   return out;
 }
 
+/** Ingresos, egresos y neto en pesos; los dólares van aparte (no se suman pesos con dólares). */
 export type TotalesHistorial = {
   totalIngresos: number;
   totalEgresos: number;
+  /** Neto de las líneas en dólares (subcuenta USD). */
+  netoUsd: number;
+  lineasUsd: number;
   lineasIngreso: number;
   lineasEgreso: number;
   txPendientes: number;
@@ -351,13 +358,17 @@ export type TotalesHistorial = {
 
 /** Totales de la pagina: el signo ya viene de la base. */
 export function totalesPagina(lineas: Linea[]): TotalesHistorial {
-  const ingresos = lineas.filter((l) => l.monto > 0);
-  const egresos = lineas.filter((l) => l.monto < 0);
+  const pesos = lineas.filter((l) => l.moneda !== "USD");
+  const usd = lineas.filter((l) => l.moneda === "USD");
+  const ingresos = pesos.filter((l) => l.monto > 0);
+  const egresos = pesos.filter((l) => l.monto < 0);
   const txPendientes = new Set(lineas.filter((l) => l.estado === "Pendiente").map((l) => l.idTxn));
   const txRechazadas = new Set(lineas.filter((l) => l.estado === "Rechazado").map((l) => l.idTxn));
   return {
     totalIngresos: ingresos.reduce((s, l) => s + l.monto, 0),
     totalEgresos: egresos.reduce((s, l) => s - l.monto, 0),
+    netoUsd: usd.reduce((s, l) => s + l.monto, 0),
+    lineasUsd: usd.length,
     lineasIngreso: ingresos.length,
     lineasEgreso: egresos.length,
     txPendientes: txPendientes.size,
