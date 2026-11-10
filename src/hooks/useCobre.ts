@@ -104,7 +104,9 @@ export function useDolares() {
     queryKey: [...KEY, "conversiones"],
     queryFn: () => listConversiones(),
     refetchInterval: (q) =>
-      (q.state.data ?? []).some((c) => ["enviando", "initiated", "processing"].includes(c.estado))
+      (q.state.data ?? []).some((c) =>
+        ["pendiente_aprobacion", "enviando", "initiated", "processing"].includes(c.estado),
+      )
         ? 5_000
         : 30_000,
   });
