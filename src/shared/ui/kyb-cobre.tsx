@@ -1,6 +1,6 @@
 /**
  * Formulario de los datos KYB que pide Cobre para dar de alta al comercio como Subcliente:
- * teléfono, sitio web, industria, países de constitución y operación, representantes legales y
+ * teléfono, sitio web, industria, fecha y países de constitución y operación, representantes legales y
  * beneficiarios finales. Lo usan el portal (Mi cuenta) y el admin (detalle del cliente); cada uno
  * le pasa los datos y las funciones para guardarlos.
  *
@@ -24,6 +24,8 @@ export type EmpresaKyb = {
   telefono: string;
   sitioWeb: string;
   industria: string;
+  /** AAAA-MM-DD. Persona física: la fecha en que empezó a operar (o su fecha de nacimiento). */
+  fechaConstitucion: string;
   paisConstitucion: string;
   paisOperacion: string;
 };
@@ -65,6 +67,12 @@ export function KybCobreForm(p: Props) {
       return p.onError("El teléfono va con código de país, por ejemplo +52 55 1234 5678");
     }
     if (!empresa.industria) return p.onError("Elige la industria");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(empresa.fechaConstitucion)) {
+      return p.onError("Indica la fecha de constitución");
+    }
+    if (empresa.fechaConstitucion > new Date().toISOString().slice(0, 10)) {
+      return p.onError("La fecha de constitución no puede ser futura");
+    }
     setGuardando(true);
     try {
       await p.onGuardarEmpresa({
@@ -196,6 +204,21 @@ export function KybCobreForm(p: Props) {
               </option>
             ))}
           </select>
+        </div>
+        <div className="md:col-span-2">
+          <Label htmlFor="kyb-fecha">Fecha de constitución</Label>
+          <Input
+            id="kyb-fecha"
+            type="date"
+            className="mt-1"
+            disabled={p.soloLectura}
+            max={new Date().toISOString().slice(0, 10)}
+            value={empresa.fechaConstitucion}
+            onChange={(e) => setEmpresa({ ...empresa, fechaConstitucion: e.target.value })}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            La del acta constitutiva. Si eres persona física, la fecha en que empezaste a operar.
+          </p>
         </div>
         {(["paisConstitucion", "paisOperacion"] as const).map((k) => (
           <div key={k}>
