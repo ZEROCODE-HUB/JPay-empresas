@@ -54,17 +54,18 @@ function Page() {
       return null;
     }
   };
+  const monedaVista = mov.totales.moneda;
   const exportExcel = async () => {
     const lineas = await lineasAExportar();
     if (!lineas) return;
-    exportarHistorialExcel(lineas, totalesPagina(lineas));
+    exportarHistorialExcel(lineas, totalesPagina(lineas, monedaVista));
     toast.success("Excel descargado");
   };
   const exportPDF = async () => {
     const lineas = await lineasAExportar();
     if (!lineas) return;
     const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
-    exportarHistorialPdf(lineas, totalesPagina(lineas), serie);
+    exportarHistorialPdf(lineas, totalesPagina(lineas, monedaVista), serie);
     toast.success("PDF descargado");
   };
 

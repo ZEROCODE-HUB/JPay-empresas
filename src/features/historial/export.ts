@@ -37,11 +37,16 @@ export function exportarHistorialExcel(lineas: Linea[], t: TotalesHistorial) {
     Estado: l.estado,
   }));
   const ws = XLSX.utils.json_to_sheet([
-    { Resumen: "Ingresos", Valor: formatMoney(t.totalIngresos) },
-    { Resumen: "Egresos", Valor: formatMoney(t.totalEgresos) },
-    { Resumen: "Neto", Valor: formatMoney(t.totalIngresos - t.totalEgresos) },
-    ...(t.lineasUsd
-      ? [{ Resumen: "Neto en dólares", Valor: formatMoney(t.netoUsd, { moneda: "USD" }) }]
+    { Resumen: "Ingresos", Valor: formatMoney(t.totalIngresos, { moneda: t.moneda }) },
+    { Resumen: "Egresos", Valor: formatMoney(t.totalEgresos, { moneda: t.moneda }) },
+    { Resumen: "Neto", Valor: formatMoney(t.totalIngresos - t.totalEgresos, { moneda: t.moneda }) },
+    ...(t.lineasOtra
+      ? [
+          {
+            Resumen: t.moneda === "USD" ? "Neto en pesos" : "Neto en dólares",
+            Valor: formatMoney(t.netoOtra, { moneda: t.moneda === "USD" ? "MXN" : "USD" }),
+          },
+        ]
       : []),
     { Resumen: "Pendientes/Rechazados", Valor: String(t.totalPendientes) },
     {},
@@ -73,10 +78,12 @@ export function exportarHistorialPdf(lineas: Linea[], t: TotalesHistorial, serie
     head: [["Ingresos", "Egresos", "Neto", "Pendientes/Rechazados"]],
     body: [
       [
-        formatMoney(t.totalIngresos),
-        formatMoney(t.totalEgresos),
-        formatMoney(t.totalIngresos - t.totalEgresos) +
-          (t.lineasUsd ? ` (${formatMoney(t.netoUsd, { signo: true, moneda: "USD" })})` : ""),
+        formatMoney(t.totalIngresos, { moneda: t.moneda }),
+        formatMoney(t.totalEgresos, { moneda: t.moneda }),
+        formatMoney(t.totalIngresos - t.totalEgresos, { moneda: t.moneda }) +
+          (t.lineasOtra
+            ? ` (${formatMoney(t.netoOtra, { signo: true, moneda: t.moneda === "USD" ? "MXN" : "USD" })})`
+            : ""),
         String(t.totalPendientes),
       ],
     ],

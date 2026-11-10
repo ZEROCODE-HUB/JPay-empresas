@@ -342,13 +342,17 @@ export function agruparPorTxid(
   return out;
 }
 
-/** Ingresos, egresos y neto en pesos; los dólares van aparte (no se suman pesos con dólares). */
+/**
+ * Ingresos, egresos y neto en la moneda de la vista (pesos, o dólares si se filtra la subcuenta en
+ * dólares). Lo de la otra moneda va aparte: no se suman pesos con dólares.
+ */
 export type TotalesHistorial = {
+  moneda: "MXN" | "USD";
   totalIngresos: number;
   totalEgresos: number;
-  /** Neto de las líneas en dólares (subcuenta USD). */
-  netoUsd: number;
-  lineasUsd: number;
+  /** Neto de las líneas en la otra moneda. */
+  netoOtra: number;
+  lineasOtra: number;
   lineasIngreso: number;
   lineasEgreso: number;
   txPendientes: number;
@@ -357,18 +361,19 @@ export type TotalesHistorial = {
 };
 
 /** Totales de la pagina: el signo ya viene de la base. */
-export function totalesPagina(lineas: Linea[]): TotalesHistorial {
-  const pesos = lineas.filter((l) => l.moneda !== "USD");
-  const usd = lineas.filter((l) => l.moneda === "USD");
-  const ingresos = pesos.filter((l) => l.monto > 0);
-  const egresos = pesos.filter((l) => l.monto < 0);
+export function totalesPagina(lineas: Linea[], moneda: "MXN" | "USD" = "MXN"): TotalesHistorial {
+  const propias = lineas.filter((l) => l.moneda === moneda);
+  const otras = lineas.filter((l) => l.moneda !== moneda);
+  const ingresos = propias.filter((l) => l.monto > 0);
+  const egresos = propias.filter((l) => l.monto < 0);
   const txPendientes = new Set(lineas.filter((l) => l.estado === "Pendiente").map((l) => l.idTxn));
   const txRechazadas = new Set(lineas.filter((l) => l.estado === "Rechazado").map((l) => l.idTxn));
   return {
+    moneda,
     totalIngresos: ingresos.reduce((s, l) => s + l.monto, 0),
     totalEgresos: egresos.reduce((s, l) => s - l.monto, 0),
-    netoUsd: usd.reduce((s, l) => s + l.monto, 0),
-    lineasUsd: usd.length,
+    netoOtra: otras.reduce((s, l) => s + l.monto, 0),
+    lineasOtra: otras.length,
     lineasIngreso: ingresos.length,
     lineasEgreso: egresos.length,
     txPendientes: txPendientes.size,

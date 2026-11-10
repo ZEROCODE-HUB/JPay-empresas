@@ -40,7 +40,10 @@ export function useMovimientosHistorial(filtros: FiltrosHistorial) {
     lineas,
     totalCount,
     totalPages,
-    totales: totalesPagina(lineas),
+    totales: totalesPagina(
+      lineas,
+      subcuentas.find((s) => s.nombre === filtros.subcuenta)?.moneda ?? "MXN",
+    ),
   };
 }
 

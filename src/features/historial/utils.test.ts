@@ -158,8 +158,9 @@ describe("lineas", () => {
     expect(totalesPagina(lineas)).toEqual({
       totalIngresos: 100,
       totalEgresos: 46,
-      netoUsd: 0,
-      lineasUsd: 0,
+      moneda: "MXN",
+      netoOtra: 0,
+      lineasOtra: 0,
       lineasIngreso: 1,
       lineasEgreso: 3,
       txPendientes: 1,
@@ -175,8 +176,12 @@ describe("lineas", () => {
       linea({ idTxn: "FX1-USD", tipoLinea: "ingreso", monto: 2.7, moneda: "USD" }),
     ]);
     expect(t.totalIngresos - t.totalEgresos).toBe(200);
-    expect(t.netoUsd).toBeCloseTo(2.7);
-    expect(t.lineasUsd).toBe(1);
+    expect(t.netoOtra).toBeCloseTo(2.7);
+    expect(t.lineasOtra).toBe(1);
+    // Vista de la subcuenta en dólares: se suma en USD.
+    const usd = totalesPagina([linea({ tipoLinea: "ingreso", monto: 2.7, moneda: "USD" })], "USD");
+    expect(usd.totalIngresos).toBeCloseTo(2.7);
+    expect(usd.lineasOtra).toBe(0);
   });
 
   it("rango de pagina", () => {
