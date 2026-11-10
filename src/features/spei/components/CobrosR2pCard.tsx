@@ -5,6 +5,7 @@ import { Badge, BtnPrimary, Card, Input, Label } from "@/components/portal-shell
 import { useCobrosR2p } from "@/hooks/useCobre";
 import type { CobroR2p, SubcuentaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney, parseMonto } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import { validarCurp, validarRfc } from "@/shared/validadores";
 
 const ESTADO: Record<
@@ -184,7 +185,13 @@ export function CobrosR2pCard({
       </Card>
 
       <Card>
-        <h2 className="font-semibold">Cobros</h2>
+        <h2 className="font-semibold">
+          Cobros
+          <InfoTip className="ml-1">
+            Tus cobros por SPEI más recientes (hasta 50). Cuando tu cliente paga a la CLABE del
+            cobro, el dinero llega a tu cuenta y el cobro pasa a pagado.
+          </InfoTip>
+        </h2>
         {cobros.isLoading ? (
           <p className="mt-2 text-sm text-black-400">Cargando…</p>
         ) : (cobros.data ?? []).length === 0 ? (

@@ -1,6 +1,7 @@
 import { Badge, Card } from "@/components/portal-shell";
 import type { Conversion, TransferenciaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import { ESTADO_ENVIO } from "@/features/spei/estados";
 
 const CONVERSION: Record<
@@ -22,7 +23,14 @@ const CONVERSION: Record<
 export function ConversionesCard({ conversiones }: { conversiones: Conversion[] }) {
   return (
     <Card>
-      <h2 className="font-semibold">Conversiones</h2>
+      <h2 className="font-semibold">
+        Conversiones
+        <InfoTip className="ml-1">
+          Tus conversiones de pesos a dólares más recientes (hasta 30), sin las cotizaciones que no
+          confirmaste. A la izquierda, los pesos que salieron; a la derecha, los dólares que
+          recibiste.
+        </InfoTip>
+      </h2>
       {conversiones.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">Todavía no convertiste pesos a dólares.</p>
       ) : (
@@ -51,7 +59,13 @@ export function ConversionesCard({ conversiones }: { conversiones: Conversion[] 
 export function EnviosDolaresCard({ envios }: { envios: TransferenciaSpei[] }) {
   return (
     <Card>
-      <h2 className="font-semibold">Envíos en dólares</h2>
+      <h2 className="font-semibold">
+        Envíos en dólares
+        <InfoTip className="ml-1">
+          Tus envíos en dólares más recientes por Fedwire o SWIFT, con el estado que informa Cobre.
+          Se toman de tus últimas 50 transferencias.
+        </InfoTip>
+      </h2>
       {envios.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">Todavía no enviaste dólares.</p>
       ) : (

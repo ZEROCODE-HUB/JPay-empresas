@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InfoTip } from "@/shared/ui/info-tip";
 import { PREVIEW_LIMIT } from "../utils";
 
 /** Tarjeta chica de KPI (label en mayúsculas, valor y nota opcional). */
@@ -6,14 +7,26 @@ export function KpiServicio({
   label,
   value,
   nota,
+  info,
+  infoAlign = "left",
 }: {
   label: string;
   value: ReactNode;
   nota?: ReactNode;
+  /** De dónde sale el dato; se muestra con una «i» al pasar el mouse. */
+  info?: ReactNode;
+  infoAlign?: "left" | "right";
 }) {
   return (
     <div className="bg-card border rounded-lg p-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        {label}
+        {info && (
+          <InfoTip align={infoAlign} className="ml-1">
+            {info}
+          </InfoTip>
+        )}
+      </div>
       <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
         {value}
       </div>

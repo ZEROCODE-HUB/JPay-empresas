@@ -1,6 +1,7 @@
 import { Badge, Card } from "@/components/portal-shell";
 import type { DepositoSpei, TransferenciaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import { ESTADO_ENVIO } from "../estados";
 
 /** Transferencias SPEI enviadas (sueltas o en lote) y depósitos recibidos (a la CLABE o por cobro). */
@@ -27,7 +28,13 @@ export function TransferenciasSpeiCard({
 }) {
   return (
     <Card>
-      <h2 className="font-semibold">Transferencias enviadas</h2>
+      <h2 className="font-semibold">
+        Transferencias enviadas
+        <InfoTip className="ml-1">
+          Tus transferencias SPEI en pesos más recientes (hasta 50), sueltas o en lote, con el
+          estado que informa Cobre. El monto no incluye la comisión.
+        </InfoTip>
+      </h2>
       {transferencias.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">Todavía no enviaste transferencias.</p>
       ) : (
@@ -83,7 +90,13 @@ export function TransferenciasSpeiCard({
 export function DepositosSpeiCard({ depositos }: { depositos: DepositoSpei[] }) {
   return (
     <Card>
-      <h2 className="font-semibold">Depósitos recibidos</h2>
+      <h2 className="font-semibold">
+        Depósitos recibidos
+        <InfoTip align="right" className="ml-1">
+          Tus depósitos SPEI más recientes (hasta 50) que llegaron a tu CLABE de Cobre: directos («A
+          tu CLABE») o pagos de tus cobros por SPEI.
+        </InfoTip>
+      </h2>
       {depositos.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">Todavía no recibiste depósitos.</p>
       ) : (

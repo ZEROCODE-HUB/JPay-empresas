@@ -1,5 +1,6 @@
 import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import type { TotalesHistorial } from "../utils";
 
 /** KPIs de la página actual: ingresos, egresos, neto y pendientes/rechazados. */
@@ -8,14 +9,26 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
   return (
     <div className="grid md:grid-cols-4 gap-5 mb-6">
       <Card className="p-5">
-        <div className="text-xs text-muted-foreground mb-1">Ingresos del periodo</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          Ingresos del periodo
+          <InfoTip className="ml-1">
+            Suma de los movimientos a favor que ves en esta página de la tabla, con los filtros que
+            elegiste. Si hay más páginas, sus movimientos no entran en la suma.
+          </InfoTip>
+        </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
           {formatMoney(t.totalIngresos)}
         </div>
         <div className="text-xs text-muted-foreground mt-1">{t.lineasIngreso} líneas</div>
       </Card>
       <Card className="p-5">
-        <div className="text-xs text-muted-foreground mb-1">Egresos del periodo</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          Egresos del periodo
+          <InfoTip className="ml-1">
+            Suma de los movimientos en contra (salidas, comisiones e impuestos) que ves en esta
+            página de la tabla, con los filtros que elegiste.
+          </InfoTip>
+        </div>
         <div className="text-xl md:text-2xl font-bold text-foreground">
           {formatMoney(t.totalEgresos)}
         </div>
@@ -24,7 +37,12 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
         </div>
       </Card>
       <Card className="p-5">
-        <div className="text-xs text-muted-foreground mb-1">Neto</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          Neto
+          <InfoTip className="ml-1">
+            Ingresos menos egresos de los movimientos que ves en esta página de la tabla.
+          </InfoTip>
+        </div>
         <div
           className={`font-display tabular-nums text-xl md:text-2xl font-bold ${neto >= 0 ? "text-emerald-700" : "text-danger-600"}`}
         >
@@ -33,7 +51,13 @@ export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
         </div>
       </Card>
       <Card className="p-5">
-        <div className="text-xs text-muted-foreground mb-1">Pendientes / Rechazados</div>
+        <div className="text-xs text-muted-foreground mb-1">
+          Pendientes / Rechazados
+          <InfoTip align="right" className="ml-1">
+            Cantidad de operaciones de esta página de la tabla que siguen pendientes o fueron
+            rechazadas. Cada operación cuenta una vez aunque tenga varias líneas.
+          </InfoTip>
+        </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-foreground">
           {t.totalPendientes}
         </div>

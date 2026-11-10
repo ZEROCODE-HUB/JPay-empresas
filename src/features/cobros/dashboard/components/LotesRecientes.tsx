@@ -2,6 +2,7 @@ import { Eye } from "lucide-react";
 import { BtnOutline, Card } from "@/components/portal-shell";
 import type { LoteResumen } from "@/lib/api/cobros-masivos";
 import { formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import { ProgresoLote, TablaCobros, type ColCobros } from "../../components/TablaCobros";
 import { ESTADO_LOTE_BADGE_DASHBOARD, ESTADO_LOTE_LABEL } from "../../estados";
 
@@ -29,7 +30,13 @@ export function LotesRecientes({
     <Card className="p-0 overflow-hidden">
       <div className="px-5 py-4 border-b flex items-center justify-between">
         <div>
-          <div className="font-semibold">Lotes recientes</div>
+          <div className="font-semibold">
+            Lotes recientes
+            <InfoTip className="ml-1">
+              Los 10 lotes más recientes creados en el período. «Cobrado» es lo que ya pagaron tus
+              clientes (incluye pagos parciales) y «Pendiente», el monto total menos lo cobrado.
+            </InfoTip>
+          </div>
           <div className="text-xs text-muted-foreground">
             {lotes.length} lotes en el periodo seleccionado
           </div>

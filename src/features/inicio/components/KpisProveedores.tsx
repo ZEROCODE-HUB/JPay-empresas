@@ -34,6 +34,7 @@ function KpiTarjeta({ range }: { range: Rango }) {
       sub={
         s ? `${s.cantidad} cobros con Ecart Pay` : error ? "Sin datos de Ecart Pay" : "Cargando…"
       }
+      info="Cobros que Ecart Pay marcó como pagados en el período elegido, con cualquier medio (tarjeta, SPEI u OXXO). Es el monto cobrado antes de comisiones; los reembolsos posteriores no se restan."
       icon={<CreditCard size={18} />}
       iconClass="bg-secondary-50 text-secondary-500"
     />
@@ -54,6 +55,7 @@ function KpisSpei({ range }: { range: Rango }) {
         label="SPEI recibido"
         value={listo ? formatMoney(t.recibido) : "—"}
         sub={listo ? `${t.opsRecibido} depósitos` : espera}
+        info="Depósitos SPEI recibidos en tu CLABE de Cobre (directos o por cobros SPEI) dentro del período elegido. Se calcula con tus 50 depósitos más recientes."
         icon={<ArrowDownLeft size={18} />}
         iconClass="bg-success-bg text-success"
       />
@@ -61,6 +63,8 @@ function KpisSpei({ range }: { range: Rango }) {
         label="SPEI enviado"
         value={listo ? formatMoney(t.enviado) : "—"}
         sub={listo ? `${t.opsEnviado} transferencias` : espera}
+        info="Transferencias SPEI en pesos que enviaste en el período elegido, sueltas o en lote. No cuenta las rechazadas, fallidas, canceladas ni devueltas. Se calcula con tus 50 envíos más recientes."
+        infoAlign="right"
         icon={<ArrowUpRight size={18} />}
         iconClass="bg-error-bg text-error"
       />

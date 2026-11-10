@@ -108,17 +108,24 @@ export function ReporteCobrosView({ rango, data, isLoading, error, conComercio =
               label="Cobrado"
               value={formatMoney(s.cobrado)}
               sub={`${formatNumber(s.cantidad)} cobros`}
+              info="Suma de los cobros que Ecart Pay marcó como pagados en el período (por fecha de pago), con cualquier medio. Es el monto bruto: no resta comisiones ni reembolsos."
             />
             <KpiCard
               label="Comisión del proveedor"
               value={formatMoney(s.comision)}
               sub={s.sinConciliar > 0 ? `${s.sinConciliar} sin conciliar todavía` : undefined}
+              info="Lo que Ecart Pay cobra por esos cobros. Se conoce cuando el cobro se concilia con Ecart Pay, así que los cobros sin conciliar todavía no suman comisión."
             />
-            <KpiCard label="Neto" value={formatMoney(s.neto)} />
+            <KpiCard
+              label="Neto"
+              value={formatMoney(s.neto)}
+              info="Lo que queda de esos cobros después de la comisión, según Ecart Pay. Solo incluye los cobros ya conciliados y no resta reembolsos ni contracargos."
+            />
             <KpiCard
               label="Reembolsado"
               value={formatMoney(s.reembolsado)}
               sub={`${formatNumber(s.reembolsos)} reembolsos`}
+              info="Reembolsos aprobados por Ecart Pay en el período, por la fecha en que se completaron (el cobro original puede ser de antes)."
             />
             <KpiCard
               label="Contracargos"
@@ -128,11 +135,13 @@ export function ReporteCobrosView({ rango, data, isLoading, error, conComercio =
                   ? `${s.contracargosAbiertos} abiertos · ${formatMoney(s.contracargosMonto)}`
                   : formatMoney(s.contracargosMonto)
               }
+              info="Contracargos (desconocimientos del tarjetahabiente) abiertos en el período, en cualquier estado. «Abiertos» son los que todavía están en revisión."
             />
             <KpiCard
               label="Pendientes de pago"
               value={formatNumber(s.pendientes)}
               sub={formatMoney(s.pendientesMonto)}
+              info="Cobros creados en el período que todavía no se pagan (sin pagar o pendientes de confirmación). No suman en «Cobrado»."
             />
           </div>
 

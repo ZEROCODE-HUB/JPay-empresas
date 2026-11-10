@@ -59,11 +59,20 @@ function Retiros() {
           )}
           {data.saldo && (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <KpiCard label="Disponible en Ecart Pay" value={formatMoney(data.saldo.disponible)} />
-              <KpiCard label="Cobrado" value={formatMoney(data.saldo.cobrado)} />
+              <KpiCard
+                label="Disponible en Ecart Pay"
+                value={formatMoney(data.saldo.disponible)}
+                info="Saldo que Ecart Pay reporta hoy para tu cuenta, en pesos: lo que puedes retirar a tu banco."
+              />
+              <KpiCard
+                label="Cobrado"
+                value={formatMoney(data.saldo.cobrado)}
+                info="Total de pagos recibidos en tu cuenta de Ecart Pay, según su resumen. Es el acumulado de la cuenta, no de un período."
+              />
               <KpiCard
                 label="Retiros, reembolsos y comisiones"
                 value={formatMoney(data.saldo.cargos)}
+                info="Total de cargos que Ecart Pay descontó de tu cuenta: retiros a tu banco, reembolsos y comisiones. Es el acumulado de la cuenta, no de un período."
               />
             </div>
           )}

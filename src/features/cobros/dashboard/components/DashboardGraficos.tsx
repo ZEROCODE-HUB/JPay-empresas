@@ -21,6 +21,7 @@ import {
   type VencimientoData,
 } from "@/lib/api/cobros-masivos";
 import { formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 
 const MEDIO_COLORS: Record<string, string> = {
   TRANSFERENCIA: "var(--brand-secondary-500)",
@@ -30,10 +31,21 @@ const MEDIO_COLORS: Record<string, string> = {
 
 const VENC_COLORS = ["var(--success)", "var(--warning)", "var(--danger-500)"];
 
-function Titulo({ children }: { children: ReactNode }) {
+function Titulo({
+  children,
+  info,
+  infoAlign = "left",
+}: {
+  children: ReactNode;
+  info: ReactNode;
+  infoAlign?: "left" | "right";
+}) {
   return (
     <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
       {children}
+      <InfoTip align={infoAlign} className="ml-1">
+        {info}
+      </InfoTip>
     </h4>
   );
 }
@@ -62,7 +74,9 @@ export function DashboardGraficos({
   return (
     <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
       <Card>
-        <Titulo>Cobros por medio de pago</Titulo>
+        <Titulo info="Reparto de lo cobrado en el período según el medio con que pagaron tus clientes. JPay todavía no registra el medio de pago de los cobros masivos, así que por ahora el gráfico aparece vacío.">
+          Cobros por medio de pago
+        </Titulo>
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
@@ -86,7 +100,9 @@ export function DashboardGraficos({
       </Card>
 
       <Card>
-        <Titulo>Cobros por vencimiento</Titulo>
+        <Titulo info="Cobros del período según en qué vencimiento se pagaron (1.º, 2.º o 3.º). JPay todavía no registra este dato, así que por ahora todo aparece en cero.">
+          Cobros por vencimiento
+        </Titulo>
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
@@ -110,7 +126,12 @@ export function DashboardGraficos({
       </Card>
 
       <Card>
-        <Titulo>Operaciones no cobradas</Titulo>
+        <Titulo
+          info="Registros de los lotes del período que no se pagaron completos. «Vencidas» ya pasaron su vencimiento; «Vigentes», todavía no. El porcentaje es el monto que falta cobrar sobre el monto total de esos lotes."
+          infoAlign="right"
+        >
+          Operaciones no cobradas
+        </Titulo>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">No cobrado</span>
@@ -142,7 +163,9 @@ export function DashboardGraficos({
 export function EvolucionPagos({ evolucion }: { evolucion: EvolucionData[] }) {
   return (
     <Card className="mb-6">
-      <Titulo>Evolucion de pagos</Titulo>
+      <Titulo info="Lo cobrado día a día en el período. JPay todavía no registra la fecha de cada pago de los cobros masivos, así que por ahora el gráfico aparece vacío.">
+        Evolucion de pagos
+      </Titulo>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={evolucion}>
           <CartesianGrid strokeDasharray="3 3" />

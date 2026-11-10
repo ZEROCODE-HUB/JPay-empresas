@@ -2,12 +2,18 @@ import type { ReactNode } from "react";
 import { Card } from "@/components/portal-shell";
 import { estadoCatalogo, medioPagoLabels, type Lote } from "@/lib/api/cobros-masivos";
 import { formatMoney } from "@/shared/format";
+import { InfoTip } from "@/shared/ui/info-tip";
 import type { ResumenRegistros } from "../utils";
 
-function Titulo({ children }: { children: ReactNode }) {
+function Titulo({ children, info }: { children: ReactNode; info?: ReactNode }) {
   return (
     <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
       {children}
+      {info && (
+        <InfoTip align="right" className="ml-1">
+          {info}
+        </InfoTip>
+      )}
     </h4>
   );
 }
@@ -59,7 +65,9 @@ export function LoteInfoCards({
       </Card>
 
       <Card>
-        <Titulo>Estadisticas</Titulo>
+        <Titulo info="Registros de este lote según su estado: pagos completos, parciales, pendientes, vencidos y con error. «% Cobrado» es lo pagado sobre el monto total del lote.">
+          Estadisticas
+        </Titulo>
         <div className="space-y-2 text-sm">
           <Fila label="Total registros">
             <span className="font-semibold">{r.totalRegistros}</span>
@@ -119,7 +127,9 @@ export function LoteInfoCards({
       </Card>
 
       <Card>
-        <Titulo>Montos</Titulo>
+        <Titulo info="Total: suma de lo que hay que cobrar en todos los registros del lote. Cobrado: lo que ya pagaron tus clientes, incluidos los pagos parciales. Pendiente: la diferencia.">
+          Montos
+        </Titulo>
         <div className="space-y-3">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Total</span>

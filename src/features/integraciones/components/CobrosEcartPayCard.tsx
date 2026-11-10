@@ -5,6 +5,7 @@ import { useCobrosEcartPay, useReembolsarCobro } from "@/hooks/useIntegraciones"
 import { esReembolsable, type CobroProveedor, type MotivoReembolso } from "@/lib/api/integraciones";
 import { formatDateTime, formatMoney, parseMonto } from "@/shared/format";
 import { FormDialog } from "@/shared/ui/form-dialog";
+import { InfoTip } from "@/shared/ui/info-tip";
 
 const METODO: Record<string, string> = { spei: "SPEI", oxxo: "OXXO", card: "Tarjeta" };
 const ESTADO: Record<string, { label: string; tone: "success" | "warn" | "danger" | "neutral" }> = {
@@ -59,7 +60,13 @@ export function CobrosEcartPayCard() {
 
   return (
     <Card>
-      <h2 className="font-semibold">Cobros recibidos</h2>
+      <h2 className="font-semibold">
+        Cobros recibidos
+        <InfoTip className="ml-1">
+          Tus 50 cobros más recientes con Ecart Pay (sin los que dieron error), con el estado que
+          Ecart Pay informa. Debajo del monto ves lo ya reembolsado.
+        </InfoTip>
+      </h2>
       <p className="text-xs text-black-400 mt-1">
         Cobros de tus links de pago con Ecart Pay. Los pagos con tarjeta se pueden reembolsar; los
         de SPEI y OXXO no.

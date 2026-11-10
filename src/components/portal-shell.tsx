@@ -11,6 +11,7 @@ import {
 import { useMemo, useState, type ReactNode } from "react";
 import { BrandLogo } from "./brand-logo";
 import { useDemoMode } from "@/contexts/demo-mode";
+import { EtiquetaConInfo } from "@/shared/ui/info-tip";
 import type { Modulo } from "@/shared/pais";
 
 /**
@@ -394,10 +395,23 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
   );
 }
 
-export function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function Stat({
+  label,
+  value,
+  sub,
+  info,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  /** De dónde sale el dato; se muestra con una «i» al pasar el mouse. */
+  info?: React.ReactNode;
+}) {
   return (
     <Card>
-      <div className="text-xs uppercase tracking-wide text-black-400">{label}</div>
+      <div className="text-xs uppercase tracking-wide text-black-400">
+        <EtiquetaConInfo label={label} info={info} />
+      </div>
       <div className="font-display text-2xl md:text-3xl font-semibold mt-1 text-black-800 tabular-nums">
         {value}
       </div>
