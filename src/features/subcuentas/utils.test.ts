@@ -98,14 +98,16 @@ describe("movimientos", () => {
   const rows = [
     {
       tipo: "deposito",
-      monto_operacion: 100,
+      categoria: "deposito",
+      monto: 100,
       cvu: "999",
       id_txn: "TX1",
       fecha: "2026-05-01T10:30:00",
     },
     {
-      tipo: "retiro",
-      monto_operacion: -40,
+      tipo: "conversion",
+      categoria: "conversion",
+      monto: -40,
       cvu: null,
       id_txn: "TX2",
       fecha: "2026-05-02T11:00:00",
@@ -113,7 +115,7 @@ describe("movimientos", () => {
   ] as unknown as MovimientoSubcuentaRow[];
   const moves: Mov[] = mapMovimientos(rows, "Marca");
 
-  it("mapea tipo, título, fecha/hora y monto absoluto", () => {
+  it("el signo del asiento decide si entra o sale (una conversión sale)", () => {
     expect(moves[0]).toMatchObject({
       tipo: "ingreso",
       titulo: "Depósito",
@@ -122,7 +124,12 @@ describe("movimientos", () => {
       monto: 100,
       entidad: "Marca",
     });
-    expect(moves[1]).toMatchObject({ tipo: "egreso", titulo: "Retiro", cbu: "", monto: 40 });
+    expect(moves[1]).toMatchObject({
+      tipo: "egreso",
+      titulo: "Conversión a dólares",
+      cbu: "",
+      monto: 40,
+    });
   });
   it("filtra por tipo y búsqueda", () => {
     expect(filtrarMovs(moves, "egreso", "")).toHaveLength(1);

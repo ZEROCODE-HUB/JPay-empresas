@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  listMovimientosSubcuenta,
+  getDetalleSubcuenta,
   listSubcuentasCliente,
   type SubcuentaConSaldos,
 } from "@/lib/api/subcuentas";
@@ -42,11 +42,16 @@ export function useSubcuentasCliente<T>(mapear: (rows: SubcuentaConSaldos[]) => 
   };
 }
 
-export function useMovimientosSubcuenta(id: string | undefined, cbu: string) {
+export function useMovimientosSubcuenta(id: string | undefined) {
   const query = useQuery({
-    queryKey: ["subcuentas", "movimientos", id, cbu],
-    queryFn: () => listMovimientosSubcuenta(id, cbu),
-    retry: false,
+    queryKey: ["subcuentas", "movimientos", id],
+    queryFn: () => getDetalleSubcuenta(id as string),
+    enabled: !!id,
   });
-  return { movimientos: query.data ?? [], loading: query.isLoading };
+  return {
+    movimientos: query.data?.movimientos ?? [],
+    totales: query.data?.totales,
+    loading: query.isLoading,
+    error: query.isError && !query.data ? query.error : null,
+  };
 }

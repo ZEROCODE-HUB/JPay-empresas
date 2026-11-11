@@ -4,6 +4,7 @@ import { formatMoney } from "@/shared/format";
 import { descargarReporteSubcuenta } from "../export";
 import type { useDetalleSubcuenta } from "../hooks/useDetalleSubcuenta";
 import type { FiltroTipoMov, Mov, Sub } from "../types";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 type Props = {
   sub: Sub;
@@ -123,6 +124,8 @@ export function DetalleMovimientos({ sub, d, onVerHistorial }: Props) {
       <div className="max-h-[280px] overflow-y-auto border rounded-lg divide-y">
         {d.loadingMoves ? (
           <p className="p-4 text-sm text-muted-foreground text-center">Cargando movimientos…</p>
+        ) : d.errorMoves ? (
+          <ErrorCarga error={d.errorMoves} compacto />
         ) : d.filtMoves.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground text-center">
             Sin movimientos registrados

@@ -78,6 +78,9 @@ export async function getResumenCuenta(
     .from("transactions")
     .select("*", { count: "exact", head: true })
     .eq("legajo", legajo)
+    // Solo las operaciones confirmadas (contabilizadas): no cuenta rechazadas ni en curso.
+    .eq("ledger_status", "posted")
+    .not("id_txn", "like", "%-USD")
     .gte("fecha", start.toISOString());
   if (errCount) throw new DataAccessError(errCount);
   return { documentos, movimientosMes: count ?? 0 };

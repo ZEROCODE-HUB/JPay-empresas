@@ -1,6 +1,6 @@
 import type { MovimientoSubcuentaRow, SubcuentaConSaldos } from "@/lib/api/subcuentas";
 import { formatMoney, parseMonto } from "@/shared/format";
-import { TIPOS_EGRESO, TITULO_MOV } from "./estados";
+import { TITULO_CATEGORIA, TITULO_MOV } from "./estados";
 import type { FiltroTipoMov, Mov, Sub } from "./types";
 
 export const PALETTE = ["#6366f1", "#0ea5e9", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
@@ -81,14 +81,15 @@ export function rangoPagina(page: number, pageSize: number, total: number): stri
 
 export function mapMovimientos(rows: MovimientoSubcuentaRow[], entidad: string): Mov[] {
   return rows.map((m) => ({
-    tipo: TIPOS_EGRESO.includes(m.tipo) ? "egreso" : "ingreso",
-    titulo: TITULO_MOV[m.tipo] ?? m.tipo,
+    // El signo viene del asiento: lo que sale de la subcuenta es egreso.
+    tipo: Number(m.monto) < 0 ? "egreso" : "ingreso",
+    titulo: (m.categoria && TITULO_CATEGORIA[m.categoria]) || TITULO_MOV[m.tipo] || m.tipo,
     txid: m.id_txn,
     cbu: m.cvu ?? "",
     entidad,
     fecha: (m.fecha ?? "").slice(0, 10),
     hora: (m.fecha ?? "").slice(11, 16),
-    monto: Math.abs(Number(m.monto_operacion ?? 0)),
+    monto: Math.abs(Number(m.monto ?? 0)),
   }));
 }
 

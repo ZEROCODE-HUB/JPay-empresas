@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/portal-shell";
 import { EnviarDolaresCard } from "@/features/dolares/components/EnviarDolaresCard";
 import { EnviosDolaresCard } from "@/features/dolares/components/MovimientosDolares";
-import { useCuentaSpei } from "@/hooks/useCobre";
+import { useCuentaSpei, useTransferencias } from "@/hooks/useCobre";
 import { Cargando, ErrorCarga, EstadoConsulta } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/enviar/dolares")({
@@ -11,7 +11,8 @@ export const Route = createFileRoute("/app/enviar/dolares")({
 });
 
 function Page() {
-  const { cuenta, subcuentas, destinatarios, transferencias } = useCuentaSpei();
+  const { cuenta, subcuentas, destinatarios } = useCuentaSpei();
+  const transferencias = useTransferencias("USD");
   const error = cuenta.error ?? subcuentas.error ?? destinatarios.error;
   // Los dólares son por la cuenta de JPay: un comercio con instancia Cobre propia no los usa aquí.
   const habilitada = !!cuenta.data?.cuenta && !cuenta.data.instanciaPropia;
@@ -38,7 +39,7 @@ function Page() {
             habilitada={habilitada}
           />
           <EstadoConsulta q={transferencias}>
-            {(t) => <EnviosDolaresCard envios={t.filter((x) => x.moneda === "USD")} />}
+            {(t) => <EnviosDolaresCard envios={t} />}
           </EstadoConsulta>
         </div>
       )}

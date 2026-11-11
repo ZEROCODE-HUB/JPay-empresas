@@ -20,7 +20,7 @@ export function CuentaStats({ c }: { c: CuentaPantalla }) {
       label: "Transacciones mes",
       value: formatNumber(c.movCount),
       cargando: c.cargandoResumen,
-      info: `Cantidad de operaciones registradas en tu cuenta ${brand.name} desde el día 1 del mes en curso, en cualquier estado.`,
+      info: `Operaciones confirmadas en tu cuenta ${brand.name} desde el día 1 del mes en curso (depósitos, envíos y conversiones). No cuenta las rechazadas ni las que siguen en proceso; una conversión cuenta una vez.`,
     },
     {
       icon: User,

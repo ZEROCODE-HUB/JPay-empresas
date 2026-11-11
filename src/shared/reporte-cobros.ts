@@ -75,6 +75,10 @@ export type ReporteCobros = {
   desde: string;
   hasta: string;
   timezone: string;
+  /** Moneda del reporte (la del país; los cobros en otra moneda no se suman). */
+  moneda: string;
+  /** "sandbox" si todavía no hay cobros reales y se muestran los de prueba. */
+  entorno: string;
   resumen: ResumenCobros;
   porDia: CobrosPorDia[];
   porMetodo: CobrosPorMetodo[];
@@ -118,6 +122,8 @@ export function toReporteCobros(raw: unknown): ReporteCobros {
     desde: str(r.desde) ?? "",
     hasta: str(r.hasta) ?? "",
     timezone: str(r.timezone) ?? "UTC",
+    moneda: str(r.moneda) ?? "MXN",
+    entorno: str(r.entorno) ?? "produccion",
     resumen: {
       cantidad: num(s.cantidad),
       cobrado: num(s.cobrado),

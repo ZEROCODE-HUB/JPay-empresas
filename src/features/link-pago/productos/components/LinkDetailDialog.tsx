@@ -71,7 +71,7 @@ export function LinkDetailDialog({
             <div>
               <span className="text-xs text-muted-foreground">Monto total</span>
               <div className="font-semibold">
-                {formatMoney(montoProductos(link.products), { decimals: 0 })}
+                {formatMoney(montoProductos(link.products), { decimals: 0, moneda: link.moneda })}
               </div>
             </div>
             <div>

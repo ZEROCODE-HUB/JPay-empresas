@@ -25,5 +25,17 @@ export const TITULO_MOV: Record<string, string> = {
   ajuste_manual: "Ajuste de saldo",
 };
 
+/** Título de cada categoría del asiento (función portal_detalle_subcuenta). */
+export const TITULO_CATEGORIA: Record<string, string> = {
+  deposito: "Depósito",
+  envio_spei: "Transferencia SPEI",
+  envio_usd: "Envío en dólares",
+  conversion: "Conversión a dólares",
+  interna: "Transferencia entre subcuentas",
+  ajuste: "Ajuste de saldo",
+  cobro_tarjeta: "Cobro con tarjeta",
+  retiro: "Retiro",
+};
+
 /** Tipos de transacción que restan saldo a la subcuenta. */
 export const TIPOS_EGRESO = ["transferencia", "retiro"];

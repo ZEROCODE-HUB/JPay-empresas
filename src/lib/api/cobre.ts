@@ -393,15 +393,24 @@ export async function listLotesSpei(limite = 20): Promise<LoteSpei[]> {
   }));
 }
 
-export async function listTransferenciasSpei(limite = 50): Promise<TransferenciaSpei[]> {
+/**
+ * Últimas transferencias. Con `moneda` se filtra en la base ANTES del límite (antes se filtraba
+ * después y los envíos en dólares le quitaban lugares a los de pesos).
+ */
+export async function listTransferenciasSpei(
+  limite = 50,
+  moneda?: "MXN" | "USD",
+): Promise<TransferenciaSpei[]> {
   const sb = requireSupabase();
-  const { data: rows, error } = await sb
+  let q = sb
     .from("cobre_transferencias")
     .select(
       "id, id_txn, tipo, moneda, monto, concepto, estado, motivo, clave_rastreo, cep, swift_uetr, requiere_aprobacion, lote_id, created_at, cobre_contrapartes(titular, numero)",
     )
     .order("created_at", { ascending: false })
     .limit(limite);
+  if (moneda) q = q.eq("moneda", moneda);
+  const { data: rows, error } = await q;
   if (error) throw new DataAccessError(error);
   return (rows ?? []).map((r) => {
     const cp = r.cobre_contrapartes as unknown as { titular: string; numero: string } | null;
@@ -555,14 +564,52 @@ export const convertirDolares = async (cruceId: string) =>
     await invocar<Record<string, unknown>>("cobre-fx", { accion: "convertir", cruce_id: cruceId }),
   );
 
+/** Estados de una conversión que todavía no terminó (los pesos siguen apartados). */
+const CONVERSION_ABIERTA = ["pendiente_aprobacion", "enviando", "initiated", "processing"];
+
+/**
+ * Últimas conversiones y, además, TODAS las que siguen en proceso aunque sean más viejas (antes
+ * «Por recibir» solo veía las últimas 30).
+ */
 export async function listConversiones(limite = 30): Promise<Conversion[]> {
   const sb = requireSupabase();
-  const { data, error } = await sb
-    .from("cobre_cruces")
-    .select("*")
-    .neq("estado", "cotizado")
-    .order("created_at", { ascending: false })
-    .limit(limite);
+  const [ultimas, abiertas] = await Promise.all([
+    sb
+      .from("cobre_cruces")
+      .select("*")
+      .neq("estado", "cotizado")
+      .order("created_at", { ascending: false })
+      .limit(limite),
+    sb.from("cobre_cruces").select("*").in("estado", CONVERSION_ABIERTA),
+  ]);
+  if (ultimas.error) throw new DataAccessError(ultimas.error);
+  if (abiertas.error) throw new DataAccessError(abiertas.error);
+  const vistas = new Set((ultimas.data ?? []).map((r) => r.id));
+  const extra = (abiertas.data ?? []).filter((r) => !vistas.has(r.id));
+  return [...(ultimas.data ?? []), ...extra].map((r) => aConversion(r as Record<string, unknown>));
+}
+
+/** Comisión, IVA y total de una transferencia, y si el saldo disponible alcanza para el total. */
+export type CotizacionEnvio = {
+  monto: number;
+  comision: number;
+  iva: number;
+  total: number;
+  disponible: number;
+  alcanza: boolean;
+};
+
+export async function cotizarEnvio(
+  subcuentaId: string,
+  monto: number,
+  destino?: string,
+): Promise<CotizacionEnvio> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.rpc("portal_cotizar_envio", {
+    p_subaccount_id: subcuentaId,
+    p_monto: monto,
+    p_destino: destino,
+  });
   if (error) throw new DataAccessError(error);
-  return (data ?? []).map((r) => aConversion(r as Record<string, unknown>));
+  return data as unknown as CotizacionEnvio;
 }

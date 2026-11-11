@@ -112,28 +112,43 @@ export async function transferirEntreSubcuentas(input: {
   if (error) throw new DataAccessError(error);
 }
 
-export type MovimientoSubcuentaRow = Pick<
-  Tables<"transactions">,
-  "tipo" | "monto_operacion" | "comision" | "cvu" | "id_txn" | "fecha"
->;
+/** Una operación de la subcuenta, con el signo del asiento (+ entra, − sale). */
+export type MovimientoSubcuentaRow = {
+  id_txn: string;
+  tipo: string;
+  /** deposito, envio_spei, envio_usd, conversion, interna, ajuste, cobro_tarjeta, retiro… */
+  categoria: string | null;
+  cvu: string | null;
+  contraparte: string | null;
+  fecha: string;
+  estado: string | null;
+  monto: number;
+  comision: number;
+  iva: number;
+};
+
+export type DetalleSubcuenta = {
+  moneda: "MXN" | "USD";
+  totales: {
+    entradas: number;
+    ops_entradas: number;
+    salidas: number;
+    ops_salidas: number;
+    comisiones: number;
+    iva: number;
+  };
+  /** Apartado ahora por operaciones en curso. */
+  pendiente: number;
+  movimientos: MovimientoSubcuentaRow[];
+};
 
 /**
- * `subcuenta_id` identifica la subcuenta propia que intervino; `cvu` es la
- * contraparte. Se usan ambos para no perder movimientos viejos (anteriores a
- * subcuenta_id) ni las transferencias internas.
+ * Movimientos (los últimos 200) y totales de TODA la historia de una subcuenta, calculados por la
+ * base con el signo del asiento: una conversión sale, una transferencia interna recibida entra.
  */
-export async function listMovimientosSubcuenta(
-  id: string | undefined,
-  cbu: string,
-): Promise<MovimientoSubcuentaRow[]> {
+export async function getDetalleSubcuenta(id: string): Promise<DetalleSubcuenta> {
   const sb = requireSupabase();
-  const filtro = cbu ? `subcuenta_id.eq.${id},cvu.eq.${cbu}` : `subcuenta_id.eq.${id}`;
-  const { data, error } = await sb
-    .from("transactions")
-    .select("tipo, monto_operacion, comision, cvu, id_txn, fecha")
-    .or(filtro)
-    .order("fecha", { ascending: false })
-    .limit(200);
+  const { data, error } = await sb.rpc("portal_detalle_subcuenta", { p_subaccount_id: id });
   if (error) throw new DataAccessError(error);
-  return data ?? [];
+  return data as unknown as DetalleSubcuenta;
 }

@@ -22,6 +22,10 @@ export function SaldosDolaresCard({
   const enCurso = conversiones.filter((c) => CONVERSION_EN_CURSO.includes(c.estado));
   const porRecibir = enCurso.reduce((a, c) => a + c.montoUsd, 0);
   const retenidoMxn = suma(pesos, "saldoRetenido");
+  // Lo apartado por conversiones (monto + comisión + IVA); el resto es por envíos u otras
+  // operaciones en curso.
+  const porConversiones = enCurso.reduce((a, c) => a + c.montoMxn + c.comision + c.impuesto, 0);
+  const porOtras = Math.max(0, retenidoMxn - porConversiones);
 
   return (
     <Card>
@@ -41,9 +45,9 @@ export function SaldosDolaresCard({
           <div className="text-xs text-black-400">
             Pesos apartados
             <InfoTip className="ml-1">
-              Pesos que ya salieron de tu saldo disponible por conversiones o envíos que todavía
-              están en proceso. Si la operación termina bien, salen de tu cuenta; si falla, vuelven
-              a tu saldo disponible.
+              Pesos que ya salieron de tu saldo disponible por operaciones que todavía están en
+              proceso: conversiones a dólares (con su comisión e IVA) y envíos SPEI. Si la operación
+              termina bien, salen de tu cuenta; si falla, vuelven a tu saldo disponible.
             </InfoTip>
           </div>
           <div
@@ -53,9 +57,15 @@ export function SaldosDolaresCard({
           </div>
           {enCurso.length > 0 && (
             <div className="text-xs text-amber-700 mt-0.5">
+              {formatMoney(porConversiones)} por{" "}
               {enCurso.length === 1
                 ? "1 conversión en proceso"
                 : `${enCurso.length} conversiones en proceso`}
+            </div>
+          )}
+          {porOtras > 0.005 && (
+            <div className="text-xs text-black-400 mt-0.5">
+              {formatMoney(porOtras)} por envíos u otras operaciones en curso
             </div>
           )}
         </div>

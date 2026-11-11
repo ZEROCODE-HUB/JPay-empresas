@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/portal-shell";
 import { LoteSpeiCard } from "@/features/spei/components/LoteSpeiCard";
 import { TransferenciasSpeiCard } from "@/features/spei/components/MovimientosSpeiCard";
 import { TransferirSpeiCard } from "@/features/spei/components/TransferirSpeiCard";
-import { useCuentaSpei } from "@/hooks/useCobre";
+import { useCuentaSpei, useTransferencias } from "@/hooks/useCobre";
 import { Cargando, ErrorCarga, EstadoConsulta } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/enviar/spei")({
@@ -12,7 +12,8 @@ export const Route = createFileRoute("/app/enviar/spei")({
 });
 
 function Page() {
-  const { cuenta, subcuentas, destinatarios, transferencias, lotes } = useCuentaSpei();
+  const { cuenta, subcuentas, destinatarios, lotes } = useCuentaSpei();
+  const transferencias = useTransferencias("MXN");
   const error = cuenta.error ?? subcuentas.error ?? destinatarios.error;
   const habilitada = !!cuenta.data?.cuenta && cuenta.data.cuenta.conectividad !== "processing";
   return (
@@ -48,7 +49,7 @@ function Page() {
             )}
           </EstadoConsulta>
           <EstadoConsulta q={transferencias}>
-            {(t) => <TransferenciasSpeiCard transferencias={t.filter((x) => x.moneda === "MXN")} />}
+            {(t) => <TransferenciasSpeiCard transferencias={t} />}
           </EstadoConsulta>
         </div>
       )}

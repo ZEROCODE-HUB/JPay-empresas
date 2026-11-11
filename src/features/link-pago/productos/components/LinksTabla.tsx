@@ -94,7 +94,7 @@ export function LinksTabla({ lista }: { lista: ListaLinks }) {
                         <Badge tone={toneEstadoLink(estado)}>{estado}</Badge>
                       </td>
                       <td className="px-5 py-3 font-mono tabular-nums text-right text-xs font-semibold">
-                        {formatMoney(montoProductos(l.products), { decimals: 0 })}
+                        {formatMoney(montoProductos(l.products), { decimals: 0, moneda: l.moneda })}
                       </td>
                       <td className="px-5 py-3 text-xs text-muted-foreground">
                         {l.expiresAt || "N/A"}

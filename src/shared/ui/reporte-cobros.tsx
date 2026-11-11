@@ -7,6 +7,7 @@
 import { FileDown, FileSpreadsheet } from "lucide-react";
 import { BtnOutline } from "@/components/portal-shell";
 import { formatDate, formatDateShort, formatDateTime, formatMoney, formatNumber } from "../format";
+import { Cargando, ErrorCarga } from "./estado-carga";
 import {
   etiquetaMetodo,
   etiquetaPunto,
@@ -96,13 +97,16 @@ export function ReporteCobrosView({ rango, data, isLoading, error, conComercio =
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Cargando…</p>
+        <Cargando className="block h-40 w-full" />
       ) : error ? (
-        <p className="text-sm text-danger-600">
-          No se pudo armar el reporte: {(error as Error).message}
-        </p>
+        <ErrorCarga error={error} titulo="No se pudo armar el reporte" />
       ) : !data || !s ? null : (
         <>
+          {data.entorno === "sandbox" && s.cantidad > 0 && (
+            <p className="text-xs text-amber-800">
+              Todavía no hay cobros reales en este período: estas cifras son de cobros de prueba.
+            </p>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <KpiCard
               label="Cobrado"

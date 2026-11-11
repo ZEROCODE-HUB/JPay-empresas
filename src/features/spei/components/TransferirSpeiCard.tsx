@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
-import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
+import { useCotizacionEnvio, useCuentaSpeiMutaciones } from "@/hooks/useCobre";
 import { enviarOtpTransferencia } from "@/lib/api/otp";
 import { nuevoTxid, type DestinatarioSpei, type SubcuentaSpei } from "@/lib/api/cobre";
 import { formatMoney, parseMonto } from "@/shared/format";
@@ -40,6 +40,9 @@ export function TransferirSpeiCard({
 
   const sub = conClabe.find((s) => s.id === (origen || conClabe[0]?.id));
   const d = destinatarios.find((x) => x.id === (destino || destinatarios[0]?.id));
+  const importe = parseMonto(monto);
+  const cot = useCotizacionEnvio(sub?.id, importe > 0 ? importe : 0, d?.numero);
+  const noAlcanza = !!cot.data && !cot.data.alcanza;
 
   const guardarDestinatario = () => {
     const clabe = dest.clabe.replace(/\D/g, "");
@@ -71,11 +74,14 @@ export function TransferirSpeiCard({
   };
 
   const enviar = () => {
-    const importe = parseMonto(monto);
     if (!sub) return toast.error("Elige una subcuenta");
     if (!d) return toast.error("Elige un destinatario");
     if (!(importe > 0)) return toast.error("Ingresa un monto");
     if (importe > sub.saldoDisponible) return toast.error("El monto supera el saldo disponible");
+    if (noAlcanza)
+      return toast.error(
+        `Tu saldo no alcanza: con comisión e IVA se descuentan ${formatMoney(cot.data!.total)}`,
+      );
     m.enviar.mutate(
       {
         subcuentaId: sub.id,
@@ -241,13 +247,25 @@ export function TransferirSpeiCard({
             </div>
           )}
           <div className="md:col-span-2 flex items-center justify-between gap-3">
-            <p className="text-xs text-black-400">
-              Se descuentan el monto y la comisión de tu saldo. Las transferencias grandes pueden
-              quedar pendientes de aprobación.
-            </p>
+            <div className="text-xs text-black-400">
+              {cot.data && importe > 0 ? (
+                <p className={noAlcanza ? "text-danger-600 font-medium" : undefined}>
+                  Comisión {formatMoney(cot.data.comision)} + IVA {formatMoney(cot.data.iva)} ·
+                  Total a descontar {formatMoney(cot.data.total)}
+                  {noAlcanza && ` · tu saldo disponible es ${formatMoney(cot.data.disponible)}`}
+                </p>
+              ) : (
+                <p>Se descuentan el monto, la comisión y el IVA de tu saldo.</p>
+              )}
+              <p>Las transferencias grandes pueden quedar pendientes de aprobación.</p>
+            </div>
             <BtnPrimary
               onClick={enviar}
-              disabled={m.enviar.isPending || (d?.tipo === "clabe" && d.verificacion !== "matched")}
+              disabled={
+                m.enviar.isPending ||
+                noAlcanza ||
+                (d?.tipo === "clabe" && d.verificacion !== "matched")
+              }
             >
               {m.enviar.isPending ? "Enviando…" : "Transferir"}
             </BtnPrimary>

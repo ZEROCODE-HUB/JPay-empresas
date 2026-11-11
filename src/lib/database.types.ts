@@ -8851,6 +8851,14 @@ export type Database = {
       }
       pais_predeterminado: { Args: never; Returns: string }
       pais_predeterminar: { Args: { p_codigo: string }; Returns: undefined }
+      portal_cotizar_envio: {
+        Args: { p_destino?: string; p_monto: number; p_subaccount_id: string }
+        Returns: Json
+      }
+      portal_detalle_subcuenta: {
+        Args: { p_limite?: number; p_subaccount_id: string }
+        Returns: Json
+      }
       portal_lotes_gestion: {
         Args: never
         Returns: {

@@ -95,6 +95,7 @@ export function toPaymentLink(x: LinkPagoConDetalle): PaymentLink {
   }));
   return {
     id: x.id,
+    moneda: x.moneda === "USD" ? "USD" : "MXN",
     // La URL guardada puede ser branding (brand.web.payLinksBase) o un origen
     // viejo (localhost). Se reconstruye con el dominio de producción para
     // que "Copiar" y el detalle apunten siempre al deploy.

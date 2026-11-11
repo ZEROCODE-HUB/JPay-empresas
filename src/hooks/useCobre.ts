@@ -21,6 +21,7 @@ import {
   listLotesSpei,
   listSubcuentasSpei,
   listTransferenciasSpei,
+  cotizarEnvio,
 } from "@/lib/api/cobre";
 import type { PersonaKyb } from "@/shared/cobre-kyb";
 import type { EmpresaKyb } from "@/shared/ui/kyb-cobre";
@@ -67,6 +68,30 @@ export function useCuentaSpei() {
       refetchInterval: 30_000,
     }),
   };
+}
+
+/** Transferencias de una moneda (filtradas en la base antes del límite). */
+export function useTransferencias(moneda: "MXN" | "USD") {
+  return useQuery({
+    queryKey: [...KEY, "transferencias", moneda],
+    queryFn: () => listTransferenciasSpei(50, moneda),
+    refetchInterval: (q) => (abiertas((q.state.data ?? []).map((t) => t.estado)) ? 5_000 : 30_000),
+  });
+}
+
+/** Comisión e IVA de un envío, para mostrar el total y validar el saldo antes de enviar. */
+export function useCotizacionEnvio(
+  subcuentaId: string | undefined,
+  monto: number,
+  destino?: string,
+) {
+  return useQuery({
+    queryKey: [...KEY, "cotizacion", subcuentaId, monto, destino],
+    queryFn: () => cotizarEnvio(subcuentaId as string, monto, destino),
+    enabled: !!subcuentaId && monto > 0,
+    staleTime: 30_000,
+    meta: { silencioso: true },
+  });
 }
 
 export function useCuentaSpeiMutaciones() {

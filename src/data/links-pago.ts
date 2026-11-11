@@ -17,6 +17,8 @@ export interface PaymentMethod {
 
 export interface PaymentLink {
   id: string;
+  /** Moneda del link (MXN o USD). */
+  moneda?: "MXN" | "USD";
   url: string;
   products: Product[];
   status: "Activo" | "Inactivo" | "Vencido";
