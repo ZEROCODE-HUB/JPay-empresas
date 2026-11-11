@@ -21,7 +21,7 @@ jobs:
       - name: Tests
         run: npm test
       - name: Funciones del servidor (Deno)
-        run: npx -y deno@2.9.5 test supabase/functions/_shared/
+        run: npx -y deno@2.9.5 test --node-modules-dir=none supabase/functions/_shared/
       - name: Build
         run: npm run build
       # El código compartido tiene que ser idéntico en los dos repos. Se compara con la misma rama
