@@ -12,6 +12,7 @@ import { Badge, BtnOutline, Card } from "@/components/portal-shell";
 import { ESTADO_ECOM_TONE } from "../estados";
 import type { IntegracionesEcom } from "../hooks/useIntegracionesEcom";
 import { PAGE_SIZES, rangoPagina } from "../utils";
+import { FilaError, FilasCargando } from "@/shared/ui/estado-carga";
 
 /** Lista de integraciones */
 export function IntegracionesTabla({ s }: { s: IntegracionesEcom }) {
@@ -37,36 +38,40 @@ export function IntegracionesTabla({ s }: { s: IntegracionesEcom }) {
             </tr>
           </thead>
           <tbody>
-            {paginated.map((e) => (
-              <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30">
-                <td className="px-5 py-3 font-semibold">{e.name}</td>
-                <td className="px-5 py-3">
-                  <Badge tone={ESTADO_ECOM_TONE[e.estado]}>{e.estado}</Badge>
-                </td>
-                <td className="px-5 py-3 text-sm text-muted-foreground">{e.created}</td>
-                <td className="px-5 py-3 text-right">
-                  <div className="flex gap-1 justify-end">
-                    <button
-                      onClick={() => s.toggleEstado(e.id)}
-                      className={`h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md border bg-card transition text-xs font-semibold text-muted-foreground ${
-                        e.estado === "Habilitado"
-                          ? "hover:bg-danger-50 hover:text-danger-600"
-                          : "hover:bg-emerald-50 hover:text-emerald-600"
-                      }`}
-                    >
-                      {e.estado === "Habilitado" ? <Pause size={12} /> : <Play size={12} />}
-                      {e.estado === "Habilitado" ? "DESHABILITAR" : "HABILITAR"}
-                    </button>
-                    <button
-                      onClick={() => s.openClaveModal(e.id, e.name)}
-                      className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md border bg-card hover:bg-orange-50 hover:text-orange-600 transition text-xs font-semibold text-muted-foreground"
-                    >
-                      <Key size={12} /> ACTUALIZAR CLAVE
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {s.cargando && <FilasCargando colSpan={4} />}
+            {s.error && <FilaError colSpan={4} error={s.error} onRetry={s.recargar} />}
+            {!s.cargando &&
+              !s.error &&
+              paginated.map((e) => (
+                <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30">
+                  <td className="px-5 py-3 font-semibold">{e.name}</td>
+                  <td className="px-5 py-3">
+                    <Badge tone={ESTADO_ECOM_TONE[e.estado]}>{e.estado}</Badge>
+                  </td>
+                  <td className="px-5 py-3 text-sm text-muted-foreground">{e.created}</td>
+                  <td className="px-5 py-3 text-right">
+                    <div className="flex gap-1 justify-end">
+                      <button
+                        onClick={() => s.toggleEstado(e.id)}
+                        className={`h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md border bg-card transition text-xs font-semibold text-muted-foreground ${
+                          e.estado === "Habilitado"
+                            ? "hover:bg-danger-50 hover:text-danger-600"
+                            : "hover:bg-emerald-50 hover:text-emerald-600"
+                        }`}
+                      >
+                        {e.estado === "Habilitado" ? <Pause size={12} /> : <Play size={12} />}
+                        {e.estado === "Habilitado" ? "DESHABILITAR" : "HABILITAR"}
+                      </button>
+                      <button
+                        onClick={() => s.openClaveModal(e.id, e.name)}
+                        className="h-8 px-2.5 inline-flex items-center gap-1.5 rounded-md border bg-card hover:bg-orange-50 hover:text-orange-600 transition text-xs font-semibold text-muted-foreground"
+                      >
+                        <Key size={12} /> ACTUALIZAR CLAVE
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
           </tbody>
         </table>
       </div>

@@ -4,6 +4,7 @@ import { Search, Store } from "lucide-react";
 import { PageHeader, Card, Badge, Input, BtnOutline } from "@/components/portal-shell";
 import type { ComercioClienteRow } from "@/lib/api/comercios";
 import { useComerciosCliente } from "@/hooks/useComercios";
+import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/mis-comercios")({ component: Page });
 
@@ -43,7 +44,7 @@ const estadoTone = (estado: string): "neutral" | "success" | "warn" | "danger" =
 };
 
 function Page() {
-  const { rows, isLoading: loading } = useComerciosCliente();
+  const { rows, isLoading: loading, error, refetch } = useComerciosCliente();
   const comercios = useMemo(() => mapComercios(rows), [rows]);
   const [q, setQ] = useState("");
   const [nivel, setNivel] = useState("Todos");
@@ -92,11 +93,17 @@ function Page() {
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <div className="bg-white border border-black-100 rounded-md px-4 py-2 flex items-center gap-2">
               <Store size={14} className="text-highlight" />
-              <span className="font-semibold text-black-700">{comercios.length}</span> comercios
+              <span className="font-semibold text-black-700">
+                {loading ? <Cargando className="h-3 w-5" /> : comercios.length}
+              </span>{" "}
+              comercios
             </div>
             <div className="bg-white border border-black-100 rounded-md px-4 py-2 flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-success inline-block" />
-              <span className="font-semibold text-black-700">{activos}</span> activos
+              <span className="font-semibold text-black-700">
+                {loading ? <Cargando className="h-3 w-5" /> : activos}
+              </span>{" "}
+              activos
             </div>
           </div>
         }
@@ -140,7 +147,9 @@ function Page() {
       </Card>
 
       {loading ? (
-        <Card className="p-6 text-sm text-muted-foreground">Cargando comercios…</Card>
+        <Cargando className="block h-48 w-full" />
+      ) : error ? (
+        <ErrorCarga error={error} onRetry={refetch} />
       ) : (
         <Card className="p-0 overflow-hidden">
           <div className="overflow-x-auto">

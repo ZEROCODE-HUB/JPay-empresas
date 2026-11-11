@@ -1,6 +1,7 @@
 import { Activity, Shield, TrendingUp, User } from "lucide-react";
 import { formatNumber } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
+import { Cargando } from "@/shared/ui/estado-carga";
 import type { CuentaPantalla } from "../hooks/useCuentaPantalla";
 import { labelKyc } from "../utils";
 import { brand } from "@/brand/brand";
@@ -18,6 +19,7 @@ export function CuentaStats({ c }: { c: CuentaPantalla }) {
       icon: Activity,
       label: "Transacciones mes",
       value: formatNumber(c.movCount),
+      cargando: c.cargandoResumen,
       info: `Cantidad de operaciones registradas en tu cuenta ${brand.name} desde el día 1 del mes en curso, en cualquier estado.`,
     },
     {
@@ -45,8 +47,14 @@ export function CuentaStats({ c }: { c: CuentaPantalla }) {
             {/* Las impares quedan a la derecha (columna derecha en el celular, última en escritorio). */}
             <InfoTip align={i % 2 === 1 ? "right" : "left"}>{s.info}</InfoTip>
           </div>
-          <div className="font-display tabular-nums text-sm font-semibold mt-0.5">{s.value}</div>
-          {s.sub && <div className="text-[9px] text-muted-foreground">{s.sub}</div>}
+          <div className="font-display tabular-nums text-sm font-semibold mt-0.5">
+            {c.cargando || ("cargando" in s && s.cargando) ? (
+              <Cargando className="h-4 w-16" />
+            ) : (
+              s.value
+            )}
+          </div>
+          {s.sub && !c.cargando && <div className="text-[9px] text-muted-foreground">{s.sub}</div>}
         </div>
       ))}
     </div>

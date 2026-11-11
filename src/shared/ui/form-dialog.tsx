@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { BtnPrimary, BtnOutline } from "@/components/portal-shell";
 
@@ -20,13 +20,31 @@ export function FormDialog({
   title: string;
   description?: string;
   children: ReactNode;
-  onSubmit: () => void;
+  /** Si devuelve una promesa, el botón queda bloqueado hasta que termine (evita el doble clic). */
+  onSubmit: () => unknown;
   submitLabel?: string;
   size?: "md" | "lg" | "xl" | "2xl";
   hideCancel?: boolean;
   cancelLabel?: string;
   isSubmitting?: boolean;
 }) {
+  const [enviando, setEnviando] = useState(false);
+  const enCurso = useRef(false);
+  const ocupado = isSubmitting || enviando;
+  const enviar = async () => {
+    if (enCurso.current || isSubmitting) return;
+    const r = onSubmit();
+    if (!(r instanceof Promise)) return;
+    enCurso.current = true;
+    setEnviando(true);
+    try {
+      await r;
+    } finally {
+      enCurso.current = false;
+      setEnviando(false);
+    }
+  };
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -64,23 +82,18 @@ export function FormDialog({
           className="p-6 space-y-4"
           onSubmit={(e) => {
             e.preventDefault();
-            onSubmit();
+            void enviar();
           }}
         >
           {children}
           <div className="flex gap-2 pt-2">
             {!hideCancel && (
-              <BtnOutline
-                type="button"
-                className="flex-1"
-                onClick={onClose}
-                disabled={isSubmitting}
-              >
+              <BtnOutline type="button" className="flex-1" onClick={onClose} disabled={ocupado}>
                 {cancelLabel}
               </BtnOutline>
             )}
-            <BtnPrimary type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting && (
+            <BtnPrimary type="submit" className="flex-1" disabled={ocupado}>
+              {ocupado && (
                 <span className="inline-block w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
               )}
               {submitLabel}

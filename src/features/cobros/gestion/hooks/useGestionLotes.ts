@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { eliminarLoteDB, getLotesGestionDB, type LoteEstado } from "@/lib/api/cobros-masivos";
 import { filtrarLotes, paginar, totalPaginas } from "../../utils";
+
+const SIN_LOTES: Awaited<ReturnType<typeof getLotesGestionDB>> = [];
 
 /** Listado de gestión de lotes: carga, filtros, paginación y eliminación. */
 export function useGestionLotes() {
@@ -12,19 +15,12 @@ export function useGestionLotes() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [confirmarEliminarId, setConfirmarEliminarId] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
-  const [lotesData, setLotesData] = useState<Awaited<ReturnType<typeof getLotesGestionDB>>>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const data = await getLotesGestionDB();
-      if (!cancelled) setLotesData(data);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [tick]);
+  const q = useQuery({
+    queryKey: ["cobros", "lotes-gestion"],
+    queryFn: getLotesGestionDB,
+    meta: { silencioso: true },
+  });
+  const lotesData = q.data ?? SIN_LOTES;
 
   const lotes = useMemo(
     () =>
@@ -41,7 +37,7 @@ export function useGestionLotes() {
     setPage(1);
   }, [busqueda, filtroEstado, fechaDesde, fechaHasta]);
 
-  const recargar = () => setTick((t) => t + 1);
+  const recargar = () => void q.refetch();
 
   /** Elimina el lote pendiente de confirmación; `onOk` corre si salió bien. */
   const eliminar = async (onOk: () => void) => {
@@ -78,6 +74,8 @@ export function useGestionLotes() {
     },
     totalPages: totalPaginas(lotes.length, pageSize),
     recargar,
+    isLoading: q.isPending,
+    error: q.isError && !q.data ? q.error : null,
     confirmarEliminarId,
     setConfirmarEliminarId,
     eliminar,

@@ -11,11 +11,14 @@ export function ProductFormDialog({
   onClose,
   product,
   onSave,
+  guardando = false,
 }: {
   open: boolean;
   onClose: () => void;
   product: Product | null;
   onSave: (p: Product) => void;
+  /** Mientras guarda, el botón queda bloqueado (evita el doble clic). */
+  guardando?: boolean;
 }) {
   const [name, setName] = useState(product?.name || "");
   const [qty, setQty] = useState(product?.qty.toString() || "1");
@@ -24,6 +27,7 @@ export function ProductFormDialog({
 
   return (
     <FormDialog
+      isSubmitting={guardando}
       open={open}
       onClose={onClose}
       title={product ? "Editar producto" : "Nuevo producto"}

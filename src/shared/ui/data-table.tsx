@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { BtnOutline } from "@/components/portal-shell";
 import { Pagination } from "@/shared/ui/pagination";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 export type FilterType = "text" | "date" | "enum";
 
@@ -46,6 +47,9 @@ type DataTableProps<T> = {
   keyExtractor: (row: T, index?: number) => string | number;
   actions?: (row: T) => ReactNode;
   loading?: boolean;
+  /** Error de la consulta: se muestra «No se pudo cargar» en vez del mensaje de vacío. */
+  error?: unknown;
+  onRetry?: () => void;
   emptyMessage?: string;
   pageSize?: number;
   selection?: {
@@ -93,6 +97,8 @@ export function DataTable<T>({
   keyExtractor,
   actions,
   loading = false,
+  error,
+  onRetry,
   emptyMessage = "Sin datos",
   pageSize: defaultPageSize = 10,
   selection,
@@ -347,6 +353,14 @@ export function DataTable<T>({
             <div key={i} className="h-10 bg-muted rounded" />
           ))}
         </div>
+      </div>
+    );
+  }
+
+  if (error && data.length === 0) {
+    return (
+      <div className="bg-card border rounded-lg p-4">
+        <ErrorCarga error={error} onRetry={onRetry} compacto />
       </div>
     );
   }

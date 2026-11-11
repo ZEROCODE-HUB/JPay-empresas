@@ -14,10 +14,13 @@ export function LinkEditDialog({
   link,
   onClose,
   onSave,
+  guardando = false,
 }: {
   link: PaymentLink | null;
   onClose: () => void;
   onSave: (id: string, vals: EdicionLink) => void;
+  /** Mientras guarda, el botón queda bloqueado (evita el doble clic). */
+  guardando?: boolean;
 }) {
   const [status, setStatus] = useState("Activo");
   const [reference, setReference] = useState("");
@@ -49,6 +52,7 @@ export function LinkEditDialog({
 
   return (
     <FormDialog
+      isSubmitting={guardando}
       open={link !== null}
       onClose={onClose}
       title="Editar link de pago"

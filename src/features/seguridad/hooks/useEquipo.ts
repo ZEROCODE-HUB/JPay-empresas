@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { enviarInvitacion } from "@/lib/api/auth";
+import { mensajeError } from "@/shared/errores";
 import { EQUIPO_INICIAL } from "../estados";
 import { validarInvitacion } from "../utils";
 
@@ -22,8 +23,11 @@ export function useEquipo() {
     }
     try {
       await enviarInvitacion(email);
-    } catch {
-      // Fallback silencioso: igual se registra localmente y se notifica
+    } catch (e) {
+      toast.error(
+        `No se pudo enviar la invitación${mensajeError(e) ? `: ${mensajeError(e)}` : ""}`,
+      );
+      return;
     }
     setTeam((prev) => [...prev, { n: nombre, e: email, r: inviteRole, a: "Pendiente" }]);
     toast.success(`Invitación enviada a ${email}`);

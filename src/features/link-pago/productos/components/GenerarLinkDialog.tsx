@@ -24,6 +24,7 @@ export function GenerarLinkDialog({
       submitLabel="Generar link"
       size="lg"
       onSubmit={form.generar}
+      isSubmitting={form.generando}
     >
       <div>
         <Label>Comercio</Label>

@@ -28,12 +28,18 @@ export function useMovimientosHistorial(filtros: FiltrosHistorial) {
   const totalCount = historial.isError ? 0 : (historial.data?.total ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalCount / filtros.pageSize));
 
+  // Si ya había datos y falla un refresco, se avisa con un toast; si no hay nada que mostrar, la
+  // pantalla muestra «No se pudo cargar» en su lugar.
+  const errorSinDatos = historial.isError && !historial.data;
   useEffect(() => {
-    if (historial.isError) toast.error("No se pudieron cargar los movimientos");
-  }, [historial.isError, historial.errorUpdatedAt]);
+    if (historial.isError && historial.data) toast.error("No se pudieron cargar los movimientos");
+  }, [historial.isError, historial.errorUpdatedAt, historial.data]);
 
   return {
     loading: historial.loading,
+    cargando: historial.cargando && !historial.isError,
+    error: errorSinDatos ? historial.error : null,
+    reintentar: historial.refetch,
     cliente,
     subcuentas,
     sinSubcuentas,

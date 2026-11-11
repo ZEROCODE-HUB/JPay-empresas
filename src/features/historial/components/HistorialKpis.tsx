@@ -1,10 +1,27 @@
 import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
+import { Cargando } from "@/shared/ui/estado-carga";
 import type { TotalesHistorial } from "../utils";
 
 /** KPIs de la página actual: ingresos, egresos, neto y pendientes/rechazados. */
-export function HistorialKpis({ totales: t }: { totales: TotalesHistorial }) {
+export function HistorialKpis({
+  totales: t,
+  cargando = false,
+}: {
+  totales: TotalesHistorial;
+  /** Mientras carga: bloques grises en vez de $0. */
+  cargando?: boolean;
+}) {
+  if (cargando) {
+    return (
+      <div className="grid md:grid-cols-4 gap-5 mb-6">
+        {[0, 1, 2, 3].map((i) => (
+          <Cargando key={i} className="block h-[6.5rem] w-full" />
+        ))}
+      </div>
+    );
+  }
   const neto = t.totalIngresos - t.totalEgresos;
   const m = { moneda: t.moneda };
   const otra = t.moneda === "USD" ? "MXN" : "USD";

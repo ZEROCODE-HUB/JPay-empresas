@@ -9,6 +9,7 @@ import { PeriodoSelector } from "@/features/inicio/components/PeriodoSelector";
 import { exportarDashboard } from "@/features/inicio/export";
 import { usePeriodoDashboard } from "@/features/inicio/hooks/usePeriodoDashboard";
 import { agruparPorDia, calcularKpis } from "@/features/inicio/utils";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/")({
   component: Dashboard,
@@ -17,7 +18,10 @@ export const Route = createFileRoute("/app/")({
 function Dashboard() {
   const periodo = usePeriodoDashboard();
   const { range, periodLabel } = periodo;
-  const { movs, saldoTotal, cuentas, cuentaLabel } = useDashboard(range.start, range.end);
+  const { movs, saldoTotal, cuentas, cuentaLabel, isLoading, error, refetch } = useDashboard(
+    range.start,
+    range.end,
+  );
 
   const data = useMemo(
     () => agruparPorDia(movs, range.start, range.end),
@@ -42,9 +46,14 @@ function Dashboard() {
         onExport={(fmt) => exportarDashboard(fmt, movs, kpis, periodLabel)}
       />
 
-      <DashboardKpis kpis={kpis} cuentaLabel={cuentaLabel} />
-
-      <MovimientosDiariosChart data={data} periodLabel={periodLabel} />
+      {error ? (
+        <ErrorCarga error={error} onRetry={refetch} />
+      ) : (
+        <>
+          <DashboardKpis kpis={kpis} cuentaLabel={cuentaLabel} loading={isLoading} />
+          <MovimientosDiariosChart data={data} periodLabel={periodLabel} loading={isLoading} />
+        </>
+      )}
     </>
   );
 }

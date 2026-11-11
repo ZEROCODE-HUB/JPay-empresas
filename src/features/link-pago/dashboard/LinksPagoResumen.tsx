@@ -20,6 +20,7 @@ import jsPDF from "jspdf";
 import { applyPlugin } from "jspdf-autotable";
 import { useClienteActual, useDashboardLinksPago } from "@/hooks/useLinksPago";
 import { brand } from "@/brand/brand";
+import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
 
 const presets = [
   { label: "Hoy", days: 0 },
@@ -51,8 +52,12 @@ const METHOD_COLORS = [
 /** Resumen de cobros con links de pago: KPIs, gráficos y exportación (Links de pago y Reportes). */
 export function LinksPagoResumen() {
   const [days, setDays] = useState(30);
-  const { data: cliente } = useClienteActual();
-  const { data } = useDashboardLinksPago(cliente?.legajo, days);
+  const clienteQ = useClienteActual();
+  const cliente = clienteQ.data;
+  const dashQ = useDashboardLinksPago(cliente?.legajo, days);
+  const { data } = dashQ;
+  const error = data ? null : (clienteQ.error ?? dashQ.error);
+  const cargando = !data && !error;
   const movs = useMemo(() => data?.movs ?? [], [data]);
   const links = data?.links ?? [];
 
@@ -192,92 +197,105 @@ export function LinksPagoResumen() {
               </InfoTip>
             </div>
             <div className="font-display tabular-nums text-sm md:text-base font-semibold mt-0.5">
-              {k.value}
+              {cargando ? <Cargando className="h-5 w-16" /> : k.value}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
-        <Card>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Estado de transacciones
-            <InfoTip className="ml-1">
-              Cantidad de cobros con tarjeta de tus links de pago en el período, agrupados por
-              estado.
-            </InfoTip>
-          </h4>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={statusData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label={({ name, value }: { name?: string; value?: number }) => name + " " + value}
-              >
-                {statusData.map((e) => (
-                  <Cell key={e.name} fill={COLORS[e.name] || "#666"} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
+      {error ? (
+        <ErrorCarga
+          error={error}
+          onRetry={() => void (clienteQ.error ? clienteQ.refetch() : dashQ.refetch())}
+        />
+      ) : cargando ? (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+          {[0, 1, 2].map((i) => (
+            <Cargando key={i} className="block h-72 w-full" />
+          ))}
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
+          <Card>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Estado de transacciones
+              <InfoTip className="ml-1">
+                Cantidad de cobros con tarjeta de tus links de pago en el período, agrupados por
+                estado.
+              </InfoTip>
+            </h4>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={statusData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={({ name, value }: { name?: string; value?: number }) => name + " " + value}
+                >
+                  {statusData.map((e) => (
+                    <Cell key={e.name} fill={COLORS[e.name] || "#666"} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
 
-        <Card>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Montos por link de pago
-            <InfoTip className="ml-1">
-              El monto configurado en cada uno de tus links de pago. No es lo cobrado y no depende
-              del período elegido.
-            </InfoTip>
-          </h4>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie
-                data={linkData}
-                dataKey="amount"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={80}
-                label={({ name }: { name?: string }) => name}
-              >
-                {linkData.map((_, i) => (
-                  <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(v: number) => formatMoney(v, { decimals: 0 })} />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
+          <Card>
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Montos por link de pago
+              <InfoTip className="ml-1">
+                El monto configurado en cada uno de tus links de pago. No es lo cobrado y no depende
+                del período elegido.
+              </InfoTip>
+            </h4>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={linkData}
+                  dataKey="amount"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={80}
+                  label={({ name }: { name?: string }) => name}
+                >
+                  {linkData.map((_, i) => (
+                    <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatMoney(v, { decimals: 0 })} />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
 
-        <Card className="md:col-span-2 xl:col-span-1">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-            Volumen por link (millones {monedaActiva()})
-            <InfoTip align="right" className="ml-1">
-              El mismo monto configurado de cada link, en millones. No es lo cobrado y no depende
-              del período elegido.
-            </InfoTip>
-          </h4>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={volData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip formatter={(v: number) => v + "M"} />
-              <Bar dataKey="vol" radius={[4, 4, 0, 0]}>
-                {volData.map((_, i) => (
-                  <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+          <Card className="md:col-span-2 xl:col-span-1">
+            <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
+              Volumen por link (millones {monedaActiva()})
+              <InfoTip align="right" className="ml-1">
+                El mismo monto configurado de cada link, en millones. No es lo cobrado y no depende
+                del período elegido.
+              </InfoTip>
+            </h4>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={volData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip formatter={(v: number) => v + "M"} />
+                <Bar dataKey="vol" radius={[4, 4, 0, 0]}>
+                  {volData.map((_, i) => (
+                    <Cell key={i} fill={METHOD_COLORS[i % METHOD_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

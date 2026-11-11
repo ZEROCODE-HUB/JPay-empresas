@@ -30,7 +30,13 @@ export function useClienteSesion() {
     (c: Cliente | null) => queryClient.setQueryData(KEY_CLIENTE, c),
     [queryClient],
   );
-  return { cliente: query.data ?? null, isLoading: query.isLoading, setCliente };
+  return {
+    cliente: query.data ?? null,
+    isLoading: query.isLoading,
+    error: query.data === undefined && query.isError ? query.error : null,
+    refetch: () => void query.refetch(),
+    setCliente,
+  };
 }
 
 /** Documentos KYC (con URL firmada) y movimientos del mes del cliente. */

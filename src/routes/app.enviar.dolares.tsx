@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, PageHeader } from "@/components/portal-shell";
+import { PageHeader } from "@/components/portal-shell";
 import { EnviarDolaresCard } from "@/features/dolares/components/EnviarDolaresCard";
 import { EnviosDolaresCard } from "@/features/dolares/components/MovimientosDolares";
 import { useCuentaSpei } from "@/hooks/useCobre";
+import { Cargando, ErrorCarga, EstadoConsulta } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/enviar/dolares")({
   head: () => ({ meta: [{ title: "Envíos en dólares" }] }),
@@ -21,11 +22,14 @@ function Page() {
         description="Paga a cuentas en Estados Unidos (Fedwire) o en otros países (SWIFT) con tu saldo en dólares."
       />
       {cuenta.isLoading || subcuentas.isLoading || destinatarios.isLoading ? (
-        <Card className="text-sm text-black-400">Cargando…</Card>
+        <Cargando className="block h-40 w-full" />
       ) : error ? (
-        <Card className="text-sm text-danger-600">
-          No se pudo cargar: {(error as Error).message}
-        </Card>
+        <ErrorCarga
+          error={error}
+          onRetry={() =>
+            void Promise.all([cuenta.refetch(), subcuentas.refetch(), destinatarios.refetch()])
+          }
+        />
       ) : (
         <div className="space-y-4">
           <EnviarDolaresCard
@@ -33,9 +37,9 @@ function Page() {
             destinatarios={destinatarios.data ?? []}
             habilitada={habilitada}
           />
-          <EnviosDolaresCard
-            envios={(transferencias.data ?? []).filter((t) => t.moneda === "USD")}
-          />
+          <EstadoConsulta q={transferencias}>
+            {(t) => <EnviosDolaresCard envios={t.filter((x) => x.moneda === "USD")} />}
+          </EstadoConsulta>
         </div>
       )}
     </>

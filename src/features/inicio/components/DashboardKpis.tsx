@@ -3,6 +3,7 @@ import { ArrowDownLeft, ArrowUpRight, Link2, Users, Wallet } from "lucide-react"
 import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
+import { Cargando } from "@/shared/ui/estado-carga";
 import type { KpisDashboard } from "../utils";
 import { brand } from "@/brand/brand";
 
@@ -14,6 +15,7 @@ export function Kpi({
   iconClass,
   info,
   infoAlign = "left",
+  loading = false,
 }: {
   label: string;
   value: ReactNode;
@@ -23,6 +25,8 @@ export function Kpi({
   /** De dónde sale el dato; se muestra con una «i» al pasar el mouse. */
   info?: ReactNode;
   infoAlign?: "left" | "right";
+  /** Mientras carga: gris animado en vez del valor (nunca $0). */
+  loading?: boolean;
 }) {
   return (
     <Card>
@@ -37,9 +41,11 @@ export function Kpi({
             )}
           </div>
           <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-black-800">
-            {value}
+            {loading ? <Cargando className="h-7 w-28" /> : value}
           </div>
-          <div className="text-xs text-black-400 mt-0.5">{sub}</div>
+          <div className="text-xs text-black-400 mt-0.5">
+            {loading ? <Cargando className="h-3 w-20" /> : sub}
+          </div>
         </div>
         <div
           className={`w-9 h-9 rounded-sm flex items-center justify-center shrink-0 ${iconClass}`}
@@ -52,11 +58,20 @@ export function Kpi({
 }
 
 /** Las dos filas de KPIs del dashboard. */
-export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuentaLabel: string }) {
+export function DashboardKpis({
+  kpis,
+  cuentaLabel,
+  loading = false,
+}: {
+  kpis: KpisDashboard;
+  cuentaLabel: string;
+  loading?: boolean;
+}) {
   return (
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <Kpi
+          loading={loading}
           label="Saldo total de la cuenta"
           value={formatMoney(kpis.saldo)}
           sub={cuentaLabel || "Sin CLABE asignada"}
@@ -65,6 +80,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           iconClass="bg-secondary-50 text-secondary-500"
         />
         <Kpi
+          loading={loading}
           label="Depósitos del período"
           value={formatMoney(kpis.depositos)}
           sub={`${kpis.opsDep} operaciones`}
@@ -73,6 +89,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           iconClass="bg-success-bg text-success"
         />
         <Kpi
+          loading={loading}
           label="Retiros del período"
           value={formatMoney(kpis.retiros)}
           sub={`${kpis.opsRet} operaciones`}
@@ -81,6 +98,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           iconClass="bg-error-bg text-error"
         />
         <Kpi
+          loading={loading}
           label="Total de cuentas"
           value={kpis.cuentas}
           sub={`1 principal + ${kpis.cuentas - 1} subcuentas`}
@@ -92,6 +110,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Kpi
+          loading={loading}
           label="Cobros mediante Link de Pago"
           value={formatMoney(kpis.cobrosLink)}
           sub={`${kpis.opsLink} transacciones`}

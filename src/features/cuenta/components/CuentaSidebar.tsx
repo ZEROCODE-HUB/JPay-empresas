@@ -3,6 +3,7 @@ import { Landmark, SlidersHorizontal } from "lucide-react";
 import { brand } from "@/brand/brand";
 import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
+import { Cargando } from "@/shared/ui/estado-carga";
 import type { CuentaPantalla } from "../hooks/useCuentaPantalla";
 
 function Fila({ label, value }: { label: string; value: ReactNode }) {
@@ -15,6 +16,7 @@ function Fila({ label, value }: { label: string; value: ReactNode }) {
 }
 
 function LimitesCard({ c }: { c: CuentaPantalla }) {
+  if (c.cargando) return <Cargando className="block h-40 w-full" />;
   return (
     <Card>
       <h3 className="font-semibold text-sm mb-3 flex items-center gap-2">

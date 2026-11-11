@@ -102,6 +102,10 @@ export function useListaLinks(legajo: string | undefined) {
     refrescar,
     deleteLink,
     saveEditLink,
+    guardando: actualizarLink.isPending,
+    cargando: linksQuery.isPending && !linksQuery.isError,
+    error: linksQuery.data ? null : linksQuery.error,
+    recargar: () => void linksQuery.refetch(),
   };
 }
 

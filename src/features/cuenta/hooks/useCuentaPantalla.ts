@@ -12,7 +12,13 @@ import { antiguedad, clienteToForm, formToPatch, mapDocumentos, scoreSeguridad }
  * respaldo), formulario editable, documentos KYC y métricas de la cabecera.
  */
 export function useCuentaPantalla() {
-  const { cliente, isLoading: loadingCliente, setCliente } = useClienteSesion();
+  const {
+    cliente,
+    isLoading: loadingCliente,
+    error: errorCliente,
+    refetch: recargarCliente,
+    setCliente,
+  } = useClienteSesion();
   const resumen = useResumenCuenta(cliente?.legajo);
   const loadingDocs = loadingCliente || (!!cliente && resumen.isLoading);
   const kycDocs = useMemo(() => mapDocumentos(resumen.documentos), [resumen.documentos]);
@@ -110,6 +116,10 @@ export function useCuentaPantalla() {
     cancelar,
     kycDocs,
     loadingDocs,
+    cargando: loadingCliente,
+    error: errorCliente,
+    recargar: recargarCliente,
+    cargandoResumen: loadingDocs,
     movCount: resumen.movimientosMes,
     antiguedad: antiguedad(base),
     score: scoreSeguridad(cliente, aprobado, kycDocs.length),

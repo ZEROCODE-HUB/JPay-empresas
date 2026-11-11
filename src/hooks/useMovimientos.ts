@@ -29,6 +29,9 @@ export function useDashboard(start: Date, end: Date) {
     cuentas: d ? d.saldos.length + 1 : 1,
     // La CLABE del cliente vive en la columna `cbu`.
     cuentaLabel: cli?.cbu ? `CLABE ${cli.cbu}` : "",
+    isLoading: query.isPending,
+    error: query.isError && !d ? query.error : null,
+    refetch: () => void query.refetch(),
   };
 }
 
@@ -44,7 +47,11 @@ export function useHistorial(filtros: FiltrosHistorial) {
     data: query.data,
     loading: query.isFetching,
     isError: query.isError,
+    /** Primera carga (todavía no hay datos que mostrar). */
+    cargando: query.isPending,
+    error: query.error,
     errorUpdatedAt: query.errorUpdatedAt,
+    refetch: () => void query.refetch(),
   };
 }
 

@@ -5,6 +5,7 @@ import { InfoTip } from "@/shared/ui/info-tip";
 import type { Sub } from "../types";
 import { pctSaldo, totalesSubs } from "../utils";
 import { brand } from "@/brand/brand";
+import { Cargando } from "@/shared/ui/estado-carga";
 
 function Kpi({
   label,
@@ -12,6 +13,7 @@ function Kpi({
   sub,
   info,
   infoAlign = "left",
+  loading = false,
 }: {
   label: string;
   value: string;
@@ -19,6 +21,7 @@ function Kpi({
   /** De dónde sale el dato; se muestra con una «i» al pasar el mouse. */
   info: ReactNode;
   infoAlign?: "left" | "right";
+  loading?: boolean;
 }) {
   return (
     <div className="bg-card border rounded-lg p-3">
@@ -29,27 +32,29 @@ function Kpi({
         </InfoTip>
       </div>
       <div className="font-display tabular-nums text-base md:text-lg font-semibold mt-0.5">
-        {value}
+        {loading ? <Cargando className="h-6 w-24" /> : value}
       </div>
-      <div className="text-[10px] text-muted-foreground mt-0.5">{sub}</div>
+      <div className="text-[10px] text-muted-foreground mt-0.5">{loading ? " " : sub}</div>
     </div>
   );
 }
 
 /** Saldo total, disponible, retenido y distribución del saldo entre subcuentas. */
-export function SubcuentasKpis({ subs }: { subs: Sub[] }) {
+export function SubcuentasKpis({ subs, loading = false }: { subs: Sub[]; loading?: boolean }) {
   const { total, disp, ret, totalUsd, dispUsd, retUsd, hayUsd } = totalesSubs(subs);
   const usd = (n: number) => formatMoney(n, { moneda: "USD" });
   const pesos = subs.filter((s) => s.moneda !== "USD");
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
       <Kpi
+        loading={loading}
         label="Saldo total"
         value={formatMoney(total)}
         sub={hayUsd ? `+ ${usd(totalUsd)} en dólares` : `${subs.length} subcuentas`}
         info={`Disponible más retenido de tus subcuentas en pesos, según los movimientos registrados en ${brand.name}. Es el saldo de hoy. Tu subcuenta en dólares se muestra aparte, en dólares: no se suman pesos con dólares.`}
       />
       <Kpi
+        loading={loading}
         label="Disponible"
         value={formatMoney(disp)}
         sub={hayUsd ? `+ ${usd(dispUsd)} en dólares` : "Listo para operar"}
@@ -57,6 +62,7 @@ export function SubcuentasKpis({ subs }: { subs: Sub[] }) {
         infoAlign="right"
       />
       <Kpi
+        loading={loading}
         label="Retenido"
         value={formatMoney(ret)}
         sub={hayUsd && retUsd > 0 ? `+ ${usd(retUsd)} en dólares` : "Pendiente de liberar"}
@@ -71,6 +77,7 @@ export function SubcuentasKpis({ subs }: { subs: Sub[] }) {
           </InfoTip>
         </div>
         <div className="text-[10px] mt-1.5 space-y-1.5">
+          {loading && <Cargando className="block h-8 w-full" />}
           {pesos.slice(0, 3).map((s) => {
             const pct = pctSaldo(s, total);
             return (
@@ -93,7 +100,7 @@ export function SubcuentasKpis({ subs }: { subs: Sub[] }) {
           {pesos.length > 3 && (
             <div className="text-[10px] text-muted-foreground pt-0.5">+{pesos.length - 3} más</div>
           )}
-          {subs.length === 0 && (
+          {!loading && subs.length === 0 && (
             <div className="text-[10px] text-muted-foreground pt-0.5">Sin subcuentas</div>
           )}
         </div>

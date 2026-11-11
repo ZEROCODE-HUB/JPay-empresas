@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Card, PageHeader } from "@/components/portal-shell";
+import { PageHeader } from "@/components/portal-shell";
 import { ConvertirCard } from "@/features/dolares/components/ConvertirCard";
 import { ConversionesCard } from "@/features/dolares/components/MovimientosDolares";
 import { SaldosDolaresCard } from "@/features/dolares/components/SaldosDolaresCard";
 import { CONVERSION_EN_CURSO } from "@/features/dolares/estados";
 import { useCuentaSpei, useDolares } from "@/hooks/useCobre";
+import { Cargando, ErrorCarga, EstadoConsulta } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/dolares")({
   head: () => ({ meta: [{ title: "Dólares" }] }),
@@ -37,19 +38,22 @@ function Page() {
         description="Convierte pesos a dólares. Para pagar a cuentas en Estados Unidos o en otros países, usa Enviar › Envíos en dólares."
       />
       {cuenta.isLoading || subcuentas.isLoading ? (
-        <Card className="text-sm text-black-400">Cargando…</Card>
+        <Cargando className="block h-40 w-full" />
       ) : error ? (
-        <Card className="text-sm text-danger-600">
-          No se pudo cargar: {(error as Error).message}
-        </Card>
+        <ErrorCarga
+          error={error}
+          onRetry={() => void Promise.all([cuenta.refetch(), subcuentas.refetch()])}
+        />
       ) : (
         <div className="space-y-4">
-          <SaldosDolaresCard
-            subcuentas={subcuentas.data ?? []}
-            conversiones={conversiones.data ?? []}
-          />
+          {/* Sin las conversiones no se sabe qué está «por recibir»: espera a tenerlas. */}
+          <EstadoConsulta q={conversiones} alto="h-28">
+            {(c) => <SaldosDolaresCard subcuentas={subcuentas.data ?? []} conversiones={c} />}
+          </EstadoConsulta>
           <ConvertirCard subcuentas={subcuentas.data ?? []} habilitada={habilitada} />
-          <ConversionesCard conversiones={conversiones.data ?? []} />
+          <EstadoConsulta q={conversiones}>
+            {(c) => <ConversionesCard conversiones={c} />}
+          </EstadoConsulta>
         </div>
       )}
     </>

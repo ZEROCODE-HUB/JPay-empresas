@@ -34,6 +34,7 @@ export function useSubcuentasCliente<T>(mapear: (rows: SubcuentaConSaldos[]) => 
     subs: query.data?.subs ?? [],
     clienteLegajo: query.data?.legajo ?? null,
     loading: query.isLoading,
+    error: query.data === undefined && query.isError ? query.error : null,
     setSubs,
     recargar: async () => {
       await query.refetch();

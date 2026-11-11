@@ -86,7 +86,7 @@ export function useGenerarLink({
     setComercioId("");
   };
 
-  const generar = async () => {
+  const generarLink = async () => {
     const selProducts = products.filter((p) => selected.includes(p.id));
     if (selProducts.length === 0) {
       toast.error("Selecciona al menos un producto");
@@ -163,7 +163,20 @@ export function useGenerarLink({
     await onRefrescar();
   };
 
+  // Evita el doble clic: mientras se genera, el botón queda bloqueado.
+  const [generando, setGenerando] = useState(false);
+  const generar = async () => {
+    if (generando) return;
+    setGenerando(true);
+    try {
+      await generarLink();
+    } finally {
+      setGenerando(false);
+    }
+  };
+
   return {
+    generando,
     open,
     abrir,
     cerrar,

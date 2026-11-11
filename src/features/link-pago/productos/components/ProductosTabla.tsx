@@ -1,6 +1,7 @@
 import { Plus, Search } from "lucide-react";
 import { BtnOutline, BtnPrimary, Card, Input } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
+import { FilaError, FilasCargando } from "@/shared/ui/estado-carga";
 import type { CatalogoProductos } from "../hooks/useCatalogoProductos";
 
 /** Barra de acciones y tabla de productos con selección. */
@@ -57,6 +58,24 @@ export function ProductosTabla({
               </tr>
             </thead>
             <tbody>
+              {catalogo.cargando && <FilasCargando colSpan={6} />}
+              {catalogo.error && (
+                <FilaError colSpan={6} error={catalogo.error} onRetry={catalogo.recargar} />
+              )}
+              {!catalogo.cargando &&
+                !catalogo.error &&
+                catalogo.productosFiltrados.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-5 py-10 text-center text-sm text-muted-foreground"
+                    >
+                      {products.length > 0
+                        ? "Ningún producto coincide con la búsqueda."
+                        : "Todavía no tienes productos. Crea el primero con «+ Producto»."}
+                    </td>
+                  </tr>
+                )}
               {catalogo.productosFiltrados.map((p) => (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-3 py-3">

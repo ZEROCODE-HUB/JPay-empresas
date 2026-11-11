@@ -7,6 +7,7 @@ import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { useComerciosCliente } from "@/hooks/useComercios";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { brand } from "@/brand/brand";
+import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
 
 type Busqueda = { ecartpay?: "conectado" | "error"; motivo?: string };
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/app/integraciones")({
 function Page() {
   const { ecartpay, motivo } = Route.useSearch();
   const navigate = useNavigate();
-  const { rows, isLoading } = useComerciosCliente();
+  const { rows, isLoading, error, refetch } = useComerciosCliente();
   const comercios = rows ?? [];
   const [comercioId, setComercioId] = useState<string | null>(null);
   const actual = comercioId ?? comercios[0]?.id ?? null;
@@ -42,7 +43,9 @@ function Page() {
         description="Conecta las cuentas con las que cobras tus ventas. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
       />
       {isLoading ? (
-        <Card className="text-sm text-black-400">Cargando…</Card>
+        <Cargando className="block h-40 w-full" />
+      ) : error ? (
+        <ErrorCarga error={error} onRetry={refetch} />
       ) : !actual ? (
         <Card>
           <EmptyState

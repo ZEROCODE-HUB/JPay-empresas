@@ -10,6 +10,7 @@ import { GestionPaginacion } from "@/features/cobros/gestion/components/GestionP
 import { LotesTabla } from "@/features/cobros/gestion/components/LotesTabla";
 import { useDetalleLoteModal } from "@/features/cobros/gestion/hooks/useDetalleLoteModal";
 import { useGestionLotes } from "@/features/cobros/gestion/hooks/useGestionLotes";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/cobros/gestion")({ component: GestionLotes });
 
@@ -47,7 +48,16 @@ function GestionLotes() {
 
       <GestionFiltros f={g.filtros} />
 
-      <LotesTabla lotes={g.paginados} vacio={g.lotes.length === 0} onVer={detalle.abrir} />
+      {g.error ? (
+        <ErrorCarga error={g.error} onRetry={g.recargar} />
+      ) : (
+        <LotesTabla
+          lotes={g.paginados}
+          vacio={g.lotes.length === 0}
+          cargando={g.isLoading}
+          onVer={detalle.abrir}
+        />
+      )}
 
       <GestionPaginacion
         page={g.page}

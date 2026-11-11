@@ -20,9 +20,11 @@ const LEYENDA: Array<{ clase: string; label: string }> = [
 export function MovimientosDiariosChart({
   data,
   periodLabel,
+  loading = false,
 }: {
   data: FilaDia[];
   periodLabel: string;
+  loading?: boolean;
 }) {
   return (
     <Card>
@@ -47,7 +49,13 @@ export function MovimientosDiariosChart({
         ))}
       </div>
       <div className="w-full" style={{ height: Math.max(200, Math.min(360, 40 * data.length)) }}>
-        {data.length > 0 ? (
+        {loading ? (
+          <div
+            role="status"
+            aria-label="Cargando"
+            className="h-full rounded bg-muted animate-pulse"
+          />
+        ) : data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}

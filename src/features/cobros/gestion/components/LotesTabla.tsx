@@ -24,15 +24,17 @@ const COLS: ColCobros[] = [
 export function LotesTabla({
   lotes,
   vacio,
+  cargando = false,
   onVer,
 }: {
   lotes: LoteGestionRow[];
   vacio: boolean;
+  cargando?: boolean;
   onVer: (id: string) => void;
 }) {
   return (
     <Card className="p-0 overflow-hidden">
-      <TablaCobros cols={COLS} vacio={vacio}>
+      <TablaCobros cols={COLS} vacio={vacio} cargando={cargando}>
         {lotes.map((l) => (
           <tr key={l.id} className="hover:bg-muted/30 transition-colors">
             <td className="px-5 py-3 font-semibold">{l.nombre}</td>

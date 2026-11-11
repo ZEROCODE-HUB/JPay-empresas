@@ -104,6 +104,9 @@ export function useIntegracionesEcom() {
   };
 
   return {
+    cargando: integraciones.isPending && !integraciones.isError,
+    error: integraciones.data ? null : integraciones.error,
+    recargar: () => void integraciones.refetch(),
     list,
     paginated,
     page,

@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Card, PageHeader } from "@/components/portal-shell";
 import { useComerciosCliente } from "@/hooks/useComercios";
 import { useConexionEcartPay } from "@/hooks/useIntegraciones";
+import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
 
 /**
  * Candado de las pantallas que usan Ecart Pay: espera el comercio del cliente y su conexión, y si
@@ -21,7 +22,12 @@ export function RequiereEcartPay({
   aviso?: string;
   children: (comercioId: string) => ReactNode;
 }) {
-  const { rows, isLoading: cargandoComercios } = useComerciosCliente();
+  const {
+    rows,
+    isLoading: cargandoComercios,
+    error: errorComercios,
+    refetch,
+  } = useComerciosCliente();
   const comercioId = rows?.[0]?.id ?? null;
   const conexion = useConexionEcartPay(comercioId);
   const conectado = conexion.data?.estado === "conectado";
@@ -32,7 +38,12 @@ export function RequiereEcartPay({
     <>
       <PageHeader title={titulo} description={descripcion} />
       {cargandoComercios || conexion.isLoading ? (
-        <Card className="text-sm text-black-400">Cargando…</Card>
+        <Cargando className="block h-24 w-full" />
+      ) : errorComercios || (conexion.isError && !conexion.data) ? (
+        <ErrorCarga
+          error={errorComercios ?? conexion.error}
+          onRetry={() => (errorComercios ? refetch() : void conexion.refetch())}
+        />
       ) : (
         <Card className="text-sm">
           {aviso}{" "}

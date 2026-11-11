@@ -21,8 +21,10 @@ export function LotesRecientes({
   lotes,
   onVerTodos,
   onVer,
+  cargando = false,
 }: {
   lotes: LoteResumen[];
+  cargando?: boolean;
   onVerTodos: () => void;
   onVer: (id: string) => void;
 }) {
@@ -38,14 +40,14 @@ export function LotesRecientes({
             </InfoTip>
           </div>
           <div className="text-xs text-muted-foreground">
-            {lotes.length} lotes en el periodo seleccionado
+            {cargando ? "Cargando…" : `${lotes.length} lotes en el periodo seleccionado`}
           </div>
         </div>
         <BtnOutline className="h-9 px-3 text-xs" onClick={onVerTodos}>
           Ver todos
         </BtnOutline>
       </div>
-      <TablaCobros cols={COLS} vacio={lotes.length === 0}>
+      <TablaCobros cols={COLS} vacio={lotes.length === 0} cargando={cargando}>
         {lotes.slice(0, 10).map((l) => (
           <tr key={l.id} className="hover:bg-muted/30 transition-colors">
             <td className="px-5 py-3">

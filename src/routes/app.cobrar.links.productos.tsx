@@ -65,6 +65,7 @@ function Page() {
             onClose={catalogo.cerrarForm}
             product={catalogo.editing}
             onSave={catalogo.saveProduct}
+            guardando={catalogo.guardando}
           />
 
           <GenerarLinkDialog
@@ -121,6 +122,7 @@ function Page() {
         link={lista.editLink}
         onClose={() => lista.setEditLink(null)}
         onSave={lista.saveEditLink}
+        guardando={lista.guardando}
       />
     </>
   );

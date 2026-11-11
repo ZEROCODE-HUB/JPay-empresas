@@ -4,6 +4,7 @@ import { Badge, BtnOutline, Card, Input } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { toneEstadoLink } from "../estados";
 import type { ListaLinks } from "../hooks/useListaLinks";
+import { FilaError, FilasCargando } from "@/shared/ui/estado-carga";
 import {
   codigoLink,
   linkDisplayStatus,
@@ -42,7 +43,7 @@ export function LinksTabla({ lista }: { lista: ListaLinks }) {
         <div className="px-5 py-4 border-b flex items-center justify-between">
           <h3 className="font-semibold text-sm">Links de pago generados</h3>
           <span className="text-xs text-muted-foreground">
-            {total} link{total !== 1 ? "s" : ""}
+            {lista.cargando ? "Cargando…" : `${total} link${total !== 1 ? "s" : ""}`}
           </span>
         </div>
         <div className="overflow-x-auto">
@@ -61,7 +62,11 @@ export function LinksTabla({ lista }: { lista: ListaLinks }) {
               </tr>
             </thead>
             <tbody>
-              {total === 0 ? (
+              {lista.cargando ? (
+                <FilasCargando colSpan={9} />
+              ) : lista.error ? (
+                <FilaError colSpan={9} error={lista.error} onRetry={lista.recargar} />
+              ) : total === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-5 py-10 text-center text-sm text-muted-foreground">
                     {lista.links.length > 0

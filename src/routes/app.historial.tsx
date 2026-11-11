@@ -18,6 +18,7 @@ import {
   useMovimientosHistorial,
   useVistaHistorial,
 } from "@/features/historial/hooks/useMovimientosHistorial";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 // `?subcuenta=<nombre>` llega desde Subcuentas ("Ver historial") y preselecciona el filtro.
 export const Route = createFileRoute("/app/historial")({
@@ -88,7 +89,13 @@ function Page() {
 
       <VistaSelector vista={vista} subcuentas={mov.subcuentas} sinSubcuentas={mov.sinSubcuentas} />
 
-      <HistorialKpis totales={mov.totales} />
+      {mov.error ? (
+        <div className="mb-6">
+          <ErrorCarga error={mov.error} onRetry={mov.reintentar} />
+        </div>
+      ) : (
+        <HistorialKpis totales={mov.totales} cargando={mov.cargando} />
+      )}
 
       <FiltrosCard
         f={filtros}
@@ -102,19 +109,21 @@ function Page() {
         onPdf={() => void exportPDF()}
       />
 
-      <MovimientosTabla
-        loading={mov.loading}
-        grupos={grupos}
-        page={filtros.page}
-        pageSize={PAGE_SIZE}
-        totalCount={mov.totalCount}
-        totalPages={mov.totalPages}
-        onPage={filtros.setPage}
-        onBuscarTxid={filtros.setBuscarTxid}
-        onVerDetalle={(l) => void comprobante.verDetalle(l)}
-        onDescargar={(l) => void comprobante.descargar(l)}
-        onCompartir={(l) => void comprobante.compartir(l)}
-      />
+      {!mov.error && (
+        <MovimientosTabla
+          loading={mov.loading}
+          grupos={grupos}
+          page={filtros.page}
+          pageSize={PAGE_SIZE}
+          totalCount={mov.totalCount}
+          totalPages={mov.totalPages}
+          onPage={filtros.setPage}
+          onBuscarTxid={filtros.setBuscarTxid}
+          onVerDetalle={(l) => void comprobante.verDetalle(l)}
+          onDescargar={(l) => void comprobante.descargar(l)}
+          onCompartir={(l) => void comprobante.compartir(l)}
+        />
+      )}
 
       {comprobante.detalle && (
         <DetalleMovimientoDialog

@@ -15,12 +15,13 @@ import { useListadoSubcuentas } from "@/features/subcuentas/hooks/useListadoSubc
 import { useTransferenciaInterna } from "@/features/subcuentas/hooks/useTransferenciaInterna";
 import type { Sub } from "@/features/subcuentas/types";
 import { mapSubs } from "@/features/subcuentas/utils";
+import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/subcuentas")({ component: Page });
 
 function Page() {
   const navigate = useNavigate();
-  const { subs, setSubs, clienteLegajo, loading, recargar } = useSubcuentasCliente(mapSubs);
+  const { subs, setSubs, clienteLegajo, loading, error, recargar } = useSubcuentasCliente(mapSubs);
   const listado = useListadoSubcuentas(subs);
   const form = useFormSubcuenta(clienteLegajo, recargar);
   const transf = useTransferenciaInterna(subs, recargar);
@@ -53,7 +54,13 @@ function Page() {
         }
       />
 
-      <SubcuentasKpis subs={subs} />
+      {error ? (
+        <div className="mb-6">
+          <ErrorCarga error={error} onRetry={() => void recargar()} />
+        </div>
+      ) : (
+        <SubcuentasKpis subs={subs} loading={loading} />
+      )}
 
       <SubcuentasFiltros
         q={listado.q}
@@ -64,23 +71,25 @@ function Page() {
         onEstado={listado.setEstado}
       />
 
-      <SubcuentasTabla
-        loading={loading}
-        paginated={listado.paginated}
-        totalFiltradas={listado.filtradas.length}
-        page={listado.page}
-        pageSize={listado.pageSize}
-        totalPages={listado.totalPages}
-        setPage={listado.setPage}
-        menuId={acciones.menuId}
-        setMenuId={acciones.setMenuId}
-        onVerDetalle={acciones.setDetailSub}
-        onFondear={abrirFondeo}
-        onVerHistorial={verHistorial}
-        onEditar={form.abrirEditar}
-        onCambiarEstado={acciones.cambiarEstado}
-        onBorrar={acciones.setConfirmarBorrar}
-      />
+      {!error && (
+        <SubcuentasTabla
+          loading={loading}
+          paginated={listado.paginated}
+          totalFiltradas={listado.filtradas.length}
+          page={listado.page}
+          pageSize={listado.pageSize}
+          totalPages={listado.totalPages}
+          setPage={listado.setPage}
+          menuId={acciones.menuId}
+          setMenuId={acciones.setMenuId}
+          onVerDetalle={acciones.setDetailSub}
+          onFondear={abrirFondeo}
+          onVerHistorial={verHistorial}
+          onEditar={form.abrirEditar}
+          onCambiarEstado={acciones.cambiarEstado}
+          onBorrar={acciones.setConfirmarBorrar}
+        />
+      )}
 
       {detailSub && (
         <SubDetailModal

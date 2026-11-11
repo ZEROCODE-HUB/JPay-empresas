@@ -8,9 +8,12 @@ const ALIGN = { left: "text-left", right: "text-right", center: "text-center" } 
 export function TablaCobros({
   cols,
   vacio,
+  cargando = false,
   children,
 }: {
   cols: ColCobros[];
+  /** Mientras carga: filas grises animadas en vez de "No hay registros.". */
+  cargando?: boolean;
   /** Si es true agrega la fila "No hay registros." al final. */
   vacio: boolean;
   children: ReactNode;
@@ -31,8 +34,20 @@ export function TablaCobros({
           </tr>
         </thead>
         <tbody className="divide-y">
-          {children}
-          {vacio && (
+          {cargando &&
+            Array.from({ length: 4 }).map((_, i) => (
+              <tr key={i}>
+                <td colSpan={cols.length} className="px-5 py-3">
+                  <div
+                    role="status"
+                    aria-label="Cargando"
+                    className="h-6 rounded bg-muted animate-pulse"
+                  />
+                </td>
+              </tr>
+            ))}
+          {!cargando && children}
+          {!cargando && vacio && (
             <tr>
               <td
                 colSpan={cols.length}

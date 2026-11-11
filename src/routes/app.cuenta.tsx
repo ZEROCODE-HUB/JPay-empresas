@@ -14,6 +14,7 @@ import { AltaCobreCard } from "@/features/cuenta/components/AltaCobreCard";
 import { usePaisConModulos } from "@/shared/modulos-pais";
 import { useCuentaPantalla } from "@/features/cuenta/hooks/useCuentaPantalla";
 import type { DocReal } from "@/features/cuenta/types";
+import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/cuenta")({ component: Page });
 
@@ -33,18 +34,30 @@ function Page() {
         }
       />
 
-      <CuentaStats c={c} />
+      {c.error ? (
+        <ErrorCarga error={c.error} onRetry={c.recargar} />
+      ) : (
+        <>
+          <CuentaStats c={c} />
 
-      <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
-        <div className="space-y-6">
-          <InfoUsuarioCard c={c} />
-          <InfoAdicionalCard c={c} />
-          {c.isPJ && <InfoEmpresaCard c={c} />}
-          {pais.modulos.transferencias_cobre && <AltaCobreCard />}
-          <DocumentosKycCard c={c} onPreview={setDocPreview} />
-        </div>
-        <CuentaSidebar c={c} />
-      </div>
+          <div className="grid lg:grid-cols-[1.4fr_1fr] gap-6">
+            <div className="space-y-6">
+              {c.cargando ? (
+                <Cargando className="block h-96 w-full" />
+              ) : (
+                <>
+                  <InfoUsuarioCard c={c} />
+                  <InfoAdicionalCard c={c} />
+                  {c.isPJ && <InfoEmpresaCard c={c} />}
+                  {pais.modulos.transferencias_cobre && <AltaCobreCard />}
+                  <DocumentosKycCard c={c} onPreview={setDocPreview} />
+                </>
+              )}
+            </div>
+            <CuentaSidebar c={c} />
+          </div>
+        </>
+      )}
 
       <DocPreviewModal doc={docPreview} onClose={() => setDocPreview(null)} />
     </>
