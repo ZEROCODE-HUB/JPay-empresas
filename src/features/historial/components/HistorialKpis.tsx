@@ -31,9 +31,9 @@ export function HistorialKpis({
         <div className="text-xs text-muted-foreground mb-1">
           Ingresos del periodo
           <InfoTip className="ml-1">
-            Suma (en la moneda de la subcuenta que ves) de los movimientos a favor que ves en esta
-            página de la tabla, con los filtros que elegiste. Si hay más páginas, sus movimientos no
-            entran en la suma. Los movimientos de tu subcuenta en dólares no se suman aquí.
+            Suma de los movimientos a favor de TODO el período y los filtros que elegiste (no solo
+            de la página que ves), en la moneda de la subcuenta que ves. Solo lo confirmado: lo
+            rechazado y lo pendiente se cuentan aparte. Pesos y dólares no se mezclan.
           </InfoTip>
         </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
@@ -45,9 +45,8 @@ export function HistorialKpis({
         <div className="text-xs text-muted-foreground mb-1">
           Egresos del periodo
           <InfoTip className="ml-1">
-            Suma (en la moneda de la subcuenta que ves) de los movimientos en contra (salidas,
-            comisiones e impuestos) que ves en esta página de la tabla, con los filtros que
-            elegiste.
+            Suma de los movimientos en contra (salidas, comisiones e impuestos) de TODO el período y
+            los filtros que elegiste, en la moneda de la subcuenta que ves. Solo lo confirmado.
           </InfoTip>
         </div>
         <div className="text-xl md:text-2xl font-bold text-foreground">
@@ -61,10 +60,10 @@ export function HistorialKpis({
         <div className="text-xs text-muted-foreground mb-1">
           Neto
           <InfoTip className="ml-1">
-            Ingresos menos egresos de los movimientos que ves en esta página de la tabla. Se suma en
-            pesos, o en dólares si filtras tu subcuenta en dólares; lo de la otra moneda se muestra
-            abajo, aparte: no se mezclan pesos con dólares. Una conversión en proceso se ve en tu
-            subcuenta en pesos como pendiente; los dólares aparecen cuando termina.
+            Ingresos menos egresos de todo el período y los filtros que elegiste. Se suma en pesos,
+            o en dólares si filtras tu subcuenta en dólares; lo de la otra moneda se muestra abajo,
+            aparte: no se mezclan pesos con dólares. Una conversión o un envío en proceso aparece en
+            la tabla como «pendiente» con lo apartado, y no entra en el neto hasta que termina.
           </InfoTip>
         </div>
         <div
@@ -84,7 +83,7 @@ export function HistorialKpis({
         <div className="text-xs text-muted-foreground mb-1">
           Pendientes / Rechazados
           <InfoTip align="right" className="ml-1">
-            Cantidad de operaciones de esta página de la tabla que siguen pendientes o fueron
+            Operaciones del período y los filtros que elegiste que siguen en proceso o fueron
             rechazadas. Cada operación cuenta una vez aunque tenga varias líneas.
           </InfoTip>
         </div>

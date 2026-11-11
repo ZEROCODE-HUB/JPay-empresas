@@ -8149,6 +8149,7 @@ export type Database = {
       }
       v_transaction_lines: {
         Row: {
+          categoria: string | null
           comercio_id: string | null
           concepto: string | null
           cuit: string | null
@@ -8164,6 +8165,7 @@ export type Database = {
           legajo: string | null
           line_id: string | null
           line_no: number | null
+          moneda: string | null
           monto: number | null
           nombre: string | null
           nombre_destino: string | null
@@ -8181,6 +8183,15 @@ export type Database = {
       _alerta_desde_plaft: { Args: { p_match_id: number }; Returns: string }
       _bloqueo_activo: {
         Args: { p_client_id: string; p_subaccount_id?: string }
+        Returns: string
+      }
+      _categoria_movimiento: {
+        Args: {
+          p_concepto: string
+          p_moneda: string
+          p_posting_key: string
+          p_tipo: string
+        }
         Returns: string
       }
       _cobre_cuenta: {
@@ -8329,6 +8340,15 @@ export type Database = {
       actualizar_link_registro: {
         Args: { p_link: string; p_registro_id: string }
         Returns: undefined
+      }
+      admin_comisiones_dashboard: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      admin_fondos_totales: { Args: never; Returns: Json }
+      admin_resumen_cliente: {
+        Args: { p_desde?: string; p_hasta?: string; p_legajo: string }
+        Returns: Json
       }
       agregar_registros_lote: {
         Args: { p_lote_id: string; p_registros: Json }
@@ -8604,6 +8624,7 @@ export type Database = {
           comision: number
           forma: string
           iva: number
+          moneda: string
           operaciones: number
           producto: string
           proveedor: string
@@ -8830,6 +8851,49 @@ export type Database = {
       }
       pais_predeterminado: { Args: never; Returns: string }
       pais_predeterminar: { Args: { p_codigo: string }; Returns: undefined }
+      portal_lotes_gestion: {
+        Args: never
+        Returns: {
+          created_at: string
+          estado: string
+          fecha_finalizacion: string
+          id: string
+          monto_cobrado: number
+          monto_total: number
+          nombre: string
+          pagados: number
+          parciales: number
+          pendientes: number
+          periodo: string
+          registros: number
+        }[]
+      }
+      portal_resumen_cobros_masivos: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      portal_resumen_links: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      portal_resumen_periodo: {
+        Args: { p_desde: string; p_hasta: string }
+        Returns: Json
+      }
+      portal_totales_historial: {
+        Args: {
+          p_clabe?: string
+          p_desde?: string
+          p_hasta?: string
+          p_rfc?: string
+          p_subaccount_id?: string
+          p_tipo_linea?: string
+          p_tipos?: string[]
+          p_titular?: string
+          p_txid?: string
+        }
+        Returns: Json
+      }
       proveedor_borrar_secreto: {
         Args: { p_conexion_id: string }
         Returns: undefined

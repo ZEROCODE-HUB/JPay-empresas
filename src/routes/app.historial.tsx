@@ -11,7 +11,7 @@ import { exportarHistorialExcel, exportarHistorialPdf } from "@/features/histori
 import { useComprobanteMovimiento } from "@/features/historial/hooks/useComprobanteMovimiento";
 import { PAGE_SIZE, useFiltrosHistorial } from "@/features/historial/hooks/useFiltrosHistorial";
 import { useGruposTxid } from "@/features/historial/hooks/useGruposTxid";
-import { aLinea, totalesPagina } from "@/features/historial/utils";
+import { aLinea } from "@/features/historial/utils";
 import { useExportacionHistorial } from "@/hooks/useMovimientos";
 import { MAX_FILAS_EXPORTACION } from "@/lib/api/movimientos";
 import {
@@ -55,18 +55,17 @@ function Page() {
       return null;
     }
   };
-  const monedaVista = mov.totales.moneda;
   const exportExcel = async () => {
     const lineas = await lineasAExportar();
     if (!lineas) return;
-    exportarHistorialExcel(lineas, totalesPagina(lineas, monedaVista));
+    exportarHistorialExcel(lineas, mov.totales);
     toast.success("Excel descargado");
   };
   const exportPDF = async () => {
     const lineas = await lineasAExportar();
     if (!lineas) return;
     const serie = "RP-EMP-2026-" + Math.floor(100000 + Math.random() * 899999);
-    exportarHistorialPdf(lineas, totalesPagina(lineas, monedaVista), serie);
+    exportarHistorialPdf(lineas, mov.totales, serie);
     toast.success("PDF descargado");
   };
 

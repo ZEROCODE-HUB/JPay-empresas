@@ -4,12 +4,9 @@ import {
   getHistorial,
   getHistorialExportacion,
   type FiltrosHistorial,
-  type MovimientoDashboard,
 } from "@/lib/api/movimientos";
 
-const SIN_MOVIMIENTOS: MovimientoDashboard[] = [];
-
-/** Movimientos del período, saldo total y cantidad de cuentas del dashboard. */
+/** Resumen del período del Inicio (totales de la base) y CLABE del cliente. */
 export function useDashboard(start: Date, end: Date) {
   const desde = start.toISOString();
   const hasta = end.toISOString();
@@ -19,16 +16,9 @@ export function useDashboard(start: Date, end: Date) {
     placeholderData: keepPreviousData,
   });
   const d = query.data;
-  const cli = d?.cliente;
   return {
-    movs: d?.movimientos ?? SIN_MOVIMIENTOS,
-    // Saldo en pesos: la subcuenta en dólares no se suma (no se mezclan monedas).
-    saldoTotal: (d?.saldos ?? [])
-      .filter((x) => x.moneda !== "USD")
-      .reduce((a, x) => a + Number(x.saldo_disponible ?? 0) + Number(x.saldo_retenido ?? 0), 0),
-    cuentas: d ? d.saldos.length + 1 : 1,
-    // La CLABE del cliente vive en la columna `cbu`.
-    cuentaLabel: cli?.cbu ? `CLABE ${cli.cbu}` : "",
+    resumen: d?.resumen,
+    cuentaLabel: d?.clabe ? `CLABE ${d.clabe}` : "",
     isLoading: query.isPending,
     error: query.isError && !d ? query.error : null,
     refetch: () => void query.refetch(),

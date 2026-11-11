@@ -33,12 +33,37 @@ export async function getClienteActual(): Promise<ClienteActual | null> {
 // Dashboard
 // ============================================================================
 
-export type MovimientoTarjeta = { monto: number; fecha: string; estado: string; id: string };
-export type LinkPagoResumen = Pick<LinkPagoRow, "id" | "monto" | "estado" | "url">;
+export type LinkPagoResumen = Pick<LinkPagoRow, "id" | "monto" | "estado" | "url" | "referencia">;
 
-export type DashboardLinksPago = { movs: MovimientoTarjeta[]; links: LinkPagoResumen[] };
+/** Totales de los cobros de links de un entorno y una moneda (función `portal_resumen_links`). */
+export type GrupoLinks = {
+  entorno: string;
+  moneda: string;
+  operaciones: number;
+  aprobados: number;
+  monto_aprobado: number;
+  pendientes: number;
+  rechazados: number;
+  reembolsados: number;
+};
+export type CobradoLink = {
+  link_id: string;
+  entorno: string;
+  moneda: string;
+  cobrado: number;
+  pagos: number;
+};
 
-/** Cobros con tarjeta de los últimos `days` días y links del cliente. Errores silenciosos. */
+export type DashboardLinksPago = {
+  grupos: GrupoLinks[];
+  porLink: CobradoLink[];
+  links: LinkPagoResumen[];
+};
+
+/**
+ * Cobros de los links de pago de los últimos `days` días (calculados por la base, desde los
+ * pagos con tarjeta) y los links del cliente.
+ */
 export async function getDashboardLinksPago(
   legajo: string,
   days: number,
@@ -51,33 +76,17 @@ export async function getDashboardLinksPago(
   const end = new Date(now);
   end.setHours(23, 59, 59, 999);
 
-  const { data: m } = await s
-    .from("transactions")
-    .select("monto_operacion, fecha, estado_id, id_txn")
-    .eq("legajo", legajo)
-    .eq("tipo", "tarjeta")
-    .gte("fecha", start.toISOString())
-    .lte("fecha", end.toISOString());
-
-  // transactions.estado_id → estados_movimiento.id; el código se agrupa en las categorías del dashboard.
-  const ids = Array.from(new Set((m ?? []).map((x) => x.estado_id)));
-  const codigoPorId: Record<number, string> = {};
-  if (ids.length) {
-    const { data: est } = await s.from("estados_movimiento").select("id, codigo").in("id", ids);
-    (est ?? []).forEach((e) => (codigoPorId[e.id] = e.codigo));
-  }
-  const movs = (m ?? []).map((x) => ({
-    monto: Math.abs(Number(x.monto_operacion ?? 0)),
-    fecha: x.fecha,
-    estado: categoriaDashboard(codigoPorId[x.estado_id]),
-    id: x.id_txn ?? x.fecha,
-  }));
-
-  const { data: lk } = await s
-    .from("cliente_links_pago")
-    .select("id, monto, estado, url")
-    .eq("cliente_legajo", legajo);
-  return { movs, links: lk ?? [] };
+  const [res, lk] = await Promise.all([
+    s.rpc("portal_resumen_links", { p_desde: start.toISOString(), p_hasta: end.toISOString() }),
+    s
+      .from("cliente_links_pago")
+      .select("id, monto, estado, url, referencia")
+      .eq("cliente_legajo", legajo),
+  ]);
+  if (res.error) throw new DataAccessError(res.error);
+  if (lk.error) throw new DataAccessError(lk.error);
+  const r = res.data as unknown as { grupos: GrupoLinks[]; por_link: CobradoLink[] };
+  return { grupos: r.grupos ?? [], porLink: r.por_link ?? [], links: lk.data ?? [] };
 }
 
 // ============================================================================
@@ -259,21 +268,4 @@ export async function upsertIntegracionEcommerce(
       { onConflict: "cliente_legajo,plataforma" },
     );
   if (error) throw new DataAccessError(error);
-}
-
-const CATEGORIA_POR_CODIGO: Record<string, string> = {
-  APROBADO: "Aprobado",
-  RECHAZADO: "Rechazado",
-  BLOQUEADO: "Rechazado",
-  EXPIRADO: "Rechazado",
-  REEMBOLSADO: "Reembolsado",
-  PENDIENTE: "Pendiente",
-  EN_PROGRESO: "Pendiente",
-  CREADO: "Pendiente",
-  ABIERTO: "Pendiente",
-};
-
-/** Categoría del dashboard (Aprobado / Pendiente / Rechazado / Reembolsado) según el código del estado. */
-function categoriaDashboard(codigo: string | undefined): string {
-  return (codigo && CATEGORIA_POR_CODIGO[codigo]) || "Pendiente";
 }

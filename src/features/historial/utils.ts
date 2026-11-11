@@ -2,6 +2,7 @@ import { brand } from "@/brand/brand";
 import type { DatosComprobante } from "@/lib/comprobante";
 import type { LineaMovimientoRow, OperacionRow } from "@/lib/api/movimientos";
 import { formatDateTime, formatMoney } from "@/shared/format";
+import type { TotalesBaseHistorial } from "@/lib/api/movimientos";
 
 export type EstadoMov = "Acreditado" | "Pendiente" | "Rechazado";
 
@@ -213,7 +214,15 @@ export function clabeUnica(subcuentas: Array<{ cbu: string | null }>): string {
 // fila por concepto (ingreso/egreso, comision, impuesto, interes) con el mismo
 // TXID. Sale del ledger, asi que filtros y paginacion corren en la base.
 // ---------------------------------------------------------------------------
-export type TipoLinea = "ingreso" | "egreso" | "comision" | "impuesto" | "interes" | "reverso";
+export type TipoLinea =
+  | "ingreso"
+  | "egreso"
+  | "comision"
+  | "impuesto"
+  | "interes"
+  | "reverso"
+  /** Lo apartado de una operación en curso (aún no es ingreso ni egreso). */
+  | "pendiente";
 
 export type Linea = {
   lineId: string;
@@ -245,6 +254,7 @@ export const TIPOS_LINEA: Array<{ k: TipoLinea | "Todos"; l: string }> = [
   { k: "impuesto", l: "Impuesto" },
   { k: "interes", l: "Interés" },
   { k: "reverso", l: "Reverso" },
+  { k: "pendiente", l: "Pendiente (apartado)" },
 ];
 const TIPO_LINEA_LABEL = new Map(TIPOS_LINEA.map((t) => [t.k, t.l]));
 
@@ -300,6 +310,7 @@ export const aLinea = (r: LineaMovimientoRow): Linea => ({
 const ORDEN_LINEA: Record<TipoLinea, number> = {
   ingreso: 0,
   egreso: 0,
+  pendiente: 0,
   reverso: 1,
   interes: 2,
   comision: 3,
@@ -359,6 +370,32 @@ export type TotalesHistorial = {
   txRechazadas: number;
   totalPendientes: number;
 };
+
+/**
+ * Totales de las tarjetas a partir de lo que calcula la base sobre TODO lo filtrado (no la
+ * página): solo lo confirmado entra en ingresos y egresos; pendientes y rechazados, aparte.
+ */
+export function totalesDesdeBase(
+  base: TotalesBaseHistorial | null | undefined,
+  moneda: "MXN" | "USD" = "MXN",
+): TotalesHistorial {
+  const m = base?.monedas[moneda];
+  const o = base?.monedas[moneda === "USD" ? "MXN" : "USD"];
+  const txPendientes = Number(base?.tx_pendientes ?? 0);
+  const txRechazadas = Number(base?.tx_rechazadas ?? 0);
+  return {
+    moneda,
+    totalIngresos: Number(m?.ingresos ?? 0),
+    totalEgresos: Number(m?.egresos ?? 0),
+    netoOtra: Number(o?.neto ?? 0),
+    lineasOtra: Number(o?.lineas_ingreso ?? 0) + Number(o?.lineas_egreso ?? 0),
+    lineasIngreso: Number(m?.lineas_ingreso ?? 0),
+    lineasEgreso: Number(m?.lineas_egreso ?? 0),
+    txPendientes,
+    txRechazadas,
+    totalPendientes: txPendientes + txRechazadas,
+  };
+}
 
 /** Totales de la pagina: el signo ya viene de la base. */
 export function totalesPagina(lineas: Linea[], moneda: "MXN" | "USD" = "MXN"): TotalesHistorial {

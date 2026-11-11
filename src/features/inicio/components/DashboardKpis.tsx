@@ -74,8 +74,12 @@ export function DashboardKpis({
           loading={loading}
           label="Saldo total de la cuenta"
           value={formatMoney(kpis.saldo)}
-          sub={cuentaLabel || "Sin CLABE asignada"}
-          info={`Suma del saldo de todas tus subcuentas en ${brand.name}: lo disponible más lo retenido por operaciones en curso. Es el saldo de hoy; no depende del período elegido.`}
+          sub={
+            kpis.hayUsd
+              ? `+ ${formatMoney(kpis.saldoUsd, { moneda: "USD" })} en dólares`
+              : cuentaLabel || "Sin CLABE asignada"
+          }
+          info={`Suma del saldo de tus subcuentas en pesos en ${brand.name}: lo disponible más lo retenido por operaciones en curso. Es el saldo de hoy; no depende del período elegido. Tu subcuenta en dólares se muestra aparte, en dólares.`}
           icon={<Wallet size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
@@ -84,16 +88,16 @@ export function DashboardKpis({
           label="Depósitos del período"
           value={formatMoney(kpis.depositos)}
           sub={`${kpis.opsDep} operaciones`}
-          info={`Suma de los depósitos registrados en tu cuenta ${brand.name} en el período elegido, en cualquier estado.`}
+          info={`Depósitos en pesos que entraron a tu cuenta ${brand.name} en el período elegido (por SPEI a tu CLABE o por tus cobros por SPEI). Solo los acreditados; los rechazados o devueltos no cuentan.`}
           icon={<ArrowDownLeft size={18} />}
           iconClass="bg-success-bg text-success"
         />
         <Kpi
           loading={loading}
-          label="Retiros del período"
-          value={formatMoney(kpis.retiros)}
-          sub={`${kpis.opsRet} operaciones`}
-          info={`Suma de los retiros registrados en tu cuenta ${brand.name} en el período elegido, en cualquier estado. No incluye las transferencias SPEI enviadas: esas las ves en Transferencias SPEI.`}
+          label="Salidas del período"
+          value={formatMoney(kpis.salidas)}
+          sub={`${kpis.opsSal} operaciones`}
+          info={`Todo lo que salió de tus subcuentas en pesos en el período: transferencias SPEI, conversiones a dólares y retiros, sin contar comisiones e IVA (en el período sumaron ${formatMoney(kpis.comisiones)}). Solo lo confirmado: un envío rechazado o devuelto no cuenta.`}
           icon={<ArrowUpRight size={18} />}
           iconClass="bg-error-bg text-error"
         />
@@ -101,8 +105,8 @@ export function DashboardKpis({
           loading={loading}
           label="Total de cuentas"
           value={kpis.cuentas}
-          sub={`1 principal + ${kpis.cuentas - 1} subcuentas`}
-          info={`Tu cuenta principal más las subcuentas que creaste en ${brand.name}.`}
+          sub={kpis.hayUsd ? "en pesos y en dólares" : "subcuentas"}
+          info={`Todas tus subcuentas en ${brand.name}, en pesos y en dólares.`}
           infoAlign="right"
           icon={<Users size={18} />}
           iconClass="bg-info-bg text-info"
@@ -111,10 +115,10 @@ export function DashboardKpis({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Kpi
           loading={loading}
-          label="Cobros mediante Link de Pago"
+          label="Cobros con tarjeta"
           value={formatMoney(kpis.cobrosLink)}
-          sub={`${kpis.opsLink} transacciones`}
-          info={`Suma de los cobros con tarjeta de tus links de pago registrados en ${brand.name} en el período elegido, en cualquier estado (aprobados, pendientes o rechazados).`}
+          sub={`${kpis.opsLink} cobros${kpis.tarjetaPruebas ? " de prueba" : ""}`}
+          info={`Cobros con tarjeta pagados en el período (links de pago y puntos físicos), menos lo reembolsado. Los pendientes y rechazados no cuentan.${kpis.tarjetaPruebas ? " Todavía no tienes cobros reales: estos son de prueba." : ""}`}
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />

@@ -1,5 +1,6 @@
 import { requireSupabase } from "@/lib/supabase";
 import type { Tables } from "@/lib/database.types";
+import { DataAccessError } from "./errors";
 import {
   buildResolvableUrl,
   toResolvableLinkPagoUrl as toResolvableLinkPagoUrlShared,
@@ -268,30 +269,14 @@ export async function crearLoteDB(
   }
 }
 
-/** Lanza el error si la consulta falla (la pantalla muestra «No se pudo cargar»). */
+/** Lotes del cliente con sus montos (calculados por la base, sin tope de filas). */
 export async function getLotesGestionDB(): Promise<LoteGestionRow[]> {
   const s = requireSupabase();
-  const { data: lotes } = await s
-    .from("lotes")
-    .select("*")
-    .neq("estado", "eliminado")
-    .order("created_at", { ascending: false })
-    .throwOnError();
-  if (!lotes) return [];
-
-  const { data: allRegs } = await s
-    .from("lote_registros")
-    .select("lote_id, estado, monto, monto_pagado")
-    .throwOnError();
-  const regs = allRegs ?? [];
-
-  return lotes.map((l) => {
-    const lr = regs.filter((r) => r.lote_id === l.id);
-    const cobrados = lr.filter((r) => r.estado === "pagado_total").length;
-    const parciales = lr.filter((r) => r.estado === "pagado_parcial").length;
-    const pendientes = lr.filter((r) => r.estado === "pendiente" || r.estado === "vencido").length;
-    const montoTotal = lr.reduce((s, r) => s + Number(r.monto), 0);
-    const montoCobrado = lr.reduce((s, r) => s + Number(r.monto_pagado), 0);
+  const { data, error } = await s.rpc("portal_lotes_gestion");
+  if (error) throw new DataAccessError(error);
+  return (data ?? []).map((l) => {
+    const montoTotal = Number(l.monto_total);
+    const montoCobrado = Number(l.monto_cobrado);
     return {
       id: l.id,
       nombre: l.nombre,
@@ -300,9 +285,9 @@ export async function getLotesGestionDB(): Promise<LoteGestionRow[]> {
       fechaFinalizacion: l.fecha_finalizacion,
       estado: l.estado as LoteEstado,
       progreso: montoTotal > 0 ? Math.round((montoCobrado / montoTotal) * 100) : 0,
-      cantidadPagos: cobrados,
-      cantidadParciales: parciales,
-      cantidadPendientes: pendientes,
+      cantidadPagos: Number(l.pagados),
+      cantidadParciales: Number(l.parciales),
+      cantidadPendientes: Number(l.pendientes),
       montoTotal,
       montoCobrado,
       montoPorCobrar: montoTotal - montoCobrado,
@@ -581,49 +566,6 @@ export interface DashboardKPI {
   montoPendiente: number;
 }
 
-/** Lanza el error si la consulta falla (la pantalla muestra «No se pudo cargar»). */
-export async function computeDashboardKPI(filter: PeriodFilter): Promise<DashboardKPI> {
-  const s = requireSupabase();
-  const fromIso = filter.from.toISOString();
-  const toIso = filter.to.toISOString();
-  const { data: lotes } = await s
-    .from("lotes")
-    .select("id, estado")
-    .neq("estado", "eliminado")
-    .gte("created_at", fromIso)
-    .lte("created_at", toIso)
-    .throwOnError();
-  const lotesArr = lotes ?? [];
-  const loteIds = lotesArr.map((l) => l.id);
-  if (loteIds.length === 0)
-    return {
-      totalLotes: 0,
-      enProceso: 0,
-      finalizados: 0,
-      conError: 0,
-      montoTotal: 0,
-      montoCobrado: 0,
-      montoPendiente: 0,
-    };
-  const { data: regs } = await s
-    .from("lote_registros")
-    .select("lote_id, monto, monto_pagado")
-    .in("lote_id", loteIds)
-    .throwOnError();
-  const regsArr = regs ?? [];
-  const montoTotal = regsArr.reduce((s, r) => s + Number(r.monto), 0);
-  const montoCobrado = regsArr.reduce((s, r) => s + Number(r.monto_pagado), 0);
-  return {
-    totalLotes: lotesArr.length,
-    enProceso: lotesArr.filter((l) => l.estado === "en_proceso").length,
-    finalizados: lotesArr.filter((l) => l.estado === "finalizado").length,
-    conError: lotesArr.filter((l) => l.estado === "error").length,
-    montoTotal,
-    montoCobrado,
-    montoPendiente: montoTotal - montoCobrado,
-  };
-}
-
 export interface MedioPagoData {
   medio: string;
   monto: number;
@@ -658,48 +600,6 @@ export interface NoCobradasData {
   porcentajeNoCobrado: number;
 }
 
-/** Lanza el error si la consulta falla (la pantalla muestra «No se pudo cargar»). */
-export async function computeNoCobradas(filter: PeriodFilter): Promise<NoCobradasData> {
-  const s = requireSupabase();
-  const fromIso = filter.from.toISOString();
-  const toIso = filter.to.toISOString();
-  const { data: lotes } = await s
-    .from("lotes")
-    .select("id")
-    .neq("estado", "eliminado")
-    .gte("created_at", fromIso)
-    .lte("created_at", toIso)
-    .throwOnError();
-  const loteIds = (lotes ?? []).map((l) => l.id);
-  if (loteIds.length === 0)
-    return {
-      totalOperaciones: 0,
-      vencidas: 0,
-      vigentes: 0,
-      montoNoCobrado: 0,
-      porcentajeNoCobrado: 0,
-    };
-  const { data: regs } = await s
-    .from("lote_registros")
-    .select("estado, monto, monto_pagado")
-    .in("lote_id", loteIds)
-    .throwOnError();
-  const regsArr = regs ?? [];
-  const noCobradas = regsArr.filter((r) => r.estado !== "pagado_total");
-  const montoTotal = regsArr.reduce((s, r) => s + Number(r.monto), 0);
-  const montoNoCobrado = noCobradas.reduce(
-    (s, r) => s + (Number(r.monto) - Number(r.monto_pagado)),
-    0,
-  );
-  return {
-    totalOperaciones: regsArr.length,
-    vencidas: noCobradas.filter((r) => r.estado === "vencido").length,
-    vigentes: noCobradas.filter((r) => r.estado !== "vencido").length,
-    montoNoCobrado,
-    porcentajeNoCobrado: montoTotal > 0 ? Math.round((montoNoCobrado / montoTotal) * 100) : 0,
-  };
-}
-
 export interface EvolucionData {
   fecha: string;
   monto: number;
@@ -724,44 +624,22 @@ export interface LoteResumen {
   createdAt: string;
 }
 
-/** Lanza el error si la consulta falla (la pantalla muestra «No se pudo cargar»). */
-export async function computeLotesRecientes(filter: PeriodFilter): Promise<LoteResumen[]> {
+export type ResumenCobrosMasivos = {
+  kpi: DashboardKPI;
+  noCobradas: NoCobradasData;
+  lotesRecientes: LoteResumen[];
+};
+
+/**
+ * KPIs, no cobradas y lotes recientes del período, calculados por la base sobre todos los
+ * registros (antes se leían en el navegador y se cortaban en 1000).
+ */
+export async function getResumenCobrosMasivos(filter: PeriodFilter): Promise<ResumenCobrosMasivos> {
   const s = requireSupabase();
-  const fromIso = filter.from.toISOString();
-  const toIso = filter.to.toISOString();
-  const { data: lotes } = await s
-    .from("lotes")
-    .select("*")
-    .neq("estado", "eliminado")
-    .gte("created_at", fromIso)
-    .lte("created_at", toIso)
-    .order("created_at", { ascending: false })
-    .throwOnError();
-  const lotesArr = lotes ?? [];
-  if (lotesArr.length === 0) return [];
-  const loteIds = lotesArr.map((l) => l.id);
-  const { data: regs } = await s
-    .from("lote_registros")
-    .select("lote_id, estado, monto, monto_pagado")
-    .in("lote_id", loteIds)
-    .throwOnError();
-  const regsArr = regs ?? [];
-  return lotesArr.map((l) => {
-    const lr = regsArr.filter((r) => r.lote_id === l.id);
-    const montoTotal = lr.reduce((s, r) => s + Number(r.monto), 0);
-    const montoCobrado = lr.reduce((s, r) => s + Number(r.monto_pagado), 0);
-    return {
-      id: l.id,
-      nombre: l.nombre,
-      estado: l.estado as LoteEstado,
-      progreso: montoTotal > 0 ? Math.round((montoCobrado / montoTotal) * 100) : 0,
-      montoTotal,
-      montoCobrado,
-      cantidadPagos: lr.filter((r) => r.estado === "pagado_total").length,
-      cantidadParciales: lr.filter((r) => r.estado === "pagado_parcial").length,
-      cantidadPendientes: lr.filter((r) => r.estado === "pendiente" || r.estado === "vencido")
-        .length,
-      createdAt: l.created_at,
-    };
+  const { data, error } = await s.rpc("portal_resumen_cobros_masivos", {
+    p_desde: filter.from.toISOString(),
+    p_hasta: filter.to.toISOString(),
   });
+  if (error) throw new DataAccessError(error);
+  return data as unknown as ResumenCobrosMasivos;
 }

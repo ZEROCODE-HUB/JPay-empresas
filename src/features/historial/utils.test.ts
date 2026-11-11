@@ -16,6 +16,7 @@ import {
   tiposDeOperacion,
   totalesPagina,
   type Linea,
+  totalesDesdeBase,
 } from "./utils";
 
 const linea = (p: Partial<Linea>): Linea => ({
@@ -204,5 +205,33 @@ describe("vista / subcuenta", () => {
     expect(subFiltroDeVista("principal", "Caja")).toBe("Todas");
     expect(subFiltroDeVista("sub", "Caja")).toBe("Caja");
     expect(subFiltroDeVista("sub", undefined)).toBe("Todas");
+  });
+});
+
+describe("totales desde la base", () => {
+  const base = {
+    lineas: 13,
+    monedas: {
+      MXN: { ingresos: 350, egresos: 132.06, neto: 217.94, lineas_ingreso: 2, lineas_egreso: 7 },
+      USD: { ingresos: 6.91, egresos: 1, neto: 5.91, lineas_ingreso: 3, lineas_egreso: 1 },
+    },
+    tx_pendientes: 1,
+    tx_rechazadas: 2,
+  };
+  it("en pesos, con los dólares aparte", () => {
+    expect(totalesDesdeBase(base, "MXN")).toMatchObject({
+      moneda: "MXN",
+      totalIngresos: 350,
+      totalEgresos: 132.06,
+      netoOtra: 5.91,
+      lineasOtra: 4,
+      totalPendientes: 3,
+    });
+  });
+  it("en dólares, con los pesos aparte", () => {
+    expect(totalesDesdeBase(base, "USD")).toMatchObject({ totalIngresos: 6.91, netoOtra: 217.94 });
+  });
+  it("sin datos, todo en cero", () => {
+    expect(totalesDesdeBase(null).totalIngresos).toBe(0);
   });
 });

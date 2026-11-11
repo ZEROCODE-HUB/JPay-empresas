@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
-  computeDashboardKPI,
   computeEvolucion,
-  computeLotesRecientes,
-  computeNoCobradas,
   computePorMedio,
   computePorVencimiento,
+  getResumenCobrosMasivos,
   periodFilter,
   type DashboardKPI,
   type NoCobradasData,
@@ -41,16 +39,13 @@ export function useDashboardCobros() {
   const q = useQuery({
     queryKey: ["cobros", "dashboard", filter.from.toISOString(), filter.to.toISOString()],
     queryFn: async () => {
-      const [kpi, porMedio, porVencimiento, noCobradas, evolucion, lotesRecientes] =
-        await Promise.all([
-          computeDashboardKPI(filter),
-          computePorMedio(filter),
-          computePorVencimiento(filter),
-          computeNoCobradas(filter),
-          computeEvolucion(filter),
-          computeLotesRecientes(filter),
-        ]);
-      return { kpi, porMedio, porVencimiento, noCobradas, evolucion, lotesRecientes };
+      const [resumen, porMedio, porVencimiento, evolucion] = await Promise.all([
+        getResumenCobrosMasivos(filter),
+        computePorMedio(filter),
+        computePorVencimiento(filter),
+        computeEvolucion(filter),
+      ]);
+      return { ...resumen, porMedio, porVencimiento, evolucion };
     },
     placeholderData: keepPreviousData,
     meta: { silencioso: true },

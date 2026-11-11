@@ -8,7 +8,7 @@ import { MovimientosDiariosChart } from "@/features/inicio/components/Movimiento
 import { PeriodoSelector } from "@/features/inicio/components/PeriodoSelector";
 import { exportarDashboard } from "@/features/inicio/export";
 import { usePeriodoDashboard } from "@/features/inicio/hooks/usePeriodoDashboard";
-import { agruparPorDia, calcularKpis } from "@/features/inicio/utils";
+import { kpisDesdeResumen, serieDiaria } from "@/features/inicio/utils";
 import { ErrorCarga } from "@/shared/ui/estado-carga";
 
 export const Route = createFileRoute("/app/")({
@@ -18,16 +18,13 @@ export const Route = createFileRoute("/app/")({
 function Dashboard() {
   const periodo = usePeriodoDashboard();
   const { range, periodLabel } = periodo;
-  const { movs, saldoTotal, cuentas, cuentaLabel, isLoading, error, refetch } = useDashboard(
-    range.start,
-    range.end,
-  );
+  const { resumen, cuentaLabel, isLoading, error, refetch } = useDashboard(range.start, range.end);
 
   const data = useMemo(
-    () => agruparPorDia(movs, range.start, range.end),
-    [movs, range.start, range.end],
+    () => serieDiaria(resumen, range.start, range.end),
+    [resumen, range.start, range.end],
   );
-  const kpis = useMemo(() => calcularKpis(movs, saldoTotal, cuentas), [movs, saldoTotal, cuentas]);
+  const kpis = useMemo(() => kpisDesdeResumen(resumen), [resumen]);
 
   return (
     <>
@@ -43,7 +40,7 @@ function Dashboard() {
 
       <PeriodoSelector
         p={periodo}
-        onExport={(fmt) => exportarDashboard(fmt, movs, kpis, periodLabel)}
+        onExport={(fmt) => exportarDashboard(fmt, data, kpis, periodLabel)}
       />
 
       {error ? (

@@ -16,4 +16,5 @@ export const TIPO_LINEA_STYLE: Record<TipoLinea, string> = {
   impuesto: "bg-violet-50 text-violet-700 border-violet-200",
   interes: "bg-sky-50 text-sky-700 border-sky-200",
   reverso: "bg-slate-100 text-slate-700 border-slate-300",
+  pendiente: "bg-amber-50 text-amber-800 border-dashed border-amber-300",
 };

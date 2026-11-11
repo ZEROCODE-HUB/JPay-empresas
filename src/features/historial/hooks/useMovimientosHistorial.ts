@@ -7,7 +7,7 @@ import {
   clabeUnica,
   estadoVista,
   subFiltroDeVista,
-  totalesPagina,
+  totalesDesdeBase,
   type ClienteComprobante,
   type Linea,
   type ModoVista,
@@ -46,8 +46,8 @@ export function useMovimientosHistorial(filtros: FiltrosHistorial) {
     lineas,
     totalCount,
     totalPages,
-    totales: totalesPagina(
-      lineas,
+    totales: totalesDesdeBase(
+      historial.isError ? null : historial.data?.totales,
       subcuentas.find((s) => s.nombre === filtros.subcuenta)?.moneda ?? "MXN",
     ),
   };

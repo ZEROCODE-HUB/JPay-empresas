@@ -58,45 +58,56 @@ export function LinksPagoResumen() {
   const { data } = dashQ;
   const error = data ? null : (clienteQ.error ?? dashQ.error);
   const cargando = !data && !error;
-  const movs = useMemo(() => data?.movs ?? [], [data]);
-  const links = data?.links ?? [];
+  const links = useMemo(() => data?.links ?? [], [data]);
+  // Cobros reales si hay; si no, los de prueba (nunca se suman los dos). En pesos.
+  const entorno = (data?.grupos ?? []).some((g) => g.entorno !== "sandbox")
+    ? "produccion"
+    : "sandbox";
+  const delEntorno = (e: string) => (entorno === "sandbox" ? e === "sandbox" : e !== "sandbox");
+  const dePrueba = entorno === "sandbox" && (data?.grupos ?? []).length > 0;
 
   const metrics = useMemo(() => {
-    const total = movs.length;
-    const aprobados = movs.filter((x) => x.estado === "Aprobado");
-    const totalApproved = aprobados.reduce((a, x) => a + x.monto, 0);
-    const pending = movs.filter((x) => x.estado === "Pendiente").length;
-    const rejected = movs.filter((x) => x.estado === "Rechazado").length;
-    const refunds = movs.filter((x) => x.estado === "Reembolsado").length;
+    const gs = (data?.grupos ?? []).filter((g) => g.moneda === "MXN" && delEntorno(g.entorno));
+    const sum = (k: keyof (typeof gs)[number]) => gs.reduce((a, g) => a + Number(g[k] ?? 0), 0);
+    const total = sum("operaciones");
+    const aprobados = sum("aprobados");
+    const totalApproved = sum("monto_aprobado");
     return {
       totalApproved,
       totalTx: total,
-      pending,
-      rejected,
-      refunds,
-      conversionRate: total > 0 ? Math.round((aprobados.length / total) * 100) : 0,
-      avgTicket: aprobados.length > 0 ? Math.round(totalApproved / aprobados.length) : 0,
+      approved: aprobados,
+      pending: sum("pendientes"),
+      rejected: sum("rechazados"),
+      refunds: sum("reembolsados"),
+      conversionRate: total > 0 ? Math.round((aprobados / total) * 100) : 0,
+      avgTicket: aprobados > 0 ? Math.round(totalApproved / aprobados) : 0,
     };
-  }, [movs]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, entorno]);
 
   const statusData = [
-    { name: "Aprobado", value: movs.filter((x) => x.estado === "Aprobado").length },
+    { name: "Aprobado", value: metrics.approved },
     { name: "Pendiente", value: metrics.pending },
     { name: "Rechazado", value: metrics.rejected },
     { name: "Reembolsado", value: metrics.refunds },
   ];
 
-  const linkData = links.map((l) => ({
-    name: (l.url ?? "").split("/").pop() || String(l.id).slice(0, 8).toUpperCase(),
-    amount: Number(l.monto ?? 0),
-  }));
+  // Lo COBRADO por cada link en el período (antes se mostraba el precio configurado).
+  const nombreLink = (id: string) => {
+    const l = links.find((x) => x.id === id);
+    return l?.referencia || (l?.url ?? "").split("/").pop() || String(id).slice(0, 8).toUpperCase();
+  };
+  const linkData = (data?.porLink ?? [])
+    .filter((p) => p.moneda === "MXN" && delEntorno(p.entorno))
+    .map((p) => ({ name: nombreLink(p.link_id), amount: Number(p.cobrado ?? 0) }))
+    .sort((a, b) => b.amount - a.amount);
   const volData = linkData.map((d) => ({ ...d, vol: +(d.amount / 1_000_000).toFixed(1) }));
 
   const kpis = [
     {
       label: "Total aprobado",
       value: formatMoney(metrics.totalApproved, { decimals: 0 }),
-      info: `Suma de los cobros con tarjeta de tus links de pago aprobados en el período elegido, según tu cuenta ${brand.name}.`,
+      info: `Suma de los cobros con tarjeta de tus links de pago pagados en el período elegido, menos lo reembolsado, según tu cuenta ${brand.name}.${dePrueba ? " Todavía no tienes cobros reales: estos son de prueba." : ""}`,
     },
     {
       label: "Transacciones totales",
@@ -186,6 +197,11 @@ export function LinksPagoResumen() {
         </BtnOutline>
       </div>
 
+      {dePrueba && (
+        <p className="mb-3 text-xs text-amber-800">
+          Todavía no tienes cobros reales con tarjeta: estas cifras son de cobros de prueba.
+        </p>
+      )}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 mb-6">
         {kpis.map((k, i) => (
           <div key={k.label} className="bg-card border rounded-lg p-3">
@@ -246,10 +262,10 @@ export function LinksPagoResumen() {
 
           <Card>
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-              Montos por link de pago
+              Cobrado por link de pago
               <InfoTip className="ml-1">
-                El monto configurado en cada uno de tus links de pago. No es lo cobrado y no depende
-                del período elegido.
+                Lo que te pagaron con cada uno de tus links en el período elegido (pagos con
+                tarjeta, menos lo reembolsado).
               </InfoTip>
             </h4>
             <ResponsiveContainer width="100%" height={240}>
@@ -276,8 +292,7 @@ export function LinksPagoResumen() {
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">
               Volumen por link (millones {monedaActiva()})
               <InfoTip align="right" className="ml-1">
-                El mismo monto configurado de cada link, en millones. No es lo cobrado y no depende
-                del período elegido.
+                Lo mismo que «Cobrado por link de pago», en millones.
               </InfoTip>
             </h4>
             <ResponsiveContainer width="100%" height={240}>

@@ -2,48 +2,65 @@ import { requireSupabase } from "@/lib/supabase";
 import type { Tables } from "@/lib/database.types";
 import { emailSesion } from "./cuenta";
 import { DataAccessError } from "./errors";
-import { conSaldos, type Saldos } from "./subcuentas";
 
 // ============================================================================
 // Dashboard (app.index)
 // ============================================================================
 
-export type MovimientoDashboard = Pick<
-  Tables<"transactions">,
-  "tipo" | "monto_operacion" | "fecha"
->;
+export type Moneda = "MXN" | "USD";
 
-export type Dashboard = {
-  cliente: Pick<Tables<"clientes">, "legajo" | "cbu">;
-  movimientos: MovimientoDashboard[];
-  saldos: (Saldos & { moneda: string | null })[];
+/** Totales de una moneda del período (función `portal_resumen_periodo`). */
+export type ResumenMoneda = {
+  saldo: number;
+  disponible: number;
+  retenido: number;
+  cuentas: number;
+  entradas: number;
+  ops_entradas: number;
+  salidas: number;
+  ops_salidas: number;
+  comisiones: number;
+  iva: number;
+  /** Por categoría (deposito, envio_spei, conversion…): monto con signo y operaciones. */
+  por_categoria: Record<string, { monto: number; ops: number }>;
+  /** Apartado ahora por operaciones en curso (no depende del período). */
+  pendiente: number;
+  ops_pendientes: number;
+  rechazado: number;
+  ops_rechazadas: number;
 };
 
-/** Movimientos del período y saldos de las subcuentas del cliente de la sesión. */
+export type ResumenPeriodo = {
+  zona_horaria: string;
+  cuentas: number;
+  monedas: Partial<Record<Moneda, ResumenMoneda>>;
+  /** Cobros con tarjeta (links y POS), por entorno: los de prueba no se suman con los reales. */
+  cobros_tarjeta: { entorno: string; moneda: string; monto: number; ops: number }[];
+  serie: { dia: string; moneda: string; depositos: number; entradas: number; salidas: number }[];
+  serie_tarjeta: { dia: string; entorno: string; moneda: string; monto: number }[];
+};
+
+export type Dashboard = {
+  /** CLABE del cliente (columna `cbu`). */
+  clabe: string | null;
+  resumen: ResumenPeriodo;
+};
+
+/**
+ * Totales del período del cliente de la sesión, calculados por la base: por moneda, solo lo
+ * contabilizado y sin tope de filas.
+ */
 export async function getDashboard(desde: string, hasta: string): Promise<Dashboard | null> {
   const s = requireSupabase();
   const mail = await emailSesion();
   if (!mail) return null;
-  const { data: cli, error: errCli } = await s
-    .from("clientes")
-    .select("legajo, cbu")
-    .eq("correo", mail)
-    .maybeSingle();
-  if (errCli) throw new DataAccessError(errCli);
-  if (!cli) return null;
-  const { data: m, error: errMov } = await s
-    .from("transactions")
-    .select("tipo, monto_operacion, fecha")
-    .eq("legajo", cli.legajo)
-    .gte("fecha", desde)
-    .lte("fecha", hasta);
-  if (errMov) throw new DataAccessError(errMov);
-  const { data: subs, error: errSubs } = await s
-    .from("subaccounts")
-    .select("moneda, subaccount_balances(saldo_disponible, saldo_retenido, saldo_conciliado)")
-    .eq("cliente_legajo", cli.legajo);
-  if (errSubs) throw new DataAccessError(errSubs);
-  return { cliente: cli, movimientos: m ?? [], saldos: (subs ?? []).map(conSaldos) };
+  const [cli, resumen] = await Promise.all([
+    s.from("clientes").select("cbu").eq("correo", mail).maybeSingle(),
+    s.rpc("portal_resumen_periodo", { p_desde: desde, p_hasta: hasta }),
+  ]);
+  if (cli.error) throw new DataAccessError(cli.error);
+  if (resumen.error) throw new DataAccessError(resumen.error);
+  return { clabe: cli.data?.cbu ?? null, resumen: resumen.data as unknown as ResumenPeriodo };
 }
 
 // ============================================================================
@@ -109,6 +126,8 @@ export type Historial = {
   subcuentas: SubcuentaHistorial[];
   lineas: LineaMovimientoRow[];
   total: number;
+  /** Totales de todo lo filtrado (no solo la página). */
+  totales: TotalesBaseHistorial | null;
 };
 
 const like = (v: string) => `%${v.trim().replace(/[%_,()]/g, "\\$&")}%`;
@@ -116,7 +135,7 @@ const like = (v: string) => `%${v.trim().replace(/[%_,()]/g, "\\$&")}%`;
 type Supabase = ReturnType<typeof requireSupabase>;
 
 const COLUMNAS_LINEA =
-  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre, subaccount_id";
+  "line_id, transaction_id, id_txn, legajo, tipo_operacion, tipo_linea, monto, fecha, line_no, cvu, email, nombre, nombre_destino, cuit, estado_codigo, estado_nombre, subaccount_id, moneda";
 
 /** Cliente de la sesión y sus subcuentas (ordenadas por nombre). */
 async function clienteYSubcuentas(
@@ -148,14 +167,61 @@ async function clienteYSubcuentas(
 
 /** Agrega a cada línea la moneda de su subcuenta. */
 function conMoneda(
-  filas: Omit<LineaMovimientoRow, "moneda">[],
+  filas: (Omit<LineaMovimientoRow, "moneda"> & { moneda: string | null })[],
   subcuentas: SubcuentaHistorial[],
 ): LineaMovimientoRow[] {
+  // La moneda viene del asiento (vista); la de la subcuenta queda de respaldo.
   const usd = new Set(subcuentas.filter((s) => s.moneda === "USD").map((s) => s.id));
   return filas.map((f) => ({
     ...f,
-    moneda: f.subaccount_id && usd.has(f.subaccount_id) ? "USD" : "MXN",
+    moneda:
+      f.moneda === "USD" || f.moneda === "MXN"
+        ? f.moneda
+        : f.subaccount_id && usd.has(f.subaccount_id)
+          ? "USD"
+          : "MXN",
   }));
+}
+
+/** Totales del historial (función `portal_totales_historial`) sobre TODO lo filtrado. */
+export type TotalesBaseHistorial = {
+  lineas: number;
+  monedas: Partial<
+    Record<
+      Moneda,
+      {
+        ingresos: number;
+        egresos: number;
+        neto: number;
+        lineas_ingreso: number;
+        lineas_egreso: number;
+      }
+    >
+  >;
+  tx_pendientes: number;
+  tx_rechazadas: number;
+};
+
+async function totalesLineas(
+  sb: Supabase,
+  subcuentas: SubcuentaHistorial[],
+  f: Omit<FiltrosHistorial, "page" | "pageSize">,
+): Promise<TotalesBaseHistorial> {
+  const sub =
+    f.subcuenta !== "Todas" ? subcuentas.find((s) => s.nombre === f.subcuenta) : undefined;
+  const { data, error } = await sb.rpc("portal_totales_historial", {
+    p_desde: f.desde ? new Date(f.desde + "T00:00:00").toISOString() : undefined,
+    p_hasta: f.hasta ? new Date(f.hasta + "T23:59:59").toISOString() : undefined,
+    p_tipos: f.tipos ?? undefined,
+    p_tipo_linea: f.tipoLinea ?? undefined,
+    p_subaccount_id: sub?.id,
+    p_clabe: f.clabe.trim() || undefined,
+    p_rfc: f.rfc.trim() || undefined,
+    p_txid: f.txid.trim() || undefined,
+    p_titular: f.titular.trim() || undefined,
+  });
+  if (error) throw new DataAccessError(error);
+  return data as unknown as TotalesBaseHistorial;
 }
 
 /** Consulta de líneas con todos los filtros aplicados, ordenada, sin rango. */
@@ -203,17 +269,23 @@ export async function getHistorial(f: FiltrosHistorial): Promise<Historial> {
   const sb = requireSupabase();
   const { cliente: cli, subcuentas } = await clienteYSubcuentas(sb);
   const legajo = cli?.legajo;
-  if (!legajo) return { cliente: cli, subcuentas: [], lineas: [], total: 0 };
+  if (!legajo) return { cliente: cli, subcuentas: [], lineas: [], total: 0, totales: null };
 
   const from = (f.page - 1) * f.pageSize;
   const to = from + f.pageSize - 1;
-  const { data, count, error } = await consultaLineas(sb, legajo, subcuentas, f, true).range(
-    from,
-    to,
-  );
+  const [{ data, count, error }, totales] = await Promise.all([
+    consultaLineas(sb, legajo, subcuentas, f, true).range(from, to),
+    totalesLineas(sb, subcuentas, f),
+  ]);
   if (error) throw new DataAccessError(error);
 
-  return { cliente: cli, subcuentas, lineas: conMoneda(data ?? [], subcuentas), total: count ?? 0 };
+  return {
+    cliente: cli,
+    subcuentas,
+    lineas: conMoneda(data ?? [], subcuentas),
+    total: count ?? 0,
+    totales,
+  };
 }
 
 /** Tope de filas de una exportación. */

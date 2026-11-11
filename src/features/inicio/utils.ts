@@ -1,5 +1,4 @@
-import type { MovimientoDashboard } from "@/lib/api/movimientos";
-import { toDate } from "@/shared/format";
+import type { ResumenPeriodo } from "@/lib/api/movimientos";
 
 export type PeriodKey = "today" | "15d" | "30d" | "60d" | "90d" | "day" | "range";
 
@@ -19,14 +18,22 @@ export type FilaDia = {
 };
 
 export type KpisDashboard = {
+  /** Saldo en pesos (disponible + retenido). */
   saldo: number;
+  /** Saldo de la subcuenta en dólares, aparte (no se suma con los pesos). */
+  saldoUsd: number;
+  hayUsd: boolean;
   depositos: number;
   opsDep: number;
-  retiros: number;
-  opsRet: number;
+  /** Todas las salidas en pesos: envíos SPEI, conversiones, retiros y ajustes (sin comisiones). */
+  salidas: number;
+  opsSal: number;
+  comisiones: number;
   cuentas: number;
   cobrosLink: number;
   opsLink: number;
+  /** true si los cobros con tarjeta son de prueba (todavía no hay cobros reales). */
+  tarjetaPruebas: boolean;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -94,41 +101,58 @@ export function etiquetaPeriodo(period: PeriodKey, day: string, desde: string, h
   return QUICK.find((p) => p.k === period)?.l ?? "30 días";
 }
 
-const monto = (m: MovimientoDashboard) => Math.abs(Number(m.monto_operacion ?? 0));
+/**
+ * Entorno de los cobros con tarjeta a mostrar: los reales si hay alguno; si no, los de prueba.
+ * Nunca se suman los dos.
+ */
+export function entornoTarjeta(r: ResumenPeriodo): string {
+  const reales = [...r.cobros_tarjeta, ...r.serie_tarjeta].some((c) => c.entorno !== "sandbox");
+  return reales ? "produccion" : "sandbox";
+}
 
-/** Totales por día (depósitos y link de pago) para el gráfico de barras. */
-export function agruparPorDia(movs: MovimientoDashboard[], start: Date, end: Date): FilaDia[] {
+const enEntorno = (entorno: string, elegido: string) =>
+  elegido === "sandbox" ? entorno === "sandbox" : entorno !== "sandbox";
+
+/** Totales por día (depósitos y cobros con tarjeta, en pesos) para el gráfico de barras. */
+export function serieDiaria(r: ResumenPeriodo | undefined, start: Date, end: Date): FilaDia[] {
   const byDate = new Map<string, FilaDia>();
   eachDay(start, end).forEach((d) => {
     byDate.set(toKey(d), { date: fmtKey(d), depositos: 0, linkPago: 0, total: 0 });
   });
-  movs.forEach((m) => {
-    const fecha = toDate(m.fecha);
-    const row = fecha ? byDate.get(toKey(fecha)) : undefined;
-    if (!row) return;
-    const amt = monto(m);
-    if (m.tipo === "deposito") row.depositos += amt;
-    else if (m.tipo === "tarjeta") row.linkPago += amt;
-    row.total = row.depositos + row.linkPago;
-  });
+  if (!r) return Array.from(byDate.values());
+  const entorno = entornoTarjeta(r);
+  for (const d of r.serie) {
+    const row = d.moneda === "MXN" ? byDate.get(d.dia) : undefined;
+    if (row) row.depositos += Number(d.depositos);
+  }
+  for (const t of r.serie_tarjeta) {
+    const row = t.moneda === "MXN" && enEntorno(t.entorno, entorno) ? byDate.get(t.dia) : undefined;
+    if (row) row.linkPago += Number(t.monto);
+  }
+  byDate.forEach((row) => (row.total = row.depositos + row.linkPago));
   return Array.from(byDate.values());
 }
 
-export function calcularKpis(
-  movs: MovimientoDashboard[],
-  saldo: number,
-  cuentas: number,
-): KpisDashboard {
-  const sum = (t: string) => movs.filter((x) => x.tipo === t).reduce((a, x) => a + monto(x), 0);
-  const count = (t: string) => movs.filter((x) => x.tipo === t).length;
+/** KPIs del Inicio a partir del resumen del período (en pesos; los dólares, aparte). */
+export function kpisDesdeResumen(r: ResumenPeriodo | undefined): KpisDashboard {
+  const mxn = r?.monedas.MXN;
+  const usd = r?.monedas.USD;
+  const entorno = r ? entornoTarjeta(r) : "produccion";
+  const tarjeta = (r?.cobros_tarjeta ?? []).filter(
+    (c) => c.moneda === "MXN" && enEntorno(c.entorno, entorno),
+  );
   return {
-    saldo,
-    depositos: sum("deposito"),
-    opsDep: count("deposito"),
-    retiros: sum("retiro"),
-    opsRet: count("retiro"),
-    cuentas,
-    cobrosLink: sum("tarjeta"),
-    opsLink: count("tarjeta"),
+    saldo: Number(mxn?.saldo ?? 0),
+    saldoUsd: Number(usd?.saldo ?? 0),
+    hayUsd: !!usd && Number(usd.cuentas) > 0,
+    depositos: Number(mxn?.por_categoria.deposito?.monto ?? 0),
+    opsDep: Number(mxn?.por_categoria.deposito?.ops ?? 0),
+    salidas: Number(mxn?.salidas ?? 0),
+    opsSal: Number(mxn?.ops_salidas ?? 0),
+    comisiones: Number(mxn?.comisiones ?? 0) + Number(mxn?.iva ?? 0),
+    cuentas: Number(r?.cuentas ?? 0),
+    cobrosLink: tarjeta.reduce((a, c) => a + Number(c.monto), 0),
+    opsLink: tarjeta.reduce((a, c) => a + Number(c.ops), 0),
+    tarjetaPruebas: entorno === "sandbox" && tarjeta.length > 0,
   };
 }
