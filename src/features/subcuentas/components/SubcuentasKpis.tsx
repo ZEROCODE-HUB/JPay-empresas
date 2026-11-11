@@ -4,6 +4,7 @@ import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import type { Sub } from "../types";
 import { pctSaldo, totalesSubs } from "../utils";
+import { brand } from "@/brand/brand";
 
 function Kpi({
   label,
@@ -46,7 +47,7 @@ export function SubcuentasKpis({ subs }: { subs: Sub[] }) {
         label="Saldo total"
         value={formatMoney(total)}
         sub={hayUsd ? `+ ${usd(totalUsd)} en dólares` : `${subs.length} subcuentas`}
-        info="Disponible más retenido de tus subcuentas en pesos, según los movimientos registrados en JPay. Es el saldo de hoy. Tu subcuenta en dólares se muestra aparte, en dólares: no se suman pesos con dólares."
+        info={`Disponible más retenido de tus subcuentas en pesos, según los movimientos registrados en ${brand.name}. Es el saldo de hoy. Tu subcuenta en dólares se muestra aparte, en dólares: no se suman pesos con dólares.`}
       />
       <Kpi
         label="Disponible"

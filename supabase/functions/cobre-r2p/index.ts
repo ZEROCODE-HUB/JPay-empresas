@@ -17,6 +17,7 @@ import { CobreError } from "../_shared/cobre.ts";
 import { conexionDeCliente, type ConexionCobre } from "../_shared/cobre-servidor.ts";
 import { aplicarEstadoCobroR2p, emitirCobroR2p, nuevoExternalR2p } from "../_shared/cobre-r2p.ts";
 import { handler, HttpError, json, readJson, serviceClient, userClient } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 type Obj = Record<string, unknown>;
 const MIN_MINUTOS = 5;
@@ -132,7 +133,8 @@ async function crear(
   const pagador = pagadorValido(b.pagador);
   const conexion = await conexionDeCliente(sb, legajo);
   const d = await destino(sb, conexion, legajo, b.subcuenta_id);
-  if (!d) throw new HttpError(409, "La cuenta JPay del comercio todavía no está habilitada");
+  if (!d)
+    throw new HttpError(409, `La cuenta ${brand.name} del comercio todavía no está habilitada`);
   const externo = nuevoExternalR2p();
   const { data: fila, error } = await sb
     .from("cobre_cobros_r2p")
@@ -148,7 +150,7 @@ async function crear(
       concepto:
         String(b.concepto ?? "")
           .trim()
-          .slice(0, 120) || "Cobro JPay",
+          .slice(0, 120) || `Cobro ${brand.name}`,
       pagador_nombre: pagador.nombre,
       pagador_id_tipo: pagador.idTipo,
       pagador_id_numero: pagador.idNumero,

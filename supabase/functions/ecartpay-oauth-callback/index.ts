@@ -15,6 +15,7 @@ import {
   redirectUriOAuth,
 } from "../_shared/ecartpay.ts";
 import { serviceClient } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -35,7 +36,10 @@ Deno.serve(async (req) => {
     .select("comercio_id, entorno, volver_a")
     .maybeSingle();
   if (!estado) {
-    return pagina("El enlace de conexión venció o ya se usó. Vuelve a intentarlo desde JPay.", 400);
+    return pagina(
+      `El enlace de conexión venció o ya se usó. Vuelve a intentarlo desde ${brand.name}.`,
+      400,
+    );
   }
   const volver = (r: Record<string, string>) =>
     Response.redirect(conResultado(estado.volver_a, r), 302);
@@ -111,6 +115,6 @@ Deno.serve(async (req) => {
 
 /** Página mínima para los errores en los que no se sabe a dónde volver. */
 function pagina(mensaje: string, status: number): Response {
-  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cobros con tarjeta - JPay</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5"><h1 style="font-size:1.25rem">No se pudo conectar la cuenta</h1><p>${mensaje}</p></body></html>`;
+  const html = `<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cobros con tarjeta - ${brand.name}</title><body style="font-family:system-ui,sans-serif;max-width:32rem;margin:4rem auto;padding:0 1rem;line-height:1.5"><h1 style="font-size:1.25rem">No se pudo conectar la cuenta</h1><p>${mensaje}</p></body></html>`;
   return new Response(html, { status, headers: { "content-type": "text/html; charset=utf-8" } });
 }

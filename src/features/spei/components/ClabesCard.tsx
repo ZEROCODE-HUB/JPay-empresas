@@ -5,6 +5,7 @@ import { Badge, Card } from "@/components/portal-shell";
 import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
 import type { CuentaCobre, SubcuentaSpei } from "@/lib/api/cobre";
 import { formatMoney } from "@/shared/format";
+import { brand } from "@/brand/brand";
 
 const ALTA: Record<string, { label: string; tone: "success" | "warn" | "danger" | "neutral" }> = {
   enviando: { label: "Enviando el alta", tone: "warn" },
@@ -56,12 +57,12 @@ export function ClabesCard({
         <div className="mt-3 text-sm">
           {!cuenta.alta ? (
             <p className="text-black-400">
-              Todavía no tienes tu cuenta JPay. Completa los datos de la empresa, sus representantes
-              y beneficiarios en{" "}
+              Todavía no tienes tu cuenta {brand.name}. Completa los datos de la empresa, sus
+              representantes y beneficiarios en{" "}
               <Link to="/app/cuenta" className="font-semibold text-secondary hover:underline">
                 Mi cuenta
               </Link>{" "}
-              y JPay solicita la apertura de tu cuenta.
+              y {brand.name} solicita la apertura de tu cuenta.
             </p>
           ) : cuenta.alta.estado === "rejected" ||
             cuenta.alta.estado === "failed" ||
@@ -71,7 +72,7 @@ export function ClabesCard({
               <Link to="/app/cuenta" className="font-semibold hover:underline">
                 Mi cuenta
               </Link>{" "}
-              y JPay envía una nueva.
+              y {brand.name} envía una nueva.
             </p>
           ) : (
             <p className="text-black-400">

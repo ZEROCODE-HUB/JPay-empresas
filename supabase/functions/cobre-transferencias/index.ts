@@ -44,6 +44,7 @@ import {
   serviceClient,
   userClient,
 } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 type Body = Record<string, unknown> & { accion?: unknown };
 type Obj = Record<string, unknown>;
@@ -318,9 +319,9 @@ async function balanceDelComercio(ctx: Ctx, legajo: string): Promise<string> {
     .eq("modo", ctx.conexion.modo)
     .eq("estado", "activa")
     .maybeSingle();
-  if (!data) throw new HttpError(409, "Tu cuenta JPay todavía no está habilitada");
+  if (!data) throw new HttpError(409, `Tu cuenta ${brand.name} todavía no está habilitada`);
   if (data.conectividad && data.conectividad !== "connected") {
-    throw new HttpError(409, "Tu cuenta JPay todavía no está activa");
+    throw new HttpError(409, `Tu cuenta ${brand.name} todavía no está activa`);
   }
   return data.cuenta_externa_id;
 }
@@ -414,7 +415,7 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
   }
   if (usd) {
     if (ctx.conexion.instanciaId)
-      throw new HttpError(409, "Los envíos en dólares son por la cuenta de JPay");
+      throw new HttpError(409, `Los envíos en dólares son por la cuenta de ${brand.name}`);
     if (monto < 1) throw new HttpError(400, "El mínimo por envío en dólares es 1.00 USD");
     if (cp.verificacion !== "verified")
       throw new HttpError(409, "Todavía estamos verificando a este beneficiario");

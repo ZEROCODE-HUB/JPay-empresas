@@ -22,6 +22,7 @@ import {
 } from "../_shared/cobre-servidor.ts";
 import { asignarClabeReceptora } from "../_shared/cobre-subclientes.ts";
 import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 type Obj = Record<string, unknown>;
 const texto = (v: unknown, max = 200) =>
@@ -142,7 +143,7 @@ async function vincularBalance(sb: SupabaseClient, id: string, cuentaExterna: st
         provider_id: "pr_mex_cobre3",
         action: "create",
         tags: [`jpay-${inst.clienteLegajo}`],
-        alias: `JPAY ${inst.clienteLegajo}`.slice(0, 32),
+        alias: `${brand.name.toUpperCase()} ${inst.clienteLegajo}`.slice(0, 32),
       });
   if (cuenta.provider_id && cuenta.provider_id !== "pr_mex_cobre3") {
     throw new HttpError(409, "La cuenta no es un Cobre Balance México");
@@ -172,7 +173,7 @@ async function vincularBalance(sb: SupabaseClient, id: string, cuentaExterna: st
       modo: conexion.modo,
       cuenta_externa_id: cuenta.id,
       clabe,
-      alias: `JPAY ${inst.clienteLegajo}`.slice(0, 32),
+      alias: `${brand.name.toUpperCase()} ${inst.clienteLegajo}`.slice(0, 32),
       instancia_id: inst.id,
       subcuenta_id: receptora?.id ?? null,
       conectividad: cuenta.connectivity?.status ?? null,
@@ -214,7 +215,7 @@ async function suscribir(sb: SupabaseClient, instanciaId: string | null) {
   if (!sub) {
     sub = await conexion.cliente.post<Obj>("/subscriptions", {
       url,
-      description: inst ? `JPay ${inst.clienteLegajo}` : "JPay",
+      description: inst ? `${brand.name} ${inst.clienteLegajo}` : `${brand.name}`,
       events: EVENTOS_COBRE,
       event_signature_key: clave,
     });

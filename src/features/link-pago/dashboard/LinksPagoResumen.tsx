@@ -19,6 +19,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import { applyPlugin } from "jspdf-autotable";
 import { useClienteActual, useDashboardLinksPago } from "@/hooks/useLinksPago";
+import { brand } from "@/brand/brand";
 
 const presets = [
   { label: "Hoy", days: 0 },
@@ -90,7 +91,7 @@ export function LinksPagoResumen() {
     {
       label: "Total aprobado",
       value: formatMoney(metrics.totalApproved, { decimals: 0 }),
-      info: "Suma de los cobros con tarjeta de tus links de pago aprobados en el período elegido, según tu cuenta JPay.",
+      info: `Suma de los cobros con tarjeta de tus links de pago aprobados en el período elegido, según tu cuenta ${brand.name}.`,
     },
     {
       label: "Transacciones totales",

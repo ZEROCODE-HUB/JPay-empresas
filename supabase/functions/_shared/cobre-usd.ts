@@ -12,6 +12,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { aCentavos, CobreError, deCentavos, resumirTransferencia } from "./cobre.ts";
 import type { ConexionCobre } from "./cobre-servidor.ts";
 import { aplicarEstadoTransferencia } from "./cobre-transferencias.ts";
+import { brand } from "./brand.ts";
 
 type Obj = Record<string, unknown>;
 const s = (v: unknown) => (typeof v === "string" && v ? v : null);
@@ -40,7 +41,7 @@ export async function balancesMatriz(
   if (!global || !usa) {
     throw new CobreError(
       409,
-      "Faltan los Balances Global y USA de JPay (admin > País y proveedores)",
+      `Faltan los Balances Global y USA de ${brand.name} (admin > País y proveedores)`,
     );
   }
   return { global, usa };
@@ -82,7 +83,10 @@ export async function balanceComercio(
     .eq("estado", "activa")
     .maybeSingle();
   if (!data)
-    throw new CobreError(409, "El comercio todavía no tiene su cuenta JPay (apertura pendiente)");
+    throw new CobreError(
+      409,
+      `El comercio todavía no tiene su cuenta ${brand.name} (apertura pendiente)`,
+    );
   return { cuentaExterna: data.cuenta_externa_id, subcuentaId: data.subcuenta_id };
 }
 
@@ -97,7 +101,7 @@ export async function cotizarCruce(
   o: { legajo: string; subcuentaMxnId: string; montoMxn: number },
 ): Promise<Obj> {
   if (conexion.instanciaId)
-    throw new CobreError(409, "La conversión a dólares es de la cuenta de JPay");
+    throw new CobreError(409, `La conversión a dólares es de la cuenta de ${brand.name}`);
   if (!(o.montoMxn > 0)) throw new CobreError(400, "Monto inválido");
   await balanceComercio(sb, conexion.modo, o.legajo);
   await balancesMatriz(sb, conexion.modo);

@@ -3,6 +3,7 @@ import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import type { FilaDia } from "../utils";
+import { brand } from "@/brand/brand";
 
 const SERIES: Record<string, string> = {
   depositos: "Depósitos",
@@ -31,8 +32,8 @@ export function MovimientosDiariosChart({
             <span className="truncate min-w-0">Movimientos diarios</span>
             <InfoTip>
               Por día del período elegido: depósitos y cobros con tarjeta de links de pago
-              registrados en tu cuenta JPay, en cualquier estado. «Total del día» es la suma de
-              ambos; los retiros y las transferencias enviadas no aparecen aquí.
+              registrados en tu cuenta {brand.name}, en cualquier estado. «Total del día» es la suma
+              de ambos; los retiros y las transferencias enviadas no aparecen aquí.
             </InfoTip>
           </h3>
           <p className="text-xs text-black-400 truncate">{periodLabel}</p>

@@ -1,5 +1,6 @@
 import { formatMoney } from "@/shared/format";
 import { KpiServicio } from "./comunes";
+import { brand } from "@/brand/brand";
 
 export function ServiciosKpis({
   totalAdheridos,
@@ -19,7 +20,7 @@ export function ServiciosKpis({
       <KpiServicio
         label="Servicios adheridos"
         value={totalAdheridos}
-        info="Servicios que tienes adheridos para pagar desde JPay."
+        info={`Servicios que tienes adheridos para pagar desde ${brand.name}.`}
       />
       <KpiServicio
         label="A pagar este mes"

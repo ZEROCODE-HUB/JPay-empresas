@@ -7,6 +7,7 @@ import { nuevoTxid, type DestinatarioSpei, type SubcuentaSpei } from "@/lib/api/
 import { formatMoney, parseMonto } from "@/shared/format";
 import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";
 import { VERIFICACION } from "../estados";
+import { brand } from "@/brand/brand";
 
 const select = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
@@ -122,7 +123,7 @@ export function TransferirSpeiCard({
       <h2 className="font-semibold">Transferir por SPEI</h2>
       {!habilitada || conClabe.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder transferir cuando tu cuenta JPay esté activa.
+          Vas a poder transferir cuando tu cuenta {brand.name} esté activa.
         </p>
       ) : (
         <div className="mt-4 grid gap-4 md:grid-cols-2">

@@ -13,6 +13,7 @@ import {
   type ModoCobre,
 } from "./cobre.ts";
 import type { ConexionCobre } from "./cobre-servidor.ts";
+import { brand } from "./brand.ts";
 
 type Obj = Record<string, unknown>;
 
@@ -116,7 +117,7 @@ export async function emitirCobroR2p(
         contraparte: cp,
         cuentaDestino: String(fila.cuenta_destino_externa_id),
         monto: Number(fila.monto),
-        concepto: String(fila.concepto ?? "Cobro JPay"),
+        concepto: String(fila.concepto ?? `Cobro ${brand.name}`),
         validoHasta: new Date(String(fila.valido_hasta)),
         externalId: fila.external_id,
       }),
@@ -240,7 +241,7 @@ export async function acreditarCobroR2p(
   });
   if (error) throw new Error(error.message);
   const r = data as { estado?: string; transaction_id?: string } | null;
-  if (!fila) return `sin cobro en JPay (depósito ${r?.estado ?? "?"})`;
+  if (!fila) return `sin cobro en ${brand.name} (depósito ${r?.estado ?? "?"})`;
   if (fila.estado !== "pagado") {
     const ahora = new Date().toISOString();
     await sb

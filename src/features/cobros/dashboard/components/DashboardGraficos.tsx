@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/cobros-masivos";
 import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
+import { brand } from "@/brand/brand";
 
 const MEDIO_COLORS: Record<string, string> = {
   TRANSFERENCIA: "var(--brand-secondary-500)",
@@ -74,7 +75,9 @@ export function DashboardGraficos({
   return (
     <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6 mb-6">
       <Card>
-        <Titulo info="Reparto de lo cobrado en el período según el medio con que pagaron tus clientes. JPay todavía no registra el medio de pago de los cobros masivos, así que por ahora el gráfico aparece vacío.">
+        <Titulo
+          info={`Reparto de lo cobrado en el período según el medio con que pagaron tus clientes. ${brand.name} todavía no registra el medio de pago de los cobros masivos, así que por ahora el gráfico aparece vacío.`}
+        >
           Cobros por medio de pago
         </Titulo>
         <ResponsiveContainer width="100%" height={240}>
@@ -100,7 +103,9 @@ export function DashboardGraficos({
       </Card>
 
       <Card>
-        <Titulo info="Cobros del período según en qué vencimiento se pagaron (1.º, 2.º o 3.º). JPay todavía no registra este dato, así que por ahora todo aparece en cero.">
+        <Titulo
+          info={`Cobros del período según en qué vencimiento se pagaron (1.º, 2.º o 3.º). ${brand.name} todavía no registra este dato, así que por ahora todo aparece en cero.`}
+        >
           Cobros por vencimiento
         </Titulo>
         <ResponsiveContainer width="100%" height={240}>
@@ -163,7 +168,9 @@ export function DashboardGraficos({
 export function EvolucionPagos({ evolucion }: { evolucion: EvolucionData[] }) {
   return (
     <Card className="mb-6">
-      <Titulo info="Lo cobrado día a día en el período. JPay todavía no registra la fecha de cada pago de los cobros masivos, así que por ahora el gráfico aparece vacío.">
+      <Titulo
+        info={`Lo cobrado día a día en el período. ${brand.name} todavía no registra la fecha de cada pago de los cobros masivos, así que por ahora el gráfico aparece vacío.`}
+      >
         Evolucion de pagos
       </Titulo>
       <ResponsiveContainer width="100%" height={240}>

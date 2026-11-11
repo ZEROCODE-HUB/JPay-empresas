@@ -26,6 +26,7 @@ import {
   serviceClient,
   userClient,
 } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 type Body = {
   accion?: unknown;
@@ -115,14 +116,14 @@ async function balancesMatriz(ctx: Ctx) {
             action: "create",
             metadata: { currency: "usd" },
             tags: ["jpay"],
-            alias: "JPAY Global USD",
+            alias: `${brand.name.toUpperCase()} Global USD`,
           }
         : {
             provider_id: "pr_usa_cobre",
             action: "create",
             metadata: {},
             tags: ["jpay"],
-            alias: "JPAY USA",
+            alias: `${brand.name.toUpperCase()} USA`,
           },
     );
     const { data, error } = await sb
@@ -132,7 +133,10 @@ async function balancesMatriz(ctx: Ctx) {
         modo: conexion.modo,
         cuenta_externa_id: c.id,
         clabe: null,
-        alias: tipo === "global" ? "JPAY Global USD" : "JPAY USA",
+        alias:
+          tipo === "global"
+            ? `${brand.name.toUpperCase()} Global USD`
+            : `${brand.name.toUpperCase()} USA`,
         proveedor_id: tipo === "global" ? "pr_global_cobre" : "pr_usa_cobre",
         moneda: "USD",
         conectividad: c.connectivity?.status ?? null,
@@ -200,7 +204,8 @@ async function cambiarReceptora(ctx: Ctx, subcuentaId: string, legajoSesion: str
     .eq("modo", ctx.conexion.modo)
     .eq("estado", "activa")
     .maybeSingle();
-  if (!cuenta?.clabe) throw new HttpError(409, "El comercio todavía no tiene su cuenta JPay");
+  if (!cuenta?.clabe)
+    throw new HttpError(409, `El comercio todavía no tiene su cuenta ${brand.name}`);
   await asignarClabeReceptora(
     ctx.sb,
     ctx.conexion.modo,
@@ -232,7 +237,7 @@ async function devolverDeposito(ctx: Ctx, depositoId: string) {
   }
   const mm = await ctx.conexion.cliente.post<{ id: string }>("/money_movements_return", {
     transaction_id: d.transaccion_externa_id,
-    metadata: { description: "Devolucion: deposito sin titular en JPay" },
+    metadata: { description: `Devolucion: deposito sin titular en ${brand.name}` },
   });
   const { data: fila, error: e2 } = await ctx.sb
     .from("cobre_depositos")

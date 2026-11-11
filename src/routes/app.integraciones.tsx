@@ -6,6 +6,7 @@ import { Card, PageHeader } from "@/components/portal-shell";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { useComerciosCliente } from "@/hooks/useComercios";
 import { EmptyState } from "@/shared/ui/empty-state";
+import { brand } from "@/brand/brand";
 
 type Busqueda = { ecartpay?: "conectado" | "error"; motivo?: string };
 
@@ -47,7 +48,7 @@ function Page() {
           <EmptyState
             icon={<Plug size={48} strokeWidth={1.5} />}
             title="Todavía no tienes un comercio habilitado"
-            description="Cuando el equipo de JPay lo dé de alta, podrás conectar tus medios de cobro desde aquí."
+            description={`Cuando el equipo de ${brand.name} lo dé de alta, podrás conectar tus medios de cobro desde aquí.`}
           />
         </Card>
       ) : (

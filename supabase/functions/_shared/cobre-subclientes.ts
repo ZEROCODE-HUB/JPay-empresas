@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { estadoSubcliente, type DatosSubcliente, type PersonaKyb } from "./cobre.ts";
 import type { ConexionCobre } from "./cobre-servidor.ts";
+import { brand } from "./brand.ts";
 
 type Obj = Record<string, unknown>;
 
@@ -182,7 +183,7 @@ export async function crearBalanceComercio(
   // la que recibe la CLABE (y con eso cumple el requisito para activarlo).
   const receptora = existentes ?? { id: await subcuentaReceptora(sb, fila.cliente_legajo) };
   const nombre = (cli?.nombre_fantasia || cli?.nombre || fila.cliente_legajo).slice(0, 20);
-  const alias = `JPAY ${nombre}`.slice(0, 32);
+  const alias = `${brand.name.toUpperCase()} ${nombre}`.slice(0, 32);
   const etiqueta = `jpay-${fila.cliente_legajo}`;
   type CuentaCobre = {
     id: string;

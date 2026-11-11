@@ -4,6 +4,7 @@ import { Card } from "@/components/portal-shell";
 import { formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import type { KpisDashboard } from "../utils";
+import { brand } from "@/brand/brand";
 
 export function Kpi({
   label,
@@ -59,7 +60,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           label="Saldo total de la cuenta"
           value={formatMoney(kpis.saldo)}
           sub={cuentaLabel || "Sin CLABE asignada"}
-          info="Suma del saldo de todas tus subcuentas en JPay: lo disponible más lo retenido por operaciones en curso. Es el saldo de hoy; no depende del período elegido."
+          info={`Suma del saldo de todas tus subcuentas en ${brand.name}: lo disponible más lo retenido por operaciones en curso. Es el saldo de hoy; no depende del período elegido.`}
           icon={<Wallet size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />
@@ -67,7 +68,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           label="Depósitos del período"
           value={formatMoney(kpis.depositos)}
           sub={`${kpis.opsDep} operaciones`}
-          info="Suma de los depósitos registrados en tu cuenta JPay en el período elegido, en cualquier estado."
+          info={`Suma de los depósitos registrados en tu cuenta ${brand.name} en el período elegido, en cualquier estado.`}
           icon={<ArrowDownLeft size={18} />}
           iconClass="bg-success-bg text-success"
         />
@@ -75,7 +76,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           label="Retiros del período"
           value={formatMoney(kpis.retiros)}
           sub={`${kpis.opsRet} operaciones`}
-          info="Suma de los retiros registrados en tu cuenta JPay en el período elegido, en cualquier estado. No incluye las transferencias SPEI enviadas: esas las ves en Transferencias SPEI."
+          info={`Suma de los retiros registrados en tu cuenta ${brand.name} en el período elegido, en cualquier estado. No incluye las transferencias SPEI enviadas: esas las ves en Transferencias SPEI.`}
           icon={<ArrowUpRight size={18} />}
           iconClass="bg-error-bg text-error"
         />
@@ -83,7 +84,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           label="Total de cuentas"
           value={kpis.cuentas}
           sub={`1 principal + ${kpis.cuentas - 1} subcuentas`}
-          info="Tu cuenta principal más las subcuentas que creaste en JPay."
+          info={`Tu cuenta principal más las subcuentas que creaste en ${brand.name}.`}
           infoAlign="right"
           icon={<Users size={18} />}
           iconClass="bg-info-bg text-info"
@@ -94,7 +95,7 @@ export function DashboardKpis({ kpis, cuentaLabel }: { kpis: KpisDashboard; cuen
           label="Cobros mediante Link de Pago"
           value={formatMoney(kpis.cobrosLink)}
           sub={`${kpis.opsLink} transacciones`}
-          info="Suma de los cobros con tarjeta de tus links de pago registrados en JPay en el período elegido, en cualquier estado (aprobados, pendientes o rechazados)."
+          info={`Suma de los cobros con tarjeta de tus links de pago registrados en ${brand.name} en el período elegido, en cualquier estado (aprobados, pendientes o rechazados).`}
           icon={<Link2 size={18} />}
           iconClass="bg-secondary-50 text-secondary-500"
         />

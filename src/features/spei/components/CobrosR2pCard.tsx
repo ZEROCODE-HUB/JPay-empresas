@@ -7,6 +7,7 @@ import type { CobroR2p, SubcuentaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney, parseMonto } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import { validarCurp, validarRfc } from "@/shared/validadores";
+import { brand } from "@/brand/brand";
 
 const ESTADO: Record<
   CobroR2p["estado"],
@@ -89,7 +90,7 @@ export function CobrosR2pCard({
         <h2 className="font-semibold">Nuevo cobro por SPEI</h2>
         {!habilitada ? (
           <p className="mt-2 text-sm text-black-400">
-            Vas a poder cobrar cuando tu cuenta JPay esté activa.
+            Vas a poder cobrar cuando tu cuenta {brand.name} esté activa.
           </p>
         ) : (
           <div className="mt-4 grid gap-3 md:grid-cols-2">

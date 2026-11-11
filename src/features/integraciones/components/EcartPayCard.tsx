@@ -6,6 +6,7 @@ import { useConexionEcartPay, useConexionEcartPayMutaciones } from "@/hooks/useI
 import type { EstadoConexion } from "@/lib/api/integraciones";
 import { formatDateTime } from "@/shared/format";
 import { ConfirmDialog } from "@/shared/ui/confirm-dialog";
+import { brand } from "@/brand/brand";
 
 const ESTADO: Record<
   EstadoConexion,
@@ -103,9 +104,9 @@ export function EcartPayCard({ comercioId }: { comercioId: string }) {
         closeOnConfirm
         message={
           <>
-            JPay deja de cobrar en tu cuenta de cobros con tarjeta y borra las claves guardadas.
-            Para quitar también el permiso, revoca el acceso de JPay desde el panel de tu procesador
-            de pagos.
+            {brand.name} deja de cobrar en tu cuenta de cobros con tarjeta y borra las claves
+            guardadas. Para quitar también el permiso, revoca el acceso de {brand.name} desde el
+            panel de tu procesador de pagos.
           </>
         }
         onConfirm={() =>

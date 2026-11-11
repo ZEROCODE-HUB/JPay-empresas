@@ -8,6 +8,7 @@ import type { DestinatarioSpei, LoteSpei, SubcuentaSpei } from "@/lib/api/cobre"
 import { formatDateTime, formatMoney } from "@/shared/format";
 import { VERIFICACION } from "../estados";
 import { archivoATexto, descargarPlantillaLoteSpei, leerLoteSpei, LARGO_CONCEPTO } from "../lote";
+import { brand } from "@/brand/brand";
 
 const ESTADO_LOTE: Record<
   string,
@@ -151,7 +152,7 @@ export function LoteSpeiCard({
       </div>
       {!habilitada || pesos.length === 0 ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder enviar lotes cuando tu cuenta JPay esté activa.
+          Vas a poder enviar lotes cuando tu cuenta {brand.name} esté activa.
         </p>
       ) : (
         <>

@@ -6,6 +6,7 @@ import { BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import { useClienteSesion } from "@/hooks/useCuenta";
 import { getUltimaSolicitud, solicitarContacto } from "@/lib/api/solicitudes";
 import { formatDateTime } from "@/shared/format";
+import { brand } from "@/brand/brand";
 
 const KEY = ["solicitudes", "domiciliacion"] as const;
 const CORREO = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -52,7 +53,7 @@ export function SolicitudDomiciliacion() {
         mensaje: f.mensaje.trim() || undefined,
       }),
     onSuccess: () => {
-      toast.success("¡Listo! Un ejecutivo de JPay te contactará pronto.");
+      toast.success(`¡Listo! Un ejecutivo de ${brand.name} te contactará pronto.`);
       setEditando(false);
       void qc.invalidateQueries({ queryKey: KEY });
     },
@@ -89,7 +90,7 @@ export function SolicitudDomiciliacion() {
             </h2>
             <p className="mt-1 text-sm text-black-500">
               {abierta
-                ? "Un ejecutivo de JPay te contactará pronto para activar la domiciliación en tu cuenta."
+                ? `Un ejecutivo de ${brand.name} te contactará pronto para activar la domiciliación en tu cuenta.`
                 : "Si todavía necesitas ayuda con la domiciliación, puedes enviarnos tus datos otra vez."}
             </p>
             <dl className="mt-3 text-sm grid grid-cols-[auto,1fr] gap-x-3 gap-y-1">
@@ -104,7 +105,7 @@ export function SolicitudDomiciliacion() {
             </dl>
             <button
               type="button"
-              className="mt-4 text-sm font-medium text-primary hover:underline"
+              className="mt-4 text-sm font-medium text-primary-ink hover:underline"
               onClick={() => setEditando(true)}
             >
               {abierta ? "Corregir mis datos" : "Enviar otra solicitud"}
@@ -120,7 +121,8 @@ export function SolicitudDomiciliacion() {
       <h2 className="font-semibold">Llena tus datos y un ejecutivo te contactará</h2>
       <p className="mt-1 text-sm text-black-500">
         Con la domiciliación cobras de forma recurrente o única a la cuenta de tus clientes, con su
-        autorización. Un ejecutivo de JPay te explica cómo funciona y la activa en tu cuenta.
+        autorización. Un ejecutivo de {brand.name} te explica cómo funciona y la activa en tu
+        cuenta.
       </p>
       <form
         className="mt-4 space-y-3"

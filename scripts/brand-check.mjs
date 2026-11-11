@@ -11,6 +11,10 @@
  *      text-highlight-foreground (el contraste depende de la marca).
  *   5. `text-primary` como color de texto: usar text-primary-ink (contraste sobre fondo claro).
  *
+ * No cuentan los comentarios (líneas que empiezan con //, /* o *), los archivos de pruebas
+ * (*.test.*) ni los identificadores en minúsculas (`jpay`, `jpay-lote-…`): la búsqueda de nombres
+ * distingue mayúsculas y revisa el nombre tal cual y en MAYÚSCULAS.
+ *
  * Para excepciones legítimas (claves de storage, prefijos de IDs ya persistidos, etc.) agregar
  * el comentario `brand-check-ignore` en la misma línea, explicando el motivo.
  *
@@ -30,6 +34,8 @@ const SKIP = ["src/brand/", "src/routeTree.gen.ts", "supabase/functions/_shared/
   (p) => p.split("/").join(sep),
 );
 const IGNORE_MARK = "brand-check-ignore";
+const TEST_FILE = /\.test\.(ts|tsx|js|jsx|mjs)$/;
+const COMMENT_LINE = /^\s*(\/\/|\/\*|\*)/;
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -52,8 +58,9 @@ const nameTerms = [
   ...(brand.previousNames ?? []),
 ]
   .filter(Boolean)
+  .flatMap((t) => [t, t.toUpperCase()])
   .map((t) => escape(t));
-const brandText = new RegExp(`(?<![\\w-])(?:${nameTerms.join("|")})(?![\\w])`, "i");
+const brandText = new RegExp(`(?<![\\w-])(?:${[...new Set(nameTerms)].join("|")})(?![\\w])`);
 const brandHosts = new RegExp([...hosts].map(escape).join("|"), "i");
 
 // 2. Colores de marca (cualquier paso de las escalas).
@@ -94,11 +101,13 @@ for (const dir of SCAN_DIRS) {
   for (const file of walk(resolve(root, dir))) {
     const rel = relative(root, file);
     if (SKIP.some((s) => rel === s || rel.startsWith(s))) continue;
+    if (TEST_FILE.test(rel)) continue;
     const lines = readFileSync(file, "utf8").split(/\r?\n/);
     lines.forEach((line, i) => {
-      if (line.includes(IGNORE_MARK)) return;
+      if (line.includes(IGNORE_MARK) || COMMENT_LINE.test(line)) return;
       const where = `${rel.split(sep).join("/")}:${i + 1}`;
-      const text = line.match(brandText);
+      // Comentario al final de la línea (` // …`): no cuenta para el nombre de la marca.
+      const text = line.replace(/\s\/\/\s.*$/, "").match(brandText);
       if (text)
         problems.push(
           `${where}  marca escrita a mano "${text[0]}" → usar brand.* de @/brand/brand`,

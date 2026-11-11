@@ -13,6 +13,7 @@ import { PAISES_ISO3 } from "@/shared/cobre-kyb";
 import { formatMoney, parseMonto } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import { VERIFICACION } from "@/features/spei/estados";
+import { brand } from "@/brand/brand";
 
 const select = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
@@ -148,14 +149,14 @@ export function EnviarDolaresCard({
             {formatMoney(usd?.saldoDisponible ?? 0, { moneda: "USD" })}
           </span>
           <InfoTip align="right" className="ml-1">
-            Saldo disponible hoy en tu subcuenta en dólares de JPay. No incluye lo retenido por
-            envíos o conversiones en curso.
+            Saldo disponible hoy en tu subcuenta en dólares de {brand.name}. No incluye lo retenido
+            por envíos o conversiones en curso.
           </InfoTip>
         </span>
       </div>
       {!habilitada ? (
         <p className="mt-2 text-sm text-black-400">
-          Vas a poder enviar dólares cuando tu cuenta JPay esté activa.
+          Vas a poder enviar dólares cuando tu cuenta {brand.name} esté activa.
         </p>
       ) : (
         <>

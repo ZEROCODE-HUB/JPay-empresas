@@ -8,8 +8,8 @@ jobs:
   verificar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -20,5 +20,15 @@ jobs:
         run: npm run lint
       - name: Tests
         run: npm test
+      - name: Funciones del servidor (Deno)
+        run: npx -y deno@2.9.5 test supabase/functions/_shared/
       - name: Build
         run: npm run build
+      # El código compartido tiene que ser idéntico en los dos repos. Se compara con la misma rama
+      # de JPay-admin (o con main si esa rama no existe allá).
+      - name: Código compartido con JPay-admin
+        env:
+          RAMA: ${{ github.head_ref || github.ref_name }}
+        run: |
+          git clone --depth 1 --branch "$RAMA" https://github.com/ZEROCODE-HUB/JPay-admin.git "$RUNNER_TEMP/hermano"             || git clone --depth 1 https://github.com/ZEROCODE-HUB/JPay-admin.git "$RUNNER_TEMP/hermano"
+          SHARED_SIBLING="$RUNNER_TEMP/hermano" npm run shared:check

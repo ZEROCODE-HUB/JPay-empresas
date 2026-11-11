@@ -22,6 +22,7 @@ import { conexionCobre, instanciaCobre, type ConexionCobre } from "../_shared/co
 import { acreditarCobroR2p } from "../_shared/cobre-r2p.ts";
 import { aplicarRebote } from "../_shared/cobre-transferencias.ts";
 import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import { brand } from "../_shared/brand.ts";
 
 const DIAS = 3;
 const MAX_PAGINAS = 20;
@@ -204,7 +205,7 @@ Deno.serve(
               txid: t.id_txn,
               monto: Number(t.monto),
               moneda: t.moneda,
-              nota: "Completada en JPay sin débito en Cobre",
+              nota: `Completada en ${brand.name} sin débito en Cobre`,
             },
           });
         }
@@ -377,7 +378,7 @@ async function revisarTransaccion(
         tipo: "falta_en_jpay",
         clave: `${mmId}:${tx.tipo}`,
         transaccion: tx.id,
-        detalle: { monto, tipo: tx.tipo, nota: "Conversión en Cobre que JPay no tiene" },
+        detalle: { monto, tipo: tx.tipo, nota: `Conversión en Cobre que ${brand.name} no tiene` },
       };
     const esperado = Number(tx.tipo === "cbmm_debit" ? cruce.monto_mxn : cruce.monto_usd);
     if (Math.abs(esperado - monto) >= 0.01) {
@@ -403,7 +404,7 @@ async function revisarTransaccion(
         tipo: "falta_en_jpay",
         clave: `${mmId}:${tx.tipo}`,
         transaccion: tx.id,
-        detalle: { monto, tipo: tx.tipo, nota: "Traslado Global→USA que JPay no tiene" },
+        detalle: { monto, tipo: tx.tipo, nota: `Traslado Global→USA que ${brand.name} no tiene` },
       };
     return Math.abs(Number(envio.monto) - monto) >= 0.01
       ? {
@@ -428,7 +429,7 @@ async function revisarTransaccion(
           tipo: "falta_en_jpay",
           clave: mmId,
           transaccion: tx.id,
-          detalle: { monto, tipo: tx.tipo, nota: "Movimiento en Cobre que JPay no tiene" },
+          detalle: { monto, tipo: tx.tipo, nota: `Movimiento en Cobre que ${brand.name} no tiene` },
         }
       : null;
   }
@@ -448,7 +449,7 @@ async function revisarTransaccion(
       tipo: "falta_en_jpay",
       clave: mmId,
       transaccion: tx.id,
-      detalle: { monto, tipo: tx.tipo, nota: "Envío en Cobre que JPay no tiene" },
+      detalle: { monto, tipo: tx.tipo, nota: `Envío en Cobre que ${brand.name} no tiene` },
     };
   if (["pendiente", "enviando", "trasladando"].includes(envio.estado)) {
     const clave = cuenta.moneda === "USD" ? "USD" : cuenta.cuenta_externa_id;

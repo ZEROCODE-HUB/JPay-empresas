@@ -19,6 +19,7 @@ import {
   userClient,
 } from "../_shared/http.ts";
 import { confirmarPago } from "../_shared/pagos.ts";
+import { brand } from "../_shared/brand.ts";
 
 const MOTIVOS = ["requested", "duplicate", "fraudulent"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -49,7 +50,7 @@ Deno.serve(
     if (!pago || pago.proveedor !== "ecartpay") throw new HttpError(404, "Pago inexistente");
     // SPEI no admite reembolso y OXXO es efectivo: solo tarjeta (antes lo filtraba solo el portal).
     if (pago.metodo === "spei" || pago.metodo === "oxxo") {
-      throw new HttpError(409, "Solo los pagos con tarjeta se reembolsan desde JPay");
+      throw new HttpError(409, `Solo los pagos con tarjeta se reembolsan desde ${brand.name}`);
     }
 
     // Quién pide: el dueño del pago o el backoffice con permiso.
