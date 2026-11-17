@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  crearCuentaRetiro,
   desconectarEcartPay,
+  enviarCodigoCuentaRetiro,
   getConexionEcartPay,
   getReporteCobros,
   getRetirosEcartPay,
   iniciarConexionEcartPay,
   listCobrosEcartPay,
+  prepararCuentaRetiro,
   reembolsarCobro,
 } from "@/lib/api/integraciones";
 
@@ -57,6 +60,27 @@ export function useReporteCobros(rango: { desde: string; hasta: string }, habili
     queryFn: () => getReporteCobros(rango.desde, rango.hasta),
     enabled: habilitado,
   });
+}
+
+/** Datos para el formulario de cuenta de retiro (solo cuando se abre). */
+export function usePreparacionCuentaRetiro(abierto: boolean) {
+  return useQuery({
+    queryKey: ["integraciones", "retiros", "preparar"],
+    queryFn: prepararCuentaRetiro,
+    enabled: abierto,
+    staleTime: 60_000,
+  });
+}
+
+export function useCuentaRetiroMutaciones() {
+  const qc = useQueryClient();
+  return {
+    enviarCodigo: useMutation({ mutationFn: enviarCodigoCuentaRetiro }),
+    crear: useMutation({
+      mutationFn: crearCuentaRetiro,
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["integraciones", "retiros"] }),
+    }),
+  };
 }
 
 export function useRetirosEcartPay(pagina: number, habilitado: boolean) {

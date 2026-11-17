@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Badge, BtnOutline, Card, PageHeader } from "@/components/portal-shell";
+import { Badge, BtnOutline, BtnPrimary, Card, PageHeader } from "@/components/portal-shell";
+import { AgregarCuentaRetiroDialog } from "@/features/integraciones/components/AgregarCuentaRetiroDialog";
 import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
 import { useRetirosEcartPay } from "@/hooks/useIntegraciones";
 import { formatDateTime, formatMoney } from "@/shared/format";
 import { KpiCard } from "@/shared/ui/kpi-card";
+import { brand } from "@/brand/brand";
 
 export const Route = createFileRoute("/app/retiros")({
   head: () => ({ meta: [{ title: "Retiros a tu banco" }] }),
@@ -20,9 +22,13 @@ const ESTADO: Record<string, { label: string; tone: "success" | "warn" | "danger
   canceled: { label: "Cancelado", tone: "neutral" },
 };
 const TIPO_CUENTA: Record<string, string> = { clabe: "CLABE", tarjeta: "Tarjeta de débito" };
+const VALIDACION: Record<string, { label: string; tone: "success" | "warn" | "danger" }> = {
+  approved: { label: "Verificada", tone: "success" },
+  pending: { label: "Validando", tone: "warn" },
+  rejected: { label: "Rechazada", tone: "danger" },
+};
 
-const DESCRIPCION =
-  "Lo que pasaste de tu cuenta de cobros con tarjeta a tu banco. Los retiros se piden desde el panel de tu procesador de pagos.";
+const DESCRIPCION = `Lo que pasaste de tu cuenta de cobros con tarjeta a tu banco o a tu cuenta ${brand.name}. Los retiros se piden desde el panel de tu procesador de pagos.`;
 
 function Page() {
   return (
@@ -38,6 +44,7 @@ function Page() {
 
 function Retiros() {
   const [pagina, setPagina] = useState(1);
+  const [agregar, setAgregar] = useState(false);
   const { data, isLoading, isFetching, error } = useRetirosEcartPay(pagina, true);
   const cuentas = new Map((data?.cuentas ?? []).map((c) => [c.id, c]));
 
@@ -78,11 +85,14 @@ function Retiros() {
           )}
 
           <Card>
-            <h2 className="font-semibold">Cuentas de retiro</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="font-semibold">Cuentas de retiro</h2>
+              <BtnPrimary onClick={() => setAgregar(true)}>Agregar cuenta de retiro</BtnPrimary>
+            </div>
             {data.cuentas.length === 0 ? (
               <p className="mt-2 text-sm text-black-400">
-                No tienes cuentas de retiro cargadas. Agrega tu CLABE en el panel de tu procesador
-                de pagos.
+                No tienes cuentas de retiro cargadas. Agrega la CLABE de tu cuenta {brand.name} para
+                retirar ahí lo que cobras con tarjeta.
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-black-100 text-sm">
@@ -94,8 +104,15 @@ function Retiros() {
                       </span>
                       {c.titular && <span className="text-black-400"> · {c.titular}</span>}
                     </span>
-                    <span className="text-black-400 tabular-nums">
+                    <span className="flex items-center gap-2 text-black-400 tabular-nums">
                       {TIPO_CUENTA[c.tipo] ?? c.tipo} {c.numero ?? ""}
+                      {c.verificada ? (
+                        <Badge tone="success">Verificada</Badge>
+                      ) : c.validacion && VALIDACION[c.validacion] ? (
+                        <Badge tone={VALIDACION[c.validacion].tone}>
+                          {VALIDACION[c.validacion].label}
+                        </Badge>
+                      ) : null}
                     </span>
                   </li>
                 ))}
@@ -177,6 +194,7 @@ function Retiros() {
           </Card>
         </div>
       ) : null}
+      <AgregarCuentaRetiroDialog open={agregar} onClose={() => setAgregar(false)} />
     </>
   );
 }

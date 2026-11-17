@@ -892,6 +892,9 @@ export type CuentaRetiro = {
   numero: string | null;
   banco: string | null;
   titular: string | null;
+  /** Validación de la CLABE con STP: pending, approved, rejected… (null si no aplica). */
+  validacion: string | null;
+  verificada: boolean;
 };
 
 export function cuentaRetiroDeEcart(c: Record<string, unknown>): CuentaRetiro {
@@ -904,7 +907,34 @@ export function cuentaRetiroDeEcart(c: Record<string, unknown>): CuentaRetiro {
     numero: enmascararCuenta(c.number),
     banco: c.bank === undefined || c.bank === null ? null : String(c.bank),
     titular: s(c.business_name),
+    validacion: s((c.validation as Record<string, unknown> | undefined)?.status),
+    verificada: c.verified === true,
   };
+}
+
+/** RFC mexicano: 12 caracteres (persona moral) o 13 (persona física). */
+export function esRfc(v: unknown): v is string {
+  return typeof v === "string" && /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(v.toUpperCase());
+}
+
+export type BancoEcart = { clave: string; nombre: string };
+
+/**
+ * Banco de una CLABE según `GET /api/banks`: Ecart Pay exige que los últimos 3 dígitos de la
+ * `clave` coincidan con los primeros 3 de la CLABE (las de Cobre empiezan con 703, TESORED).
+ */
+export function bancoDeClabe(respuesta: unknown, clabe: string): BancoEcart | null {
+  const r = respuesta as Record<string, unknown> | unknown[] | null;
+  const lista = (Array.isArray(r) ? r : (r?.docs ?? r?.data ?? [])) as Record<string, unknown>[];
+  if (!Array.isArray(lista) || !/^\d{18}$/.test(clabe)) return null;
+  const prefijo = clabe.slice(0, 3);
+  for (const b of lista) {
+    const clave = b.clave ?? b.code ?? b.key;
+    if (clave === undefined || clave === null) continue;
+    if (String(clave).slice(-3) === prefijo)
+      return { clave: String(clave), nombre: String(b.name ?? b.nombre ?? clave) };
+  }
+  return null;
 }
 
 export type Retiro = {

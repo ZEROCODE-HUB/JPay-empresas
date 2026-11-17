@@ -196,6 +196,9 @@ export type CuentaRetiro = {
   numero: string | null;
   banco: string | null;
   titular: string | null;
+  /** Validación de la CLABE con STP: pending, approved, rejected (null si no aplica). */
+  validacion: string | null;
+  verificada: boolean;
 };
 
 export type Retiro = {
@@ -232,3 +235,43 @@ export async function getRetirosEcartPay(pagina = 1): Promise<Retiros> {
   if (!data) throw new Error("No se recibió respuesta del procesador de pagos");
   return data;
 }
+
+/** CLABE de Cobre del cliente, con el banco que la reconoce el procesador (TESORED). */
+export type ClabeParaRetiro = {
+  clabe: string;
+  subcuenta: string | null;
+  banco: { clave: string; nombre: string } | null;
+};
+
+export type PreparacionCuentaRetiro = {
+  titular: string | null;
+  rfc: string | null;
+  clabes: ClabeParaRetiro[];
+};
+
+async function accionRetiros<T>(body: Record<string, unknown>): Promise<T> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<T>("ecartpay-retiros", { body });
+  if (error) throw await errorDeFuncion(error);
+  if (!data) throw new Error("No se recibió respuesta del procesador de pagos");
+  return data;
+}
+
+/** Datos para dar de alta la cuenta de retiro: CLABEs de Cobre, titular y RFC. */
+export const prepararCuentaRetiro = () =>
+  accionRetiros<PreparacionCuentaRetiro>({ accion: "preparar_cuenta" });
+
+/** El procesador manda un código de un solo uso al correo del dueño de la cuenta. */
+export const enviarCodigoCuentaRetiro = () =>
+  accionRetiros<{ enviado: boolean }>({ accion: "enviar_codigo" });
+
+export type NuevaCuentaRetiro = {
+  clabe: string;
+  alias: string;
+  titular: string;
+  rfc: string;
+  codigo: string;
+};
+
+export const crearCuentaRetiro = (c: NuevaCuentaRetiro) =>
+  accionRetiros<{ cuenta: CuentaRetiro }>({ accion: "crear_cuenta", ...c });

@@ -13,7 +13,9 @@ import {
   canjearCodigoOAuth,
   centavosAUnidades,
   conciliar,
+  bancoDeClabe,
   cuentaRetiroDeEcart,
+  esRfc,
   enmascararCuenta,
   retiroDeEcart,
   EcartPayCliente,
@@ -468,6 +470,8 @@ Deno.test("retiros: cuentas enmascaradas y retiros", () => {
     numero: "•••• 8751",
     banco: "40072",
     titular: "Angel Cantu",
+    validacion: null,
+    verificada: false,
   });
   assertEquals(JSON.stringify(cuenta).includes("0011121254"), false);
   assertEquals(
@@ -561,4 +565,38 @@ Deno.test("MSI: configuración ida y vuelta, con validaciones", () => {
     "El máximo es menor que el mínimo en 6 meses",
   );
   assertEquals(falla({ planes: [{ meses: 6, minimo: -1 }] }), "Mínimo inválido en 6 meses");
+});
+
+Deno.test("esRfc acepta persona moral y física", () => {
+  assertEquals(esRfc("CDM010101AB1"), true);
+  assertEquals(esRfc("GODE561231GR8"), true);
+  assertEquals(esRfc("99828002186"), false);
+  assertEquals(esRfc(null), false);
+});
+
+Deno.test("bancoDeClabe: TESORED para CLABEs de Cobre (703)", () => {
+  const bancos = {
+    docs: [
+      { name: "BBVA", clave: "40012" },
+      { name: "TESORED", clave: "90703" },
+    ],
+  };
+  assertEquals(bancoDeClabe(bancos, "703716550611320524"), { clave: "90703", nombre: "TESORED" });
+  assertEquals(bancoDeClabe([{ name: "BBVA", clave: 40012 }], "012180001234567891"), {
+    clave: "40012",
+    nombre: "BBVA",
+  });
+  assertEquals(bancoDeClabe(bancos, "646180000000000000"), null);
+  assertEquals(bancoDeClabe(bancos, "123"), null);
+});
+
+Deno.test("cuentaRetiroDeEcart lee la validación con STP", () => {
+  const c = cuentaRetiroDeEcart({
+    _id: "pm1",
+    method: "clabe",
+    number: "703716550611320524",
+    verified: false,
+    validation: { status: "pending" },
+  });
+  assertEquals([c.validacion, c.verificada, c.numero], ["pending", false, "•••• 0524"]);
 });
