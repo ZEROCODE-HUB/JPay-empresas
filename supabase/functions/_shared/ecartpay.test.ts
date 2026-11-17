@@ -14,6 +14,7 @@ import {
   centavosAUnidades,
   conciliar,
   bancoDeClabe,
+  clabeRegistrada,
   cuentaRetiroDeEcart,
   esRfc,
   enmascararCuenta,
@@ -599,4 +600,19 @@ Deno.test("cuentaRetiroDeEcart lee la validación con STP", () => {
     validation: { status: "pending" },
   });
   assertEquals([c.validacion, c.verificada, c.numero], ["pending", false, "•••• 0524"]);
+});
+
+Deno.test("clabeRegistrada: número completo, enmascarado y otros métodos", () => {
+  const clabe = "703180000000001234";
+  assertEquals(clabeRegistrada({ docs: [{ method: "clabe", number: clabe }] }, clabe), true);
+  assertEquals(clabeRegistrada([{ method: "clabe", number: "**** 1234" }], clabe), true);
+  assertEquals(
+    clabeRegistrada({ docs: [{ method: "debit", number: "4111111111111234" }] }, clabe),
+    false,
+  );
+  assertEquals(
+    clabeRegistrada({ docs: [{ method: "clabe", number: "703180000000009999" }] }, clabe),
+    false,
+  );
+  assertEquals(clabeRegistrada(null, clabe), false);
 });

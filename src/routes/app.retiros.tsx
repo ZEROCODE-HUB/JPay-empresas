@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Badge, BtnOutline, BtnPrimary, Card, PageHeader } from "@/components/portal-shell";
-import { AgregarCuentaRetiroDialog } from "@/features/integraciones/components/AgregarCuentaRetiroDialog";
+import { Badge, BtnOutline, Card, PageHeader } from "@/components/portal-shell";
+import { ActivarRetirosAviso } from "@/features/integraciones/components/ActivarRetirosAviso";
 import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
 import { useRetirosEcartPay } from "@/hooks/useIntegraciones";
 import { formatDateTime, formatMoney } from "@/shared/format";
@@ -44,13 +44,13 @@ function Page() {
 
 function Retiros() {
   const [pagina, setPagina] = useState(1);
-  const [agregar, setAgregar] = useState(false);
   const { data, isLoading, isFetching, error } = useRetirosEcartPay(pagina, true);
   const cuentas = new Map((data?.cuentas ?? []).map((c) => [c.id, c]));
 
   return (
     <>
       <PageHeader title="Retiros a tu banco" description={DESCRIPCION} />
+      <ActivarRetirosAviso />
       {isLoading ? (
         <Card className="text-sm text-black-400">Consultando tu cuenta…</Card>
       ) : error ? (
@@ -85,14 +85,11 @@ function Retiros() {
           )}
 
           <Card>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold">Cuentas de retiro</h2>
-              <BtnPrimary onClick={() => setAgregar(true)}>Agregar cuenta de retiro</BtnPrimary>
-            </div>
+            <h2 className="font-semibold">Cuentas de retiro</h2>
             {data.cuentas.length === 0 ? (
               <p className="mt-2 text-sm text-black-400">
-                No tienes cuentas de retiro cargadas. Agrega la CLABE de tu cuenta {brand.name} para
-                retirar ahí lo que cobras con tarjeta.
+                Todavía no tienes cuentas de retiro. Activa los retiros a tu cuenta {brand.name} con
+                el aviso de arriba.
               </p>
             ) : (
               <ul className="mt-3 divide-y divide-black-100 text-sm">
@@ -194,7 +191,6 @@ function Retiros() {
           </Card>
         </div>
       ) : null}
-      <AgregarCuentaRetiroDialog open={agregar} onClose={() => setAgregar(false)} />
     </>
   );
 }

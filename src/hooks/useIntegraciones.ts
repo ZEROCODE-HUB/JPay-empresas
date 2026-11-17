@@ -62,8 +62,8 @@ export function useReporteCobros(rango: { desde: string; hasta: string }, habili
   });
 }
 
-/** Datos para el formulario de cuenta de retiro (solo cuando se abre). */
-export function usePreparacionCuentaRetiro(abierto: boolean) {
+/** CLABE de la cuenta del cliente y si ya está vinculada como cuenta de retiro. */
+export function usePreparacionCuentaRetiro(abierto = true) {
   return useQuery({
     queryKey: ["integraciones", "retiros", "preparar"],
     queryFn: prepararCuentaRetiro,

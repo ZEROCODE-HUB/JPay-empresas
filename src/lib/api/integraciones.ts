@@ -246,6 +246,8 @@ export type ClabeParaRetiro = {
 export type PreparacionCuentaRetiro = {
   titular: string | null;
   rfc: string | null;
+  /** Alguna CLABE de la cuenta ya es cuenta de retiro en el procesador. */
+  vinculada: boolean;
   clabes: ClabeParaRetiro[];
 };
 
@@ -265,12 +267,13 @@ export const prepararCuentaRetiro = () =>
 export const enviarCodigoCuentaRetiro = () =>
   accionRetiros<{ enviado: boolean }>({ accion: "enviar_codigo" });
 
+/** Lo que no se mande lo completa el servidor con los datos del cliente. */
 export type NuevaCuentaRetiro = {
-  clabe: string;
-  alias: string;
-  titular: string;
-  rfc: string;
   codigo: string;
+  clabe?: string;
+  alias?: string;
+  titular?: string;
+  rfc?: string;
 };
 
 export const crearCuentaRetiro = (c: NuevaCuentaRetiro) =>

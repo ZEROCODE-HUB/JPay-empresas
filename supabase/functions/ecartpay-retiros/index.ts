@@ -20,6 +20,7 @@ import {
 } from "../_shared/conexiones.ts";
 import {
   bancoDeClabe,
+  clabeRegistrada,
   cuentaRetiroDeEcart,
   EcartPayError,
   esRfc,
@@ -188,15 +189,21 @@ async function cuentaDeRetiro(
   const bancos = await ecart.get<unknown>("/api/banks", { country: "MX" });
 
   if (b.accion === "preparar_cuenta") {
+    const registradas = await ecart.get<unknown>("/api/payment-methods", { limit: 50 });
     return {
       titular: datos.titular,
       rfc: datos.rfc,
+      // Vinculada: alguna CLABE de Cobre del cliente ya es cuenta de retiro en Ecart Pay.
+      vinculada: datos.clabes.some((c) => clabeRegistrada(registradas, c.clabe)),
       clabes: datos.clabes.map((c) => ({ ...c, banco: bancoDeClabe(bancos, c.clabe) })),
     };
   }
 
-  // crear_cuenta
-  const clabe = typeof b.clabe === "string" ? b.clabe.replace(/\s/g, "") : "";
+  // crear_cuenta: sin CLABE/RFC/titular explícitos se usan los del cliente.
+  const clabe =
+    typeof b.clabe === "string" && b.clabe.trim()
+      ? b.clabe.replace(/\s/g, "")
+      : (datos.clabes[0]?.clabe ?? "");
   if (!datos.clabes.some((c) => c.clabe === clabe))
     throw new HttpError(
       400,
@@ -204,7 +211,8 @@ async function cuentaDeRetiro(
     );
   const banco = bancoDeClabe(bancos, clabe);
   if (!banco) throw new HttpError(409, "El procesador de pagos no reconoce el banco de esa CLABE");
-  const rfc = typeof b.rfc === "string" ? b.rfc.trim().toUpperCase() : "";
+  const rfc =
+    typeof b.rfc === "string" && b.rfc.trim() ? b.rfc.trim().toUpperCase() : (datos.rfc ?? "");
   if (!esRfc(rfc)) throw new HttpError(400, "El RFC no es válido (12 o 13 caracteres)");
   const codigo = typeof b.codigo === "string" ? b.codigo.trim() : "";
   if (!/^\d{4,8}$/.test(codigo))

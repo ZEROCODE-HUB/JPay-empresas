@@ -912,6 +912,27 @@ export function cuentaRetiroDeEcart(c: Record<string, unknown>): CuentaRetiro {
   };
 }
 
+/**
+ * ¿La CLABE ya está dada de alta como cuenta de retiro? Ecart Pay puede devolver el número completo
+ * o enmascarado: si viene completo se compara entero; si no, por los últimos 4 dígitos.
+ */
+export function clabeRegistrada(respuesta: unknown, clabe: string): boolean {
+  const r = respuesta as { docs?: unknown; data?: unknown } | unknown[] | null;
+  const lista = Array.isArray(r)
+    ? r
+    : Array.isArray(r?.docs)
+      ? r.docs
+      : Array.isArray(r?.data)
+        ? r.data
+        : [];
+  return (lista as Record<string, unknown>[]).some((c) => {
+    if (!c || (c.method !== undefined && c.method !== "clabe")) return false;
+    const d = String(c.number ?? "").replace(/\D/g, "");
+    if (d.length === 18) return d === clabe;
+    return d.length >= 4 && clabe.endsWith(d.slice(-4));
+  });
+}
+
 /** RFC mexicano: 12 caracteres (persona moral) o 13 (persona física). */
 export function esRfc(v: unknown): v is string {
   return typeof v === "string" && /^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$/.test(v.toUpperCase());

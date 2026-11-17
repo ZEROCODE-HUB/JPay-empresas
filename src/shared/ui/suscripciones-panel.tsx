@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Copy, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -48,10 +48,13 @@ export function SuscripcionesPanel({
   comercioId,
   titulo,
   descripcion,
+  aviso,
 }: {
   comercioId: string;
   titulo: string;
   descripcion: string;
+  /** Contenido opcional entre el encabezado y la lista. */
+  aviso?: ReactNode;
 }) {
   const lista = useSuscripciones(comercioId);
   const cobros = useCobrosRecurrentes(comercioId);
@@ -99,6 +102,7 @@ export function SuscripcionesPanel({
           </BtnPrimary>
         }
       />
+      {aviso}
       {lista.isLoading ? (
         <Card className="text-sm text-muted-foreground">Cargando…</Card>
       ) : lista.isError ? (
