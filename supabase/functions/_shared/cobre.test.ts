@@ -50,6 +50,8 @@ Deno.test("modo y URL: sin COBRE_MODO es simulado; prueba exige COBRE_BASE_URL",
     baseUrlCobre("prueba", "https://instancia.cobre.co/v1/"),
     "https://instancia.cobre.co/v1",
   );
+  assertEquals(baseUrlCobre("prueba", "https://api.cobre.co"), "https://api.cobre.co/v1");
+  assertEquals(baseUrlCobre("prueba", " https://api.cobre.co/ "), "https://api.cobre.co/v1");
   let error: unknown = null;
   try {
     baseUrlCobre("prueba", null);

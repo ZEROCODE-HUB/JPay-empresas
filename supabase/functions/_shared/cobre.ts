@@ -45,7 +45,9 @@ export function baseUrlCobre(
   if (modo === "simulado") return "https://cobre.simulado/v1";
   if (modo === "prueba") {
     if (!configurada) throw new CobreError(500, "Falta COBRE_BASE_URL para el modo prueba");
-    return configurada.replace(/\/+$/, "");
+    // Se acepta con o sin la versión: «https://api.cobre.co» → «https://api.cobre.co/v1».
+    const base = configurada.trim().replace(/\/+$/, "");
+    return /\/v\d+$/.test(base) ? base : `${base}/v1`;
   }
   return COBRE_URL_PRODUCCION;
 }
