@@ -29,6 +29,7 @@ import {
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 import { brand } from "../_shared/brand.ts";
+import { modoCobre } from "../_shared/cobre.ts";
 
 type Body = {
   comercio_id?: unknown;
@@ -158,6 +159,8 @@ async function datosDelCliente(sb: SupabaseClient, comercioId: string) {
       .select("clabe, subaccounts(nombre)")
       .eq("cliente_legajo", comercio.legajo)
       .eq("estado", "activa")
+      // Solo las del modo actual: las del simulador no son CLABEs reales.
+      .eq("modo", modoCobre())
       .order("created_at"),
   ]);
   if (e2) throw new HttpError(500, e2.message);
