@@ -201,9 +201,14 @@ function errorDe(status: number, cuerpo: unknown, porDefecto: string): CobreErro
   const c = (cuerpo && typeof cuerpo === "object" ? cuerpo : {}) as Record<string, unknown>;
   const codigo = typeof c.code === "string" && c.code ? c.code : null;
   const desc = typeof c.description === "string" && c.description ? c.description : null;
+  // Sin `description`, se adjunta lo que haya respondido (recortado) para poder diagnosticar.
+  const crudo =
+    cuerpo === null || cuerpo === undefined || cuerpo === ""
+      ? ""
+      : (typeof cuerpo === "string" ? cuerpo : JSON.stringify(cuerpo)).slice(0, 300);
   return new CobreError(
     status,
-    desc ? (codigo ? `${codigo}: ${desc}` : desc) : porDefecto,
+    desc ? (codigo ? `${codigo}: ${desc}` : desc) : crudo ? `${porDefecto}: ${crudo}` : porDefecto,
     codigo,
     cuerpo,
   );
