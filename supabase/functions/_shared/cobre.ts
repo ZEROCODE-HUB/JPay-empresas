@@ -199,8 +199,10 @@ async function leerCuerpo(res: Response): Promise<unknown> {
 
 function errorDe(status: number, cuerpo: unknown, porDefecto: string): CobreError {
   const c = (cuerpo && typeof cuerpo === "object" ? cuerpo : {}) as Record<string, unknown>;
-  const codigo = typeof c.code === "string" && c.code ? c.code : null;
-  const desc = typeof c.description === "string" && c.description ? c.description : null;
+  const txt = (...v: unknown[]) => (v.find((x) => typeof x === "string" && x) as string) ?? null;
+  // Cobre responde `code`/`description`, `error_code`/`error_description` o solo `message`.
+  const codigo = txt(c.code, c.error_code);
+  const desc = txt(c.description, c.error_description, c.message);
   // Sin `description`, se adjunta lo que haya respondido (recortado) para poder diagnosticar.
   const crudo =
     cuerpo === null || cuerpo === undefined || cuerpo === ""

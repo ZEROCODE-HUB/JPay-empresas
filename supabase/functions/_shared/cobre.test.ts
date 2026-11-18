@@ -1081,3 +1081,23 @@ Deno.test(
     );
   },
 );
+
+Deno.test("errores de Cobre: error_code/error_description y message", async () => {
+  const pedir = (status: number, body: unknown) =>
+    new CobreCliente({
+      baseUrl: "https://cobre.test/v1",
+      credenciales: { userId: "u", secret: "s" },
+      fetch: (async (u: string | URL) =>
+        String(u).endsWith("/auth")
+          ? new Response(JSON.stringify({ access_token: "t", expiration_time: 1200 }), {
+              status: 200,
+            })
+          : new Response(JSON.stringify(body), { status })) as typeof fetch,
+    }).get("/subclients");
+  const a = await pedir(403, { message: "Forbidden" }).catch((e) => e);
+  assertEquals((a as Error).message, "Forbidden");
+  const b = await pedir(409, { error_code: "G001", error_description: "General error" }).catch(
+    (e) => e,
+  );
+  assertEquals((b as Error).message, "G001: General error");
+});
