@@ -18,7 +18,7 @@ import {
   entero,
   sincronizarSuscripcion,
   descartarSuscripcion,
-  reenviarInvitacion,
+  renovarLink,
   reintentarSuscripcion,
   texto,
 } from "../_shared/recurrentes.ts";
@@ -81,8 +81,8 @@ Deno.serve(
           return json(await cambiarEstadoSuscripcion(ctx, await propia(), "active"));
         case "cancelar":
           return json(await cambiarEstadoSuscripcion(ctx, await propia(), "cancelled"));
-        case "reenviar":
-          return json(await reenviarInvitacion(ctx, await propia()));
+        case "renovar_link":
+          return json(await renovarLink(ctx, await propia()));
         case "reintentar":
           return json(await reintentarSuscripcion(ctx, await propia()));
         case "descartar":

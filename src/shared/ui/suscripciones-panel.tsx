@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Copy, Plus, RefreshCw, Send } from "lucide-react";
+import { Copy, Link2, Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   Badge,
@@ -42,9 +42,9 @@ const MENSAJE_ACCION = {
   descartar: "Suscripción descartada",
 } as const;
 
-/** El link que da Ecart Pay al crearla caduca; pasado un día se usa «Reenviar invitación». */
+/** El link que da Ecart Pay al crearla caduca; pasado un día se genera otro. */
 const linkReciente = (s: Suscripcion) =>
-  Date.now() - Date.parse(s.created_at) < 24 * 60 * 60 * 1000;
+  Date.now() - Date.parse(s.respuesta?.created_at ?? s.created_at) < 24 * 60 * 60 * 1000;
 
 /** Motivo entendible de una suscripción que no se pudo crear. */
 function errorAmigable(error: string | null): string {
@@ -96,17 +96,11 @@ export function SuscripcionesPanel({
       },
     );
 
-  const reenviar = (s: Suscripcion) =>
-    m.reenviarInvitacion.mutate(s.id, {
+  const renovar = (s: Suscripcion) =>
+    m.renovarLink.mutate(s.id, {
       onSuccess: async (r) => {
-        if (r.link) {
-          await copiar(r.link);
-          toast.success(
-            `Le reenviamos la invitación a ${s.suscriptor_email} y copiamos el link nuevo`,
-          );
-        } else {
-          toast.success(`Le reenviamos la invitación a ${s.suscriptor_email}`);
-        }
+        if (r.link) await copiar(r.link);
+        else toast.success("Link nuevo generado");
       },
       onError: avisar,
     });
@@ -217,12 +211,10 @@ export function SuscripcionesPanel({
                           <Copy size={14} /> Copiar link para el suscriptor
                         </BtnOutline>
                       )}
-                      {vigente && !tarjeta && (
-                        <BtnOutline
-                          disabled={m.reenviarInvitacion.isPending}
-                          onClick={() => reenviar(s)}
-                        >
-                          <Send size={14} /> Reenviar invitación
+                      {s.estado === "activa" && !tarjeta && !linkReciente(s) && (
+                        <BtnOutline disabled={m.renovarLink.isPending} onClick={() => renovar(s)}>
+                          <Link2 size={14} />{" "}
+                          {m.renovarLink.isPending ? "Generando…" : "Generar link nuevo"}
                         </BtnOutline>
                       )}
                       <BtnOutline

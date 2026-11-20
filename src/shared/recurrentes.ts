@@ -36,7 +36,12 @@ export type Suscripcion = {
   ultimo_error: string | null;
   created_at: string;
   /** Última respuesta de Ecart Pay (de ahí sale si el suscriptor ya registró su tarjeta). */
-  respuesta?: { card_ids?: unknown[]; last_payment_date?: string | null } | null;
+  respuesta?: {
+    card_ids?: unknown[];
+    last_payment_date?: string | null;
+    /** Alta en Ecart Pay: desde ahí corre la vigencia del link. */
+    created_at?: string;
+  } | null;
 };
 
 /** El suscriptor ya agregó una tarjeta en el link de Ecart Pay. */
@@ -193,13 +198,13 @@ export function useRecurrentesMutaciones(comercioId: string | null) {
       }) => invocar<Suscripcion>("ecartpay-suscripciones", { ...base(), ...v }),
       onSuccess,
     }),
-    /** Reenvía la invitación al suscriptor; devuelve el link nuevo si Ecart Pay lo da. */
-    reenviarInvitacion: useMutation({
+    /** Link nuevo para el suscriptor (el del alta caduca). */
+    renovarLink: useMutation({
       mutationFn: (id: string) =>
         invocar<{ suscripcion: Suscripcion; link: string | null }>("ecartpay-suscripciones", {
           ...base(),
           id,
-          accion: "reenviar",
+          accion: "renovar_link",
         }),
       onSuccess,
     }),

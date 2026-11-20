@@ -857,51 +857,9 @@ export const texto = (v: unknown, max = 200) =>
   typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null;
 export const entero = (v: unknown) => (typeof v === "number" && Number.isInteger(v) ? v : null);
 
-/** Link nuevo que pueda venir en la respuesta de Ecart Pay (el del alta caduca). */
-export function linkDeRespuesta(r: unknown): string | null {
-  const o = (r ?? {}) as Obj;
-  const d = (o.data && typeof o.data === "object" ? o.data : o) as Obj;
-  const v = s(d.checkout_link) ?? s(d.link) ?? s(d.url) ?? s(d.invitation_link);
-  return v && /^https:\/\//.test(v) ? v : null;
-}
-
-/**
- * Reenvía al suscriptor la invitación para agregar su tarjeta
- * (`POST /api/subscriptions/{id}/resend-invitation-link`). Ecart Pay permite 5 por suscripción y
- * una cada 24 h. Si la respuesta trae un link nuevo, se guarda.
- */
-export async function reenviarInvitacion(
-  ctx: Contexto,
-  fila: Obj,
-): Promise<{ suscripcion: Obj; link: string | null }> {
-  if (!s(fila.id_externo)) throw new HttpError(409, "La suscripción todavía no está registrada");
-  if (fila.estado !== "activa" && fila.estado !== "pausada")
-    throw new HttpError(409, "La suscripción ya terminó");
-  const r = await ctx.ecart.post<unknown>(
-    `/api/subscriptions/${encodeURIComponent(String(fila.id_externo))}/resend-invitation-link`,
-  );
-  const link = linkDeRespuesta(r);
-  if (!link) return { suscripcion: fila, link: null };
-  const { data } = await ctx.sb
-    .from("suscripciones")
-    .update({ checkout_link: link, updated_at: ahora() })
-    .eq("id", String(fila.id))
-    .select("*")
-    .single();
-  return { suscripcion: data ?? fila, link };
-}
-
-/** Vuelve a mandar a Ecart Pay una suscripción que se rechazó al crearla (estado `error`). */
-export async function reintentarSuscripcion(ctx: Contexto, fila: Obj): Promise<Obj> {
-  if (fila.estado !== "error" || s(fila.id_externo))
-    throw new HttpError(409, "Solo se reintentan las suscripciones que no se crearon");
-  const { data: cli } = await ctx.sb
-    .from("proveedor_clientes")
-    .select("cliente_externo_id")
-    .eq("id", String(fila.proveedor_cliente_id))
-    .maybeSingle();
-  if (!cli?.cliente_externo_id) throw new HttpError(409, "Falta el cliente en Ecart Pay");
-  const d: NuevaSuscripcion = {
+/** Datos para volver a mandar a Ecart Pay una suscripción guardada. */
+function datosDeFila(fila: Obj): NuevaSuscripcion {
+  return {
     idempotencyKey: String(fila.idempotency_key),
     nombre: String(fila.suscriptor_nombre),
     email: String(fila.suscriptor_email),
@@ -919,6 +877,73 @@ export async function reintentarSuscripcion(ctx: Contexto, fila: Obj): Promise<O
     compromisoPeriodos: (fila.compromiso_periodos as number | null) ?? null,
     creadoPor: null,
   };
+}
+
+async function clienteExterno(ctx: Contexto, fila: Obj): Promise<string> {
+  const { data: cli } = await ctx.sb
+    .from("proveedor_clientes")
+    .select("cliente_externo_id")
+    .eq("id", String(fila.proveedor_cliente_id))
+    .maybeSingle();
+  if (!cli?.cliente_externo_id) throw new HttpError(409, "Falta el cliente en Ecart Pay");
+  return String(cli.cliente_externo_id);
+}
+
+/**
+ * Link nuevo para el suscriptor. El `checkout_link` del alta caduca y en las suscripciones
+ * administradas por el comercio Ecart Pay no reenvía la invitación ni da otro link (el endpoint de
+ * sesión pide un permiso que la cuenta no tiene). Si el suscriptor todavía no registró tarjeta ni
+ * hubo cobros, se crea en Ecart Pay una igual (link nuevo) y se cancela la anterior.
+ */
+export async function renovarLink(
+  ctx: Contexto,
+  fila: Obj,
+): Promise<{ suscripcion: Obj; link: string | null }> {
+  const viejo = s(fila.id_externo);
+  if (!viejo) throw new HttpError(409, "La suscripción todavía no está registrada");
+  if (fila.estado !== "activa") throw new HttpError(409, "Solo se renueva el link de una activa");
+  const actual = await ctx.ecart.get<Obj>(`/api/subscriptions/${encodeURIComponent(viejo)}`);
+  if (Array.isArray(actual.card_ids) && actual.card_ids.length > 0)
+    throw new HttpError(409, "El suscriptor ya registró su tarjeta: no hace falta otro link");
+  const { count } = await ctx.sb
+    .from("cobros_recurrentes")
+    .select("id", { count: "exact", head: true })
+    .eq("suscripcion_id", String(fila.id));
+  if ((count ?? 0) > 0) throw new HttpError(409, "La suscripción ya tiene cobros");
+
+  const nueva = await ctx.ecart.post<Obj>(
+    "/api/subscriptions",
+    suscripcionAEcart(await clienteExterno(ctx, fila), datosDeFila(fila)),
+  );
+  // La anterior se cancela; si falla no cobra nada (no tiene tarjeta) y queda anotado.
+  let aviso: string | null = null;
+  try {
+    await ctx.ecart.request("PUT", `/api/subscriptions/${encodeURIComponent(viejo)}`, {
+      body: { status: "cancelled" },
+    });
+  } catch (e) {
+    aviso = `No se pudo cancelar la suscripción anterior ${viejo}: ${String((e as Error).message)}`;
+  }
+  const { data, error } = await ctx.sb
+    .from("suscripciones")
+    .update({
+      ...suscripcionDeEcart(nueva),
+      estado: "activa",
+      ultimo_error: aviso?.slice(0, 300) ?? null,
+    })
+    .eq("id", String(fila.id))
+    .select("*")
+    .single();
+  if (error) throw new HttpError(500, error.message);
+  return { suscripcion: data, link: s(data.checkout_link) };
+}
+
+/** Vuelve a mandar a Ecart Pay una suscripción que se rechazó al crearla (estado `error`). */
+export async function reintentarSuscripcion(ctx: Contexto, fila: Obj): Promise<Obj> {
+  if (fila.estado !== "error" || s(fila.id_externo))
+    throw new HttpError(409, "Solo se reintentan las suscripciones que no se crearon");
+  const externo = await clienteExterno(ctx, fila);
+  const d = datosDeFila(fila);
   const err = validarSuscripcion(d);
   if (err) throw new HttpError(400, err);
   // Se marca `creando` primero: si no hay respuesta clara, la sincronización la busca.
@@ -928,10 +953,7 @@ export async function reintentarSuscripcion(ctx: Contexto, fila: Obj): Promise<O
     .eq("id", String(fila.id))
     .eq("estado", "error");
   try {
-    const r = await ctx.ecart.post<Obj>(
-      "/api/subscriptions",
-      suscripcionAEcart(String(cli.cliente_externo_id), d),
-    );
+    const r = await ctx.ecart.post<Obj>("/api/subscriptions", suscripcionAEcart(externo, d));
     const { data, error } = await ctx.sb
       .from("suscripciones")
       .update({ estado: "activa", ...suscripcionDeEcart(r), updated_at: ahora() })
