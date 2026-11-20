@@ -15,6 +15,7 @@ import {
   conciliar,
   bancoDeClabe,
   clabeRegistrada,
+  pasarelaPropia,
   cuentaRetiroDeEcart,
   esRfc,
   enmascararCuenta,
@@ -615,4 +616,30 @@ Deno.test("clabeRegistrada: número completo, enmascarado y otros métodos", () 
     false,
   );
   assertEquals(clabeRegistrada(null, clabe), false);
+});
+
+Deno.test("pasarelaPropia: encuentra la de Ecart Pay y lee su estado", () => {
+  const r = {
+    docs: [
+      { _id: "s1", name: "Stripe", active: false, methods: [] },
+      {
+        _id: "e1",
+        name: "EcartPay Mexico",
+        active: false,
+        methods: [
+          { title: "Debit/Credit Card", active: true },
+          { title: "oxxo", active: true },
+          { title: "Pix", active: false },
+        ],
+      },
+    ],
+  };
+  assertEquals(pasarelaPropia(r), {
+    id: "e1",
+    nombre: "EcartPay Mexico",
+    activa: false,
+    metodosActivos: ["Debit/Credit Card", "oxxo"],
+  });
+  assertEquals(pasarelaPropia([{ id: "x", name: "Conekta", active: true }]), null);
+  assertEquals(pasarelaPropia(null), null);
 });

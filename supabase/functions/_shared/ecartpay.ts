@@ -993,3 +993,40 @@ export function _reiniciarEstado(): void {
   tokens.clear();
   modosAuth.clear();
 }
+
+// ---------------------------------------------------------------------------------------------
+// Pasarela propia de Ecart Pay (docs: /docs/payment-gateways). `GET /api/gateways` lista las
+// pasarelas de la cuenta, cada una con `active` y sus `methods`. Si la de Ecart Pay está apagada,
+// el checkout (links, suscripciones) responde «The account has not active payment methods».
+// Se prende con `PUT /api/gateways/{id}` y `{ active: true }`.
+// ---------------------------------------------------------------------------------------------
+
+export type PasarelaEcart = {
+  id: string;
+  nombre: string;
+  activa: boolean;
+  /** Métodos de la pasarela que están prendidos (tarjeta, OXXO, transferencia…). */
+  metodosActivos: string[];
+};
+
+/** La pasarela propia de Ecart Pay en la respuesta de `/api/gateways` (null si no viene). */
+export function pasarelaPropia(respuesta: unknown): PasarelaEcart | null {
+  const r = respuesta as { docs?: unknown; data?: unknown } | unknown[] | null;
+  const lista = (
+    Array.isArray(r) ? r : Array.isArray(r?.docs) ? r.docs : Array.isArray(r?.data) ? r.data : []
+  ) as Record<string, unknown>[];
+  const g = lista.find(
+    (x) => x && /ecart\s*pay/i.test(String(x.name ?? x.title ?? "")) && (x.id ?? x._id),
+  );
+  if (!g) return null;
+  const metodos = Array.isArray(g.methods) ? (g.methods as Record<string, unknown>[]) : [];
+  return {
+    id: String(g.id ?? g._id),
+    nombre: String(g.name ?? g.title),
+    activa: g.active === true,
+    metodosActivos: metodos
+      .filter((m) => m?.active === true)
+      .map((m) => String(m.title ?? m.name ?? m.method ?? ""))
+      .filter(Boolean),
+  };
+}

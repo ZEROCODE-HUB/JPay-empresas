@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PasarelaApagadaAviso } from "@/features/integraciones/components/PasarelaApagadaAviso";
 import { ActivarRetirosAviso } from "@/features/integraciones/components/ActivarRetirosAviso";
 import { RequiereEcartPay } from "@/features/integraciones/components/RequiereEcartPay";
 import { SuscripcionesPanel } from "@/shared/ui/suscripciones-panel";
@@ -19,7 +20,12 @@ function Page() {
           comercioId={comercioId}
           titulo="Suscripciones"
           descripcion={DESCRIPCION}
-          aviso={<ActivarRetirosAviso />}
+          aviso={
+            <>
+              <PasarelaApagadaAviso comercioId={comercioId} />
+              <ActivarRetirosAviso />
+            </>
+          }
         />
       )}
     </RequiereEcartPay>

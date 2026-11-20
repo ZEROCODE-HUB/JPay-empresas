@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  activarPasarelaEcart,
   crearCuentaRetiro,
   desconectarEcartPay,
   enviarCodigoCuentaRetiro,
   getConexionEcartPay,
+  getPasarelaEcart,
   getReporteCobros,
   getRetirosEcartPay,
   iniciarConexionEcartPay,
@@ -89,5 +91,23 @@ export function useRetirosEcartPay(pagina: number, habilitado: boolean) {
     queryFn: () => getRetirosEcartPay(pagina),
     enabled: habilitado,
     placeholderData: (prev) => prev,
+  });
+}
+
+/** Estado de la pasarela de Ecart Pay del comercio (solo si la conexión está activa). */
+export function usePasarelaEcart(comercioId: string | null, conectado: boolean) {
+  return useQuery({
+    queryKey: [...KEY, "pasarela", comercioId],
+    queryFn: () => getPasarelaEcart(comercioId as string),
+    enabled: !!comercioId && conectado,
+    staleTime: 60_000,
+  });
+}
+
+export function useActivarPasarelaEcart(comercioId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => activarPasarelaEcart(comercioId as string),
+    onSuccess: (p) => qc.setQueryData([...KEY, "pasarela", comercioId], p),
   });
 }

@@ -4,6 +4,7 @@ import { Plug } from "lucide-react";
 import { toast } from "sonner";
 import { Card, PageHeader } from "@/components/portal-shell";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
+import { PasarelaApagadaAviso } from "@/features/integraciones/components/PasarelaApagadaAviso";
 import { useComerciosCliente } from "@/hooks/useComercios";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { brand } from "@/brand/brand";
@@ -72,6 +73,7 @@ function Page() {
               </select>
             </label>
           )}
+          <PasarelaApagadaAviso comercioId={actual} />
           <EcartPayCard comercioId={actual} />
         </div>
       )}

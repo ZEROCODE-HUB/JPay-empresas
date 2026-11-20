@@ -278,3 +278,26 @@ export type NuevaCuentaRetiro = {
 
 export const crearCuentaRetiro = (c: NuevaCuentaRetiro) =>
   accionRetiros<{ cuenta: CuentaRetiro }>({ accion: "crear_cuenta", ...c });
+
+/** Pasarela propia de Ecart Pay en la cuenta del comercio (si está apagada, no se puede cobrar). */
+export type PasarelaEcart = {
+  id: string;
+  nombre: string;
+  activa: boolean;
+  metodosActivos: string[];
+};
+
+async function pasarelaEcart(body: Record<string, unknown>): Promise<PasarelaEcart | null> {
+  const sb = requireSupabase();
+  const { data, error } = await sb.functions.invoke<{ pasarela: PasarelaEcart | null }>(
+    "ecartpay-pasarela",
+    { body },
+  );
+  if (error) throw await errorDeFuncion(error);
+  return data?.pasarela ?? null;
+}
+
+export const getPasarelaEcart = (comercioId: string) => pasarelaEcart({ comercio_id: comercioId });
+
+export const activarPasarelaEcart = (comercioId: string) =>
+  pasarelaEcart({ comercio_id: comercioId, accion: "activar" });
