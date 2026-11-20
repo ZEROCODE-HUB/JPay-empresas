@@ -345,7 +345,61 @@ export async function sincronizarSuscripcion(ctx: Contexto, fila: Obj): Promise<
     .select("*")
     .single();
   if (error) throw new HttpError(500, error.message);
+  await registrarUltimoPago(ctx.sb, data, r);
   return data;
+}
+
+/**
+ * Registra el último cobro exitoso que informa Ecart Pay en la suscripción (`last_payment_date`,
+ * leído de la API, no del aviso). Una fila por fecha de pago: repetirlo no duplica.
+ */
+export async function registrarUltimoPago(sb: SupabaseClient, fila: Obj, r: Obj): Promise<void> {
+  const fecha = s(r.last_payment_date);
+  const id = s(fila.id_externo) ?? s(r.id);
+  if (!fecha || !id) return;
+  await sb.from("cobros_recurrentes").upsert(
+    {
+      tipo: "suscripcion",
+      suscripcion_id: fila.id,
+      comercio_id: fila.comercio_id,
+      cliente_legajo: fila.cliente_legajo,
+      monto: Number(r.amount ?? fila.monto),
+      moneda: String(r.currency ?? fila.moneda ?? "MXN"),
+      estado: "pagado",
+      motivo: null,
+      clave_externa: `${id}:pago:${fecha}`,
+      cobrado_at: fecha,
+    },
+    { onConflict: "tipo,clave_externa", ignoreDuplicates: true },
+  );
+}
+
+/**
+ * Pago con tarjeta de una suscripción (aviso firmado `transactions.paid` con `source`
+ * "subscription"). No trae el id de la suscripción: se sincronizan las suscripciones del mismo
+ * cliente de Ecart Pay y el cobro se registra con lo que confirma la API (`last_payment_date`).
+ */
+export async function procesarPagoDeSuscripcion(
+  sb: SupabaseClient,
+  cuerpo: unknown,
+): Promise<string | null> {
+  const c = (cuerpo ?? {}) as Obj;
+  const d = (c.data && typeof c.data === "object" ? c.data : {}) as Obj;
+  if (s(d.source) !== "subscription" || !s(d.customer_id)) return null;
+  const { data: filas } = await sb
+    .from("suscripciones")
+    .select("*")
+    .eq("respuesta->>customer_id", String(d.customer_id))
+    .not("id_externo", "is", null)
+    .in("estado", ["activa", "pausada"]);
+  if (!filas?.length) return "suscripción desconocida";
+  let n = 0;
+  for (const fila of filas) {
+    const ctx = await contextoDeFila(sb, fila);
+    await sincronizarSuscripcion(ctx, fila);
+    n++;
+  }
+  return `pago de suscripción · ${n} sincronizada${n === 1 ? "" : "s"}`;
 }
 
 /** Pausa, reanuda o cancela en Ecart Pay (PUT /api/subscriptions/{id}) y guarda el resultado. */
@@ -697,7 +751,8 @@ export async function procesarAvisoRecurrente(
       evento === "subscription.payment_failed" ||
       evento === "subscription.paused" ||
       (evento === "subscription.notify" && /payment.*fail|paused/i.test(mensaje));
-    if (confirmado && (exito || fallo)) {
+    // Los cobros exitosos ya los registró sincronizarSuscripcion (last_payment_date).
+    if (confirmado && fallo) {
       await sb.from("cobros_recurrentes").upsert(
         {
           tipo: "suscripcion",

@@ -15,7 +15,12 @@
 import { leerEventoWebhook, verificarFirmaWebhook } from "../_shared/ecartpay.ts";
 import { json, serviceClient } from "../_shared/http.ts";
 import { procesarEvento } from "../_shared/pagos.ts";
-import { eventoRecurrente, idRecurrente, resumenAvisoRecurrente } from "../_shared/recurrentes.ts";
+import {
+  eventoRecurrente,
+  idRecurrente,
+  procesarPagoDeSuscripcion,
+  resumenAvisoRecurrente,
+} from "../_shared/recurrentes.ts";
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Método no permitido" }, 405);
@@ -128,6 +133,26 @@ Deno.serve(async (req) => {
       })
       .eq("id", fila.id);
     return json({ error: "Firma inválida" }, 401);
+  }
+
+  // Pago de una suscripción (firmado): se registra sincronizando con Ecart Pay.
+  if (firmado && leido.evento === "transactions.paid") {
+    try {
+      const resultado = await procesarPagoDeSuscripcion(sb, cuerpo);
+      if (resultado) {
+        await sb
+          .from("webhook_eventos")
+          .update({ resultado, procesado_at: new Date().toISOString() })
+          .eq("id", fila.id);
+        return json({ ok: true });
+      }
+    } catch (e) {
+      await sb
+        .from("webhook_eventos")
+        .update({ resultado: "error", error: String((e as Error).message).slice(0, 500) })
+        .eq("id", fila.id);
+      return json({ ok: true });
+    }
   }
 
   await procesarEvento(sb, fila.id, idExterno);
