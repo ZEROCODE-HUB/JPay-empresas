@@ -17,6 +17,9 @@ import {
   crearSuscripcion,
   entero,
   sincronizarSuscripcion,
+  descartarSuscripcion,
+  reenviarInvitacion,
+  reintentarSuscripcion,
   texto,
 } from "../_shared/recurrentes.ts";
 
@@ -78,6 +81,12 @@ Deno.serve(
           return json(await cambiarEstadoSuscripcion(ctx, await propia(), "active"));
         case "cancelar":
           return json(await cambiarEstadoSuscripcion(ctx, await propia(), "cancelled"));
+        case "reenviar":
+          return json(await reenviarInvitacion(ctx, await propia()));
+        case "reintentar":
+          return json(await reintentarSuscripcion(ctx, await propia()));
+        case "descartar":
+          return json(await descartarSuscripcion(ctx, await propia()));
         default:
           throw new HttpError(400, "Acción inválida");
       }

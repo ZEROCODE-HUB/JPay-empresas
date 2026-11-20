@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Copy, Plus, RefreshCw } from "lucide-react";
+import { Copy, Plus, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   Badge,
@@ -14,6 +14,7 @@ import {
   INTERVALOS,
   intervaloLabel,
   nuevaClave,
+  tieneTarjeta,
   useCobrosRecurrentes,
   useRecurrentesMutaciones,
   useSuscripciones,
@@ -32,6 +33,26 @@ const ESTADO: Record<string, { label: string; tone: "success" | "warn" | "danger
   terminada: { label: "Terminada", tone: "neutral" },
   error: { label: "No creada", tone: "danger" },
 };
+
+const MENSAJE_ACCION = {
+  sincronizar: "Actualizada",
+  pausar: "Suscripción pausada",
+  reanudar: "Suscripción reanudada",
+  reintentar: "Suscripción creada: ya puedes compartir el link",
+  descartar: "Suscripción descartada",
+} as const;
+
+/** El link que da Ecart Pay al crearla caduca; pasado un día se usa «Reenviar invitación». */
+const linkReciente = (s: Suscripcion) =>
+  Date.now() - Date.parse(s.created_at) < 24 * 60 * 60 * 1000;
+
+/** Motivo entendible de una suscripción que no se pudo crear. */
+function errorAmigable(error: string | null): string {
+  if (!error) return "No se pudo crear la suscripción. Puedes reintentarla.";
+  if (/redirect_url/i.test(error))
+    return "No se pudo crear por un error de configuración que ya está corregido. Reinténtala.";
+  return `No se pudo crear la suscripción: ${error.replace(/\s*\(HTTP \d+\)$/, "")}`;
+}
 
 const selectCls = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
@@ -63,21 +84,32 @@ export function SuscripcionesPanel({
   const [cancelar, setCancelar] = useState<Suscripcion | null>(null);
   const avisar = (e: unknown) => toast.error((e as Error).message);
 
-  const accion = (s: Suscripcion, a: "sincronizar" | "pausar" | "reanudar") =>
+  const accion = (
+    s: Suscripcion,
+    a: "sincronizar" | "pausar" | "reanudar" | "reintentar" | "descartar",
+  ) =>
     m.accionSuscripcion.mutate(
       { id: s.id, accion: a },
       {
-        onSuccess: () =>
-          toast.success(
-            a === "pausar"
-              ? "Suscripción pausada"
-              : a === "reanudar"
-                ? "Suscripción reanudada"
-                : "Actualizada",
-          ),
+        onSuccess: () => toast.success(MENSAJE_ACCION[a]),
         onError: avisar,
       },
     );
+
+  const reenviar = (s: Suscripcion) =>
+    m.reenviarInvitacion.mutate(s.id, {
+      onSuccess: async (r) => {
+        if (r.link) {
+          await copiar(r.link);
+          toast.success(
+            `Le reenviamos la invitación a ${s.suscriptor_email} y copiamos el link nuevo`,
+          );
+        } else {
+          toast.success(`Le reenviamos la invitación a ${s.suscriptor_email}`);
+        }
+      },
+      onError: avisar,
+    });
 
   const copiar = async (link: string) => {
     try {
@@ -117,6 +149,8 @@ export function SuscripcionesPanel({
           {filas.map((s) => {
             const e = ESTADO[s.estado] ?? { label: s.estado, tone: "neutral" as const };
             const pagos = cobrosDe(s.id);
+            const vigente = s.estado === "activa" || s.estado === "pausada";
+            const tarjeta = tieneTarjeta(s);
             return (
               <Card key={s.id}>
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -134,51 +168,92 @@ export function SuscripcionesPanel({
                       {s.dias_prueba > 0 && ` · ${s.dias_prueba} días de prueba`}
                       {s.fecha_fin && ` · hasta ${formatDate(s.fecha_fin)}`}
                     </p>
+                    {vigente && (
+                      <p className={`text-xs mt-1 ${tarjeta ? "text-success" : "text-warning"}`}>
+                        {tarjeta
+                          ? "Tarjeta registrada"
+                          : "Esperando que el suscriptor agregue su tarjeta"}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       Creada {formatDateTime(s.created_at)}
-                      {s.proximo_cobro && ` · próximo cobro ${formatDate(s.proximo_cobro)}`}
+                      {tarjeta &&
+                        s.proximo_cobro &&
+                        ` · próximo cobro ${formatDate(s.proximo_cobro)}`}
                       {s.intentos > 0 && ` · ${s.intentos} intentos fallidos`}
                     </p>
-                    {s.ultimo_error && (
-                      <p className="text-xs text-danger-600 mt-1">{s.ultimo_error}</p>
+                    {s.estado === "error" ? (
+                      <p className="text-xs text-danger-600 mt-1">
+                        {errorAmigable(s.ultimo_error)}
+                      </p>
+                    ) : (
+                      s.ultimo_error && (
+                        <p className="text-xs text-danger-600 mt-1">{s.ultimo_error}</p>
+                      )
                     )}
                   </div>
                   <Badge tone={e.tone}>{e.label}</Badge>
                 </div>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {s.checkout_link && (s.estado === "activa" || s.estado === "pausada") && (
-                    <BtnOutline onClick={() => copiar(s.checkout_link!)}>
-                      <Copy size={14} /> Copiar link para el suscriptor
-                    </BtnOutline>
-                  )}
-                  <BtnOutline
-                    disabled={m.accionSuscripcion.isPending}
-                    onClick={() => accion(s, "sincronizar")}
-                  >
-                    <RefreshCw size={14} /> Actualizar
-                  </BtnOutline>
-                  {s.estado === "activa" && (
-                    <BtnOutline
-                      disabled={m.accionSuscripcion.isPending}
-                      onClick={() => accion(s, "pausar")}
-                    >
-                      Pausar
-                    </BtnOutline>
-                  )}
-                  {s.estado === "pausada" && (
-                    <BtnOutline
-                      disabled={m.accionSuscripcion.isPending}
-                      onClick={() => accion(s, "reanudar")}
-                    >
-                      Reanudar
-                    </BtnOutline>
-                  )}
-                  {(s.estado === "activa" || s.estado === "pausada") && (
-                    <BtnOutline onClick={() => setCancelar(s)}>Cancelar</BtnOutline>
+                  {s.estado === "error" ? (
+                    <>
+                      <BtnPrimary
+                        disabled={m.accionSuscripcion.isPending}
+                        onClick={() => accion(s, "reintentar")}
+                      >
+                        <RefreshCw size={14} /> Reintentar
+                      </BtnPrimary>
+                      <BtnOutline
+                        disabled={m.accionSuscripcion.isPending}
+                        onClick={() => accion(s, "descartar")}
+                      >
+                        Descartar
+                      </BtnOutline>
+                    </>
+                  ) : (
+                    <>
+                      {vigente && !tarjeta && s.checkout_link && linkReciente(s) && (
+                        <BtnOutline onClick={() => copiar(s.checkout_link!)}>
+                          <Copy size={14} /> Copiar link para el suscriptor
+                        </BtnOutline>
+                      )}
+                      {vigente && !tarjeta && (
+                        <BtnOutline
+                          disabled={m.reenviarInvitacion.isPending}
+                          onClick={() => reenviar(s)}
+                        >
+                          <Send size={14} /> Reenviar invitación
+                        </BtnOutline>
+                      )}
+                      <BtnOutline
+                        disabled={m.accionSuscripcion.isPending}
+                        onClick={() => accion(s, "sincronizar")}
+                      >
+                        <RefreshCw size={14} /> Actualizar
+                      </BtnOutline>
+                      {s.estado === "activa" && (
+                        <BtnOutline
+                          disabled={m.accionSuscripcion.isPending}
+                          onClick={() => accion(s, "pausar")}
+                        >
+                          Pausar
+                        </BtnOutline>
+                      )}
+                      {s.estado === "pausada" && (
+                        <BtnOutline
+                          disabled={m.accionSuscripcion.isPending}
+                          onClick={() => accion(s, "reanudar")}
+                        >
+                          Reanudar
+                        </BtnOutline>
+                      )}
+                      {vigente && <BtnOutline onClick={() => setCancelar(s)}>Cancelar</BtnOutline>}
+                    </>
                   )}
                 </div>
                 {pagos.length > 0 && (
                   <ul className="mt-3 border-t border-border pt-2 text-xs space-y-1">
+                    <li className="font-medium text-muted-foreground">Cobros</li>
                     {pagos.slice(0, 6).map((c) => (
                       <li key={c.id} className="flex justify-between gap-3">
                         <span>

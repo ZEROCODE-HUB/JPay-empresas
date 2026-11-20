@@ -4,6 +4,7 @@ import {
   domiciliacionAEcart,
   eventoRecurrente,
   idRecurrente,
+  linkDeRespuesta,
   resumenAvisoRecurrente,
   suscripcionAEcart,
   suscripcionDeEcart,
@@ -152,4 +153,15 @@ Deno.test("avisos: tipo, id y resumen", () => {
   assertEquals(resumenAvisoRecurrente(dd).order_id, "ord_3");
   // Una orden común no es un aviso recurrente.
   assertEquals(eventoRecurrente("orders.update", { id: "ord_1" }), null);
+});
+
+Deno.test("linkDeRespuesta: solo links https de la respuesta", () => {
+  assertEquals(
+    linkDeRespuesta({ checkout_link: "https://x.test/s/1?_v=a" }),
+    "https://x.test/s/1?_v=a",
+  );
+  assertEquals(linkDeRespuesta({ data: { link: "https://x.test/s/2" } }), "https://x.test/s/2");
+  assertEquals(linkDeRespuesta({ message: "ok" }), null);
+  assertEquals(linkDeRespuesta({ url: "javascript:alert(1)" }), null);
+  assertEquals(linkDeRespuesta(null), null);
 });

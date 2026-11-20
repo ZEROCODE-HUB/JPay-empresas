@@ -35,7 +35,13 @@ export type Suscripcion = {
   proximo_cobro: string | null;
   ultimo_error: string | null;
   created_at: string;
+  /** Última respuesta de Ecart Pay (de ahí sale si el suscriptor ya registró su tarjeta). */
+  respuesta?: { card_ids?: unknown[]; last_payment_date?: string | null } | null;
 };
+
+/** El suscriptor ya agregó una tarjeta en el link de Ecart Pay. */
+export const tieneTarjeta = (s: Suscripcion) =>
+  Array.isArray(s.respuesta?.card_ids) && s.respuesta.card_ids.length > 0;
 
 export type Domiciliacion = {
   id: string;
@@ -181,8 +187,20 @@ export function useRecurrentesMutaciones(comercioId: string | null) {
       onSuccess,
     }),
     accionSuscripcion: useMutation({
-      mutationFn: (v: { id: string; accion: "sincronizar" | "pausar" | "reanudar" | "cancelar" }) =>
-        invocar<Suscripcion>("ecartpay-suscripciones", { ...base(), ...v }),
+      mutationFn: (v: {
+        id: string;
+        accion: "sincronizar" | "pausar" | "reanudar" | "cancelar" | "reintentar" | "descartar";
+      }) => invocar<Suscripcion>("ecartpay-suscripciones", { ...base(), ...v }),
+      onSuccess,
+    }),
+    /** Reenvía la invitación al suscriptor; devuelve el link nuevo si Ecart Pay lo da. */
+    reenviarInvitacion: useMutation({
+      mutationFn: (id: string) =>
+        invocar<{ suscripcion: Suscripcion; link: string | null }>("ecartpay-suscripciones", {
+          ...base(),
+          id,
+          accion: "reenviar",
+        }),
       onSuccess,
     }),
     crearDomiciliacion: useMutation({
