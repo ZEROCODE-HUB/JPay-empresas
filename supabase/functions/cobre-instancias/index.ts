@@ -1,4 +1,4 @@
-// Edge Function (solo admins): instancias Cobre y suscripciones de avisos (Solution Design §3.0 y
+// Edge Function: instancias Cobre y suscripciones de avisos (Solution Design §3.0 y
 // §4.1, paso 8). Body: { accion, … }.
 //
 // - `guardar` { legajo, user_id, secret?, clave_webhook?, base_url? }: alta o cambio de la
@@ -10,9 +10,17 @@
 // - `suscribir` { instancia_id? }: registra la suscripción de avisos (`POST /subscriptions`) con
 //   todos los eventos del documento, en la matriz (sin instancia) o en la del comercio, con su
 //   URL (`cobre-webhook?instancia=<id>`) y su clave. Si ya existe una con esa URL, la reusa.
+//
+// Autoservicio del cliente (portal › Conexiones), siempre sobre su propia cuenta Cobre:
+// - `mi_conexion`: estado de su cuenta conectada (sin secretos).
+// - `conectar` { user_id, secret }: valida las claves contra Cobre, guarda la instancia (el secret
+//   y una clave de avisos generada aquí van a Vault), vincula su Cobre Balance México (usa el que
+//   ya tenga o lo crea) y suscribe los avisos. Los dos últimos pasos son best-effort: si fallan,
+//   la cuenta queda conectada y se informa qué faltó (se reintenta conectando de nuevo).
+// - `desconectar`: quita los avisos, desactiva la instancia y deshabilita su CLABE en JPay.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CobreError } from "../_shared/cobre.ts";
+import { CobreError, modoCobre } from "../_shared/cobre.ts";
 import {
   claveWebhookCobre,
   conexionCobre,
@@ -21,7 +29,15 @@ import {
   urlWebhookCobre,
 } from "../_shared/cobre-servidor.ts";
 import { asignarClabeReceptora } from "../_shared/cobre-subclientes.ts";
-import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
+import {
+  esAdmin,
+  handler,
+  HttpError,
+  json,
+  readJson,
+  serviceClient,
+  userClient,
+} from "../_shared/http.ts";
 import { brand } from "../_shared/brand.ts";
 
 type Obj = Record<string, unknown>;
@@ -30,10 +46,22 @@ const texto = (v: unknown, max = 200) =>
 
 Deno.serve(
   handler(async (req) => {
-    if (!(await esAdmin(req))) throw new HttpError(403, "Solo para administradores");
     const body = await readJson<Obj>(req);
     const sb = serviceClient();
     try {
+      if (!(await esAdmin(req))) {
+        const legajo = await legajoDeSesion(req);
+        switch (body.accion) {
+          case "mi_conexion":
+            return json(await miConexion(sb, legajo));
+          case "conectar":
+            return json(await conectar(sb, legajo, body));
+          case "desconectar":
+            return json(await desconectarMia(sb, legajo));
+          default:
+            throw new HttpError(403, "Solo para administradores");
+        }
+      }
       switch (body.accion) {
         case "guardar":
           return json(await guardar(sb, body));
@@ -158,26 +186,41 @@ async function vincularBalance(sb: SupabaseClient, id: string, cuentaExterna: st
   const receptora = ((subs ?? []) as { id: string; moneda: string | null }[]).find(
     (s) => !s.moneda || s.moneda === "MXN",
   );
+  const { data: existente } = await sb
+    .from("cobre_cuentas")
+    .select("id, cliente_legajo")
+    .eq("modo", conexion.modo)
+    .eq("cuenta_externa_id", cuenta.id)
+    .maybeSingle();
+  if (existente && existente.cliente_legajo !== inst.clienteLegajo) {
+    throw new HttpError(409, "Esa cuenta de Cobre ya está vinculada a otro cliente");
+  }
   await sb
     .from("cobre_cuentas")
     .update({ estado: "cerrada" })
     .eq("tipo", "cliente")
     .eq("cliente_legajo", inst.clienteLegajo)
     .eq("modo", conexion.modo)
-    .eq("estado", "activa");
+    .eq("estado", "activa")
+    .neq("cuenta_externa_id", cuenta.id);
+  // Upsert: al reconectar la misma cuenta de Cobre se reusa su fila (único por modo + id externo).
   const { data: fila, error } = await sb
     .from("cobre_cuentas")
-    .insert({
-      tipo: "cliente",
-      cliente_legajo: inst.clienteLegajo,
-      modo: conexion.modo,
-      cuenta_externa_id: cuenta.id,
-      clabe,
-      alias: `${brand.name.toUpperCase()} ${inst.clienteLegajo}`.slice(0, 32),
-      instancia_id: inst.id,
-      subcuenta_id: receptora?.id ?? null,
-      conectividad: cuenta.connectivity?.status ?? null,
-    })
+    .upsert(
+      {
+        estado: "activa",
+        tipo: "cliente",
+        cliente_legajo: inst.clienteLegajo,
+        modo: conexion.modo,
+        cuenta_externa_id: cuenta.id,
+        clabe,
+        alias: `${brand.name.toUpperCase()} ${inst.clienteLegajo}`.slice(0, 32),
+        instancia_id: inst.id,
+        subcuenta_id: receptora?.id ?? null,
+        conectividad: cuenta.connectivity?.status ?? null,
+      },
+      { onConflict: "modo,cuenta_externa_id" },
+    )
     .select("id, cuenta_externa_id, clabe, conectividad")
     .single();
   if (error) throw new HttpError(500, error.message);
@@ -237,4 +280,148 @@ async function suscribir(sb: SupabaseClient, instanciaId: string | null) {
   if (inst) await sb.from("cobre_instancias").update({ suscripcion_id: externo }).eq("id", inst.id);
   const faltan = EVENTOS_COBRE.filter((e) => !eventos.includes(e));
   return { suscripcion: externo, url, eventos: eventos.length, faltan };
+}
+
+// ── Autoservicio del cliente ────────────────────────────────────────────────
+
+async function legajoDeSesion(req: Request): Promise<string> {
+  const { data, error } = await userClient(req).rpc("current_cliente_legajo");
+  if (error || typeof data !== "string" || !data) {
+    throw new HttpError(403, "Solo un cliente con sesión puede conectar su cuenta");
+  }
+  return data;
+}
+
+const mensaje = (e: unknown) =>
+  e instanceof Error ? e.message.replace(/^No se pudo completar la operación: /, "") : String(e);
+
+type InstanciaFila = {
+  id: string;
+  user_id: string;
+  suscripcion_id: string | null;
+  created_at: string;
+};
+
+async function instanciaActiva(sb: SupabaseClient, legajo: string): Promise<InstanciaFila | null> {
+  const { data, error } = await sb
+    .from("cobre_instancias")
+    .select("id, user_id, suscripcion_id, created_at")
+    .eq("cliente_legajo", legajo)
+    .eq("modo", modoCobre())
+    .eq("estado", "activa")
+    .maybeSingle();
+  if (error) throw new HttpError(500, error.message);
+  return data as InstanciaFila | null;
+}
+
+async function miConexion(sb: SupabaseClient, legajo: string) {
+  const modo = modoCobre();
+  const inst = await instanciaActiva(sb, legajo);
+  if (!inst) return { conectada: false, modo };
+  const { data: cuenta } = await sb
+    .from("cobre_cuentas")
+    .select("cuenta_externa_id, clabe, conectividad")
+    .eq("instancia_id", inst.id)
+    .eq("estado", "activa")
+    .maybeSingle();
+  return {
+    conectada: true,
+    modo,
+    user_id: inst.user_id,
+    avisos: !!inst.suscripcion_id,
+    conectada_at: inst.created_at,
+    cuenta: cuenta ?? null,
+  };
+}
+
+/** Cobre Balance México que ya tenga la cuenta del cliente (prefiere uno con CLABE). */
+async function balanceExistente(sb: SupabaseClient, id: string): Promise<string | null> {
+  const inst = await instanciaCobre(sb, id);
+  if (!inst) return null;
+  const r = await conexionCobre(sb, inst)
+    .cliente.get<{ contents?: Obj[] }>("/accounts", { page_size: 100 })
+    .catch(() => null);
+  const mx = (r?.contents ?? []).filter((a) => a.provider_id === "pr_mex_cobre3");
+  const c = mx.find((a) => /^\d{18}$/.test(String(a.account_number ?? ""))) ?? mx[0];
+  return c ? String(c.id) : null;
+}
+
+async function conectar(sb: SupabaseClient, legajo: string, b: Obj) {
+  const userId = texto(b.user_id, 120);
+  const secret = texto(b.secret, 500);
+  if (!userId || !secret) throw new HttpError(400, "Escribe tu usuario y tu clave de Cobre");
+  // 1. Que Cobre acepte las claves antes de guardar nada.
+  const prueba = conexionCobre(sb, {
+    id: "validacion",
+    clienteLegajo: legajo,
+    baseUrl: null,
+    credenciales: { userId, secret },
+    claveWebhook: null,
+  });
+  try {
+    await prueba.cliente.token(true);
+  } catch (e) {
+    throw new HttpError(422, `Cobre no aceptó tus claves: ${mensaje(e)}`);
+  }
+  // 2. Guardar la instancia. La clave de avisos se genera aquí y nunca sale del servidor; al
+  //    reconectar se conserva la que ya firma la suscripción existente.
+  const previa = await instanciaActiva(sb, legajo);
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const clave = Array.from(bytes, (x) => x.toString(16).padStart(2, "0")).join("");
+  const { id } = await guardar(sb, {
+    legajo,
+    user_id: userId,
+    secret,
+    ...(previa?.suscripcion_id ? {} : { clave_webhook: clave }),
+  });
+  // 3. Su cuenta en pesos (CLABE) y 4. los avisos de movimientos.
+  const faltantes: string[] = [];
+  try {
+    await vincularBalance(sb, id, await balanceExistente(sb, id));
+  } catch (e) {
+    faltantes.push(`Cuenta en pesos (CLABE): ${mensaje(e)}`);
+  }
+  try {
+    await suscribir(sb, id);
+  } catch (e) {
+    faltantes.push(`Avisos de movimientos: ${mensaje(e)}`);
+  }
+  return { ...(await miConexion(sb, legajo)), faltantes };
+}
+
+async function desconectarMia(sb: SupabaseClient, legajo: string) {
+  const previa = await instanciaActiva(sb, legajo);
+  if (!previa) return { conectada: false, modo: modoCobre() };
+  // Quita la suscripción de avisos en Cobre (best-effort: las claves pueden ya no servir).
+  const inst = await instanciaCobre(sb, previa.id).catch(() => null);
+  if (inst && previa.suscripcion_id) {
+    await conexionCobre(sb, inst)
+      .cliente.request("DELETE", `/subscriptions/${previa.suscripcion_id}`)
+      .catch(() => null);
+  }
+  const ahora = new Date().toISOString();
+  const { data: cuentas } = await sb
+    .from("cobre_cuentas")
+    .update({ estado: "cerrada" })
+    .eq("instancia_id", previa.id)
+    .eq("estado", "activa")
+    .select("id");
+  for (const c of (cuentas ?? []) as { id: string }[]) {
+    const { data: clabes } = await sb
+      .from("cobre_clabes")
+      .update({ estado: "deshabilitada", deshabilitada_at: ahora })
+      .eq("cuenta_id", c.id)
+      .eq("estado", "activa")
+      .select("subcuenta_id, clabe");
+    for (const k of (clabes ?? []) as { subcuenta_id: string; clabe: string }[]) {
+      await sb
+        .from("subaccounts")
+        .update({ cbu: null })
+        .eq("id", k.subcuenta_id)
+        .eq("cbu", k.clabe);
+    }
+  }
+  await sb.from("cobre_suscripciones").delete().eq("instancia_id", previa.id);
+  await desactivar(sb, previa.id);
+  return { conectada: false, modo: modoCobre() };
 }

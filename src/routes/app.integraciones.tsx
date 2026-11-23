@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Plug } from "lucide-react";
 import { toast } from "sonner";
 import { Card, PageHeader } from "@/components/portal-shell";
+import { CobreConexionCard } from "@/features/integraciones/components/CobreConexionCard";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { PasarelaApagadaAviso } from "@/features/integraciones/components/PasarelaApagadaAviso";
 import { useComerciosCliente } from "@/hooks/useComercios";
@@ -41,8 +42,11 @@ function Page() {
     <>
       <PageHeader
         title="Conexiones"
-        description="Conecta las cuentas con las que cobras tus ventas. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
+        description="Conecta tu cuenta Cobre (SPEI) y tu cuenta de cobros con tarjeta. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
       />
+      <div className="mb-4">
+        <CobreConexionCard />
+      </div>
       {isLoading ? (
         <Cargando className="block h-40 w-full" />
       ) : error ? (
@@ -51,7 +55,7 @@ function Page() {
         <Card>
           <EmptyState
             icon={<Plug size={48} strokeWidth={1.5} />}
-            title="Todavía no tienes un comercio habilitado"
+            title="Cobros con tarjeta: todavía no tienes un comercio habilitado"
             description={`Cuando el equipo de ${brand.name} lo dé de alta, podrás conectar tus medios de cobro desde aquí.`}
           />
         </Card>

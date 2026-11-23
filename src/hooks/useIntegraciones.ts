@@ -1,9 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   activarPasarelaEcart,
+  conectarCobre,
   crearCuentaRetiro,
+  desconectarCobre,
   desconectarEcartPay,
   enviarCodigoCuentaRetiro,
+  getConexionCobre,
   getConexionEcartPay,
   getPasarelaEcart,
   getReporteCobros,
@@ -110,4 +113,25 @@ export function useActivarPasarelaEcart(comercioId: string | null) {
     mutationFn: () => activarPasarelaEcart(comercioId as string),
     onSuccess: (p) => qc.setQueryData([...KEY, "pasarela", comercioId], p),
   });
+}
+
+const KEY_COBRE = ["integraciones", "cobre"] as const;
+
+/** Cuenta Cobre propia del cliente (no depende del comercio: es de su cuenta). */
+export function useConexionCobre() {
+  return useQuery({ queryKey: KEY_COBRE, queryFn: getConexionCobre });
+}
+
+export function useConexionCobreMutaciones() {
+  const qc = useQueryClient();
+  const refrescar = (c: Awaited<ReturnType<typeof getConexionCobre>>) => {
+    qc.setQueryData(KEY_COBRE, c);
+    // Cambia su CLABE: la cuenta SPEI y la cuenta de retiro de Ecart Pay dependen de ella.
+    void qc.invalidateQueries({ queryKey: ["cobre"] });
+    void qc.invalidateQueries({ queryKey: ["integraciones", "retiros"] });
+  };
+  return {
+    conectar: useMutation({ mutationFn: conectarCobre, onSuccess: refrescar }),
+    desconectar: useMutation({ mutationFn: desconectarCobre, onSuccess: refrescar }),
+  };
 }
