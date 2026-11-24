@@ -200,6 +200,8 @@ export type TotalesBaseHistorial = {
   >;
   tx_pendientes: number;
   tx_rechazadas: number;
+  /** Operaciones anuladas (su asiento y su reverso se compensan); no entran en los totales. */
+  tx_anuladas?: number;
 };
 
 async function totalesLineas(

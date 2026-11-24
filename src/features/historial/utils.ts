@@ -368,6 +368,7 @@ export type TotalesHistorial = {
   lineasEgreso: number;
   txPendientes: number;
   txRechazadas: number;
+  txAnuladas: number;
   totalPendientes: number;
 };
 
@@ -383,6 +384,7 @@ export function totalesDesdeBase(
   const o = base?.monedas[moneda === "USD" ? "MXN" : "USD"];
   const txPendientes = Number(base?.tx_pendientes ?? 0);
   const txRechazadas = Number(base?.tx_rechazadas ?? 0);
+  const txAnuladas = Number(base?.tx_anuladas ?? 0);
   return {
     moneda,
     totalIngresos: Number(m?.ingresos ?? 0),
@@ -393,7 +395,8 @@ export function totalesDesdeBase(
     lineasEgreso: Number(m?.lineas_egreso ?? 0),
     txPendientes,
     txRechazadas,
-    totalPendientes: txPendientes + txRechazadas,
+    txAnuladas,
+    totalPendientes: txPendientes + txRechazadas + txAnuladas,
   };
 }
 
@@ -415,6 +418,7 @@ export function totalesPagina(lineas: Linea[], moneda: "MXN" | "USD" = "MXN"): T
     lineasEgreso: egresos.length,
     txPendientes: txPendientes.size,
     txRechazadas: txRechazadas.size,
+    txAnuladas: 0,
     totalPendientes: txPendientes.size + txRechazadas.size,
   };
 }

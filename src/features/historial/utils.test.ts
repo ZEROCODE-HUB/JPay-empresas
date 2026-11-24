@@ -166,6 +166,7 @@ describe("lineas", () => {
       lineasEgreso: 3,
       txPendientes: 1,
       txRechazadas: 1,
+      txAnuladas: 0,
       totalPendientes: 2,
     });
   });
@@ -217,6 +218,7 @@ describe("totales desde la base", () => {
     },
     tx_pendientes: 1,
     tx_rechazadas: 2,
+    tx_anuladas: 1,
   };
   it("en pesos, con los dólares aparte", () => {
     expect(totalesDesdeBase(base, "MXN")).toMatchObject({
@@ -225,7 +227,7 @@ describe("totales desde la base", () => {
       totalEgresos: 132.06,
       netoOtra: 5.91,
       lineasOtra: 4,
-      totalPendientes: 3,
+      totalPendientes: 4,
     });
   });
   it("en dólares, con los pesos aparte", () => {

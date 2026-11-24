@@ -73,7 +73,7 @@ function Page() {
     <>
       <PageHeader
         title="Historial"
-        description="Auditoria completa de movimientos con filtros, exportacion y detalle de transacciones."
+        description="Auditoría completa de movimientos con filtros, exportación y detalle de transacciones."
         action={
           <div className="flex gap-2">
             <BtnOutline onClick={() => void exportExcel()} disabled={exportacion.isPending}>

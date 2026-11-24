@@ -29,11 +29,11 @@ export function HistorialKpis({
     <div className="grid md:grid-cols-4 gap-5 mb-6">
       <Card className="p-5">
         <div className="text-xs text-muted-foreground mb-1">
-          Ingresos del periodo
+          Ingresos del período
           <InfoTip className="ml-1">
             Suma de los movimientos a favor de TODO el período y los filtros que elegiste (no solo
             de la página que ves), en la moneda de la subcuenta que ves. Solo lo confirmado: lo
-            rechazado y lo pendiente se cuentan aparte. Pesos y dólares no se mezclan.
+            rechazado, lo anulado y lo pendiente se cuentan aparte. Pesos y dólares no se mezclan.
           </InfoTip>
         </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-emerald-700">
@@ -43,7 +43,7 @@ export function HistorialKpis({
       </Card>
       <Card className="p-5">
         <div className="text-xs text-muted-foreground mb-1">
-          Egresos del periodo
+          Egresos del período
           <InfoTip className="ml-1">
             Suma de los movimientos en contra (salidas, comisiones e impuestos) de TODO el período y
             los filtros que elegiste, en la moneda de la subcuenta que ves. Solo lo confirmado.
@@ -81,10 +81,12 @@ export function HistorialKpis({
       </Card>
       <Card className="p-5">
         <div className="text-xs text-muted-foreground mb-1">
-          Pendientes / Rechazados
+          Pendientes / Sin efecto
           <InfoTip align="right" className="ml-1">
-            Operaciones del período y los filtros que elegiste que siguen en proceso o fueron
-            rechazadas. Cada operación cuenta una vez aunque tenga varias líneas.
+            Operaciones del período y los filtros que elegiste que siguen en proceso, fueron
+            rechazadas o se anularon (su movimiento y su reverso se compensan, así que no cambian tu
+            saldo). No entran en ingresos ni egresos. Cada operación cuenta una vez aunque tenga
+            varias líneas.
           </InfoTip>
         </div>
         <div className="font-display tabular-nums text-xl md:text-2xl font-bold text-foreground">
@@ -92,6 +94,7 @@ export function HistorialKpis({
         </div>
         <div className="text-xs text-muted-foreground mt-1">
           {t.txPendientes} pendientes, {t.txRechazadas} rechazadas
+          {t.txAnuladas > 0 && `, ${t.txAnuladas} anuladas`}
         </div>
       </Card>
     </div>
