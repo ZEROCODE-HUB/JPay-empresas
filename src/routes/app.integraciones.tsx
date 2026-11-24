@@ -56,7 +56,7 @@ function Page() {
           <EmptyState
             icon={<Plug size={48} strokeWidth={1.5} />}
             title="Cobros con tarjeta: todavía no tienes un comercio habilitado"
-            description={`Cuando el equipo de ${brand.name} lo dé de alta, podrás conectar tus medios de cobro desde aquí.`}
+            description={`Se habilita en cuanto ${brand.name} aprueba la verificación de tu cuenta. Después podrás conectar tus medios de cobro desde aquí.`}
           />
         </Card>
       ) : (
