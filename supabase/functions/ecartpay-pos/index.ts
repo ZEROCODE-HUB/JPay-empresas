@@ -225,20 +225,78 @@ async function guardarCaja(ctx: Ctx, b: Body) {
   }
   const suc = await sucursalDelComercio(ctx, b.sucursal_id);
   if (!suc.id_externo) throw new HttpError(409, "La sucursal no está sincronizada");
-  const idLocal = crypto.randomUUID();
-  const r = await ctx.ecart.post(
-    "/api/pos/sales-registers",
-    cajaAEcart(c, suc.id_externo, idLocal),
-  );
-  const { error } = await ctx.sb.from("cajas").insert({
-    id: idLocal,
-    sucursal_id: suc.id,
-    id_externo: idCreado(r),
-    ...c,
-    sincronizado_at: ahora(),
-  });
+  const { data: ocupada } = await ctx.sb
+    .from("cajas")
+    .select("id")
+    .eq("sucursal_id", suc.id)
+    .eq("numero", c.numero)
+    .is("eliminado_at", null)
+    .maybeSingle();
+  if (ocupada) throw new HttpError(409, "Ya hay una caja con ese número en la sucursal");
+
+  // Ecart Pay guarda el número de una caja eliminada (índice único sucursal + número): si choca,
+  // se reutiliza esa caja de Ecart Pay con los datos nuevos en vez de crear otra.
+  let idExterno: string | null;
+  try {
+    const r = await ctx.ecart.post("/api/pos/sales-registers", cajaAEcart(c, suc.id_externo));
+    idExterno = idCreado(r);
+  } catch (e) {
+    if (!/E11000|duplicate key/i.test(String((e as Error)?.message ?? e))) throw e;
+    idExterno = await cajaExistenteEnEcart(ctx, suc.id_externo, c.numero);
+    if (!idExterno) {
+      throw new HttpError(
+        409,
+        `El número ${c.numero} ya se usó en esta sucursal en Ecart Pay (aunque esa caja se haya eliminado). Usa otro número.`,
+      );
+    }
+    await ctx.ecart.request("PUT", `/api/pos/sales-registers/${idExterno}`, {
+      body: cajaAEcart({ ...c, estado: c.estado ?? "activa" }, suc.id_externo),
+    });
+  }
+
+  // Si la caja de Ecart Pay ya estuvo en JPay (dada de baja), se revive esa fila.
+  const { data: previa } = idExterno
+    ? await ctx.sb.from("cajas").select("id").eq("id_externo", idExterno).maybeSingle()
+    : { data: null };
+  if (previa) {
+    const { error } = await ctx.sb
+      .from("cajas")
+      .update({
+        sucursal_id: suc.id,
+        ...c,
+        eliminado_at: null,
+        sincronizado_at: ahora(),
+        updated_at: ahora(),
+      })
+      .eq("id", previa.id);
+    if (error) throw new HttpError(500, error.message);
+    return { id: previa.id };
+  }
+  const { data: fila, error } = await ctx.sb
+    .from("cajas")
+    .insert({ sucursal_id: suc.id, id_externo: idExterno, ...c, sincronizado_at: ahora() })
+    .select("id")
+    .single();
   if (error) throw new HttpError(500, error.message);
-  return { id: idLocal };
+  return { id: fila.id };
+}
+
+/** Id de Ecart Pay de la caja con ese número en la sucursal (también si está dada de baja). */
+async function cajaExistenteEnEcart(
+  ctx: Ctx,
+  sucursalExterna: string,
+  numero: string,
+): Promise<string | null> {
+  for (const status of [undefined, "inactive", "deleted"]) {
+    const todas = await listarTodo(ctx.ecart, "/api/pos/sales-registers", { status }).catch(
+      () => [],
+    );
+    const hit = todas
+      .map(cajaDeEcart)
+      .find((x) => x.sucursal_externa === sucursalExterna && x.numero === numero);
+    if (hit?.id_externo) return hit.id_externo;
+  }
+  return null;
 }
 
 async function borrarCaja(ctx: Ctx, b: Body) {
