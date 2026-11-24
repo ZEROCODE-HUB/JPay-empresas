@@ -10,7 +10,7 @@ import {
   InfoEmpresaCard,
 } from "@/features/cuenta/components/InfoAdicionalCards";
 import { InfoUsuarioCard } from "@/features/cuenta/components/InfoUsuarioCard";
-import { AltaCobreCard } from "@/features/cuenta/components/AltaCobreCard";
+import { CobreConexionCard } from "@/features/integraciones/components/CobreConexionCard";
 import { usePaisConModulos } from "@/shared/modulos-pais";
 import { useCuentaPantalla } from "@/features/cuenta/hooks/useCuentaPantalla";
 import type { DocReal } from "@/features/cuenta/types";
@@ -49,7 +49,7 @@ function Page() {
                   <InfoUsuarioCard c={c} />
                   <InfoAdicionalCard c={c} />
                   {c.isPJ && <InfoEmpresaCard c={c} />}
-                  {pais.modulos.transferencias_cobre && <AltaCobreCard />}
+                  {pais.modulos.transferencias_cobre && <CobreConexionCard />}
                   <DocumentosKycCard c={c} onPreview={setDocPreview} />
                 </>
               )}

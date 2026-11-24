@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader } from "@/components/portal-shell";
+import { Card, PageHeader } from "@/components/portal-shell";
+import { ConectaCobreAviso } from "@/features/integraciones/components/ConectaCobreAviso";
 import { EnviarDolaresCard } from "@/features/dolares/components/EnviarDolaresCard";
 import { EnviosDolaresCard } from "@/features/dolares/components/MovimientosDolares";
 import { useCuentaSpei, useTransferencias } from "@/hooks/useCobre";
@@ -31,8 +32,16 @@ function Page() {
             void Promise.all([cuenta.refetch(), subcuentas.refetch(), destinatarios.refetch()])
           }
         />
+      ) : !cuenta.data?.cuenta ? (
+        <ConectaCobreAviso cuenta={cuenta.data} para="enviar dólares" />
       ) : (
         <div className="space-y-4">
+          {cuenta.data?.instanciaPropia && (
+            <Card className="text-sm text-black-500">
+              Los dólares todavía no están disponibles con tu cuenta Cobre conectada: por ahora solo
+              puedes operar en pesos.
+            </Card>
+          )}
           <EnviarDolaresCard
             subcuentas={subcuentas.data ?? []}
             destinatarios={destinatarios.data ?? []}
