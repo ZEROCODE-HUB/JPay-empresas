@@ -3,7 +3,10 @@ import { useMemo } from "react";
 import { Card, PageHeader } from "@/components/portal-shell";
 import { LinksPagoResumen } from "@/features/link-pago/dashboard/LinksPagoResumen";
 import { MovimientosSpeiCard } from "@/features/spei/components/MovimientosSpeiCard";
-import { useCuentaSpei } from "@/hooks/useCobre";
+import { useCuentaSpei, useEstadosCuenta } from "@/hooks/useCobre";
+import { descargarEstadoCuenta } from "@/lib/api/cobre";
+import { EstadoConsulta } from "@/shared/ui/estado-carga";
+import { EstadosCuentaPanel } from "@/shared/ui/estados-cuenta";
 import { useReporteCobros } from "@/hooks/useIntegraciones";
 import { usePaisConModulos } from "@/shared/modulos-pais";
 import { filtrarPorModulo, type Modulo } from "@/shared/pais";
@@ -11,7 +14,7 @@ import { ReporteCobrosView } from "@/shared/ui/reporte-cobros";
 import { SeccionTabs } from "@/shared/ui/seccion-tabs";
 import { useRangoCobros } from "@/shared/use-rango-cobros";
 
-type Tab = "tarjeta" | "spei" | "links";
+type Tab = "tarjeta" | "spei" | "links" | "estados";
 const TABS: { id: Tab; label: string; descripcion: string; modulo?: Modulo }[] = [
   {
     id: "tarjeta",
@@ -31,11 +34,20 @@ const TABS: { id: Tab; label: string; descripcion: string; modulo?: Modulo }[] =
     label: "Links de pago",
     descripcion: "Cobros con tus links de pago: aprobados, pendientes, rechazados y reembolsos.",
   },
+  {
+    id: "estados",
+    label: "Estados de cuenta",
+    descripcion: "Estado de cuenta mensual de tu cuenta en PDF, emitido por el banco que la opera.",
+    modulo: "transferencias_cobre",
+  },
 ];
 
 export const Route = createFileRoute("/app/reportes")({
   validateSearch: (s: Record<string, unknown>): { tab?: Tab } => ({
-    tab: s.tab === "tarjeta" || s.tab === "spei" || s.tab === "links" ? s.tab : undefined,
+    tab:
+      s.tab === "tarjeta" || s.tab === "spei" || s.tab === "links" || s.tab === "estados"
+        ? s.tab
+        : undefined,
   }),
   head: () => ({ meta: [{ title: "Reportes" }] }),
   component: Page,
@@ -61,6 +73,7 @@ function Page() {
       {actual.id === "tarjeta" && <ReporteTarjeta />}
       {actual.id === "spei" && <ReporteSpei />}
       {actual.id === "links" && <LinksPagoResumen />}
+      {actual.id === "estados" && <EstadosCuenta />}
     </>
   );
 }
@@ -91,5 +104,16 @@ function ReporteSpei() {
       transferencias={(transferencias.data ?? []).filter((t) => t.moneda === "MXN")}
       depositos={depositos.data ?? []}
     />
+  );
+}
+
+function EstadosCuenta() {
+  const q = useEstadosCuenta();
+  return (
+    <Card>
+      <EstadoConsulta q={q}>
+        {(cuentas) => <EstadosCuentaPanel cuentas={cuentas} descargar={descargarEstadoCuenta} />}
+      </EstadoConsulta>
+    </Card>
   );
 }

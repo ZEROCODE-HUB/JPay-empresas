@@ -159,6 +159,16 @@ que ya tenga o lo crea). Esos dólares son del comercio: se contabilizan en
 `cobre_saldo_esperado_usd_instancia` (subcuentas USD + comisiones USD que siguen en su cuenta). La
 comisión de los envíos USD no se barre: queda en la cuenta del comercio.
 
+### Estados de cuenta mensuales (1077)
+
+Portal → Reportes → «Estados de cuenta» y admin → cliente → Conexiones → «Estados de cuenta».
+`cobre-estados-cuenta` pide a Cobre `POST /reports` (`accounts` / `cobre_balance_statements_v1`,
+`statement_date` YYYY-MM), espera a que `GET /reports` traiga `created_at` (unos 2 s), pide
+`POST /reports_download_links` (REP002 = todavía no está) y baja el ZIP con el PDF, que entrega en
+base64. Probado contra Cobre real el 26/11/2026. Cobre crea un reporte nuevo en cada `POST` (no
+reusa el anterior como dice su doc): por eso `cobre_estados_cuenta` guarda el `repo_…` y lo
+reutiliza. Solo meses cerrados (hasta el anterior). El PDF es de Cobre y lleva su nombre.
+
 ### Barrido de comisiones (1073)
 
 - El monto lo decide siempre `cobre_barrido_reservar` (SQL, candado por comercio): comisión + IVA

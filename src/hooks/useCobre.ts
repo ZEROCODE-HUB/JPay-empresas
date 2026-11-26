@@ -16,6 +16,7 @@ import {
   guardarPersonaKyb,
   listCobrosR2p,
   listConversiones,
+  listEstadosCuenta,
   listDepositosSpei,
   listDestinatariosSpei,
   listLotesSpei,
@@ -165,4 +166,9 @@ export function useKybCobre() {
     guardarPersona: (p: PersonaKyb) => guardarPersonaKyb(legajo(), p).then(refrescar),
     borrarPersona: (id: string) => borrarPersonaKyb(id).then(refrescar),
   };
+}
+
+/** Cuentas del cliente con los meses de estado de cuenta disponibles. */
+export function useEstadosCuenta() {
+  return useQuery({ queryKey: [...KEY, "estados-cuenta"], queryFn: listEstadosCuenta });
 }

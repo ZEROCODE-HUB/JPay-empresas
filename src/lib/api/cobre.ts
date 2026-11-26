@@ -3,6 +3,7 @@ import type { PersonaKyb } from "@/shared/cobre-kyb";
 import type { EmpresaKyb } from "@/shared/ui/kyb-cobre";
 import { DataAccessError } from "./errors";
 import { legajoSesion, SALDOS_EMBED, conSaldos } from "./subcuentas";
+import type { CuentaEstados, DescargaEstado } from "@/shared/ui/estados-cuenta";
 
 /**
  * Cobre (México), según el Solution Design de JPAY: el comercio tiene su Cobre Balance (alta como
@@ -628,3 +629,13 @@ export async function cotizarEnvio(
   if (error) throw new DataAccessError(error);
   return data as unknown as CotizacionEnvio;
 }
+
+// ── Estados de cuenta mensuales (PDF de Cobre) ───────────────────────────────
+
+export const listEstadosCuenta = () =>
+  invocar<{ cuentas: CuentaEstados[] }>("cobre-estados-cuenta", { accion: "listar" }).then(
+    (r) => r.cuentas,
+  );
+
+export const descargarEstadoCuenta = (cuenta: string, periodo: string) =>
+  invocar<DescargaEstado>("cobre-estados-cuenta", { accion: "descargar", cuenta, periodo });

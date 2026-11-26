@@ -2802,6 +2802,87 @@ export type Database = {
           },
         ]
       }
+      cobre_estados_cuenta: {
+        Row: {
+          cliente_legajo: string | null
+          created_at: string
+          cuenta_externa_id: string
+          estado: string
+          id: string
+          instancia_id: string | null
+          modo: string
+          motivo: string | null
+          periodo: string
+          reporte_id: string | null
+          solicitado_por: string | null
+          updated_at: string
+        }
+        Insert: {
+          cliente_legajo?: string | null
+          created_at?: string
+          cuenta_externa_id: string
+          estado?: string
+          id?: string
+          instancia_id?: string | null
+          modo: string
+          motivo?: string | null
+          periodo: string
+          reporte_id?: string | null
+          solicitado_por?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cliente_legajo?: string | null
+          created_at?: string
+          cuenta_externa_id?: string
+          estado?: string
+          id?: string
+          instancia_id?: string | null
+          modo?: string
+          motivo?: string | null
+          periodo?: string
+          reporte_id?: string | null
+          solicitado_por?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_estados_cuenta_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_estados_cuenta_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_estados_cuenta_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_estados_cuenta_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_estados_cuenta_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cobre_instancias: {
         Row: {
           base_url: string | null
