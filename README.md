@@ -25,6 +25,9 @@ npm run dev
 
 ## Documentación
 
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): estructura del código y reglas (igual en los dos repos).
+- [`docs/OPERACION.md`](docs/OPERACION.md): conexiones con los proveedores, correo (Resend), Edge
+  Functions públicas y programadas, seguridad y cómo auditarla.
 - [`BRANDING.md`](BRANDING.md): cómo funciona la marca (nombre, colores, tipografías, logos).
 - [`PENDIENTES.md`](PENDIENTES.md): problemas conocidos a resolver antes de producción.
 - [`ARQUITECTURA_LINKS_PAGO.md`](ARQUITECTURA_LINKS_PAGO.md), [`CONTRATO_DATOS.md`](CONTRATO_DATOS.md).

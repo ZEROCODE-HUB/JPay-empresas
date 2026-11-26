@@ -20,9 +20,15 @@ src/
   lib/database.types.ts   Tipos generados del esquema real (`npm run gen:types`). No editar.
   brand/                  Marca: nombre, colores, logos (`npm run brand:sync`).
 supabase/
+  config.toml             Qué Edge Functions son públicas (verify_jwt = false). Solo en empresas.
+  migrations/             SQL numerado y solo aditivo. Solo en empresas.
   functions/<nombre>/     Edge Functions (Deno).
   functions/_shared/      http.ts (compartido entre repos), brand.ts (generado), email.ts.
 ```
+
+Cómo funciona todo por dentro (conexiones con los proveedores, correo, funciones públicas, tareas
+programadas, reglas de seguridad y cómo auditarlas): `JPay-empresas/docs/OPERACION.md`. Lo que falta
+para producción: `PENDIENTES.md` de cada repo.
 
 ## Reglas
 
@@ -56,7 +62,19 @@ npm run typecheck && npm run lint && npm test && npm run build
 npm run brand:check && npm run shared:check
 ```
 
-Edge Functions: `npx deno@2.9.5 check supabase/functions/*/index.ts`.
+Edge Functions: `npx deno@2.9.5 check supabase/functions/*/index.ts` y, en JPay-empresas,
+`npm run functions:check` (comprueba que cada función desplegada sea pública o exija sesión según
+`supabase/config.toml`).
+
+## Reglas que no se negocian
+
+- **Solo México**: CLABE, RFC, CURP, MXN, tuteo. Nada argentino.
+- **El cliente no ve los nombres de los proveedores** (en el portal: «Cuenta SPEI», «Cobros con
+  tarjeta», «procesador de pagos»). En el admin sí se nombran.
+- **Toda Edge Function que use el service role valida a quien llama** (la clave pública también
+  pasa `verify_jwt`). Los secretos van en Vault o en secretos de las funciones.
+- **RLS en todas las tablas**, sin políticas `using (true)` salvo catálogos de solo lectura.
+- **Migraciones aditivas** y **ledger inmutable** (las correcciones son contra-asientos).
 
 ## Relación con MoliPay
 

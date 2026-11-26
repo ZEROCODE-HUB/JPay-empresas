@@ -1,63 +1,59 @@
 # Pendientes
 
-Problemas conocidos del código que hay que resolver **antes de poner la plataforma en producción**.
-Ordenados por prioridad. Ver también `PENDIENTES.md` en `JPay-admin`.
+Lo que falta resolver **antes de operar con clientes reales**, ordenado por prioridad. Cómo está
+armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver también
+`PENDIENTES.md` en `JPay-admin`.
 
-## 1. CRÍTICO — Edge Functions sin control de acceso
+Última revisión: 26/11/2026.
 
-- **`crear-cliente`** (`supabase/functions/crear-cliente`): usa la service role y no verifica
-  quién la llama. Si ya existe un cliente con el email recibido, **actualiza sus datos**: alcanza
-  con conocer el email de alguien para modificar su legajo.
-- **`crear-admin`** (en `JPay-admin`): ver ese repo; permite crear administradores sin verificar
-  al llamador.
+## 1. Configuración que solo puede hacer el equipo
 
-**Qué hacer**
+- [ ] **Correo (Resend)**: cargar la clave en el admin (Sistema › Integraciones › Correo), verificar
+      el dominio en Resend, poner el remitente y el buzón que recibe las solicitudes, y mandar la
+      prueba. Mientras no esté, el correo está en **modo demo**: el enlace de verificación y el
+      código de las transferencias se muestran en pantalla, así que la verificación no protege nada.
+- [ ] **Datos de la marca**: `src/brand/brand.json` todavía tiene razón social, RFC, domicilio,
+      correos y dominios de ejemplo (`jpay.example`). Ver `BRANDING.md`.
+- [ ] **Cobre en producción**: hoy se opera el espacio productivo de pruebas con una cuenta propia
+      conectada. Falta acordar con Cobre lo de la sección 9 del Solution Design (habilitaciones) y
+      pasar `COBRE_MODO` a `produccion` con las credenciales definitivas.
+- [ ] **Ecart Pay en producción**: activar la pasarela de la cuenta, pasar el proveedor de sandbox
+      a producción y volver a vincular los comercios.
+- [ ] **Simulador apagado**: `parametros_globales.simulador_depositos_habilitado` debe quedar en
+      `false` y conviene desprogramar la tarea `cobre-simulador` de pg_cron.
 
-- [ ] Exigir y validar el JWT del llamador en cada función (`auth.getUser(token)`), y en las de
-      administración verificar su rol en la base antes de operar.
-- [ ] En el alta de clientes, no permitir que una llamada anónima modifique un cliente existente.
-- [ ] Revisar `verify_jwt` de cada función al desplegar.
+## 2. Funcionalidad
 
-> Las funciones de prueba que exponían documentos de identidad (`turl`, `test-sign`, `cleanup`)
-> se eliminaron de este repo.
+- [ ] **Varios comercios por cliente**: Conexiones los maneja por separado, pero Cobros con
+      tarjeta, Suscripciones, Puntos físicos y Retiros operan solo el primer comercio
+      (`RequiereEcartPay`). Agregar el selector de comercio si se van a usar varios.
+- [ ] **Cobro en terminal**: Ecart Pay no publica la API para mandar un cobro a una terminal ni
+      para asignar terminales desde la plataforma; hay que pedírsela.
+- [ ] **Dólares con cuenta Cobre propia**: los envíos y conversiones en USD solo funcionan con la
+      cuenta de la plataforma (Balances Global y USA).
+- [ ] **Barrido de comisiones**: las comisiones de la plataforma quedan en el Balance del cliente
+      en Cobre; falta definir cómo se cobran.
+- [ ] **Pago de servicios**: la pantalla existe pero no tiene backend (módulo apagado).
 
-## 2. ALTO — Admin determinado por dominio de email (debe ser por rol)
+## 3. Seguridad y limpieza
 
-`supabase/functions/doc-url/index.ts` decide si un usuario es administrador por el dominio de su
-email (`brand.web.domain`). Ser admin **no puede depender del email**: cualquiera con una cuenta
-de ese dominio quedaría como admin.
+- [ ] **`reenviar-verificacion` y el registro revelan si un correo tiene cuenta** (mensaje distinto
+      cuando no existe). Riesgo bajo; decidir si se unifica el mensaje.
+- [ ] **Tablas y columnas heredadas** sin uso en México (`caja_molipay`, `liquidaciones_*`,
+      `lotes_*`, `comision_molipay*`, parámetros como `iva_sobre_comision_pct`): están cerradas por
+      RLS, pero conviene retirarlas o renombrarlas con una migración aparte.
+- [ ] **Auditoría periódica**: repetir las consultas de `docs/OPERACION.md` (sección 7) cada vez
+      que se agreguen tablas, vistas o funciones `SECURITY DEFINER`.
 
-**Qué hacer**
+## Resuelto (para referencia)
 
-- [ ] Definir el rol en la base (tabla de administradores con rol, o `app_metadata.role`
-      asignado solo desde el backend con service role), nunca editable por el propio usuario.
-- [ ] En `doc-url`, reemplazar el chequeo por dominio por un chequeo de ese rol.
-- [ ] Revisar que las políticas RLS de administración usen el mismo rol.
-
-## 3. MEDIO — ID de transferencia generado en el navegador
-
-`src/routes/app.transferencias.tsx` arma el ID que se envía al Banco de Comercio en el navegador
-(`TRF${Date.now()}`).
-
-**Qué hacer**
-
-- [ ] Generar el ID en el backend, con un prefijo configurable.
-- [ ] No usar `Date.now()` como única fuente de unicidad (dos transferencias en el mismo
-      milisegundo chocan).
-
-## 4. MEDIO — Nombres heredados en columnas de la base
-
-Algunas columnas y campos de la base todavía tienen nombres heredados: `tasa_molipay_pct`,
-`tasa_molipay_monto`, `comision_molipay`, `comision_molipay_monto`, `comision_molipay_base`.
-El código los lee y escribe tal cual porque deben coincidir con la base.
-
-**Qué hacer**
-
-- [ ] Migración de base que renombre esas columnas (y las funciones/vistas que las devuelven) a
-      nombres neutros (p. ej. `tasa_plataforma_pct`), y actualizar el código en el mismo cambio.
-
-## 5. Configuración obligatoria
-
-- [ ] `VITE_PAYMENTS_API_URL`, `VITE_BDC_BACKEND_URL` y `VITE_PUBLIC_APP_URL` (ver `.env.example`).
-      Sin `VITE_BDC_BACKEND_URL`, las transferencias por el banco quedan deshabilitadas.
-- [ ] Reemplazar los datos ficticios de `src/brand/brand.json` (ver `BRANDING.md`).
+- 26/11/2026 — `crear-cliente` exige sesión y usa el correo de la sesión (antes cualquiera podía
+  reescribir los datos de un cliente conociendo su correo).
+- 26/11/2026 — `doc-url` decide quién es administrador por rol en la base, no por el dominio del
+  correo.
+- 26/11/2026 — Migración 1066: políticas abiertas heredadas, vistas sin `security_invoker` y
+  buckets `kyc` y `conciliaciones`.
+- 26/11/2026 — Las funciones públicas (avisos, OAuth, tareas programadas) volvieron a ser públicas
+  y quedaron fijadas en `supabase/config.toml` (`npm run functions:check`).
+- 26/11/2026 — La conciliación de Cobre funciona contra la API real.
+- 11/2026 — Controles en funciones `SECURITY DEFINER` (1017, 1018, 1055) y RLS de `comercios` (1063).
