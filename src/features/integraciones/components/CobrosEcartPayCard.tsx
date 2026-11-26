@@ -34,15 +34,16 @@ export function CobrosEcartPayCard() {
 
   const abrir = (c: CobroProveedor) => {
     setCobro(c);
-    setMonto(String(c.monto - c.reembolsado));
+    setMonto((Math.round((c.monto - c.reembolsado) * 100) / 100).toFixed(2));
     setMotivo("requested");
     setNota("");
   };
-  const disponible = cobro ? cobro.monto - cobro.reembolsado : 0;
+  // En centavos: 100.10 − 33.40 en coma flotante da 66.6999… y rechazaría 66.70.
+  const disponible = cobro ? Math.round((cobro.monto - cobro.reembolsado) * 100) / 100 : 0;
   const confirmar = () => {
     if (!cobro) return;
     const m = parseMonto(monto);
-    if (!(m > 0) || m > disponible) {
+    if (!(m > 0) || Math.round(m * 100) > Math.round(disponible * 100)) {
       toast.error(`El monto debe ser mayor a 0 y hasta ${formatMoney(disponible)}`);
       return;
     }

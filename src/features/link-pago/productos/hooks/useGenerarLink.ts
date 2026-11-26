@@ -93,7 +93,7 @@ export function useGenerarLink({
       return;
     }
     if (!legajo) {
-      toast.error("Sesion no disponible");
+      toast.error("Sesión no disponible");
       return;
     }
     if (!comercioId) {
@@ -132,7 +132,7 @@ export function useGenerarLink({
       toast.error("No se pudo generar el link");
       return;
     }
-    if (!inserted.detalleOk) toast.error("Link creado, pero fallo el detalle");
+    if (!inserted.detalleOk) toast.error("Link creado, pero falló el detalle");
     onCreado({
       id: inserted.id,
       url,
@@ -159,7 +159,7 @@ export function useGenerarLink({
     setMethods([]);
     setStatus("Activo");
     setComercioId("");
-    toast.success("Link generado con exito");
+    toast.success("Link generado con éxito");
     await onRefrescar();
   };
 

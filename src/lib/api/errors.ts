@@ -29,6 +29,8 @@ export class DataAccessError extends Error {
   notConfigured: boolean;
   code: string | null;
   details: string | null;
+  /** Código HTTP de la Edge Function, si vino de una (para distinguir rechazo de corte de red). */
+  status: number | null = null;
 
   constructor(err: unknown) {
     const e = toDataError(err);
@@ -39,4 +41,14 @@ export class DataAccessError extends Error {
     this.permission = isPermissionError(err);
     this.notConfigured = isNotConfiguredError(err);
   }
+}
+
+/**
+ * El servidor rechazó la operación (4xx): no se hizo nada y un reintento es otra operación.
+ * Un corte de red o un 5xx NO es rechazo: puede haberse procesado, así que el reintento debe
+ * reusar el mismo identificador (el servidor lo reconoce y no la repite).
+ */
+export function esRechazo(e: unknown): boolean {
+  const s = (e as { status?: unknown } | null)?.status;
+  return typeof s === "number" && s >= 400 && s < 500;
 }

@@ -78,17 +78,21 @@ export async function aplicarRebote(
   sb: SupabaseClient,
   modo: ModoCobre,
   ref: { mmId: string | null; externalId: string | null },
+  /** Instancia de la que vino el aviso (null = matriz): nunca se toca un envío de otra. */
+  instanciaId?: string | null,
 ): Promise<string> {
   const mm = (ref.mmId ?? "").replace(/[^\w-]/g, "");
   const ext = (ref.externalId ?? "").replace(/[^\w-]/g, "");
   if (!mm && !ext) return "sin referencia";
-  const { data: t } = await sb
+  let q = sb
     .from("cobre_transferencias")
     .select("id, id_txn, estado")
     .eq("modo", modo)
-    .or(`mm_id.eq.${mm || "-"},id_txn.eq.${ext || "-"}`)
-    .limit(1)
-    .maybeSingle();
+    .or(`mm_id.eq.${mm || "-"},id_txn.eq.${ext || "-"}`);
+  if (instanciaId !== undefined) {
+    q = instanciaId ? q.eq("instancia_id", instanciaId) : q.is("instancia_id", null);
+  }
+  const { data: t } = await q.limit(1).maybeSingle();
   if (!t) return "de un envío desconocido";
   if (t.estado === "devuelta") return "ya aplicado";
   // Antes de `completed` el reintegro lo hace el estado `rejected` del propio envío.

@@ -64,6 +64,20 @@ Deno.serve(async (req) => {
       credenciales: { publicKey: cred.publicId, privateKey: cred.privateId },
     }).token(true);
 
+    // Una cuenta de Ecart Pay solo puede estar vinculada a un comercio: si ya está conectada a
+    // otro, no se reasigna (evita que alguien se quede con la cuenta de otro mandándole su enlace).
+    if (cred.accountId) {
+      const { data: ocupada } = await sb
+        .from("comercio_proveedores")
+        .select("comercio_id")
+        .eq("proveedor", "ecartpay")
+        .eq("cuenta_externa_id", cred.accountId)
+        .eq("estado", "conectado")
+        .neq("comercio_id", estado.comercio_id)
+        .limit(1)
+        .maybeSingle();
+      if (ocupada) throw new Error("Esa cuenta de cobros ya está vinculada a otro comercio");
+    }
     const { data: conexion, error } = await sb
       .from("comercio_proveedores")
       .upsert(

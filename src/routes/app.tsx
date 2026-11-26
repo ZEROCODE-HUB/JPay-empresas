@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import {
   LayoutDashboard,
@@ -33,8 +33,28 @@ import { usePaisConModulos } from "@/shared/modulos-pais";
 import { filtrarPorModulo } from "@/shared/pais";
 import { RouteSkeleton } from "@/shared/ui/route-skeleton";
 import { usePerfilSesion } from "@/hooks/useCuenta";
+import { getEstadoClientePorCorreo } from "@/lib/api/onboarding";
+import { estadoLoginDesdeCliente } from "@/features/auth/login/utils";
+import { supabase } from "@/lib/supabase";
 
 export const Route = createFileRoute("/app")({
+  // Sin sesión, al login; con sesión pero sin cuenta aprobada, a la pantalla de su alta.
+  // (Solo en el navegador: la sesión vive ahí. El servidor valida cada operación por su cuenta.)
+  beforeLoad: async () => {
+    if (typeof window === "undefined" || !supabase) return;
+    const { data } = await supabase.auth.getSession();
+    const email = data.session?.user?.email;
+    if (!email) throw redirect({ to: "/login" });
+    let estado = "pendiente";
+    try {
+      estado = estadoLoginDesdeCliente(
+        (await getEstadoClientePorCorreo(email)) ?? "pendiente_verificacion",
+      );
+    } catch {
+      return; // Si no se puede consultar, no se bloquea por un error de red.
+    }
+    if (estado !== "aprobado") throw redirect({ to: "/onboarding/en-proceso" });
+  },
   component: AppLayout,
   pendingComponent: RouteSkeleton,
 });

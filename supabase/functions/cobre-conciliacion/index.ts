@@ -357,7 +357,12 @@ async function revisarTransaccion(
   }
 
   if (tx.tipo === "spei_rejected") {
-    const r = await aplicarRebote(sb, modo, { mmId: tx.mmId, externalId: tx.mmExternalId });
+    const r = await aplicarRebote(
+      sb,
+      modo,
+      { mmId: tx.mmId, externalId: tx.mmExternalId },
+      c.instanciaId,
+    );
     return r === "reintegrado" ? "recuperado" : null;
   }
 

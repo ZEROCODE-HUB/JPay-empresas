@@ -1,3 +1,5 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { cerrarSesion } from "@/lib/api/auth";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   Menu,
@@ -76,7 +78,15 @@ export function PortalShell({
   const activa = rutaActiva(leaves, path);
   const activaMovil = rutaActiva(mainNav, path);
 
-  const onLogout = () => {
+  const queryClient = useQueryClient();
+  const onLogout = async () => {
+    setOpen(false);
+    try {
+      await cerrarSesion();
+    } catch {
+      // Aunque falle la llamada, se limpia todo lo local y se vuelve al login.
+    }
+    queryClient.clear();
     setRole(null);
     navigate({ to: "/login" });
   };
@@ -113,7 +123,7 @@ export function PortalShell({
               : "U"}
           </div>
           <button
-            onClick={onLogout}
+            onClick={() => void onLogout()}
             className="hidden md:inline-flex items-center gap-1 text-xs text-black-400 hover:text-black-700 transition-colors"
           >
             <LogOut size={14} /> Salir
@@ -162,6 +172,12 @@ export function PortalShell({
               <nav className="p-3 flex-1 overflow-y-auto">
                 <SidebarNav nav={nav} activa={activa} onNavigate={() => setOpen(false)} />
               </nav>
+              <button
+                onClick={() => void onLogout()}
+                className="m-3 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-white/80 hover:bg-white/10"
+              >
+                <LogOut size={16} /> Salir
+              </button>
             </aside>
           </div>
         )}

@@ -407,7 +407,9 @@ export async function aplicarEstadoEnvioUsd(
   const m = (mm ?? {}) as Obj;
   const r = resumirTransferencia(m);
   const ext = r.externalId ?? "";
-  if (m.type === "global_pay_to_usa" || ext.endsWith("-T")) {
+  // Los envíos en dólares solo existen en la matriz: un aviso de una instancia propia nunca los toca.
+  if (conexion.instanciaId) return "ignorado (instancia propia)";
+  if (m.type === "global_pay_to_usa") {
     const idTxn = ext.replace(/-T$/, "").replace(/[^\w-]/g, "");
     const mmId = r.id.replace(/[^\w-]/g, "");
     const { data: t } = await sb

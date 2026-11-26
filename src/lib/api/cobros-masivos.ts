@@ -440,13 +440,6 @@ export async function iniciarLoteDB(
       inserted.map((i) => i.url),
     );
 
-    const { data: verifyRow, error: verifyErr } = await s
-      .from("cliente_links_pago")
-      .select("id, url")
-      .eq("url", linkRows[0].url)
-      .maybeSingle();
-    console.log("[iniciarLoteDB] verify link exists:", !!verifyRow, "error:", verifyErr?.message);
-
     let linkUpdatesOk = 0;
     for (let i = 0; i < inserted.length; i++) {
       const { error: linkErr } = await s.rpc("actualizar_link_registro", {
@@ -456,10 +449,10 @@ export async function iniciarLoteDB(
       if (linkErr) console.error("[iniciarLoteDB] actualizar_link error:", linkErr);
       else linkUpdatesOk++;
     }
-    console.log("[iniciarLoteDB] link updates:", linkUpdatesOk, "of", inserted.length);
 
     // Crear detalle snapshot (equivalente a Productos) para que el checkout /p/{CODE} muestre monto/producto
     // No afecta a links individuales; solo complementa los de lote
+    let detalleOk = true;
     try {
       const detalleRows = inserted.map((link, idx) => ({
         link_id: link.id,
@@ -470,12 +463,28 @@ export async function iniciarLoteDB(
         precio_unitario: Number(regsSinLink[idx].monto),
       }));
       const { error: detErr } = await s.from("cliente_links_pago_detalle").insert(detalleRows);
-      if (detErr) console.error("[iniciarLoteDB] detalle insert error:", JSON.stringify(detErr));
-      else console.log("[iniciarLoteDB] detalle rows created:", detalleRows.length);
+      if (detErr) {
+        detalleOk = false;
+        console.error("[iniciarLoteDB] detalle insert error:", detErr.message);
+      }
     } catch (e) {
+      detalleOk = false;
       console.error("[iniciarLoteDB] detalle exception:", e);
     }
 
+    // Antes se informaba éxito aunque fallaran: el usuario veía el lote listo con registros sin
+    // link o links sin monto. Ahora se avisa qué faltó (reintentar completa solo lo pendiente).
+    const faltan = inserted.length - linkUpdatesOk;
+    if (faltan > 0 || !detalleOk) {
+      return {
+        ok: false,
+        error:
+          faltan > 0
+            ? `No se pudieron asignar ${faltan} de ${inserted.length} links. Vuelve a intentarlo.`
+            : "Los links se crearon pero no se pudo guardar su detalle. Vuelve a intentarlo.",
+        linksCount: linkUpdatesOk,
+      };
+    }
     return { ok: true, linksCount: inserted.length };
   } catch (e) {
     console.error("[iniciarLoteDB] Exception:", e);

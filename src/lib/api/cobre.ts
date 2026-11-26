@@ -105,7 +105,9 @@ async function invocar<T>(fn: string, body: Record<string, unknown>): Promise<T>
   if (error) {
     const ctx = (error as { context?: Response }).context;
     const cuerpo = ctx ? await ctx.json().catch(() => null) : null;
-    throw new DataAccessError(cuerpo?.error ? new Error(cuerpo.error) : error);
+    const err = new DataAccessError(cuerpo?.error ? new Error(cuerpo.error) : error);
+    err.status = typeof ctx?.status === "number" ? ctx.status : null;
+    throw err;
   }
   if (data == null) throw new DataAccessError(new Error("Respuesta vacía"));
   return data;

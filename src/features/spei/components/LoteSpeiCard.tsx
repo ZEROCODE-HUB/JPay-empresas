@@ -1,3 +1,4 @@
+import { esRechazo } from "@/lib/api/errors";
 import { Download } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -115,7 +116,7 @@ export function LoteSpeiCard({
             );
           } else {
             toast.error(msg);
-            setIdLote(`LT${Date.now().toString(36).toUpperCase()}`);
+            if (esRechazo(e)) setIdLote(`LT${Date.now().toString(36).toUpperCase()}`);
           }
         },
       },

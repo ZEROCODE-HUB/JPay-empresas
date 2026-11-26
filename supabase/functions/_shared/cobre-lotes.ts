@@ -80,7 +80,12 @@ export async function enviarLote(
 }
 
 /** Aviso `bulk_money_movements.status.*` (o GET /bulk_money_movements/{id}). */
-export async function aplicarEstadoLote(sb: SupabaseClient, bat: unknown): Promise<string> {
+export async function aplicarEstadoLote(
+  sb: SupabaseClient,
+  bat: unknown,
+  /** Viene de un aviso: se busca solo por el id que asignó Cobre. */
+  deAviso = false,
+): Promise<string> {
   const b = (bat ?? {}) as Obj;
   const id = typeof b.id === "string" ? b.id : "";
   const archivo = typeof b.input_filename === "string" ? b.input_filename : "";
@@ -88,8 +93,9 @@ export async function aplicarEstadoLote(sb: SupabaseClient, bat: unknown): Promi
   const estado = typeof st.state === "string" ? st.state : null;
   if (!estado) return "sin estado";
   let q = sb.from("cobre_lotes").select("id, modo, estado, lote_externo_id");
+  if (deAviso && !id) return "sin id";
   q =
-    id && archivo
+    id && archivo && !deAviso
       ? q.or(
           `lote_externo_id.eq.${id.replace(/[^\w-]/g, "")},archivo.eq.${archivo.replace(/[^\w.-]/g, "")}`,
         )

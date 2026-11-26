@@ -8942,6 +8942,10 @@ export type Database = {
         Returns: Json
       }
       obtener_link_pago: { Args: { p_codigo: string }; Returns: Json }
+      otp_consumir: {
+        Args: { p_codigo: string; p_correo: string }
+        Returns: string
+      }
       pais_cambiar_modulo: {
         Args: { p_activo: boolean; p_codigo: string; p_modulo: string }
         Returns: Json

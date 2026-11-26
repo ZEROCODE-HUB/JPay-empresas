@@ -97,7 +97,7 @@ export async function extraerMensajeEdgeFunction(err: unknown): Promise<string |
 
     if (!mensaje) return texto.slice(0, 400);
     if (/testing emails to your own email|verify a domain/i.test(mensaje)) {
-      return "No se pudo enviar el correo de verificación: Resend no tiene un dominio verificado y sólo permite enviar a la dirección de la cuenta. Verifica el dominio en resend.com/domains y ajusta RESEND_FROM.";
+      return "No pudimos enviarte el correo de verificación. Inténtalo más tarde o escribe a soporte.";
     }
     return mensaje;
   } catch {
@@ -169,14 +169,14 @@ const ERROR_MESSAGES: [RegExp, string][] = [
   ],
   [
     /confirmation.*expired|token.*expired|expired/i,
-    "El enlace expiró o ya no es válido. Solicitalo nuevamente.",
+    "El enlace expiró o ya no es válido. Solicítalo de nuevo.",
   ],
-  [/invalid.*token|token.*invalid/i, "El enlace no es válido. Solicitalo nuevamente."],
+  [/invalid.*token|token.*invalid/i, "El enlace no es válido. Solicítalo de nuevo."],
 ];
 
 export function getAuthErrorMessage(message: string): string {
   for (const [pattern, friendly] of ERROR_MESSAGES) {
     if (pattern.test(message)) return friendly;
   }
-  return "No se pudo iniciar sesión. Intentalo nuevamente.";
+  return "No se pudo iniciar sesión. Inténtalo de nuevo.";
 }

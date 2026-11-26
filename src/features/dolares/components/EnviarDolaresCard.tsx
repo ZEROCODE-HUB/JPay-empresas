@@ -1,3 +1,4 @@
+import { esRechazo } from "@/lib/api/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
@@ -113,7 +114,7 @@ export function EnviarDolaresCard({
             );
           } else {
             toast.error(msg);
-            setTxid(nuevoTxid());
+            if (esRechazo(e)) setTxid(nuevoTxid());
           }
         },
       },

@@ -1,3 +1,4 @@
+import { esRechazo } from "@/lib/api/errors";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
@@ -116,8 +117,9 @@ export function TransferirSpeiCard({
             );
           } else {
             toast.error(msg);
-            // Un rechazo de validación cierra este intento: el próximo envío es otro TXID.
-            setTxid(nuevoTxid());
+            // Un rechazo cierra este intento: el próximo envío es otro TXID. Ante un corte de red
+            // se conserva, por si el servidor sí lo procesó (así no se manda dos veces).
+            if (esRechazo(e)) setTxid(nuevoTxid());
           }
         },
       },

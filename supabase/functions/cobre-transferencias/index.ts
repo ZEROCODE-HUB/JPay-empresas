@@ -287,26 +287,15 @@ async function verificarOtp(ctx: Ctx, codigo: unknown) {
   const { data: u } = await ctx.sb.auth.getUser(token ?? "");
   const correo = u?.user?.email?.toLowerCase().trim();
   if (!correo) throw new HttpError(401, "Sesión inválida");
-  const { data: otp } = await ctx.sb
-    .from("otp_transferencias")
-    .select("id, codigo, expires_at, intentos")
-    .eq("correo", correo)
-    .eq("usado", false)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!otp || new Date(otp.expires_at).getTime() < Date.now() || (otp.intentos ?? 0) >= 5) {
-    if (otp) await ctx.sb.from("otp_transferencias").update({ usado: true }).eq("id", otp.id);
-    throw new HttpError(400, "El código expiró o ya se usó. Pide uno nuevo.");
-  }
-  if (otp.codigo !== codigo) {
-    await ctx.sb
-      .from("otp_transferencias")
-      .update({ intentos: (otp.intentos ?? 0) + 1 })
-      .eq("id", otp.id);
-    throw new HttpError(400, "Código incorrecto");
-  }
-  await ctx.sb.from("otp_transferencias").update({ usado: true }).eq("id", otp.id);
+  // Atómico en la base (migración 1068): cuenta el intento y consume el código en una sola
+  // sentencia, así que solicitudes en paralelo no lo reutilizan ni esquivan el tope de 5 intentos.
+  const { data: r, error } = await ctx.sb.rpc("otp_consumir", {
+    p_correo: correo,
+    p_codigo: codigo,
+  });
+  if (error) throw new HttpError(500, error.message);
+  if (r === "vencido") throw new HttpError(400, "El código expiró o ya se usó. Pide uno nuevo.");
+  if (r !== "ok") throw new HttpError(400, "Código incorrecto");
 }
 
 /** Balance MX del comercio en su instancia (el origen de todo SPEI). */
@@ -364,7 +353,7 @@ const centavosExactos = (m: number) => m > 0 && Math.abs(m * 100 - Math.round(m 
 
 async function enviar(ctx: Ctx, legajo: string, b: Body) {
   const idTxn = String(b.id_txn ?? "").trim();
-  if (!/^[A-Za-z0-9-]{9,40}$/.test(idTxn))
+  if (!/^[A-Za-z0-9-]{9,40}$/.test(idTxn) || /-T$/i.test(idTxn))
     throw new HttpError(400, "id_txn inválido (9 a 40 caracteres)");
   const monto = Number(b.monto);
   if (!centavosExactos(monto)) throw new HttpError(400, "Monto inválido");
@@ -402,6 +391,8 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
       .eq("id", subcuentaId)
       .maybeSingle(),
   ]);
+  // Sin la configuración no se sabe si exigir código o aprobación: no se envía.
+  if (!conf) throw new HttpError(500, "No se pudo leer la configuración de envíos");
   if (!cp) throw new HttpError(404, "Destinatario inexistente");
   if (!sub || sub.cliente_legajo !== legajo) throw new HttpError(404, "Subcuenta inexistente");
   const usd = cp.tipo === "business";
@@ -424,7 +415,7 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
       409,
       cp.verificacion === "unmatched"
         ? "La CLABE del destinatario no coincide con su RFC/CURP"
-        : "Todavía no confirmamos que la CLABE sea del titular; probá en unos minutos",
+        : "Todavía no confirmamos que la CLABE sea del titular; prueba en unos minutos",
     );
   }
   if (conf?.exigir_otp) await verificarOtp(ctx, b.codigo);
@@ -465,6 +456,16 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
     .select("*")
     .single();
   if (eIns) {
+    // Otra solicitud con el mismo TXID ganó la carrera: su envío sigue; no se libera su reserva.
+    if (eIns.code === "23505") {
+      const { data: otra } = await ctx.sb
+        .from("cobre_transferencias")
+        .select("*")
+        .eq("id_txn", idTxn)
+        .maybeSingle();
+      if (otra && otra.cliente_legajo === legajo) return otra;
+      throw new HttpError(409, "Ese envío ya está registrado");
+    }
     // Sin fila no hay quien siga el envío: se libera la reserva (un reintento con el mismo TXID
     // reserva de nuevo).
     await ctx.sb.rpc("cancelar_transferencia_bdc", {
@@ -589,6 +590,7 @@ async function lote(ctx: Ctx, legajo: string, b: Body) {
     .select("exigir_otp, monto_aprobacion")
     .eq("id", 1)
     .single();
+  if (!conf) throw new HttpError(500, "No se pudo leer la configuración de envíos");
   const ids = [...new Set(items.map((i) => String(i.contraparte_id ?? "")))];
   const { data: cps } = await ctx.sb
     .from("cobre_contrapartes")

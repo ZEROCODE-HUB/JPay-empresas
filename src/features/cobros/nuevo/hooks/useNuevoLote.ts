@@ -92,7 +92,7 @@ export function useNuevoLote() {
       }
 
       toast.success(`Lote "${p.nombre}" creado con ${filas.length} registros`, {
-        description: "El lote quedo en estado Pendiente de procesamiento",
+        description: "El lote quedó en estado Pendiente de procesamiento",
       });
       navigate({ to: "/app/cobros/gestion" });
     } finally {
