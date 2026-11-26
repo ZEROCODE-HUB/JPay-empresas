@@ -92,6 +92,8 @@ export type DepositoSpei = {
 export type CuentaCobre = {
   modo: string;
   instanciaPropia: boolean;
+  /** Si el comercio puede convertir y enviar dólares (Balances Global y USA activos). */
+  dolares?: boolean;
   faltan: string[];
   alta: { estado: string; motivo: string | null; created_at: string } | null;
   cuenta: {

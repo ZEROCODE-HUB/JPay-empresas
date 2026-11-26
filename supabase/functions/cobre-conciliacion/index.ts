@@ -162,18 +162,31 @@ Deno.serve(
           );
         }
       }
-      // Global + USA de la matriz contra BANCO_COBRE_USD.
-      if (!c.instanciaId && saldosUsd.length) {
+      // Global + USA: los de la matriz contra BANCO_COBRE_USD; los de una cuenta propia contra
+      // los dólares del comercio (sus subcuentas USD y las comisiones que siguen en su cuenta).
+      if (saldosUsd.length) {
         const cobre = Math.round(saldosUsd.reduce((a, b) => a + b, 0) * 100) / 100;
-        const jpay =
-          Math.round(
-            ((await saldoCuenta(sb, "BANCO_COBRE_USD")) - (enCurso.get("USD") ?? 0)) * 100,
-          ) / 100;
-        resumen.saldos.push({ cuenta: "Global + USA", cobre, jpay, moneda: "USD" });
+        const base = c.instanciaId
+          ? Number(
+              (
+                await sb.rpc("cobre_saldo_esperado_usd_instancia", {
+                  p_legajo: c.clienteLegajo ?? "",
+                })
+              ).data ?? 0,
+            )
+          : await saldoCuenta(sb, "BANCO_COBRE_USD");
+        const jpay = Math.round((base - (enCurso.get(claveUsd(c)) ?? 0)) * 100) / 100;
+        resumen.saldos.push({
+          cuenta: "Global + USA",
+          ...(c.instanciaId ? { legajo: c.clienteLegajo } : {}),
+          cobre,
+          jpay,
+          moneda: "USD",
+        });
         if (Math.abs(cobre - jpay) >= 0.01) {
           diferencias.push({
             tipo: "saldo_distinto",
-            clave: `saldo:${modo}:usd`,
+            clave: `saldo:${modo}:${claveUsd(c)}`,
             transaccion: null,
             detalle: {
               cuenta: "Global + USA",
@@ -278,6 +291,9 @@ async function saldoCuenta(sb: SupabaseClient, codigo: string): Promise<number> 
 }
 
 const DEBITOS_ENVIO = ["spei_debit", "fedwire_debit", "swift_debit"];
+
+/** Clave de los envíos USD en curso: la bolsa de JPay o la de cada cuenta propia. */
+const claveUsd = (c: ConexionCobre) => (c.instanciaId ? `USD:${c.instanciaId}` : "USD");
 
 /** Cruza una transacción de Cobre con JPay: recupera lo que faltó y devuelve la diferencia, si hay. */
 async function revisarTransaccion(
@@ -485,7 +501,7 @@ async function revisarTransaccion(
       detalle: { monto, tipo: tx.tipo, nota: `Envío en Cobre que ${brand.name} no tiene` },
     };
   if (["pendiente", "enviando", "trasladando"].includes(envio.estado)) {
-    const clave = cuenta.moneda === "USD" ? "USD" : cuenta.cuenta_externa_id;
+    const clave = cuenta.moneda === "USD" ? claveUsd(c) : cuenta.cuenta_externa_id;
     enCurso.set(clave, (enCurso.get(clave) ?? 0) + monto);
   }
   if (Math.abs(Number(envio.monto) - monto) >= 0.01) {

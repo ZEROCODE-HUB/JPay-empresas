@@ -33,7 +33,7 @@ import {
 import { conexionCobre, conexionDeCliente, type ConexionCobre } from "../_shared/cobre-servidor.ts";
 import { aplicarEstadoTransferencia } from "../_shared/cobre-transferencias.ts";
 import { enviarLote, nombreArchivoLote } from "../_shared/cobre-lotes.ts";
-import { aplicarEstadoEnvioUsd, iniciarEnvioUsd } from "../_shared/cobre-usd.ts";
+import { aplicarEstadoEnvioUsd, balancesUsd, iniciarEnvioUsd } from "../_shared/cobre-usd.ts";
 import {
   bearerToken,
   esAdmin,
@@ -434,8 +434,8 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
     );
   }
   if (usd) {
-    if (ctx.conexion.instanciaId)
-      throw new HttpError(409, `Los envíos en dólares son por la cuenta de ${brand.name}`);
+    // En una cuenta propia, solo si el comercio tiene sus Balances Global y USA.
+    if (ctx.conexion.instanciaId) await balancesUsd(ctx.sb, ctx.conexion);
     if (monto < 1) throw new HttpError(400, "El mínimo por envío en dólares es 1.00 USD");
     if (cp.verificacion !== "verified")
       throw new HttpError(409, "Todavía estamos verificando a este beneficiario");

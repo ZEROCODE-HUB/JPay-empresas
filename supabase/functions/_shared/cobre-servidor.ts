@@ -31,6 +31,8 @@ export type ConexionCobre = {
   almacen: AlmacenSim | null;
   /** Instancia propia del comercio; null = matriz de JPay. */
   instanciaId: string | null;
+  /** Dueño de la instancia propia; null = matriz de JPay. */
+  clienteLegajo: string | null;
 };
 
 /** Instancia Cobre propia de un comercio, con sus secretos leídos de Vault. */
@@ -54,6 +56,7 @@ export function conexionCobre(
       modo,
       almacen,
       instanciaId,
+      clienteLegajo: instancia?.clienteLegajo ?? null,
       cliente: new CobreCliente({
         baseUrl: baseUrlCobre(modo),
         credenciales: instancia?.credenciales ?? { userId: "simulador", secret: "simulador" },
@@ -68,6 +71,7 @@ export function conexionCobre(
     modo,
     almacen: null,
     instanciaId,
+    clienteLegajo: instancia?.clienteLegajo ?? null,
     cliente: new CobreCliente({ baseUrl, credenciales: cred }),
   };
 }

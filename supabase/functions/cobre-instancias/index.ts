@@ -21,6 +21,10 @@
 //   faltó (se reintenta conectando de nuevo).
 // - `desconectar_cliente` { legajo }: quita los avisos, desactiva la instancia y deshabilita su
 //   CLABE en JPay.
+// - `balances_usd` { legajo, global?, usa? }: dólares en la cuenta propia (§4.1 pasos 5–6). Vincula
+//   los Balances Global (`pr_global_cobre`) y USA (`pr_usa_cobre`) del cliente: el `acc_…` que se
+//   indique, el que ya tenga en Cobre o, si no tiene, lo crea. Al conectar se vinculan solos los
+//   que ya existan (nunca se crean sin pedirlo).
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CobreError, modoCobre } from "../_shared/cobre.ts";
@@ -52,6 +56,15 @@ Deno.serve(
           return json(await conectar(sb, await legajoExistente(sb, body.legajo), body));
         case "desconectar_cliente":
           return json(await desconectar(sb, await legajoExistente(sb, body.legajo)));
+        case "balances_usd": {
+          const legajo = await legajoExistente(sb, body.legajo);
+          await balancesUsdCliente(sb, legajo, {
+            global: texto(body.global, 60),
+            usa: texto(body.usa, 60),
+            crear: true,
+          });
+          return json(await conexionDeCliente(sb, legajo));
+        }
         case "guardar":
           return json(await guardar(sb, body));
         case "desactivar":
@@ -314,19 +327,34 @@ async function conexionDeCliente(sb: SupabaseClient, legajo: string) {
   const modo = modoCobre();
   const inst = await instanciaActiva(sb, legajo);
   if (!inst) return { conectada: false, modo };
-  const { data: cuenta } = await sb
+  const { data: cuentas } = await sb
     .from("cobre_cuentas")
-    .select("cuenta_externa_id, clabe, conectividad")
+    .select("tipo, cuenta_externa_id, clabe, conectividad")
     .eq("instancia_id", inst.id)
-    .eq("estado", "activa")
-    .maybeSingle();
+    .eq("estado", "activa");
+  const filas = (cuentas ?? []) as {
+    tipo: string;
+    cuenta_externa_id: string;
+    clabe: string | null;
+    conectividad: string | null;
+  }[];
+  const cuenta = filas.find((c) => c.tipo === "cliente");
+  const global = filas.find((c) => c.tipo === "global")?.cuenta_externa_id ?? null;
+  const usa = filas.find((c) => c.tipo === "usa")?.cuenta_externa_id ?? null;
   return {
     conectada: true,
     modo,
     user_id: inst.user_id,
     avisos: !!inst.suscripcion_id,
     conectada_at: inst.created_at,
-    cuenta: cuenta ?? null,
+    cuenta: cuenta
+      ? {
+          cuenta_externa_id: cuenta.cuenta_externa_id,
+          clabe: cuenta.clabe,
+          conectividad: cuenta.conectividad,
+        }
+      : null,
+    dolares: { global, usa },
   };
 }
 
@@ -387,7 +415,110 @@ async function conectar(sb: SupabaseClient, legajo: string, b: Obj) {
   } catch (e) {
     faltantes.push(`Avisos de movimientos: ${mensaje(e)}`);
   }
+  // Dólares: solo si la cuenta ya tiene sus Balances Global y USA (no se crean al conectar).
+  await balancesUsdCliente(sb, legajo, { global: null, usa: null, crear: false }).catch(() => null);
   return { ...(await conexionDeCliente(sb, legajo)), faltantes };
+}
+
+type CuentaUsd = { id: string; provider_id?: string; connectivity?: { status?: string } };
+const PROVEEDOR_USD = { global: "pr_global_cobre", usa: "pr_usa_cobre" } as const;
+
+/**
+ * Balances Global y USA de la cuenta propia del cliente. Por cada uno: el `acc_…` indicado (se
+ * valida en Cobre), el que ya tenga la cuenta o, con `crear`, uno nuevo.
+ */
+async function balancesUsdCliente(
+  sb: SupabaseClient,
+  legajo: string,
+  o: { global: string | null; usa: string | null; crear: boolean },
+) {
+  const previa = await instanciaActiva(sb, legajo);
+  if (!previa) throw new HttpError(409, "El cliente no tiene su cuenta de Cobre conectada");
+  const inst = await instanciaCobre(sb, previa.id);
+  if (!inst) throw new HttpError(409, "La cuenta de Cobre del cliente no está activa");
+  const conexion = conexionCobre(sb, inst);
+  const lista = await conexion.cliente
+    .get<{ contents?: CuentaUsd[] }>("/accounts", { page_size: 100 })
+    .catch(() => null);
+  for (const tipo of ["global", "usa"] as const) {
+    const { data: actual } = await sb
+      .from("cobre_cuentas")
+      .select("cuenta_externa_id")
+      .eq("modo", conexion.modo)
+      .eq("instancia_id", inst.id)
+      .eq("tipo", tipo)
+      .eq("estado", "activa")
+      .maybeSingle();
+    const pedido = o[tipo];
+    if (actual && (!pedido || pedido === actual.cuenta_externa_id)) continue;
+    let cuenta: CuentaUsd | null = null;
+    if (pedido) {
+      if (!/^acc_[\w-]+$/.test(pedido))
+        throw new HttpError(400, `ID de cuenta inválido: ${pedido}`);
+      cuenta = await conexion.cliente.get<CuentaUsd>(`/accounts/${pedido}`);
+    } else {
+      cuenta = (lista?.contents ?? []).find((a) => a.provider_id === PROVEEDOR_USD[tipo]) ?? null;
+      if (!cuenta && o.crear) {
+        cuenta = await conexion.cliente.post<CuentaUsd>(
+          "/accounts",
+          tipo === "global"
+            ? {
+                provider_id: "pr_global_cobre",
+                action: "create",
+                metadata: { currency: "usd" },
+                tags: [`jpay-${legajo}`],
+                alias: `${brand.name.toUpperCase()} ${legajo} USD`.slice(0, 32),
+              }
+            : {
+                provider_id: "pr_usa_cobre",
+                action: "create",
+                metadata: {},
+                tags: [`jpay-${legajo}`],
+                alias: `${brand.name.toUpperCase()} ${legajo} USA`.slice(0, 32),
+              },
+        );
+      }
+    }
+    if (!cuenta) continue;
+    if (cuenta.provider_id && cuenta.provider_id !== PROVEEDOR_USD[tipo]) {
+      throw new HttpError(
+        409,
+        `${cuenta.id} no es un Balance ${tipo === "global" ? "Global" : "USA"} (${cuenta.provider_id})`,
+      );
+    }
+    const { data: otra } = await sb
+      .from("cobre_cuentas")
+      .select("instancia_id")
+      .eq("modo", conexion.modo)
+      .eq("cuenta_externa_id", cuenta.id)
+      .maybeSingle();
+    if (otra && otra.instancia_id !== inst.id) {
+      throw new HttpError(409, "Esa cuenta de Cobre ya está vinculada a otra conexión");
+    }
+    await sb
+      .from("cobre_cuentas")
+      .update({ estado: "cerrada" })
+      .eq("modo", conexion.modo)
+      .eq("instancia_id", inst.id)
+      .eq("tipo", tipo)
+      .eq("estado", "activa");
+    const { error } = await sb.from("cobre_cuentas").upsert(
+      {
+        estado: "activa",
+        tipo,
+        modo: conexion.modo,
+        cuenta_externa_id: cuenta.id,
+        clabe: null,
+        alias: `${legajo} ${tipo === "global" ? "Global USD" : "USA"}`.slice(0, 32),
+        proveedor_id: PROVEEDOR_USD[tipo],
+        moneda: "USD",
+        instancia_id: inst.id,
+        conectividad: cuenta.connectivity?.status ?? null,
+      },
+      { onConflict: "modo,cuenta_externa_id" },
+    );
+    if (error) throw new HttpError(500, error.message);
+  }
 }
 
 async function desconectar(sb: SupabaseClient, legajo: string) {

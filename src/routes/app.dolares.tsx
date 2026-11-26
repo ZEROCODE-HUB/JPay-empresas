@@ -18,8 +18,9 @@ function Page() {
   const { cuenta, subcuentas } = useCuentaSpei();
   const { conversiones } = useDolares();
   const error = cuenta.error ?? subcuentas.error;
-  // Los dólares son por la cuenta de JPay: un comercio con instancia Cobre propia no los usa aquí.
-  const habilitada = !!cuenta.data?.cuenta && !cuenta.data.instanciaPropia;
+  // Dólares: con la cuenta de la plataforma o, en cuenta propia, cuando se activan sus Balances.
+  const sinDolares = !!cuenta.data?.cuenta && cuenta.data.dolares === false;
+  const habilitada = !!cuenta.data?.cuenta && !sinDolares;
   // Mientras haya conversiones en proceso, los saldos se refrescan solos; y una vez más cuando
   // terminan (los pesos apartados salen y los dólares entran a la subcuenta USD).
   const enCurso = (conversiones.data ?? []).filter((c) =>
@@ -49,10 +50,10 @@ function Page() {
         <ActivaCuentaSpeiAviso cuenta={cuenta.data} para="convertir a dólares" />
       ) : (
         <div className="space-y-4">
-          {cuenta.data?.instanciaPropia && (
+          {sinDolares && (
             <Card className="text-sm text-black-500">
               Los dólares todavía no están disponibles para tu cuenta: por ahora solo puedes operar
-              en pesos.
+              en pesos. Pide a soporte que los active.
             </Card>
           )}
           {/* Sin las conversiones no se sabe qué está «por recibir»: espera a tenerlas. */}

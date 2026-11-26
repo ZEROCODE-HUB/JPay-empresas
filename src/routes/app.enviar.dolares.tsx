@@ -15,8 +15,9 @@ function Page() {
   const { cuenta, subcuentas, destinatarios } = useCuentaSpei();
   const transferencias = useTransferencias("USD");
   const error = cuenta.error ?? subcuentas.error ?? destinatarios.error;
-  // Los dólares son por la cuenta de JPay: un comercio con instancia Cobre propia no los usa aquí.
-  const habilitada = !!cuenta.data?.cuenta && !cuenta.data.instanciaPropia;
+  // Dólares: con la cuenta de la plataforma o, en cuenta propia, cuando se activan sus Balances.
+  const sinDolares = !!cuenta.data?.cuenta && cuenta.data.dolares === false;
+  const habilitada = !!cuenta.data?.cuenta && !sinDolares;
   return (
     <>
       <PageHeader
@@ -36,10 +37,10 @@ function Page() {
         <ActivaCuentaSpeiAviso cuenta={cuenta.data} para="enviar dólares" />
       ) : (
         <div className="space-y-4">
-          {cuenta.data?.instanciaPropia && (
+          {sinDolares && (
             <Card className="text-sm text-black-500">
               Los dólares todavía no están disponibles para tu cuenta: por ahora solo puedes operar
-              en pesos.
+              en pesos. Pide a soporte que los active.
             </Card>
           )}
           <EnviarDolaresCard

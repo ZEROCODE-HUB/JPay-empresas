@@ -1,5 +1,7 @@
 import { filtroId } from "./cobre-transferencias.ts";
-// Dólares (Solution Design §4.4–§4.7), siempre en la instancia matriz de JPay:
+// Dólares (Solution Design §4.4–§4.7), en la instancia matriz de JPay (Balances Global y USA de
+// JPay) o, si el comercio contrató dólares en su instancia Cobre propia, con sus propios Balances
+// Global y USA (filas `cobre_cuentas` global/usa con su `instancia_id`; §4.1 pasos 5–6):
 // - Conversión: cotización `static_quote` `mxn/usd` (vale 25 s; el Balance MX del comercio debe
 //   tener el monto) → reserva de los pesos → `POST /cross_border_money_movements` del Balance del
 //   comercio al Balance Global USD de JPay. Al `completed` entran los dólares en la subcuenta USD
@@ -26,24 +28,33 @@ export function enHorarioMercado(d = new Date()): boolean {
   return h >= 5 && h < 16;
 }
 
-/** Balances Global y USA de la instancia matriz (creados desde el admin). */
-export async function balancesMatriz(
+/**
+ * Balances Global y USA de la conexión: los de JPay en la matriz o los del comercio en su
+ * instancia propia (los vincula o crea el admin).
+ */
+export async function balancesUsd(
   sb: SupabaseClient,
-  modo: string,
+  conexion: Pick<ConexionCobre, "modo" | "instanciaId">,
 ): Promise<{ global: string; usa: string }> {
-  const { data } = await sb
+  let q = sb
     .from("cobre_cuentas")
     .select("tipo, cuenta_externa_id")
-    .eq("modo", modo)
+    .eq("modo", conexion.modo)
     .in("tipo", ["global", "usa"])
     .eq("estado", "activa");
+  q = conexion.instanciaId
+    ? q.eq("instancia_id", conexion.instanciaId)
+    : q.is("instancia_id", null);
+  const { data } = await q;
   const filas = (data ?? []) as { tipo: string; cuenta_externa_id: string }[];
   const global = filas.find((f) => f.tipo === "global")?.cuenta_externa_id;
   const usa = filas.find((f) => f.tipo === "usa")?.cuenta_externa_id;
   if (!global || !usa) {
     throw new CobreError(
       409,
-      `Faltan los Balances Global y USA de ${brand.name} (admin > País y proveedores)`,
+      conexion.instanciaId
+        ? "Los dólares todavía no están activos en tu cuenta"
+        : `Faltan los Balances Global y USA de ${brand.name} (admin > País y proveedores)`,
     );
   }
   return { global, usa };
@@ -70,7 +81,7 @@ export async function subcuentaUsd(sb: SupabaseClient, legajo: string): Promise<
   return nueva.id;
 }
 
-/** Balance MX del comercio en la matriz (los comercios con instancia propia no convierten acá). */
+/** Balance MX del comercio (en la matriz o en su instancia propia). */
 export async function balanceComercio(
   sb: SupabaseClient,
   modo: string,
@@ -92,6 +103,11 @@ export async function balanceComercio(
   return { cuentaExterna: data.cuenta_externa_id, subcuentaId: data.subcuenta_id };
 }
 
+/** Filtro por la instancia de la conexión: un aviso de una cuenta nunca toca filas de otra. */
+// deno-lint-ignore no-explicit-any
+const deInstancia = <Q extends { eq: any; is: any }>(q: Q, conexion: ConexionCobre): Q =>
+  conexion.instanciaId ? q.eq("instancia_id", conexion.instanciaId) : q.is("instancia_id", null);
+
 const nuevoExternal = (prefijo: string) =>
   `${prefijo}${Date.now().toString(36).toUpperCase()}${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
 
@@ -102,11 +118,9 @@ export async function cotizarCruce(
   conexion: ConexionCobre,
   o: { legajo: string; subcuentaMxnId: string; montoMxn: number },
 ): Promise<Obj> {
-  if (conexion.instanciaId)
-    throw new CobreError(409, `La conversión a dólares es de la cuenta de ${brand.name}`);
   if (!(o.montoMxn > 0)) throw new CobreError(400, "Monto inválido");
   await balanceComercio(sb, conexion.modo, o.legajo);
-  await balancesMatriz(sb, conexion.modo);
+  await balancesUsd(sb, conexion);
   const q = await conexion.cliente.post<Obj>("/fx_quotes", {
     currency_pair: "mxn/usd",
     source_amount: aCentavos(o.montoMxn),
@@ -132,6 +146,7 @@ export async function cotizarCruce(
     .insert({
       modo: conexion.modo,
       cliente_legajo: o.legajo,
+      instancia_id: conexion.instanciaId,
       subcuenta_mxn_id: o.subcuentaMxnId,
       subcuenta_usd_id: await subcuentaUsd(sb, o.legajo),
       cotizacion_id: q.id,
@@ -189,7 +204,7 @@ async function reenviarCruce(
   const id = String(cruce.id);
   const [comercio, matriz] = await Promise.all([
     balanceComercio(sb, conexion.modo, String(cruce.cliente_legajo)),
-    balancesMatriz(sb, conexion.modo),
+    balancesUsd(sb, conexion),
   ]);
   let mm: Obj;
   try {
@@ -243,10 +258,10 @@ export async function aplicarEstadoCruce(
   const mmId = (s(m.id) ?? "").replace(/[^\w-]/g, "");
   const ext = (s(m.external_id) ?? "").replace(/[^\w-]/g, "");
   if (!estado || (!mmId && !ext)) return "sin datos";
-  const { data: c } = await sb
-    .from("cobre_cruces")
-    .select("id, estado, cliente_legajo")
-    .eq("modo", conexion.modo)
+  const { data: c } = await deInstancia(
+    sb.from("cobre_cruces").select("id, estado, cliente_legajo").eq("modo", conexion.modo),
+    conexion,
+  )
     .or(`mm_id.eq.${filtroId(mmId)},external_id.eq.${filtroId(ext)}`)
     .limit(1)
     .maybeSingle();
@@ -298,7 +313,7 @@ export async function iniciarEnvioUsd(
   conexion: ConexionCobre,
   t: FilaEnvio,
 ): Promise<string> {
-  const { global, usa } = await balancesMatriz(sb, conexion.modo);
+  const { global, usa } = await balancesUsd(sb, conexion);
   const ext = externalTraslado(t.id_txn);
   await sb
     .from("cobre_transferencias")
@@ -352,7 +367,7 @@ export async function pagarEnvioUsd(
   conexion: ConexionCobre,
   t: FilaEnvio,
 ): Promise<string> {
-  const { usa } = await balancesMatriz(sb, conexion.modo);
+  const { usa } = await balancesUsd(sb, conexion);
   const { data: cp } = await sb
     .from("cobre_contrapartes")
     .select("contraparte_externa_id")
@@ -410,15 +425,13 @@ export async function aplicarEstadoEnvioUsd(
   const m = (mm ?? {}) as Obj;
   const r = resumirTransferencia(m);
   const ext = r.externalId ?? "";
-  // Los envíos en dólares solo existen en la matriz: un aviso de una instancia propia nunca los toca.
-  if (conexion.instanciaId) return "ignorado (instancia propia)";
   if (m.type === "global_pay_to_usa") {
     const idTxn = ext.replace(/-T$/, "").replace(/[^\w-]/g, "");
     const mmId = r.id.replace(/[^\w-]/g, "");
-    const { data: t } = await sb
-      .from("cobre_transferencias")
-      .select("*")
-      .eq("modo", conexion.modo)
+    const { data: t } = await deInstancia(
+      sb.from("cobre_transferencias").select("*").eq("modo", conexion.modo),
+      conexion,
+    )
       .or(`traslado_mm_id.eq.${filtroId(mmId)},id_txn.eq.${filtroId(idTxn)}`)
       .limit(1)
       .maybeSingle();
@@ -447,10 +460,10 @@ export async function aplicarEstadoEnvioUsd(
   }
   const mmId = r.id.replace(/[^\w-]/g, "");
   const idTxn = ext.replace(/[^\w-]/g, "");
-  const { data: t } = await sb
-    .from("cobre_transferencias")
-    .select("id, id_txn, estado, mm_id")
-    .eq("modo", conexion.modo)
+  const { data: t } = await deInstancia(
+    sb.from("cobre_transferencias").select("id, id_txn, estado, mm_id").eq("modo", conexion.modo),
+    conexion,
+  )
     .or(`mm_id.eq.${filtroId(mmId)},id_txn.eq.${filtroId(idTxn)}`)
     .limit(1)
     .maybeSingle();

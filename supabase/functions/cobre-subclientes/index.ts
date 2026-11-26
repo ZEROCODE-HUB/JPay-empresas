@@ -101,9 +101,19 @@ Deno.serve(
         instanciaDeCliente(sb, l).catch(() => null),
       ]);
       const { faltan } = subclienteCobre(datos);
+      // Dólares: con los Balances Global y USA de JPay o, en cuenta propia, con los suyos.
+      let qUsd = sb
+        .from("cobre_cuentas")
+        .select("id", { count: "exact", head: true })
+        .eq("modo", conexion.modo)
+        .in("tipo", ["global", "usa"])
+        .eq("estado", "activa");
+      qUsd = instancia ? qUsd.eq("instancia_id", instancia.id) : qUsd.is("instancia_id", null);
+      const { count: balancesUsd } = await qUsd;
       return {
         modo: conexion.modo,
         instanciaPropia: !!instancia,
+        dolares: (balancesUsd ?? 0) >= 2,
         faltan,
         alta,
         cuenta,

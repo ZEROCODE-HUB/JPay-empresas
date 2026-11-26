@@ -183,7 +183,8 @@ async function balancesMatriz(ctx: Ctx) {
     .select("id, tipo, cuenta_externa_id, conectividad")
     .eq("modo", conexion.modo)
     .in("tipo", ["global", "usa"])
-    .eq("estado", "activa");
+    .eq("estado", "activa")
+    .is("instancia_id", null);
   const filas = (actuales ?? []) as {
     id: string;
     tipo: string;

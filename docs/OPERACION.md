@@ -149,6 +149,16 @@ simulador que ya están corregidas:
 - La conciliación diaria (`cobre-conciliacion`) recupera los depósitos que no entraron por aviso y
   compara el saldo de Cobre con el del ledger.
 
+### Dólares en cuenta propia (1076)
+
+Un comercio con su propia cuenta de Cobre puede convertir y pagar en dólares si Cobre le habilita
+los Balances Global y USA, el cruce MXN/USD y Fedwire/SWIFT. Se activan en admin → cliente →
+Conexiones → «Dólares en su cuenta» (`cobre-instancias` `balances_usd`: usa el `acc_…` indicado, el
+que ya tenga o lo crea). Esos dólares son del comercio: se contabilizan en
+`BANCO_COBRE_USD_PROPIAS` (no en `BANCO_COBRE_USD`) y la conciliación compara sus Global + USA con
+`cobre_saldo_esperado_usd_instancia` (subcuentas USD + comisiones USD que siguen en su cuenta). La
+comisión de los envíos USD no se barre: queda en la cuenta del comercio.
+
 ### Barrido de comisiones (1073)
 
 - El monto lo decide siempre `cobre_barrido_reservar` (SQL, candado por comercio): comisión + IVA

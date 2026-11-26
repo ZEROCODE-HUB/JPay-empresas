@@ -2471,6 +2471,7 @@ export type Database = {
           id: string
           idempotency: string
           impuesto: number
+          instancia_id: string | null
           mm_id: string | null
           modo: string
           monto_mxn: number
@@ -2499,6 +2500,7 @@ export type Database = {
           id?: string
           idempotency: string
           impuesto?: number
+          instancia_id?: string | null
           mm_id?: string | null
           modo: string
           monto_mxn: number
@@ -2527,6 +2529,7 @@ export type Database = {
           id?: string
           idempotency?: string
           impuesto?: number
+          instancia_id?: string | null
           mm_id?: string | null
           modo?: string
           monto_mxn?: number
@@ -2567,6 +2570,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_cruces_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "cobre_cruces_subcuenta_mxn_id_fkey"
@@ -8423,6 +8433,7 @@ export type Database = {
         }
         Returns: string
       }
+      _cobre_banco_usd: { Args: { p_instancia: string }; Returns: string }
       _cobre_barrido_neto: {
         Args: { p_incluir_en_curso: boolean; p_legajo: string }
         Returns: number
@@ -8459,6 +8470,7 @@ export type Database = {
         Args: { p_transaction_id: string }
         Returns: undefined
       }
+      _kyb_personas_editables: { Args: { p_legajo: string }; Returns: boolean }
       _ledger_account_id: { Args: { p_code: string }; Returns: string }
       _ledger_line: {
         Args: {
@@ -8861,6 +8873,10 @@ export type Database = {
         Returns: Json
       }
       cobre_saldo_esperado_comercio: {
+        Args: { p_legajo: string }
+        Returns: number
+      }
+      cobre_saldo_esperado_usd_instancia: {
         Args: { p_legajo: string }
         Returns: number
       }

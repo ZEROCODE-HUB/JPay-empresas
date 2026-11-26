@@ -31,8 +31,12 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
       para asignar terminales desde la plataforma; hay que pedírsela.
 - [ ] **Dólares**: el código está, pero no opera. Faltan los Balances Global y USA en la cuenta
       Cobre de la plataforma (`cobre_configuracion.cuenta_global_id` y `cuenta_usa_id` están
-      vacíos): pedírselos a Cobre (sección 9) y cargarlos en el admin. Con una instancia Cobre
-      propia del cliente los dólares no funcionan.
+      vacíos): pedírselos a Cobre (sección 9) y cargarlos en el admin.
+- [ ] **Dólares en cuenta propia** (1076, 26/11/2026): programado. Admin → cliente → Conexiones →
+      «Dólares en su cuenta» vincula o crea sus Balances Global y USA. Contabilidad aparte
+      (`BANCO_COBRE_USD_PROPIAS`) y conciliación por cuenta (`cobre_saldo_esperado_usd_instancia`).
+      **Sin probar en Cobre real** (la cuenta de prueba no tiene dólares). La comisión de los envíos
+      USD queda en la cuenta del cliente: no se barre (JPay no tiene a dónde mandarla todavía).
 - [x] **Barrido de comisiones** (1073, 26/11/2026): admin → Integraciones → «Cobre: barrido de
       comisiones». Modos desactivado / al confirmarse cada envío / diario, monto mínimo y hora.
       Subcliente: movimiento interno al Balance de comisiones (crear o vincular desde esa tarjeta).
