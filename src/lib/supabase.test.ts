@@ -10,7 +10,7 @@ describe("getAuthErrorMessage", () => {
 
   it("usa un mensaje genérico para errores desconocidos", () => {
     expect(getAuthErrorMessage("algo raro")).toBe(
-      "No se pudo iniciar sesión. Intentalo nuevamente.",
+      "No se pudo iniciar sesión. Inténtalo de nuevo.",
     );
   });
 });
