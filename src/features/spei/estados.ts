@@ -13,7 +13,11 @@ export const VERIFICACION: Record<DestinatarioSpei["verificacion"], { label: str
     verified: { label: "Verificado", tone: "success" },
     rejected: { label: "Rechazado", tone: "danger" },
     failed: { label: "No se pudo verificar", tone: "danger" },
+    no_disponible: { label: "Titular sin verificar", tone: "warn" },
   };
+
+/** Verificaciones de CLABE con las que se puede pagar (`no_disponible`: la cuenta no la ofrece). */
+export const CLABE_PAGABLE: DestinatarioSpei["verificacion"][] = ["matched", "no_disponible"];
 
 /** Estado de un envío (SPEI, Fedwire o SWIFT). */
 export const ESTADO_ENVIO: Record<EstadoSpei, { label: string; tone: Tono }> = {

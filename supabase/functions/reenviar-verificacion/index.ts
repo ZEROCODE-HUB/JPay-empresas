@@ -16,7 +16,16 @@ Deno.serve(
     const nombre: string =
       `${user.user_metadata?.nombre || ""} ${user.user_metadata?.apellido || ""}`.trim();
 
-    if (user.email_confirmed_at) {
+    // Auth confirma el correo al registrarse: lo que cuenta es `clientes.email_verificado`.
+    const { data: cli } = await sb
+      .from("clientes")
+      .select("email_verificado, estado")
+      .eq("correo", email.trim())
+      .maybeSingle();
+    const verificado = cli
+      ? cli.email_verificado === true || cli.estado !== "pendiente_verificacion"
+      : !!user.email_confirmed_at;
+    if (verificado) {
       // Ya verificada: solo se le avisa al dueño del correo.
       await avisarCuentaExistente(sb, email);
       return json({ ok: true, email });

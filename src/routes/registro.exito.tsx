@@ -1,5 +1,5 @@
 ﻿import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AuthShell,
   DemoVerifyBox,
@@ -9,7 +9,7 @@ import {
 } from "@/features/onboarding/components";
 import { useOnboarding } from "@/lib/onboarding-store";
 import { readDemoVerifyUrl, resendVerification } from "@/lib/api/onboarding";
-import { getAuthErrorMessage } from "@/lib/supabase";
+import { getAuthErrorMessage, requireSupabase } from "@/lib/supabase";
 import { pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/registro/exito")({
@@ -25,6 +25,14 @@ function RegistroExito() {
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Al registrarse entra con sesión: sigue con el alta sin volver a iniciar sesión.
+  const [conSesion, setConSesion] = useState(false);
+  useEffect(() => {
+    requireSupabase()
+      .auth.getSession()
+      .then(({ data }) => setConSesion(!!data.session))
+      .catch(() => setConSesion(false));
+  }, []);
   const [demoUrl, setDemoUrl] = useState<string | null>(() => readDemoVerifyUrl(registro.email));
 
   const reenviar = async () => {
@@ -82,12 +90,22 @@ function RegistroExito() {
           </>
         }
       >
-        <PrimaryButton onClick={() => nav({ to: "/login" })}>Ir a inicio de sesión</PrimaryButton>
-        <div className="flex justify-center">
-          <SecondaryButton onClick={() => nav({ to: "/onboarding/datos-personales" })}>
+        {conSesion ? (
+          <PrimaryButton onClick={() => nav({ to: "/onboarding/datos-personales" })}>
             Continuar con el alta
-          </SecondaryButton>
-        </div>
+          </PrimaryButton>
+        ) : (
+          <>
+            <PrimaryButton onClick={() => nav({ to: "/login" })}>
+              Ir a inicio de sesión
+            </PrimaryButton>
+            <div className="flex justify-center">
+              <SecondaryButton onClick={() => nav({ to: "/onboarding/datos-personales" })}>
+                Continuar con el alta
+              </SecondaryButton>
+            </div>
+          </>
+        )}
       </SuccessCard>
     </AuthShell>
   );

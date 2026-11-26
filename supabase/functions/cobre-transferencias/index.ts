@@ -103,6 +103,9 @@ async function legajoDeSesion(req: Request): Promise<string> {
 
 // ── Destinatarios ────────────────────────────────────────────────────────────
 
+/** Verificaciones de CLABE con las que se puede pagar. */
+const PAGABLE = ["matched", "no_disponible"];
+
 async function registrarContraparte(ctx: Ctx, legajo: string, b: Body) {
   if (b.tipo === "business") return await registrarContraparteUsd(ctx, legajo, b);
   const tipo = b.tipo === "spei_card" ? "spei_card" : "clabe";
@@ -161,21 +164,36 @@ async function registrarContraparte(ctx: Ctx, legajo: string, b: Body) {
   }
 
   // La titularidad se verifica siempre antes de pagar (solo `matched` permite enviar).
+  // Si la cuenta de Cobre no tiene la verificación (G005) queda `no_disponible`: se puede pagar
+  // y se reintenta cada 24 h por si la habilitan.
+  const edad = fila.verificado_at ? Date.now() - new Date(fila.verificado_at).getTime() : Infinity;
   const repetir =
-    fila.verificacion === "unresolved" &&
-    fila.verificado_at &&
-    Date.now() - new Date(fila.verificado_at).getTime() >= 12 * 3_600_000;
+    (fila.verificacion === "unresolved" && edad >= 12 * 3_600_000) ||
+    (fila.verificacion === "no_disponible" && edad >= 24 * 3_600_000);
   if (tipo === "clabe" && (fila.verificacion === "sin_verificar" || repetir)) {
-    const av = await ctx.conexion.cliente.post<{ id: string }>("/account_verifications", {
-      model: "mex_acc_ownership_1",
-      verification_request: {
-        account_number: numero,
-        account_type: "clabe",
-        account_holder_id_type: idTipo,
-        account_holder_id_number: idNumero,
-      },
-      external_id: `AV-${fila.id}`.slice(0, 60),
-    });
+    let av: { id: string };
+    try {
+      av = await ctx.conexion.cliente.post<{ id: string }>("/account_verifications", {
+        model: "mex_acc_ownership_1",
+        verification_request: {
+          account_number: numero,
+          account_type: "clabe",
+          account_holder_id_type: idTipo,
+          account_holder_id_number: idNumero,
+        },
+        external_id: `AV-${fila.id}-${Date.now().toString(36)}`.slice(0, 60),
+      });
+    } catch (e) {
+      if (!(e instanceof CobreError && e.codigo === "G005")) throw e;
+      const { data, error } = await ctx.sb
+        .from("cobre_contrapartes")
+        .update({ verificacion: "no_disponible", verificado_at: new Date().toISOString() })
+        .eq("id", fila.id)
+        .select("*")
+        .single();
+      if (error) throw new HttpError(500, error.message);
+      return data;
+    }
     const { data, error } = await ctx.sb
       .from("cobre_contrapartes")
       .update({ verificacion_externa_id: av.id, verificacion: "procesando" })
@@ -410,7 +428,7 @@ async function enviar(ctx: Ctx, legajo: string, b: Body) {
     if (monto < 1) throw new HttpError(400, "El mínimo por envío en dólares es 1.00 USD");
     if (cp.verificacion !== "verified")
       throw new HttpError(409, "Todavía estamos verificando a este beneficiario");
-  } else if (cp.tipo === "clabe" && cp.verificacion !== "matched") {
+  } else if (cp.tipo === "clabe" && !PAGABLE.includes(cp.verificacion)) {
     throw new HttpError(
       409,
       cp.verificacion === "unmatched"
@@ -604,7 +622,7 @@ async function lote(ctx: Ctx, legajo: string, b: Body) {
     const cp = porId.get(String(it.contraparte_id ?? ""));
     const monto = Number(it.monto);
     if (!cp) throw new HttpError(400, `Fila ${i + 1}: destinatario inexistente`);
-    if (cp.tipo !== "clabe" || cp.verificacion !== "matched") {
+    if (cp.tipo !== "clabe" || !PAGABLE.includes(String(cp.verificacion))) {
       throw new HttpError(409, `Fila ${i + 1}: la CLABE de ${cp.titular} no está verificada`);
     }
     if (!centavosExactos(monto)) throw new HttpError(400, `Fila ${i + 1}: monto inválido`);

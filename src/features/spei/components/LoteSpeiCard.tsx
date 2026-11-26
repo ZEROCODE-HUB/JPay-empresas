@@ -7,7 +7,7 @@ import { useCuentaSpeiMutaciones } from "@/hooks/useCobre";
 import { enviarOtpTransferencia } from "@/lib/api/otp";
 import type { DestinatarioSpei, LoteSpei, SubcuentaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
-import { VERIFICACION } from "../estados";
+import { CLABE_PAGABLE, VERIFICACION } from "../estados";
 import { archivoATexto, descargarPlantillaLoteSpei, leerLoteSpei, LARGO_CONCEPTO } from "../lote";
 import { brand } from "@/brand/brand";
 import { ConfirmarEnvio } from "./ConfirmarEnvio";
@@ -56,7 +56,10 @@ export function LoteSpeiCard({
   const conError = filas.filter((f) => f.error).length;
   const nuevas = filas.filter((f) => !f.error && !f.destinatario);
   const listas =
-    filas.length > 0 && filas.every((f) => !f.error && f.destinatario?.verificacion === "matched");
+    filas.length > 0 &&
+    filas.every(
+      (f) => !f.error && CLABE_PAGABLE.includes(f.destinatario?.verificacion ?? "sin_verificar"),
+    );
 
   const cargar = (f: File | undefined) => {
     if (!f) return;

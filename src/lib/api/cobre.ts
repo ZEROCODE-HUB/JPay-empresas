@@ -29,7 +29,8 @@ export type Verificacion =
   | "unresolved"
   | "verified"
   | "rejected"
-  | "failed";
+  | "failed"
+  | "no_disponible";
 
 export type DestinatarioSpei = {
   id: string;

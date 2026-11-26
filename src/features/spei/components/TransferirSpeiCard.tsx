@@ -7,7 +7,7 @@ import { enviarOtpTransferencia } from "@/lib/api/otp";
 import { nuevoTxid, type DestinatarioSpei, type SubcuentaSpei } from "@/lib/api/cobre";
 import { formatMoney, parseMonto } from "@/shared/format";
 import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";
-import { VERIFICACION } from "../estados";
+import { CLABE_PAGABLE, VERIFICACION } from "../estados";
 import { brand } from "@/brand/brand";
 import { ConfirmarEnvio } from "./ConfirmarEnvio";
 
@@ -270,7 +270,7 @@ export function TransferirSpeiCard({
               disabled={
                 m.enviar.isPending ||
                 noAlcanza ||
-                (d?.tipo === "clabe" && d.verificacion !== "matched")
+                (d?.tipo === "clabe" && !CLABE_PAGABLE.includes(d.verificacion))
               }
             >
               {m.enviar.isPending ? "Enviando…" : "Transferir"}

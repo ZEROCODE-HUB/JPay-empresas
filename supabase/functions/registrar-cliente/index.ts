@@ -32,7 +32,9 @@ Deno.serve(
     const { data: authData, error: authErr } = await sb.auth.admin.createUser({
       email,
       password,
-      email_confirm: false,
+      // Confirmado en Auth para que entre con sesión al registrarse; la verificación del correo
+      // la lleva `clientes` (pendiente_verificacion → registrado con verificar-correo).
+      email_confirm: true,
       user_metadata: { admin_via_edge: true, nombre, apellido, tipoCuenta },
     });
     if (authErr || !authData.user) {

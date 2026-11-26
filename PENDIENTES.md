@@ -47,8 +47,6 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
       después de cargar Resend.
 - [ ] **Código OTP en modo demo**: sin clave de Resend, `enviar-otp-transferencia` devuelve el
       código en la respuesta (el segundo factor no protege). Se resuelve al cargar Resend.
-- [ ] **Personas del KYB** (`cliente_personas_kyb`): el cliente las puede seguir editando después
-      de aprobado. Riesgo bajo; congelarlas al activar la cuenta.
 - [ ] **Tablas heredadas**: sin acceso para clientes desde 1070, pero siguen en la base (las
       migraciones son aditivas). Columnas heredadas como `comision_molipay*` siguen en uso por
       funciones viejas.
@@ -56,6 +54,12 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
       que se agreguen tablas, vistas o funciones `SECURITY DEFINER`.
 
 ## Resuelto (para referencia)
+
+- 26/11/2026 (3.ª) — Personas del KYB congeladas para el cliente al enviar o aprobar su alta (1075).
+  Destinatarios SPEI: si la cuenta de Cobre no tiene la verificación de titular (G005) quedan
+  «Titular sin verificar» (`no_disponible`) y se puede transferir; se reintenta cada 24 h (1074).
+  Al registrarse el usuario entra con sesión iniciada (Auth confirma el correo; la verificación la
+  lleva `clientes.email_verificado`).
 
 - 26/11/2026 (2.ª ronda) — Links de pago con código del servidor y búsqueda exacta (antes un
   cliente podía quedarse con los pagos de otro link) y alta en una transacción (1069); cobros

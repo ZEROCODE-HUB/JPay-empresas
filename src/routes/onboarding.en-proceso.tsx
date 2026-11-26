@@ -1,5 +1,9 @@
 ﻿import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { toast } from "sonner";
 import { getPais } from "@/shared/pais";
+import { getEmailUsuarioActual } from "@/lib/api/auth";
+import { resendVerification } from "@/lib/api/onboarding";
 import {
   AuthShell,
   PrimaryButton,
@@ -22,6 +26,22 @@ function EnProceso() {
   const { data, isLoading: loading } = useEstadoOnboarding();
   const estado = data?.estado ?? null;
   const hasDocs = data?.hasDocs ?? null;
+
+  const [reenviando, setReenviando] = useState(false);
+  const reenviar = async () => {
+    setReenviando(true);
+    try {
+      const correo = await getEmailUsuarioActual();
+      if (!correo) return void nav({ to: "/login" });
+      const r = await resendVerification(correo);
+      if (r.demo_token) nav({ to: "/registro/exito" });
+      else toast.success("Te reenviamos el correo de verificación. Revisa tu bandeja.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo reenviar el correo");
+    } finally {
+      setReenviando(false);
+    }
+  };
 
   const norm = estado ? normalizarEstado(estado) : null;
   const label = norm ? ESTADO_LABEL[norm] : "En proceso";
@@ -102,8 +122,8 @@ function EnProceso() {
             </SecondaryButton>
           )}
           {norm === "pendiente_verificacion" && (
-            <SecondaryButton onClick={() => nav({ to: "/login" })}>
-              Reenviar verificación
+            <SecondaryButton onClick={reenviar} disabled={reenviando}>
+              {reenviando ? "Reenviando…" : "Reenviar verificación"}
             </SecondaryButton>
           )}
         </div>

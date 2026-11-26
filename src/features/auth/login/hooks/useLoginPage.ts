@@ -7,6 +7,7 @@ import {
   registerClient,
   tieneValidacionODocumento,
 } from "@/lib/api/onboarding";
+import { iniciarSesion } from "@/lib/api/auth";
 import type { DatosRegistro, EstadoLogin } from "../utils";
 
 /** Pestañas de la pantalla de acceso y qué pasa después de registrarse o iniciar sesión. */
@@ -36,6 +37,12 @@ export function useLoginPage(register: "pf" | "pj" | undefined) {
         fechaNac: data.fechaNac,
         tipoCuenta,
       });
+      // Entra con sesión iniciada (queda pendiente de verificar el correo). Si el correo ya tenía
+      // cuenta con otra contraseña, no entra y ve lo mismo que un alta nueva.
+      const { error: eLogin } = await iniciarSesion(data.email, data.password).catch((e) => ({
+        error: e as Error,
+      }));
+      if (!eLogin) setRole("empresa");
       navigate({ to: "/registro/exito" });
     } catch (e) {
       setRegisterError(e instanceof Error ? e.message : "No se pudo registrar la cuenta");
