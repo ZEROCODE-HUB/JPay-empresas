@@ -1,0 +1,37 @@
+# Configuración de las Edge Functions de JPay (portal + tareas del servidor).
+#
+# Por defecto Supabase exige un JWT (`verify_jwt = true`) para llamar a una función. Las de abajo
+# son PÚBLICAS a propósito: las llama un proveedor (avisos), el navegador al volver de autorizar
+# (OAuth) o pg_cron sin cabecera de autorización. Cada una se protege por dentro (firma del aviso,
+# `state` de un solo uso, `reservar_tarea` + acciones con parámetros solo para admins).
+#
+# OJO: si una de estas se despliega con `verify_jwt = true`, Supabase responde 401 antes de que
+# corra el código y dejan de funcionar los avisos de Cobre, la vinculación de cobros con tarjeta y
+# las tareas programadas, sin ningún error visible en el panel. Este archivo evita que un
+# `supabase functions deploy <nombre>` lo cambie por accidente. Verificación:
+#   npm run functions:check
+# Ver docs/OPERACION.md (sección «Edge Functions»).
+
+[functions.cobre-webhook]
+verify_jwt = false
+
+[functions.cobre-pendientes]
+verify_jwt = false
+
+[functions.cobre-conciliacion]
+verify_jwt = false
+
+[functions.cobre-simulador]
+verify_jwt = false
+
+[functions.ecartpay-webhook]
+verify_jwt = false
+
+[functions.ecartpay-oauth-callback]
+verify_jwt = false
+
+[functions.ecartpay-pendientes]
+verify_jwt = false
+
+[functions.ecartpay-conciliacion]
+verify_jwt = false

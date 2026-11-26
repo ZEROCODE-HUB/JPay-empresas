@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "gen:types": "node scripts/gen-types.mjs",
-    "shared:check": "node scripts/shared-check.mjs"
+    "shared:check": "node scripts/shared-check.mjs",
+    "functions:check": "node scripts/functions-check.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",
