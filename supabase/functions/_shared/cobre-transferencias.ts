@@ -13,6 +13,7 @@ import {
   type EstadoTransferencia,
   type ModoCobre,
 } from "./cobre.ts";
+import { barrerSiCorresponde } from "./cobre-barridos.ts";
 
 /** Id para interpolar en un filtro `.or(...)` de PostgREST: solo letras, números, `_`, `.` y `-`. */
 export const filtroId = (v: unknown): string => String(v ?? "").replace(/[^\w.-]/g, "") || "-";
@@ -70,6 +71,14 @@ export async function aplicarEstadoTransferencia(
     .eq("id", fila.id)
     .not("estado", "in", NO_FINAL);
   if (error) throw new Error(error.message);
+  if (r.estado === "completada") {
+    const { data: t } = await sb
+      .from("cobre_transferencias")
+      .select("cliente_legajo, moneda")
+      .eq("id", fila.id)
+      .maybeSingle();
+    if (t?.moneda !== "USD") await barrerSiCorresponde(sb, t?.cliente_legajo ?? null);
+  }
   return { estado: r.estado, cambio: r.estado !== fila.estado };
 }
 

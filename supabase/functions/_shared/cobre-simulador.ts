@@ -730,6 +730,22 @@ async function crearMovimiento(
       metadata: { description: meta.description ?? "", category: "" },
       ms,
     });
+  } else if (
+    cuentaOrigen?.provider_id === "pr_mex_cobre3" &&
+    cuentaDestino?.provider_id === "pr_mex_cobre3"
+  ) {
+    // Entre dos Cobre Balances MX de la misma instancia (barrido de comisiones).
+    if (cuerpo.type) return error("MM040", "type must not be sent between balances");
+    mm = nuevoMovimiento({
+      type: "cobre_balance",
+      source: src,
+      destination: dst,
+      amount: Number(cuerpo.amount),
+      currency: "mxn",
+      externalId: ext,
+      metadata: { description: meta.description ?? "" },
+      ms,
+    });
   } else if (cuentaOrigen?.provider_id === "pr_usa_cobre" && cpDestino?.type === "business") {
     const bank = ((cpDestino.metadata as Obj).counterparty_bank_details ?? {}) as Obj;
     if ((cpDestino.metadata as Obj).counterparty_verification_status !== "Verified")
@@ -912,6 +928,33 @@ export async function avanzarSimulador(almacen: AlmacenSim, ms: number): Promise
         String(mm.destination_id),
         Number(mm.amount),
         "global_pay_to_usa_credit",
+        meta,
+        ms,
+      );
+      await cambiar("completed");
+      continue;
+    }
+    if (mm.type === "cobre_balance") {
+      if (st.state !== "initiated" || edad < 1000) continue;
+      const o = await almacen.leer("cuenta", String(mm.source_id));
+      if (!o || Number(o.obtained_balance ?? 0) < Number(mm.amount)) {
+        await cambiar("failed", "F002", "NSF - Not Sufficient Funds in the designated account");
+        continue;
+      }
+      const meta = { ...base, description: (mm.metadata as Obj).description };
+      await movimientoSaldo(
+        almacen,
+        String(mm.source_id),
+        -Number(mm.amount),
+        "cobre_balance_debit",
+        meta,
+        ms,
+      );
+      await movimientoSaldo(
+        almacen,
+        String(mm.destination_id),
+        Number(mm.amount),
+        "cobre_balance_credit",
         meta,
         ms,
       );

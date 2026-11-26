@@ -33,11 +33,12 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
       Cobre de la plataforma (`cobre_configuracion.cuenta_global_id` y `cuenta_usa_id` están
       vacíos): pedírselos a Cobre (sección 9) y cargarlos en el admin. Con una instancia Cobre
       propia del cliente los dólares no funcionan.
-- [ ] **Barrido de comisiones**: las comisiones de la plataforma quedan en el Balance del cliente
-      en Cobre. Propuesta: con Subcliente, mover comisión + IVA al Balance de la plataforma
-      (`cuenta_plataforma_id`, hoy vacío) con un movimiento interno al confirmarse cada envío, más
-      una tarea diaria que reintente los que falten; con instancia propia, un SPEI diario
-      agrupado o factura mensual.
+- [x] **Barrido de comisiones** (1073, 26/11/2026): admin → Integraciones → «Cobre: barrido de
+      comisiones». Modos desactivado / al confirmarse cada envío / diario, monto mínimo y hora.
+      Subcliente: movimiento interno al Balance de comisiones (crear o vincular desde esa tarjeta).
+      Cuenta propia: SPEI a la CLABE de la plataforma (opcional). **Falta probar con $1 en Cobre real**
+      el movimiento entre dos Balances MX (la doc pública no lo detalla; se usa el mismo cuerpo que
+      el traslado Global→USA) y crear la cuenta de comisiones.
 
 ## 3. Seguridad y limpieza
 

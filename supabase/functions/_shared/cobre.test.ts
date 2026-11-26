@@ -1101,3 +1101,53 @@ Deno.test("errores de Cobre: error_code/error_description y message", async () =
   );
   assertEquals((b as Error).message, "G001: General error");
 });
+
+Deno.test("simulador: barrido entre dos Balances MX completa y mueve el saldo", async () => {
+  const almacen = new AlmacenMemoria();
+  const reloj = { t: 2_000_000 };
+  const c = clienteSim(almacen, reloj);
+  type Acc = { id: string; account_number: string; obtained_balance?: number };
+  const comercio = await c.post<Acc>("/accounts", {
+    provider_id: "pr_mex_cobre3",
+    action: "create",
+  });
+  const plataforma = await c.post<Acc>("/accounts", {
+    provider_id: "pr_mex_cobre3",
+    action: "create",
+  });
+  await depositoSimulado(almacen, { clabe: comercio.account_number, monto: 100 }, reloj.t);
+  reloj.t += 5000;
+  await avanzarSimulador(almacen, reloj.t);
+  const mm = await c.post<{ id: string; type: string }>(
+    "/money_movements",
+    {
+      source_id: comercio.id,
+      destination_id: plataforma.id,
+      amount: aCentavos(11.6),
+      metadata: { description: "Comisiones" },
+      external_id: "BARTEST000000001",
+      checker_approval: false,
+    },
+    "BARTEST000000001",
+  );
+  assertEquals(mm.type, "cobre_balance");
+  reloj.t += 2000;
+  await avanzarSimulador(almacen, reloj.t);
+  const fin = await c.get(`/money_movements/${mm.id}`);
+  assertEquals(resumirTransferencia(fin).estado, "completada");
+  const saldo = async (id: string) =>
+    deCentavos(Number((await c.get<Acc>(`/accounts/${id}`, { balance: true })).obtained_balance));
+  assertEquals(await saldo(plataforma.id), 11.6);
+  // Misma idempotencia → mismo movimiento (no barre dos veces).
+  const otra = await c.post<{ id: string }>(
+    "/money_movements",
+    {
+      source_id: comercio.id,
+      destination_id: plataforma.id,
+      amount: 1160,
+      external_id: "BARTEST000000001",
+    },
+    "BARTEST000000001",
+  );
+  assertEquals(otra.id, mm.id);
+});

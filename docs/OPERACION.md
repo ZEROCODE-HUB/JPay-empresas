@@ -149,6 +149,18 @@ simulador que ya están corregidas:
 - La conciliación diaria (`cobre-conciliacion`) recupera los depósitos que no entraron por aviso y
   compara el saldo de Cobre con el del ledger.
 
+### Barrido de comisiones (1073)
+
+- El monto lo decide siempre `cobre_barrido_reservar` (SQL, candado por comercio): comisión + IVA
+  vigentes (`_cobre_comisiones_cobradas`) − barridos no fallidos. Neto: un rebote posterior al
+  barrido se compensa (en la matriz, si queda negativo, se devuelve al comercio).
+- `_shared/cobre-barridos.ts` envía (`POST /money_movements`, idempotencia = `external_id` `BAR…`) y
+  aplica el estado. Ganchos: confirmación de envíos MXN y de conversiones (modo `por_envio`),
+  avisos (`cobre-procesos`), `cobre-pendientes` (reintentos y barrido diario, tarea
+  `cobre-barrido-diario` cada 20 h desde `barrido_hora` en México) y `cobre-cuentas` acción `barrer`.
+- `cobre_saldo_esperado_comercio` descuenta lo barrido; la conciliación reconoce los movimientos
+  `BAR…`. No genera asientos: el pasivo con el comercio no cambia.
+
 ## 7. Seguridad
 
 Reglas:

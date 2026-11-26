@@ -20,7 +20,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { deCentavos, depositoSpei, transaccionCobre, type CobreCliente } from "../_shared/cobre.ts";
 import { conexionCobre, instanciaCobre, type ConexionCobre } from "../_shared/cobre-servidor.ts";
 import { acreditarCobroR2p } from "../_shared/cobre-r2p.ts";
-import { aplicarRebote } from "../_shared/cobre-transferencias.ts";
+import { aplicarRebote, filtroId } from "../_shared/cobre-transferencias.ts";
 import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 import { brand } from "../_shared/brand.ts";
 
@@ -369,6 +369,32 @@ async function revisarTransaccion(
   const mmId = tx.mmId;
   if (!mmId) return null;
   const monto = Math.abs(tx.monto);
+
+  // Barrido de comisiones (movimiento interno o SPEI a la CLABE de la plataforma).
+  if ((tx.mmExternalId ?? "").startsWith("BAR") || tx.tipo.startsWith("cobre_balance")) {
+    const { data: bar } = await sb
+      .from("cobre_barridos")
+      .select("monto")
+      .eq("modo", modo)
+      .or(`mm_id.eq.${filtroId(mmId)},external_id.eq.${filtroId(tx.mmExternalId)}`)
+      .limit(1)
+      .maybeSingle();
+    if (!bar)
+      return {
+        tipo: "falta_en_jpay",
+        clave: `${mmId}:${tx.tipo}`,
+        transaccion: tx.id,
+        detalle: { monto, tipo: tx.tipo, nota: `Barrido de comisiones que ${brand.name} no tiene` },
+      };
+    return Math.abs(Number(bar.monto) - monto) >= 0.01
+      ? {
+          tipo: "monto_distinto",
+          clave: `${mmId}:${tx.tipo}`,
+          transaccion: tx.id,
+          detalle: { cobre: monto, jpay: Number(bar.monto) },
+        }
+      : null;
+  }
 
   if (tx.tipo === "cbmm_debit" || tx.tipo === "cbmm_credit") {
     const { data: cruce } = await sb

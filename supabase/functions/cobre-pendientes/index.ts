@@ -26,6 +26,7 @@ import {
   iniciarEnvioUsd,
 } from "../_shared/cobre-usd.ts";
 import { modoCobre } from "../_shared/cobre.ts";
+import { revisarBarridos } from "../_shared/cobre-barridos.ts";
 import { handler, json, serviceClient } from "../_shared/http.ts";
 
 type Obj = Record<string, unknown>;
@@ -56,6 +57,7 @@ Deno.serve(
       subclientes: 0,
       cobros: 0,
       conversiones: 0,
+      barridos: 0,
       errores: [] as string[],
     };
     const intentar = async (que: string, fn: () => Promise<void>) => {
@@ -335,6 +337,12 @@ Deno.serve(
         resumen.conversiones++;
       });
     }
+
+    // ── Barrido de comisiones: abiertos y diario ──
+    await intentar("barridos", async () => {
+      const b = await revisarBarridos(sb, modo, conexion, resumen.errores);
+      resumen.barridos = b.revisados + b.barridos;
+    });
 
     await sb
       .from("tareas_programadas")

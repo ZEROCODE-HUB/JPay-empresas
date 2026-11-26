@@ -1905,6 +1905,134 @@ export type Database = {
           },
         ]
       }
+      cobre_barrido_contrapartes: {
+        Row: {
+          clabe: string
+          contraparte_externa_id: string
+          created_at: string
+          instancia_id: string
+        }
+        Insert: {
+          clabe: string
+          contraparte_externa_id: string
+          created_at?: string
+          instancia_id: string
+        }
+        Update: {
+          clabe?: string
+          contraparte_externa_id?: string
+          created_at?: string
+          instancia_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_barrido_contrapartes_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cobre_barridos: {
+        Row: {
+          cliente_legajo: string
+          completado_at: string | null
+          created_at: string
+          created_by: string | null
+          cuenta_origen: string
+          destino: string
+          direccion: string
+          estado: string
+          external_id: string
+          id: string
+          instancia_id: string | null
+          mm_id: string | null
+          modo: string
+          monto: number
+          motivo: string | null
+          origen: string
+          updated_at: string
+          via: string
+        }
+        Insert: {
+          cliente_legajo: string
+          completado_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_origen: string
+          destino: string
+          direccion: string
+          estado?: string
+          external_id: string
+          id?: string
+          instancia_id?: string | null
+          mm_id?: string | null
+          modo: string
+          monto: number
+          motivo?: string | null
+          origen: string
+          updated_at?: string
+          via: string
+        }
+        Update: {
+          cliente_legajo?: string
+          completado_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuenta_origen?: string
+          destino?: string
+          direccion?: string
+          estado?: string
+          external_id?: string
+          id?: string
+          instancia_id?: string | null
+          mm_id?: string | null
+          modo?: string
+          monto?: number
+          motivo?: string | null
+          origen?: string
+          updated_at?: string
+          via?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobre_barridos_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_barridos_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_barridos_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_barridos_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "cobre_barridos_instancia_id_fkey"
+            columns: ["instancia_id"]
+            isOneToOne: false
+            referencedRelation: "cobre_instancias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cobre_clabes: {
         Row: {
           clabe: string
@@ -2148,6 +2276,13 @@ export type Database = {
       }
       cobre_configuracion: {
         Row: {
+          barrido_clabe: string | null
+          barrido_hora: number
+          barrido_instancias: boolean
+          barrido_modo: string
+          barrido_monto_minimo: number
+          barrido_rfc: string | null
+          barrido_titular: string | null
           conversion_evalua_reglas: boolean
           cuenta_global_id: string | null
           cuenta_plataforma_id: string | null
@@ -2161,6 +2296,13 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          barrido_clabe?: string | null
+          barrido_hora?: number
+          barrido_instancias?: boolean
+          barrido_modo?: string
+          barrido_monto_minimo?: number
+          barrido_rfc?: string | null
+          barrido_titular?: string | null
           conversion_evalua_reglas?: boolean
           cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
@@ -2174,6 +2316,13 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          barrido_clabe?: string | null
+          barrido_hora?: number
+          barrido_instancias?: boolean
+          barrido_modo?: string
+          barrido_monto_minimo?: number
+          barrido_rfc?: string | null
+          barrido_titular?: string | null
           conversion_evalua_reglas?: boolean
           cuenta_global_id?: string | null
           cuenta_plataforma_id?: string | null
@@ -8274,6 +8423,14 @@ export type Database = {
         }
         Returns: string
       }
+      _cobre_barrido_neto: {
+        Args: { p_incluir_en_curso: boolean; p_legajo: string }
+        Returns: number
+      }
+      _cobre_comisiones_cobradas: {
+        Args: { p_legajo: string }
+        Returns: number
+      }
       _cobre_cuenta: {
         Args: { p_moneda: string; p_tipo: string }
         Returns: string
@@ -8624,6 +8781,30 @@ export type Database = {
       cliente_tiene_movimientos: {
         Args: { p_legajo: string }
         Returns: boolean
+      }
+      cobre_barrido_reservar: {
+        Args: {
+          p_forzar?: boolean
+          p_legajo: string
+          p_modo: string
+          p_origen: string
+          p_usuario?: string
+        }
+        Returns: Json
+      }
+      cobre_barrido_resumen: {
+        Args: never
+        Returns: {
+          barrido: number
+          cliente_legajo: string
+          cobradas: number
+          en_curso: number
+          modo: string
+          nombre: string
+          por_barrer: number
+          propia: boolean
+          ultimo_at: string
+        }[]
       }
       cobre_comision_cruce: {
         Args: { p_legajo: string; p_monto: number; p_subcuenta_id: string }

@@ -24,6 +24,7 @@ import { aplicarEstadoSubcliente } from "./cobre-subclientes.ts";
 import { aplicarEstadoCobroR2p, acreditarCobroR2p } from "./cobre-r2p.ts";
 import { aplicarEstadoLote } from "./cobre-lotes.ts";
 import { aplicarEstadoCruce, aplicarEstadoEnvioUsd } from "./cobre-usd.ts";
+import { barridoDeAviso } from "./cobre-barridos.ts";
 
 type Obj = Record<string, unknown>;
 const txt = (v: unknown) => (typeof v === "string" ? v : "");
@@ -104,6 +105,8 @@ async function movimiento(sb: SupabaseClient, conexion: ConexionCobre, c: Obj): 
   if (tipo === "global_pay_to_usa" || tipo === "fedwire" || tipo === "swift") {
     return `envío USD ${await aplicarEstadoEnvioUsd(sb, conexion, c)}`;
   }
+  const barrido = await barridoDeAviso(sb, conexion, c);
+  if (barrido) return `barrido ${barrido}`;
   const mmId = txt(c.id).replace(/[^\w-]/g, "");
   const ext = txt(c.external_id).replace(/[^\w-]/g, "");
   if (!mmId && !ext) return "movimiento sin id";

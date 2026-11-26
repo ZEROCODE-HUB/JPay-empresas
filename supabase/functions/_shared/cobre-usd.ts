@@ -14,6 +14,7 @@ import { aCentavos, CobreError, deCentavos, resumirTransferencia } from "./cobre
 import type { ConexionCobre } from "./cobre-servidor.ts";
 import { aplicarEstadoTransferencia } from "./cobre-transferencias.ts";
 import { brand } from "./brand.ts";
+import { barrerSiCorresponde } from "./cobre-barridos.ts";
 
 type Obj = Record<string, unknown>;
 const s = (v: unknown) => (typeof v === "string" && v ? v : null);
@@ -244,7 +245,7 @@ export async function aplicarEstadoCruce(
   if (!estado || (!mmId && !ext)) return "sin datos";
   const { data: c } = await sb
     .from("cobre_cruces")
-    .select("id, estado")
+    .select("id, estado, cliente_legajo")
     .eq("modo", conexion.modo)
     .or(`mm_id.eq.${filtroId(mmId)},external_id.eq.${filtroId(ext)}`)
     .limit(1)
@@ -261,6 +262,7 @@ export async function aplicarEstadoCruce(
       .from("cobre_cruces")
       .update({ estado: "completada", mm_id: mmId || undefined, updated_at: ahora() })
       .eq("id", c.id);
+    await barrerSiCorresponde(sb, c.cliente_legajo);
     return "completada";
   }
   if (estado === "rejected" || estado === "failed" || estado === "canceled") {

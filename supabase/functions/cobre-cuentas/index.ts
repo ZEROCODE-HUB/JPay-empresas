@@ -10,6 +10,9 @@
 //   conectividad (no se opera hasta `connected`) y devuelve el saldo en Cobre.
 // - `receptora` { subcuenta_id } (comercio dueño o admin): mueve la CLABE del Balance del comercio
 //   a otra de sus subcuentas en pesos.
+// - `balance_comisiones` (solo admin): crea, si falta, el Balance MX donde se barren las comisiones
+//   de JPay; `vincular_balance_comisiones` { cuenta_externa } usa uno que ya existe en la matriz.
+// - `barrer` { legajo } (solo admin): barre ya las comisiones de un comercio (sin monto mínimo).
 // - `devolver_deposito` { deposito_id } (solo admin): devuelve al remitente un depósito que no se
 //   pudo asignar (`/money_movements_return`). Uno ya acreditado se ajusta desde el backoffice.
 
@@ -17,6 +20,7 @@ import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CobreError, deCentavos } from "../_shared/cobre.ts";
 import { conexionCobre, type ConexionCobre } from "../_shared/cobre-servidor.ts";
 import { asignarClabeReceptora } from "../_shared/cobre-subclientes.ts";
+import { barrerComisiones } from "../_shared/cobre-barridos.ts";
 import {
   esAdmin,
   handler,
@@ -33,6 +37,8 @@ type Body = {
   subcuenta_id?: unknown;
   cuenta_id?: unknown;
   deposito_id?: unknown;
+  cuenta_externa?: unknown;
+  legajo?: unknown;
 };
 type Ctx = { sb: SupabaseClient; conexion: ConexionCobre };
 
@@ -60,6 +66,27 @@ Deno.serve(
           const legajo = admin ? null : await legajoDeSesion(req);
           return json(await cambiarReceptora(ctx, body.subcuenta_id, legajo));
         }
+        case "balance_comisiones":
+          soloAdmin();
+          return json(await balanceComisiones(ctx, null));
+        case "vincular_balance_comisiones":
+          soloAdmin();
+          if (
+            typeof body.cuenta_externa !== "string" ||
+            !/^acc_\w{4,40}$/.test(body.cuenta_externa)
+          )
+            throw new HttpError(400, "La cuenta debe tener el formato acc_…");
+          return json(await balanceComisiones(ctx, body.cuenta_externa));
+        case "barrer":
+          soloAdmin();
+          if (typeof body.legajo !== "string" || !body.legajo)
+            throw new HttpError(400, "Falta el comercio");
+          return json(
+            await barrerComisiones(sb, body.legajo, "manual", {
+              forzar: true,
+              usuario: await usuarioDeSesion(req),
+            }),
+          );
         case "devolver_deposito":
           soloAdmin();
           if (typeof body.deposito_id !== "string") throw new HttpError(400, "Falta el depósito");
@@ -78,6 +105,64 @@ Deno.serve(
     }
   }),
 );
+
+async function usuarioDeSesion(req: Request): Promise<string | null> {
+  const { data } = await userClient(req).auth.getUser();
+  return data?.user?.id ?? null;
+}
+
+/** Balance de comisiones de la plataforma (MX, en la matriz). Lo crea o vincula uno existente. */
+async function balanceComisiones(ctx: Ctx, existente: string | null) {
+  const { sb, conexion } = ctx;
+  const { data: actual } = await sb
+    .from("cobre_cuentas")
+    .select("id, cuenta_externa_id, conectividad")
+    .eq("modo", conexion.modo)
+    .eq("tipo", "plataforma")
+    .eq("estado", "activa")
+    .maybeSingle();
+  if (actual && (!existente || actual.cuenta_externa_id === existente)) {
+    await sb.from("cobre_configuracion").update({ cuenta_plataforma_id: actual.id }).eq("id", 1);
+    return actual;
+  }
+  if (actual) {
+    throw new HttpError(409, `Ya hay un Balance de comisiones (${actual.cuenta_externa_id})`);
+  }
+  const alias = `${brand.name.toUpperCase()} Comisiones`.slice(0, 32);
+  type Cuenta = { id: string; provider_id?: string; connectivity?: { status?: string } };
+  let c: Cuenta;
+  if (existente) {
+    c = await conexion.cliente.get<Cuenta>(`/accounts/${existente}`);
+    if (c.provider_id && c.provider_id !== "pr_mex_cobre3")
+      throw new HttpError(409, "La cuenta debe ser un Balance en pesos (pr_mex_cobre3)");
+  } else {
+    c = await conexion.cliente.post<Cuenta>("/accounts", {
+      provider_id: "pr_mex_cobre3",
+      action: "create",
+      tags: ["jpay", "comisiones"],
+      alias,
+    });
+  }
+  const { data, error } = await sb
+    .from("cobre_cuentas")
+    .insert({
+      tipo: "plataforma",
+      modo: conexion.modo,
+      cuenta_externa_id: c.id,
+      alias,
+      proveedor_id: "pr_mex_cobre3",
+      moneda: "MXN",
+      conectividad: c.connectivity?.status ?? null,
+    })
+    .select("id, cuenta_externa_id, conectividad")
+    .single();
+  if (error) throw new HttpError(500, `Cuenta ${c.id} lista pero no guardada: ${error.message}`);
+  await sb
+    .from("cobre_configuracion")
+    .update({ cuenta_plataforma_id: data.id, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  return data;
+}
 
 async function legajoDeSesion(req: Request): Promise<string> {
   const { data, error } = await userClient(req).rpc("current_cliente_legajo");
