@@ -885,7 +885,8 @@ async function clienteExterno(ctx: Contexto, fila: Obj): Promise<string> {
     .select("cliente_externo_id")
     .eq("id", String(fila.proveedor_cliente_id))
     .maybeSingle();
-  if (!cli?.cliente_externo_id) throw new HttpError(409, "Falta el cliente en Ecart Pay");
+  if (!cli?.cliente_externo_id)
+    throw new HttpError(409, "Falta registrar al cliente en el procesador de pagos");
   return String(cli.cliente_externo_id);
 }
 

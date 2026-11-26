@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/portal-shell";
 import { DocPreviewModal } from "@/components/doc-preview";
@@ -10,7 +10,7 @@ import {
   InfoEmpresaCard,
 } from "@/features/cuenta/components/InfoAdicionalCards";
 import { InfoUsuarioCard } from "@/features/cuenta/components/InfoUsuarioCard";
-import { CobreConexionCard } from "@/features/integraciones/components/CobreConexionCard";
+import { CuentaSpeiCard } from "@/features/integraciones/components/CuentaSpeiCard";
 import { usePaisConModulos } from "@/shared/modulos-pais";
 import { useCuentaPantalla } from "@/features/cuenta/hooks/useCuentaPantalla";
 import type { DocReal } from "@/features/cuenta/types";
@@ -29,8 +29,8 @@ function Page() {
         title="Mi cuenta"
         description={
           c.isPJ
-            ? "Datos del titular y documentacion societaria."
-            : "Datos personales y documentacion KYC."
+            ? "Datos del titular y documentación societaria."
+            : "Datos personales y documentación de verificación."
         }
       />
 
@@ -49,7 +49,7 @@ function Page() {
                   <InfoUsuarioCard c={c} />
                   <InfoAdicionalCard c={c} />
                   {c.isPJ && <InfoEmpresaCard c={c} />}
-                  {pais.modulos.transferencias_cobre && <CobreConexionCard />}
+                  {pais.modulos.transferencias_cobre && <CuentaSpeiCard />}
                   <DocumentosKycCard c={c} onPreview={setDocPreview} />
                 </>
               )}

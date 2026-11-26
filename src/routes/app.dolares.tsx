@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Card, PageHeader } from "@/components/portal-shell";
-import { ConectaCobreAviso } from "@/features/integraciones/components/ConectaCobreAviso";
+import { ActivaCuentaSpeiAviso } from "@/features/integraciones/components/ActivaCuentaSpeiAviso";
 import { ConvertirCard } from "@/features/dolares/components/ConvertirCard";
 import { ConversionesCard } from "@/features/dolares/components/MovimientosDolares";
 import { SaldosDolaresCard } from "@/features/dolares/components/SaldosDolaresCard";
@@ -46,13 +46,13 @@ function Page() {
           onRetry={() => void Promise.all([cuenta.refetch(), subcuentas.refetch()])}
         />
       ) : !cuenta.data?.cuenta ? (
-        <ConectaCobreAviso cuenta={cuenta.data} para="convertir a dólares" />
+        <ActivaCuentaSpeiAviso cuenta={cuenta.data} para="convertir a dólares" />
       ) : (
         <div className="space-y-4">
           {cuenta.data?.instanciaPropia && (
             <Card className="text-sm text-black-500">
-              Los dólares todavía no están disponibles con tu cuenta Cobre conectada: por ahora solo
-              puedes operar en pesos.
+              Los dólares todavía no están disponibles para tu cuenta: por ahora solo puedes operar
+              en pesos.
             </Card>
           )}
           {/* Sin las conversiones no se sabe qué está «por recibir»: espera a tenerlas. */}

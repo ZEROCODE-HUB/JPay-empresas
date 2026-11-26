@@ -3,10 +3,11 @@ import { useEffect, useState } from "react";
 import { Plug } from "lucide-react";
 import { toast } from "sonner";
 import { Card, PageHeader } from "@/components/portal-shell";
-import { CobreConexionCard } from "@/features/integraciones/components/CobreConexionCard";
+import { CuentaSpeiCard } from "@/features/integraciones/components/CuentaSpeiCard";
 import { EcartPayCard } from "@/features/integraciones/components/EcartPayCard";
 import { PasarelaApagadaAviso } from "@/features/integraciones/components/PasarelaApagadaAviso";
 import { useComerciosCliente } from "@/hooks/useComercios";
+import { usePaisConModulos } from "@/shared/modulos-pais";
 import { EmptyState } from "@/shared/ui/empty-state";
 import { brand } from "@/brand/brand";
 import { Cargando, ErrorCarga } from "@/shared/ui/estado-carga";
@@ -23,30 +24,37 @@ export const Route = createFileRoute("/app/integraciones")({
 });
 
 function Page() {
-  const { ecartpay, motivo } = Route.useSearch();
+  const { ecartpay } = Route.useSearch();
   const navigate = useNavigate();
+  const pais = usePaisConModulos();
   const { rows, isLoading, error, refetch } = useComerciosCliente();
   const comercios = rows ?? [];
   const [comercioId, setComercioId] = useState<string | null>(null);
   const actual = comercioId ?? comercios[0]?.id ?? null;
 
-  // Resultado de la vuelta desde Ecart Pay: avisar y limpiar la URL.
+  // Resultado de la vuelta desde la página del procesador de pagos: avisar y limpiar la URL.
+  // (El motivo técnico no se muestra al cliente: queda registrado para soporte.)
   useEffect(() => {
     if (!ecartpay) return;
-    if (ecartpay === "conectado") toast.success("Tus cobros con tarjeta quedaron activados");
-    else toast.error(`No se pudieron activar los cobros con tarjeta${motivo ? `: ${motivo}` : ""}`);
+    if (ecartpay === "conectado") toast.success("Tus cobros con tarjeta quedaron activos");
+    else
+      toast.error(
+        "No se pudo vincular tu cuenta de cobros. Inténtalo de nuevo o contacta a soporte.",
+      );
     void navigate({ to: "/app/integraciones", search: {}, replace: true });
-  }, [ecartpay, motivo, navigate]);
+  }, [ecartpay, navigate]);
 
   return (
     <>
       <PageHeader
         title="Conexiones"
-        description="Conecta tu cuenta Cobre (SPEI) y tu cuenta de cobros con tarjeta. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
+        description="Los servicios de tu cuenta y su estado. Lo que cobras con tarjeta lo ves en Cobrar › Cobros con tarjeta."
       />
-      <div className="mb-4">
-        <CobreConexionCard />
-      </div>
+      {pais.modulos.transferencias_cobre && (
+        <div className="mb-4">
+          <CuentaSpeiCard />
+        </div>
+      )}
       {isLoading ? (
         <Cargando className="block h-40 w-full" />
       ) : error ? (
@@ -56,7 +64,7 @@ function Page() {
           <EmptyState
             icon={<Plug size={48} strokeWidth={1.5} />}
             title="Cobros con tarjeta: todavía no tienes un comercio habilitado"
-            description={`Se habilita en cuanto ${brand.name} aprueba la verificación de tu cuenta. Después podrás conectar tus medios de cobro desde aquí.`}
+            description={`Se habilita en cuanto ${brand.name} aprueba la verificación de tu cuenta. Después podrás activar tus cobros desde aquí.`}
           />
         </Card>
       ) : (

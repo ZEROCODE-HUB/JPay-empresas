@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/portal-shell";
-import { ConectaCobreAviso } from "@/features/integraciones/components/ConectaCobreAviso";
+import { ActivaCuentaSpeiAviso } from "@/features/integraciones/components/ActivaCuentaSpeiAviso";
 import { ClabesCard } from "@/features/spei/components/ClabesCard";
 import { CobrosR2pCard } from "@/features/spei/components/CobrosR2pCard";
 import { DepositosSpeiCard } from "@/features/spei/components/MovimientosSpeiCard";
@@ -29,7 +29,7 @@ function Page() {
           onRetry={() => void (cuenta.error ? cuenta.refetch() : subcuentas.refetch())}
         />
       ) : !cuenta.data?.cuenta ? (
-        <ConectaCobreAviso cuenta={cuenta.data} para="recibir pagos por SPEI" />
+        <ActivaCuentaSpeiAviso cuenta={cuenta.data} para="recibir pagos por SPEI" />
       ) : (
         <div className="space-y-4">
           <ClabesCard cuenta={cuenta.data!} subcuentas={subcuentas.data ?? []} />

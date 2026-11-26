@@ -11,13 +11,16 @@
 //   todos los eventos del documento, en la matriz (sin instancia) o en la del comercio, con su
 //   URL (`cobre-webhook?instancia=<id>`) y su clave. Si ya existe una con esa URL, la reusa.
 //
-// Autoservicio del cliente (portal › Conexiones), siempre sobre su propia cuenta Cobre:
-// - `mi_conexion`: estado de su cuenta conectada (sin secretos).
-// - `conectar` { user_id, secret }: valida las claves contra Cobre, guarda la instancia (el secret
-//   y una clave de avisos generada aquí van a Vault), vincula su Cobre Balance México (usa el que
-//   ya tenga o lo crea) y suscribe los avisos. Los dos últimos pasos son best-effort: si fallan,
-//   la cuenta queda conectada y se informa qué faltó (se reintenta conectando de nuevo).
-// - `desconectar`: quita los avisos, desactiva la instancia y deshabilita su CLABE en JPay.
+// Conexión en un paso de la cuenta Cobre de un cliente (admin › cliente › Conexiones). Solo la
+// hace un administrador: el cliente no carga claves ni ve el nombre del proveedor en el portal.
+// - `conexion_cliente` { legajo }: estado de la cuenta conectada (sin secretos).
+// - `conectar_cliente` { legajo, user_id, secret }: valida las claves contra Cobre, guarda la
+//   instancia (el secret y una clave de avisos generada aquí van a Vault), vincula su Cobre
+//   Balance México (usa el que ya tenga, el de mayor saldo, o lo crea) y suscribe los avisos. Los
+//   dos últimos pasos son best-effort: si fallan, la cuenta queda conectada y se informa qué
+//   faltó (se reintenta conectando de nuevo).
+// - `desconectar_cliente` { legajo }: quita los avisos, desactiva la instancia y deshabilita su
+//   CLABE en JPay.
 
 import type { SupabaseClient } from "jsr:@supabase/supabase-js@2";
 import { CobreError, modoCobre } from "../_shared/cobre.ts";
@@ -29,15 +32,7 @@ import {
   urlWebhookCobre,
 } from "../_shared/cobre-servidor.ts";
 import { asignarClabeReceptora } from "../_shared/cobre-subclientes.ts";
-import {
-  esAdmin,
-  handler,
-  HttpError,
-  json,
-  readJson,
-  serviceClient,
-  userClient,
-} from "../_shared/http.ts";
+import { esAdmin, handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
 import { brand } from "../_shared/brand.ts";
 
 type Obj = Record<string, unknown>;
@@ -46,23 +41,17 @@ const texto = (v: unknown, max = 200) =>
 
 Deno.serve(
   handler(async (req) => {
+    if (!(await esAdmin(req))) throw new HttpError(403, "Solo para administradores");
     const body = await readJson<Obj>(req);
     const sb = serviceClient();
     try {
-      if (!(await esAdmin(req))) {
-        const legajo = await legajoDeSesion(req);
-        switch (body.accion) {
-          case "mi_conexion":
-            return json(await miConexion(sb, legajo));
-          case "conectar":
-            return json(await conectar(sb, legajo, body));
-          case "desconectar":
-            return json(await desconectarMia(sb, legajo));
-          default:
-            throw new HttpError(403, "Solo para administradores");
-        }
-      }
       switch (body.accion) {
+        case "conexion_cliente":
+          return json(await conexionDeCliente(sb, await legajoExistente(sb, body.legajo)));
+        case "conectar_cliente":
+          return json(await conectar(sb, await legajoExistente(sb, body.legajo), body));
+        case "desconectar_cliente":
+          return json(await desconectar(sb, await legajoExistente(sb, body.legajo)));
         case "guardar":
           return json(await guardar(sb, body));
         case "desactivar":
@@ -283,14 +272,20 @@ async function suscribir(sb: SupabaseClient, instanciaId: string | null) {
   return { suscripcion: externo, url, eventos: eventos.length, faltan };
 }
 
-// ── Autoservicio del cliente ────────────────────────────────────────────────
+// ── Conexión en un paso de la cuenta Cobre de un cliente ────────────────────
 
-async function legajoDeSesion(req: Request): Promise<string> {
-  const { data, error } = await userClient(req).rpc("current_cliente_legajo");
-  if (error || typeof data !== "string" || !data) {
-    throw new HttpError(403, "Solo un cliente con sesión puede conectar su cuenta");
-  }
-  return data;
+/** Legajo pedido por el admin, comprobando que el cliente exista. */
+async function legajoExistente(sb: SupabaseClient, pedido: unknown): Promise<string> {
+  const legajo = texto(pedido, 40);
+  if (!legajo) throw new HttpError(400, "Falta el legajo del cliente");
+  const { data, error } = await sb
+    .from("clientes")
+    .select("legajo")
+    .eq("legajo", legajo)
+    .maybeSingle();
+  if (error) throw new HttpError(500, error.message);
+  if (!data) throw new HttpError(404, "Cliente inexistente");
+  return data.legajo as string;
 }
 
 const mensaje = (e: unknown) =>
@@ -315,7 +310,7 @@ async function instanciaActiva(sb: SupabaseClient, legajo: string): Promise<Inst
   return data as InstanciaFila | null;
 }
 
-async function miConexion(sb: SupabaseClient, legajo: string) {
+async function conexionDeCliente(sb: SupabaseClient, legajo: string) {
   const modo = modoCobre();
   const inst = await instanciaActiva(sb, legajo);
   if (!inst) return { conectada: false, modo };
@@ -353,7 +348,9 @@ async function balanceExistente(sb: SupabaseClient, id: string): Promise<string 
 async function conectar(sb: SupabaseClient, legajo: string, b: Obj) {
   const userId = texto(b.user_id, 120);
   const secret = texto(b.secret, 500);
-  if (!userId || !secret) throw new HttpError(400, "Escribe tu usuario y tu clave de Cobre");
+  if (!userId || !secret) {
+    throw new HttpError(400, "Faltan el User ID y la clave secreta de Cobre");
+  }
   // 1. Que Cobre acepte las claves antes de guardar nada.
   const prueba = conexionCobre(sb, {
     id: "validacion",
@@ -365,7 +362,7 @@ async function conectar(sb: SupabaseClient, legajo: string, b: Obj) {
   try {
     await prueba.cliente.token(true);
   } catch (e) {
-    throw new HttpError(422, `Cobre no aceptó tus claves: ${mensaje(e)}`);
+    throw new HttpError(422, `Cobre no aceptó las claves: ${mensaje(e)}`);
   }
   // 2. Guardar la instancia. La clave de avisos se genera aquí y nunca sale del servidor; al
   //    reconectar se conserva la que ya firma la suscripción existente.
@@ -390,10 +387,10 @@ async function conectar(sb: SupabaseClient, legajo: string, b: Obj) {
   } catch (e) {
     faltantes.push(`Avisos de movimientos: ${mensaje(e)}`);
   }
-  return { ...(await miConexion(sb, legajo)), faltantes };
+  return { ...(await conexionDeCliente(sb, legajo)), faltantes };
 }
 
-async function desconectarMia(sb: SupabaseClient, legajo: string) {
+async function desconectar(sb: SupabaseClient, legajo: string) {
   const previa = await instanciaActiva(sb, legajo);
   if (!previa) return { conectada: false, modo: modoCobre() };
   // Quita la suscripción de avisos en Cobre (best-effort: las claves pueden ya no servir).

@@ -24,7 +24,7 @@ Deno.serve(
       let pasarela = pasarelaPropia(await ecart.get<unknown>("/api/gateways"));
       if (body.accion === "activar") {
         if (!pasarela)
-          throw new HttpError(404, "No se encontró la pasarela de Ecart Pay en tu cuenta");
+          throw new HttpError(404, "No se encontró la pasarela de cobros en tu cuenta");
         if (!pasarela.activa) {
           await ecart.request("PUT", `/api/gateways/${encodeURIComponent(pasarela.id)}`, {
             body: { active: true },
@@ -35,7 +35,7 @@ Deno.serve(
       return json({ pasarela });
     } catch (e) {
       if (e instanceof EcartPayError) {
-        throw new HttpError(502, `No se pudo consultar Ecart Pay: ${e.message}`);
+        throw new HttpError(502, `No se pudo consultar el procesador de pagos: ${e.message}`);
       }
       throw e;
     }

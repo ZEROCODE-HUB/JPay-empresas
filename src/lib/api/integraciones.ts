@@ -301,30 +301,3 @@ export const getPasarelaEcart = (comercioId: string) => pasarelaEcart({ comercio
 
 export const activarPasarelaEcart = (comercioId: string) =>
   pasarelaEcart({ comercio_id: comercioId, accion: "activar" });
-
-/** Cuenta Cobre propia del cliente (contrato directo con Cobre), conectada con sus claves. */
-export type ConexionCobre = {
-  conectada: boolean;
-  modo: "simulado" | "prueba" | "produccion";
-  user_id?: string;
-  avisos?: boolean;
-  conectada_at?: string;
-  cuenta?: { cuenta_externa_id: string; clabe: string | null; conectividad: string | null } | null;
-  /** Solo al conectar: pasos que no se pudieron completar. */
-  faltantes?: string[];
-};
-
-async function accionCobre(body: Record<string, unknown>): Promise<ConexionCobre> {
-  const sb = requireSupabase();
-  const { data, error } = await sb.functions.invoke<ConexionCobre>("cobre-instancias", { body });
-  if (error) throw await errorDeFuncion(error);
-  if (!data) throw new Error("Respuesta vacía del servidor");
-  return data;
-}
-
-export const getConexionCobre = () => accionCobre({ accion: "mi_conexion" });
-
-export const conectarCobre = (c: { user_id: string; secret: string }) =>
-  accionCobre({ accion: "conectar", ...c });
-
-export const desconectarCobre = () => accionCobre({ accion: "desconectar" });

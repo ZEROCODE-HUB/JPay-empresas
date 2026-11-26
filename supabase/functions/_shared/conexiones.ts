@@ -77,6 +77,25 @@ export function urlDeVuelta(pedida: unknown, ruta = "/app/integraciones"): strin
   return defecto;
 }
 
+/**
+ * URL del panel admin a la que se vuelve cuando la conexión la inicia un administrador. Solo se
+ * acepta una dirección del mismo origen desde el que llega la solicitud (cabecera `Origin`, que el
+ * navegador pone solo), por https o desde localhost: así el callback no sirve de redirector abierto.
+ * Quien llama ya fue validado como admin.
+ */
+export function urlDeVueltaAdmin(req: Request, pedida: unknown): string {
+  const origen = req.headers.get("Origin")?.trim() ?? "";
+  try {
+    const u = new URL(String(pedida ?? ""));
+    const local = ["localhost", "127.0.0.1"].includes(u.hostname);
+    const seguro = u.protocol === "https:" || (local && u.protocol === "http:");
+    if (seguro && origen && u.origin === new URL(origen).origin) return u.toString();
+  } catch {
+    // cae en el error de abajo
+  }
+  throw new HttpError(400, "Falta la dirección de vuelta al panel");
+}
+
 /** Agrega parámetros de resultado a la URL de vuelta. */
 export function conResultado(url: string, params: Record<string, string>): string {
   const u = new URL(url);

@@ -4082,6 +4082,48 @@ export type Database = {
           },
         ]
       }
+      correo_config: {
+        Row: {
+          admin_url: string | null
+          clave_pista: string | null
+          clave_ref: string | null
+          destino_solicitudes: string | null
+          id: boolean
+          probado_at: string | null
+          probado_detalle: string | null
+          probado_ok: boolean | null
+          remitente: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          admin_url?: string | null
+          clave_pista?: string | null
+          clave_ref?: string | null
+          destino_solicitudes?: string | null
+          id?: boolean
+          probado_at?: string | null
+          probado_detalle?: string | null
+          probado_ok?: boolean | null
+          remitente?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          admin_url?: string | null
+          clave_pista?: string | null
+          clave_ref?: string | null
+          destino_solicitudes?: string | null
+          id?: boolean
+          probado_at?: string | null
+          probado_detalle?: string | null
+          probado_ok?: boolean | null
+          remitente?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       dc_excepciones: {
         Row: {
           archivo_certificado: string | null
@@ -6717,6 +6759,7 @@ export type Database = {
           atendida_at: string | null
           atendida_por: string | null
           cliente_legajo: string
+          comercio_id: string | null
           correo: string
           created_at: string
           estado: string
@@ -6724,6 +6767,7 @@ export type Database = {
           mensaje: string | null
           nombre: string
           nota: string | null
+          notificada_at: string | null
           servicio: string
           telefono: string
           updated_at: string
@@ -6732,6 +6776,7 @@ export type Database = {
           atendida_at?: string | null
           atendida_por?: string | null
           cliente_legajo: string
+          comercio_id?: string | null
           correo: string
           created_at?: string
           estado?: string
@@ -6739,6 +6784,7 @@ export type Database = {
           mensaje?: string | null
           nombre: string
           nota?: string | null
+          notificada_at?: string | null
           servicio: string
           telefono: string
           updated_at?: string
@@ -6747,6 +6793,7 @@ export type Database = {
           atendida_at?: string | null
           atendida_por?: string | null
           cliente_legajo?: string
+          comercio_id?: string | null
           correo?: string
           created_at?: string
           estado?: string
@@ -6754,6 +6801,7 @@ export type Database = {
           mensaje?: string | null
           nombre?: string
           nota?: string | null
+          notificada_at?: string | null
           servicio?: string
           telefono?: string
           updated_at?: string
@@ -6786,6 +6834,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_client_block_parameters"
             referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "solicitudes_contacto_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "comercios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "solicitudes_contacto_comercio_id_fkey"
+            columns: ["comercio_id"]
+            isOneToOne: false
+            referencedRelation: "v_lotes_venta"
+            referencedColumns: ["comercios_id"]
           },
         ]
       }
@@ -8647,6 +8709,22 @@ export type Database = {
         Args: { p_name: string }
         Returns: string
       }
+      correo_guardar_config: {
+        Args: {
+          p_admin_url?: string
+          p_clave: string
+          p_destino: string
+          p_por: string
+          p_remitente: string
+        }
+        Returns: undefined
+      }
+      correo_leer_config: { Args: never; Returns: Json }
+      correo_quitar_clave: { Args: { p_por: string }; Returns: undefined }
+      correo_registrar_prueba: {
+        Args: { p_detalle: string; p_ok: boolean }
+        Returns: undefined
+      }
       cotizar_transferencia: {
         Args: {
           p_destino?: string
@@ -9243,6 +9321,7 @@ export type Database = {
       }
       solicitar_contacto: {
         Args: {
+          p_comercio_id?: string
           p_correo: string
           p_mensaje?: string
           p_nombre: string

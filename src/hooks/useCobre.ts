@@ -33,6 +33,11 @@ const abiertas = (estados: string[]) =>
     (e) => e === "enviando" || e === "trasladando" || e.startsWith("pendiente") || e === "creando",
   );
 
+/** Solo el estado de la cuenta SPEI del cliente (misma clave de caché que `useCuentaSpei`). */
+export function useEstadoCuentaSpei() {
+  return useQuery({ queryKey: [...KEY, "cuenta"], queryFn: getCuentaCobre });
+}
+
 export function useCuentaSpei() {
   const transferencias = useQuery({
     queryKey: [...KEY, "transferencias"],

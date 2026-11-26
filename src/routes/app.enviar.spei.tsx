@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/portal-shell";
-import { ConectaCobreAviso } from "@/features/integraciones/components/ConectaCobreAviso";
+import { ActivaCuentaSpeiAviso } from "@/features/integraciones/components/ActivaCuentaSpeiAviso";
 import { LoteSpeiCard } from "@/features/spei/components/LoteSpeiCard";
 import { TransferenciasSpeiCard } from "@/features/spei/components/MovimientosSpeiCard";
 import { TransferirSpeiCard } from "@/features/spei/components/TransferirSpeiCard";
@@ -33,7 +33,7 @@ function Page() {
           }
         />
       ) : !cuenta.data?.cuenta ? (
-        <ConectaCobreAviso cuenta={cuenta.data} para="enviar transferencias SPEI" />
+        <ActivaCuentaSpeiAviso cuenta={cuenta.data} para="enviar transferencias SPEI" />
       ) : (
         <div className="space-y-4">
           <TransferirSpeiCard

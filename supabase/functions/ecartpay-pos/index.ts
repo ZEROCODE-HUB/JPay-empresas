@@ -246,7 +246,7 @@ async function guardarCaja(ctx: Ctx, b: Body) {
     if (!idExterno) {
       throw new HttpError(
         409,
-        `El número ${c.numero} ya se usó en esta sucursal en Ecart Pay (aunque esa caja se haya eliminado). Usa otro número.`,
+        `El número ${c.numero} ya se usó en esta sucursal (aunque esa caja se haya eliminado). Usa otro número.`,
       );
     }
     await ctx.ecart.request("PUT", `/api/pos/sales-registers/${idExterno}`, {
