@@ -119,8 +119,9 @@ const error = (codigo: string, description: string, status = 409) =>
 
 const pagina = (items: Obj[], q: URLSearchParams) => {
   const size = Math.min(Number(q.get("page_size") ?? 50) || 50, 1000);
-  const num = Math.max(Number(q.get("page_number") ?? 1) || 1, 1);
-  const contents = items.slice((num - 1) * size, num * size);
+  // Como en Cobre real: las páginas empiezan en 0.
+  const num = Math.max(Number(q.get("page_number") ?? 0) || 0, 0);
+  const contents = items.slice(num * size, (num + 1) * size);
   const total_pages = Math.max(1, Math.ceil(items.length / size));
   return {
     total_items: items.length,
@@ -128,7 +129,7 @@ const pagina = (items: Obj[], q: URLSearchParams) => {
     page_items: contents.length,
     page_size: size,
     page_number: num,
-    is_last_page: num >= total_pages,
+    is_last_page: num + 1 >= total_pages,
     contents,
   };
 };

@@ -239,11 +239,13 @@ async function traerTransacciones(
   desde: Date,
 ): Promise<Obj[]> {
   const todas: Obj[] = [];
-  for (let page = 1; page <= MAX_PAGINAS; page++) {
+  // Comprobado contra Cobre real (26/11/2026): las páginas empiezan en 0 (pedir la 1 cuando solo
+  // hay una da 409 G003) y `date_gte` va como fecha sola (con hora da 409 ACC000).
+  for (let page = 0; page < MAX_PAGINAS; page++) {
     const r = await cobre.get<{ contents?: Obj[]; is_last_page?: boolean }>(
       `/accounts/${cuenta}/transactions`,
       {
-        date_gte: desde.toISOString(),
+        date_gte: desde.toISOString().slice(0, 10),
         page_size: 100,
         page_number: page,
       },
