@@ -4124,6 +4124,21 @@ export type Database = {
         }
         Relationships: []
       }
+      correo_envios: {
+        Row: {
+          clave: string
+          ultimo_at: string
+        }
+        Insert: {
+          clave: string
+          ultimo_at?: string
+        }
+        Update: {
+          clave?: string
+          ultimo_at?: string
+        }
+        Relationships: []
+      }
       dc_excepciones: {
         Row: {
           archivo_certificado: string | null
@@ -8724,6 +8739,10 @@ export type Database = {
       correo_registrar_prueba: {
         Args: { p_detalle: string; p_ok: boolean }
         Returns: undefined
+      }
+      correo_reservar_envio: {
+        Args: { p_clave: string; p_intervalo: string }
+        Returns: boolean
       }
       cotizar_transferencia: {
         Args: {

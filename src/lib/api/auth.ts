@@ -20,6 +20,32 @@ export async function iniciarSesion(email: string, password: string) {
 }
 
 /**
+ * Pide el correo para restablecer la contraseña. Primero por la plataforma (Edge Function
+ * `recuperar-contrasena`, que lo manda por Resend con la plantilla de la marca); si el correo de
+ * la plataforma todavía no está configurado, cae al correo propio de Supabase Auth.
+ * No revela si el correo tiene cuenta.
+ */
+export async function pedirRecuperacion(email: string): Promise<void> {
+  const sb = requireSupabase();
+  const correo = email.trim();
+  let enviado = false;
+  try {
+    const { data, error } = await sb.functions.invoke<{ enviado?: boolean }>(
+      "recuperar-contrasena",
+      { body: { email: correo, origen: window.location.origin } },
+    );
+    enviado = !error && data?.enviado === true;
+  } catch {
+    // Sin la función (o sin red): se intenta con el correo de Supabase Auth.
+  }
+  if (enviado) return;
+  const { error } = await sb.auth.resetPasswordForEmail(correo, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  });
+  if (error) throw error;
+}
+
+/**
  * Cambia la contraseña del usuario de la sesión. Antes re-autentica con la
  * contraseña actual; lanza un Error con mensaje para mostrar si algo falla.
  */

@@ -356,3 +356,29 @@ export function pruebaEmail(to: string): Email {
     text: `Este es un correo de prueba de ${brand.name}. Si lo estás leyendo, el correo quedó bien configurado.`,
   };
 }
+
+/** Correo con el enlace para elegir una contraseña nueva. */
+export function recuperacionEmail(to: string, link: string): Email {
+  const html = layout(`
+              <tr>
+                <td style="padding:32px 32px 4px;">
+                  <h1 style="margin:0;font-size:20px;color:#111827;font-weight:700;">Restablece tu contraseña</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 32px 28px;">
+                  <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                    Recibimos una solicitud para cambiar la contraseña de tu cuenta de ${brand.name}. Haz clic en el botón para elegir una nueva.
+                  </p>${boton(link, "Elegir contraseña nueva")}
+                  <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">
+                    Por seguridad, el enlace vence en poco tiempo y solo sirve una vez. Si no pediste este cambio, ignora este correo: tu contraseña sigue igual.
+                  </p>
+                </td>
+              </tr>`);
+  return {
+    to,
+    subject: `Restablece tu contraseña · ${brand.name}`,
+    html,
+    text: `Para elegir una contraseña nueva en ${brand.name}, abre este enlace: ${link}\nSi no pediste este cambio, ignora este correo.`,
+  };
+}

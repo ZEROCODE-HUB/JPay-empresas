@@ -7,7 +7,8 @@ import {
   SuccessCard,
   FormTitle,
 } from "@/features/onboarding/components";
-import { requireSupabase, getAuthErrorMessage } from "@/lib/supabase";
+import { pedirRecuperacion } from "@/lib/api/auth";
+import { getAuthErrorMessage } from "@/lib/supabase";
 import { brand, pageTitle } from "@/brand/brand";
 
 export const Route = createFileRoute("/recuperar")({
@@ -32,16 +33,14 @@ function Recuperar() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const sb = requireSupabase();
-    const { error: err } = await sb.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setLoading(false);
-    if (err) {
-      setError(getAuthErrorMessage(err.message));
-      return;
+    try {
+      await pedirRecuperacion(email);
+      setSent(true);
+    } catch (err) {
+      setError(getAuthErrorMessage(err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoading(false);
     }
-    setSent(true);
   };
 
   return (
