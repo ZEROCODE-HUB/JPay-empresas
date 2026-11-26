@@ -37,6 +37,16 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
 
 ## 3. Seguridad y limpieza
 
+- [ ] **Código OTP en modo demo**: sin clave de Resend, `enviar-otp-transferencia` devuelve el
+      código en la respuesta (el segundo factor no protege). Se resuelve al cargar Resend.
+- [ ] **Links de pago**: el código del link se genera en el navegador con `Math.random` (6
+      caracteres, adivinable) y el monto lo escribe el navegador; pasarlo a una RPC del servidor.
+- [ ] **Transferencias sin pantalla de confirmación** (SPEI y dólares salen con un clic).
+- [ ] **Avisos de Ecart sin verificar** en domiciliaciones (`_shared/recurrentes.ts`): validar que
+      la orden sea de esa domiciliación.
+- [ ] **Cobros masivos**: crear lote y agregar registros no es transaccional (un fallo deja un lote
+      a medias); hay `console.log` con datos de links.
+
 - [ ] **`reenviar-verificacion` y el registro revelan si un correo tiene cuenta** (mensaje distinto
       cuando no existe). Riesgo bajo; decidir si se unifica el mensaje.
 - [ ] **Tablas y columnas heredadas** sin uso en México (`caja_molipay`, `liquidaciones_*`,
@@ -46,6 +56,10 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
       que se agreguen tablas, vistas o funciones `SECURITY DEFINER`.
 
 ## Resuelto (para referencia)
+
+- 26/11/2026 — OTP atómico (1068); TXID repetido en paralelo; envíos sin configuración; avisos
+  de una instancia Cobre propia aislados; OAuth no reasigna cuentas; `/app` exige sesión; Salir
+  cierra sesión; reintento tras corte de red no duplica transferencias.
 
 - 26/11/2026 — `crear-cliente` exige sesión y usa el correo de la sesión (antes cualquiera podía
   reescribir los datos de un cliente conociendo su correo).
