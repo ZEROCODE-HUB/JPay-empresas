@@ -92,7 +92,7 @@ export async function exigirPermiso(
     p_recurso_codigo: recurso,
     p_accion: accion,
   });
-  if (error || data !== true) throw new HttpError(403, "No tenés permiso para esta operación");
+  if (error || data !== true) throw new HttpError(403, "No tienes permiso para esta operación");
 }
 
 /** True si quien llama es un admin activo con rol "admin" (RPC `is_admin`). */
