@@ -15,6 +15,8 @@ import { fileURLToPath } from "node:url";
 
 const SHARED = [
   "src/shared",
+  "src/lib/comprobante.ts",
+  "src/lib/comprobante-pdf.ts",
   "ARCHITECTURE.md",
   "src/brand/brand.json",
   "src/brand/colors.ts",
