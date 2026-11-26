@@ -40,7 +40,7 @@ export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   doc.setFontSize(10);
   doc.text("Monto de operación:", izquierda, y);
   doc.setTextColor(0, 119, 255);
-  doc.text(formatearMonto(d.monto), derecha, y, { align: "right" });
+  doc.text(formatearMonto(d.monto, d.moneda), derecha, y, { align: "right" });
   y += 10;
   linea();
 
@@ -51,7 +51,7 @@ export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   y += 8;
   fila("Nombre:", d.desde.nombre);
   fila("RFC:", limpiarIdentificador(d.desde.rfc) || "—", true);
-  fila("CLABE:", d.desde.clabe || "—", true);
+  if (d.desde.clabe) fila("CLABE:", d.desde.clabe, true);
   linea();
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -59,12 +59,14 @@ export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   y += 8;
   fila("Nombre:", d.hacia.nombre);
   fila("RFC:", limpiarIdentificador(d.hacia.rfc) || "—", true);
-  fila("CLABE:", d.hacia.clabe || "—", true);
+  fila(d.moneda === "USD" ? "Cuenta:" : "CLABE:", d.hacia.clabe || "—", true);
   if (d.hacia.banco) fila("Banco:", d.hacia.banco);
   linea();
   fila("Estado:", d.estado || "—");
   fila("ID de transacción:", d.txid, true);
+  if (d.red) fila("Red:", d.red);
   if (d.claveRastreo) fila("Clave de rastreo:", d.claveRastreo, true);
+  if (d.uetr) fila("UETR (SWIFT):", d.uetr, true);
   if (d.concepto) fila("Concepto:", d.concepto);
   if (d.cep?.startsWith("https://")) {
     doc.setTextColor(34, 34, 34);

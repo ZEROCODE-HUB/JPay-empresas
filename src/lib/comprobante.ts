@@ -18,6 +18,10 @@ export type DatosComprobante = {
   /** Clave de rastreo SPEI y enlace al CEP de Banxico, si los hay. */
   claveRastreo?: string;
   cep?: string;
+  /** Envío en dólares: moneda, red (Fedwire / SWIFT) y UETR de SWIFT. */
+  moneda?: "MXN" | "USD";
+  red?: string;
+  uetr?: string;
   desde: { nombre: string; rfc: string; clabe: string };
   hacia: {
     nombre: string;
@@ -30,8 +34,9 @@ export type DatosComprobante = {
 };
 
 /** Monto con el formato de la moneda del país (siempre positivo). */
-export function formatearMonto(n: number): string {
-  return formatMoney(Number.isFinite(n) ? Math.abs(n) : 0);
+export function formatearMonto(n: number, moneda: "MXN" | "USD" = "MXN"): string {
+  const v = Number.isFinite(n) ? Math.abs(n) : 0;
+  return moneda === "USD" ? formatMoney(v, { moneda: "USD" }) : formatMoney(v);
 }
 
 /** ISO → `2026-10-16 10:53:14` (hora local del navegador). */

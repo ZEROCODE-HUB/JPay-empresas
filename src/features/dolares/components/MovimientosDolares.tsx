@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Badge, Card } from "@/components/portal-shell";
 import type { Conversion, TransferenciaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import { ESTADO_ENVIO } from "@/features/spei/estados";
+import { DetalleTransferenciaDialog } from "@/features/spei/components/DetalleTransferenciaDialog";
 
 const CONVERSION: Record<
   string,
@@ -57,13 +59,14 @@ export function ConversionesCard({ conversiones }: { conversiones: Conversion[] 
 
 /** Envíos en dólares (Fedwire / SWIFT). */
 export function EnviosDolaresCard({ envios }: { envios: TransferenciaSpei[] }) {
+  const [abierto, setAbierto] = useState<TransferenciaSpei | null>(null);
   return (
     <Card>
       <h2 className="font-semibold">
         Envíos en dólares
         <InfoTip className="ml-1">
           Tus envíos en dólares más recientes por Fedwire o SWIFT, con su estado actual. Se toman de
-          tus últimas 50 transferencias.
+          tus últimas 50 transferencias. Ábrelo para ver el detalle y descargar el comprobante.
         </InfoTip>
       </h2>
       {envios.length === 0 ? (
@@ -73,29 +76,35 @@ export function EnviosDolaresCard({ envios }: { envios: TransferenciaSpei[] }) {
           {envios.map((t) => {
             const e = ESTADO_ENVIO[t.estado];
             return (
-              <li key={t.id} className="py-2.5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-medium">{t.destinatario ?? "—"}</div>
-                    <div className="text-xs text-black-400">
-                      {t.tipo === "swift" ? "SWIFT" : "Fedwire"} · {formatDateTime(t.creadaAt)} ·{" "}
-                      {t.idTxn}
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => setAbierto(t)}
+                  className="w-full py-2.5 text-left hover:bg-black-50 rounded-sm -mx-1 px-1"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium">{t.destinatario ?? "—"}</div>
+                      <div className="text-xs text-black-400">
+                        {t.tipo === "swift" ? "SWIFT" : "Fedwire"} · {formatDateTime(t.creadaAt)} ·{" "}
+                        {t.idTxn}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="tabular-nums">{formatMoney(t.monto, { moneda: "USD" })}</div>
+                      <Badge tone={e.tone}>{e.label}</Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="tabular-nums">{formatMoney(t.monto, { moneda: "USD" })}</div>
-                    <Badge tone={e.tone}>{e.label}</Badge>
-                  </div>
-                </div>
-                {t.motivo && t.estado !== "completada" && (
-                  <p className="mt-1 text-xs text-danger-600">{t.motivo}</p>
-                )}
-                {t.swiftUetr && <p className="mt-1 text-xs text-black-400">UETR {t.swiftUetr}</p>}
+                  {t.motivo && t.estado !== "completada" && (
+                    <p className="mt-1 text-xs text-danger-600">{t.motivo}</p>
+                  )}
+                </button>
               </li>
             );
           })}
         </ul>
       )}
+      <DetalleTransferenciaDialog t={abierto} onClose={() => setAbierto(null)} />
     </Card>
   );
 }

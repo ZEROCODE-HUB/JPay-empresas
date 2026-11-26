@@ -9,7 +9,10 @@ import { formatDateTime, formatMoney } from "@/shared/format";
 import { ModalDialog } from "@/shared/ui/modal-dialog";
 import { ESTADO_ENVIO } from "../estados";
 
-/** Detalle de una transferencia SPEI con su comprobante en PDF y el CEP de Banxico. */
+/**
+ * Detalle de un envío (SPEI, Fedwire o SWIFT) con su comprobante en PDF y, en SPEI, el CEP de
+ * Banxico.
+ */
 export function DetalleTransferenciaDialog({
   t,
   onClose,
@@ -22,7 +25,10 @@ export function DetalleTransferenciaDialog({
   if (!t) return null;
   const e = ESTADO_ENVIO[t.estado];
   const cp = t.contraparte;
-  const cep = t.cep?.startsWith("https://") ? t.cep : null;
+  const usd = t.moneda === "USD";
+  const red = t.tipo === "swift" ? "SWIFT" : t.tipo === "fedwire" ? "Fedwire" : null;
+  const cep = !usd && t.cep?.startsWith("https://") ? t.cep : null;
+  const monto = usd ? formatMoney(t.monto, { moneda: "USD" }) : formatMoney(t.monto);
 
   const descargar = () => {
     descargarComprobantePdf({
@@ -33,10 +39,13 @@ export function DetalleTransferenciaDialog({
       txid: t.idTxn,
       claveRastreo: t.claveRastreo ?? undefined,
       cep: cep ?? undefined,
+      moneda: usd ? "USD" : "MXN",
+      red: usd ? (red ?? undefined) : undefined,
+      uetr: t.swiftUetr ?? undefined,
       desde: {
         nombre: String(cliente?.nombre ?? ""),
         rfc: String(cliente?.tax_id ?? ""),
-        clabe: cuenta.data?.cuenta?.clabe ?? "",
+        clabe: usd ? "" : (cuenta.data?.cuenta?.clabe ?? ""),
       },
       hacia: {
         nombre: cp?.titular ?? "",
@@ -51,18 +60,24 @@ export function DetalleTransferenciaDialog({
   const filas: [string, string][] = [
     ["Fecha", formatDateTime(t.creadaAt)],
     ["Destinatario", cp?.titular ?? t.destinatario ?? "—"],
-    ["CLABE destino", cp?.numero ?? "—"],
-    ["RFC / CURP", cp?.rfc ?? "—"],
+    [usd ? "Cuenta destino" : "CLABE destino", cp?.numero ?? "—"],
+    ...(cp?.banco ? ([["Banco", cp.banco]] as [string, string][]) : []),
+    [usd ? "ID fiscal" : "RFC / CURP", cp?.rfc ?? "—"],
+    ...(usd && red ? ([["Red", red]] as [string, string][]) : []),
     ["Concepto", t.concepto ?? "—"],
     ["ID de transacción", t.idTxn],
-    ["Clave de rastreo", t.claveRastreo ?? "—"],
+    usd ? ["UETR (SWIFT)", t.swiftUetr ?? "—"] : ["Clave de rastreo", t.claveRastreo ?? "—"],
   ];
 
   return (
-    <ModalDialog open onClose={onClose} title="Detalle de la transferencia">
+    <ModalDialog
+      open
+      onClose={onClose}
+      title={usd ? "Detalle del envío en dólares" : "Detalle de la transferencia"}
+    >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-2xl font-semibold tabular-nums">{formatMoney(t.monto)}</span>
+          <span className="text-2xl font-semibold tabular-nums">{monto}</span>
           <Badge tone={e.tone}>{e.label}</Badge>
         </div>
         {t.motivo && t.estado !== "completada" && (
@@ -92,6 +107,7 @@ export function DetalleTransferenciaDialog({
             tardar unos minutos en estar disponible.
           </p>
         ) : (
+          !usd &&
           t.estado === "completada" && (
             <p className="text-xs text-black-400">
               El CEP de Banxico aparece aquí en cuanto el banco lo informa.

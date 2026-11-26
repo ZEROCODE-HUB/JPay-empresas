@@ -42,7 +42,7 @@ function bloques(d: DatosComprobante): Bloque[] {
   return [
     { t: "encabezado", titulo: "Enviaste dinero", fecha: formatearFechaComprobante(d.fecha) },
     { t: "espacio", h: 12 },
-    { t: "monto", texto: formatearMonto(d.monto) },
+    { t: "monto", texto: formatearMonto(d.monto, d.moneda) },
     { t: "espacio", h: 12 },
     { t: "linea" },
     { t: "espacio", h: 20 },
