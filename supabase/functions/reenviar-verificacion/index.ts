@@ -14,6 +14,22 @@ Deno.serve(
     const nombre: string =
       `${user.user_metadata?.nombre || ""} ${user.user_metadata?.apellido || ""}`.trim();
 
+    if (user.email_confirmed_at) {
+      throw new HttpError(400, "Ese correo ya está verificado: inicia sesión");
+    }
+    // Tope: 3 reenvíos cada 10 minutos por cuenta (cada uno manda un correo).
+    const { count } = await sb
+      .from("verificaciones_correo")
+      .select("token", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", new Date(Date.now() - 10 * 60_000).toISOString());
+    if ((count ?? 0) >= 3) {
+      throw new HttpError(
+        429,
+        "Ya te enviamos varios correos. Espera unos minutos y revisa tu spam.",
+      );
+    }
+
     const token = crypto.randomUUID();
     const expires = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
     const { error: tErr } = await sb.from("verificaciones_correo").insert({

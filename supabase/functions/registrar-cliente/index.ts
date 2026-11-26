@@ -46,7 +46,7 @@ Deno.serve(
         return json(
           {
             error:
-              "Ya existe una cuenta con ese correo. Si ya te registraste, iniciá sesión. Si no verificaste tu correo, revisá tu bandeja/spam o usá '¿No te llegó el email de verificación?' en el login para reenviarlo. Si olvidaste la contraseña, usá '¿Olvidaste tu contraseña?'.",
+              "Ya existe una cuenta con ese correo. Si ya te registraste, inicia sesión. Si no verificaste tu correo, revisa tu bandeja de entrada y el spam, o inicia sesión para reenviar el correo de verificación. Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?».",
           },
           400,
         );

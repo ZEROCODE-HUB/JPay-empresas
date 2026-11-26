@@ -21,7 +21,7 @@ function ValidacionExitosa() {
         title="Validacion exitosa"
         body={<p>Tu correo electronico ha sido validado con exito.</p>}
       >
-        <PrimaryButton onClick={() => nav({ to: "/login" })}>Ir a inicio de sesion</PrimaryButton>
+        <PrimaryButton onClick={() => nav({ to: "/login" })}>Ir a inicio de sesión</PrimaryButton>
       </SuccessCard>
     </AuthShell>
   );

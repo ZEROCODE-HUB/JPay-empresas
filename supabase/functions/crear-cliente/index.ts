@@ -3,6 +3,11 @@
 // sólo se inserta la fila en clientes (legajo auto-derivado), se sube el KYC
 // al bucket privado 'kyc', se registran documentos y la validación inicial.
 // Rollback coordinado: si falla algo post-inserción de clientes, se borra la fila.
+//
+// Seguridad: usa el service role, así que valida a quien llama. El correo sale de la SESIÓN (no
+// del body): cada usuario solo puede completar su propia alta, y solo mientras su cuenta sigue en
+// el alta (una cuenta ya activada no se puede reescribir desde aquí). Sin esto, cualquiera con la
+// clave pública podía cambiar el RFC, la CLABE y los documentos de otro cliente conociendo su correo.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { handler, json } from "../_shared/http.ts";
@@ -20,19 +25,33 @@ Deno.serve(
       return json({ error: "Body inválido" }, 400);
     }
 
-    const { email, tipoCuenta, nombre, perfil = {}, kyc = {} } = body ?? {};
+    const sb = createClient(url, service, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Quién llama: el correo de la sesión manda. La clave pública (anon) no es una sesión.
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+    const { data: sesion } = token ? await sb.auth.getUser(token) : { data: { user: null } };
+    const correoSesion = sesion?.user?.email?.trim().toLowerCase() ?? "";
+    if (!correoSesion) return json({ error: "Inicia sesión para completar tu alta" }, 401);
+    const correoPedido = typeof body?.email === "string" ? body.email.trim() : "";
+    if (correoPedido && correoPedido.toLowerCase() !== correoSesion) {
+      return json({ error: "El correo no corresponde a tu sesión" }, 403);
+    }
+    // Misma escritura con la que se guardó al registrarse (la búsqueda es exacta).
+    const email = correoPedido || correoSesion;
+
+    const { tipoCuenta, nombre, perfil = {}, kyc = {} } = body ?? {};
     // `cuit` es el nombre anterior de `taxId` (clientes que todavía no envían país).
-    const pais: string = body?.pais ?? "AR";
+    const pais: string = body?.pais ?? "MX";
     const taxIdCrudo = String(body?.taxId ?? body?.cuit ?? "");
-    if (!email || !tipoCuenta || !nombre || !taxIdCrudo) {
-      return json({ error: "Faltan email, tipoCuenta, nombre o identificador fiscal" }, 400);
+    if (!tipoCuenta || !nombre || !taxIdCrudo) {
+      return json({ error: "Faltan tipoCuenta, nombre o identificador fiscal" }, 400);
     }
     const tipoPersona = tipoCuenta === "juridica" ? "juridica" : "fisica";
     const fiscal = identificadorFiscal(pais, tipoPersona, taxIdCrudo);
     if ("error" in fiscal) return json({ error: fiscal.error }, 400);
     const etiquetaFiscal = fiscal.tipo === "CUIT" ? "CUIT" : fiscal.tipo;
-
-    const sb = createClient(url, service, { auth: { autoRefreshToken: false } });
 
     // Columnas comunes al alta y a la actualización. En Argentina el CUIT es además el
     // identificador interno (`cuit`, del que deriva el legajo); en otros países ese número
@@ -83,6 +102,16 @@ Deno.serve(
       .eq("correo", email)
       .maybeSingle();
     const esAltaNueva = !existente;
+    // Una cuenta que ya salió del alta (activada, suspendida…) no se reescribe desde el portal.
+    if (
+      existente &&
+      !["pendiente_verificacion", "registrado", "preactivado"].includes(String(existente.estado))
+    ) {
+      return json(
+        { error: "Tu cuenta ya fue dada de alta. Para cambiar tus datos, contacta a soporte." },
+        409,
+      );
+    }
 
     if (existente) {
       const { data: upd, error: updErr } = await sb
@@ -160,7 +189,17 @@ Deno.serve(
       for (const [key, tipo] of Object.entries(docTipos)) {
         const f = kyc[key];
         if (!f || !f.data) continue;
-        const ext = (f.name.split(".").pop() || "bin").toLowerCase();
+        const ext = String(f.name ?? "")
+          .split(".")
+          .pop()!
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+        if (!EXTENSIONES_KYC.includes(ext)) {
+          throw new Error("Los documentos deben ser una imagen (JPG, PNG, WEBP, HEIC) o un PDF");
+        }
+        if (typeof f.data !== "string" || f.data.length > MAX_BASE64_KYC) {
+          throw new Error("Cada documento puede pesar hasta 10 MB");
+        }
         const path = `${legajo}/${tipo}.${ext}`;
         const bytes = decode(f.data);
         const { error: upErr } = await sb.storage
@@ -192,6 +231,10 @@ Deno.serve(
     }
   }),
 );
+
+/** Tipos de archivo que acepta el KYC y tope de tamaño (10 MB, medido en base64). */
+const EXTENSIONES_KYC = ["jpg", "jpeg", "jfif", "png", "webp", "heic", "heif", "pdf"];
+const MAX_BASE64_KYC = Math.ceil((10 * 1024 * 1024 * 4) / 3) + 4;
 
 /** Identificador fiscal normalizado y validado según el país (mismas reglas que `src/shared/validadores.ts`). */
 function identificadorFiscal(
