@@ -1,6 +1,9 @@
+// Edge Function: enlaces firmados (1 hora) a los documentos KYC del bucket privado `kyc`.
+// Body: { paths: string[] } o { path }. Un cliente solo obtiene los de SU legajo; el backoffice
+// (usuario activo en `admin_users`, comprobado con la RPC `es_backoffice`), los de cualquiera.
+// Quién es administrador nunca se decide por el dominio del correo.
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { CORS, preflight } from "../_shared/http.ts";
-import { brand } from "../_shared/brand.ts";
 
 Deno.serve(async (req) => {
   const pre = preflight(req);
@@ -35,8 +38,13 @@ Deno.serve(async (req) => {
   const admin = createClient(url, service, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  // PENDIENTE (ver PENDIENTES.md): decidir por rol, no por dominio de email.
-  const isAdmin = email.endsWith(`@${brand.web.domain}`);
+  // Backoffice por rol en la base (con el JWT de quien llama), no por el dominio del correo.
+  const { data: esBackoffice } = await createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${auth}` } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  }).rpc("es_backoffice");
+  const isAdmin = esBackoffice === true;
+  const miCorreo = email.trim().toLowerCase();
 
   // Batch: traer todos los documentos de una vez para evitar N+1
   const strPaths = (paths as unknown[]).filter((p): p is string => typeof p === "string");
@@ -63,7 +71,8 @@ Deno.serve(async (req) => {
     const legajo = docMap.get(p);
     if (legajo) {
       const correo = clienteMap.get(legajo);
-      if (correo && correo !== email && !isAdmin) {
+      // Sin correo conocido del dueño no se entrega a nadie que no sea del backoffice.
+      if (!isAdmin && (!correo || correo.trim().toLowerCase() !== miCorreo)) {
         out[p] = null;
         continue;
       }
