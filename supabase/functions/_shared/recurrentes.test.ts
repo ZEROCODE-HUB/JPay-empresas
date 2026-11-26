@@ -1,5 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1";
 import {
+  ordenEsDeDomiciliacion,
   clabeValida,
   domiciliacionAEcart,
   eventoRecurrente,
@@ -152,4 +153,24 @@ Deno.test("avisos: tipo, id y resumen", () => {
   assertEquals(resumenAvisoRecurrente(dd).order_id, "ord_3");
   // Una orden común no es un aviso recurrente.
   assertEquals(eventoRecurrente("orders.update", { id: "ord_1" }), null);
+});
+
+Deno.test("una orden solo cuenta para su domiciliación", () => {
+  const dom = { id_externo: "dd_7", monto: 499 };
+  const base = { id: "ord_3", status: "paid", total: 499, customer_id: "cus_1" };
+  assertEquals(ordenEsDeDomiciliacion(base, dom, "cus_1"), true);
+  assertEquals(ordenEsDeDomiciliacion({ ...base, direct_debit_id: "dd_7" }, dom, "cus_1"), true);
+  // Otra domiciliación, otro cliente, otro monto o sin cliente: no.
+  assertEquals(ordenEsDeDomiciliacion({ ...base, direct_debit_id: "dd_8" }, dom, "cus_1"), false);
+  assertEquals(ordenEsDeDomiciliacion(base, dom, "cus_2"), false);
+  assertEquals(ordenEsDeDomiciliacion({ ...base, total: 10 }, dom, "cus_1"), false);
+  assertEquals(ordenEsDeDomiciliacion({ id: "ord_3", total: 499 }, dom, "cus_1"), false);
+  assertEquals(
+    ordenEsDeDomiciliacion(
+      { ...base, customer_id: undefined, customer: { id: "cus_1" } },
+      dom,
+      "cus_1",
+    ),
+    true,
+  );
 });

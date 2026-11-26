@@ -15,6 +15,9 @@ import {
 import type { ConexionCobre } from "./cobre-servidor.ts";
 import { brand } from "./brand.ts";
 
+/** Id para interpolar en un filtro `.or(...)` de PostgREST: solo letras, números, `_`, `.` y `-`. */
+const filtroId = (v: unknown): string => String(v ?? "").replace(/[^\w.-]/g, "") || "-";
+
 type Obj = Record<string, unknown>;
 
 export type Pagador = {
@@ -175,7 +178,7 @@ async function cobroPor(
     .from("cobre_cobros_r2p")
     .select("*")
     .eq("modo", modo)
-    .or(`mm_id.eq.${mm || "-"},external_id.eq.${ext || "-"}`)
+    .or(`mm_id.eq.${filtroId(mm)},external_id.eq.${filtroId(ext)}`)
     .limit(1)
     .maybeSingle();
   return data as FilaCobro | null;

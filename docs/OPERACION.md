@@ -164,18 +164,31 @@ Reglas:
   (`doc-url` en el portal, `get-document-url` en el admin). Quién es administrador se decide por rol
   en la base, nunca por el dominio del correo.
 - **Ledger**: los asientos no se editan ni se borran; las correcciones son contra-asientos.
+- **La RLS no protege columnas**: si un cliente puede actualizar una fila, puede cambiar cualquier
+  columna. Las columnas que no debe tocar se restauran con un trigger `SECURITY INVOKER` que mira
+  `current_user` (`tg_clientes_proteger`, `tg_subaccounts_proteger`, `tg_links_pago_proteger`).
+  Al agregar una columna sensible a una tabla que el cliente edita, sumarla al trigger.
+- **Dinero y códigos los genera el servidor**: links de pago (`crear_link_pago`), lotes de cobro
+  (`crear_lote_con_registros`, `iniciar_lote`), TXID verificados, OTP (`otp_consumir`).
+- **Antes de mover dinero, confirmación** con destinatario, monto y comisión (`ConfirmarEnvio`).
 
 Auditoría del 26/11/2026 (reproducida simulando roles sobre la base real y verificada después):
 
-| Hueco                                                                                                            | Corrección                                                       |
-| ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| `crear-cliente` aceptaba el correo del body: cualquiera podía reescribir RFC, CLABE y documentos de otro cliente | El correo sale de la sesión; una cuenta activada no se reescribe |
-| `doc-url` trataba como admin a cualquier correo del dominio de la marca                                          | Rol en la base (`es_backoffice`)                                 |
-| Un cliente podía listar y descargar documentos KYC de otros (política del bucket)                                | Migración 1066: cada quien su carpeta                            |
-| Un anónimo leía `caja_molipay` y `v_lotes_venta` y podía modificar `tipos_movimiento` y otras tablas heredadas   | Migración 1066                                                   |
-| Un cliente leía el historial de estados de transacciones ajenas                                                  | Migración 1066                                                   |
-| Bucket `conciliaciones` abierto a cualquier usuario con sesión                                                   | Migración 1066: solo backoffice                                  |
-| `reenviar-verificacion` sin tope                                                                                 | 3 cada 10 minutos; no reenvía a cuentas verificadas              |
+| Hueco                                                                                                             | Corrección                                                         |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `crear-cliente` aceptaba el correo del body: cualquiera podía reescribir RFC, CLABE y documentos de otro cliente  | El correo sale de la sesión; una cuenta activada no se reescribe   |
+| `doc-url` trataba como admin a cualquier correo del dominio de la marca                                           | Rol en la base (`es_backoffice`)                                   |
+| Un cliente podía listar y descargar documentos KYC de otros (política del bucket)                                 | Migración 1066: cada quien su carpeta                              |
+| Un anónimo leía `caja_molipay` y `v_lotes_venta` y podía modificar `tipos_movimiento` y otras tablas heredadas    | Migración 1066                                                     |
+| Un cliente leía el historial de estados de transacciones ajenas                                                   | Migración 1066                                                     |
+| Bucket `conciliaciones` abierto a cualquier usuario con sesión                                                    | Migración 1066: solo backoffice                                    |
+| `reenviar-verificacion` sin tope                                                                                  | 3 cada 10 minutos; no reenvía a cuentas verificadas                |
+| El checkout buscaba el link con `url like '%código'`: un cliente podía crear un link que terminara igual que otro | 1069: código aleatorio único del servidor, búsqueda exacta         |
+| Un cliente podía cambiar su `estado` (aprobarse), sus límites o la moneda de una subcuenta con saldo              | 1071: triggers que restauran esas columnas                         |
+| Un cliente podía apuntar una fila de `documentos` al archivo KYC de otro y pedir el enlace firmado                | 1072 (solo backoffice escribe) y `doc-url` exige la carpeta propia |
+| Un aviso de domiciliación con el id de otra orden pagada se registraba como cobro                                 | La orden debe ser del mismo cliente de Ecart Pay y del mismo monto |
+| Registro y reenvío decían si un correo tenía cuenta                                                               | Misma respuesta siempre; aviso por correo al dueño (con tope)      |
+| Exportación CSV: un texto con `=` al inicio era una fórmula en Excel                                              | Se antepone un apóstrofo                                           |
 
 Arreglos anteriores: migraciones 1017, 1018, 1055 (controles en funciones) y 1063 (`comercios`).
 

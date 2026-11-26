@@ -7,7 +7,7 @@
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { handler, json } from "../_shared/http.ts";
-import { sendEmail, verificationEmail } from "../_shared/email.ts";
+import { avisarCuentaExistente, sendEmail, verificationEmail } from "../_shared/email.ts";
 
 Deno.serve(
   handler(async (req) => {
@@ -43,13 +43,10 @@ Deno.serve(
         raw.includes("duplicate") ||
         raw.includes("already been");
       if (isDup) {
-        return json(
-          {
-            error:
-              "Ya existe una cuenta con ese correo. Si ya te registraste, inicia sesión. Si no verificaste tu correo, revisa tu bandeja de entrada y el spam, o inicia sesión para reenviar el correo de verificación. Si olvidaste tu contraseña, usa «¿Olvidaste tu contraseña?».",
-          },
-          400,
-        );
+        // Misma respuesta que un alta nueva (no se revela que el correo está registrado); al
+        // dueño del correo le llega un aviso para iniciar sesión o recuperar la contraseña.
+        await avisarCuentaExistente(sb, email);
+        return json({ ok: true, email });
       }
       return json({ error: authErr?.message ?? "No se pudo crear el usuario" }, 400);
     }

@@ -67,7 +67,27 @@ Deno.serve(async (req) => {
   const out: Record<string, string | null> = {};
   // Filtrar por permiso antes de firmar
   const toSign: string[] = [];
+  // Un cliente solo recibe archivos de su propia carpeta (`<legajo>/…`): la fila de `documentos`
+  // no alcanza como prueba de dueño (antes se podía apuntar una fila propia al archivo de otro).
+  let miLegajo: string | null = null;
+  if (!isAdmin) {
+    for (const c of new Set([email, miCorreo])) {
+      const { data: yo } = await admin
+        .from("clientes")
+        .select("legajo")
+        .eq("correo", c)
+        .maybeSingle();
+      if (yo?.legajo) {
+        miLegajo = yo.legajo as string;
+        break;
+      }
+    }
+  }
   for (const p of strPaths) {
+    if (!isAdmin && (!miLegajo || p.split("/")[0] !== miLegajo || p.includes(".."))) {
+      out[p] = null;
+      continue;
+    }
     const legajo = docMap.get(p);
     if (legajo) {
       const correo = clienteMap.get(legajo);

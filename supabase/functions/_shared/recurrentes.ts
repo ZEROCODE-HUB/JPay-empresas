@@ -691,6 +691,31 @@ export function resumenAvisoRecurrente(cuerpo: unknown): Obj {
   };
 }
 
+/**
+ * ¿La orden que cita un aviso es un cargo de esta domiciliación? El aviso solo trae ids: sin esto,
+ * un aviso con el id de cualquier otra orden pagada del comercio (un link, otra domiciliación)
+ * se registraría como cobro de esta. Si la orden nombra una domiciliación, tiene que ser esta;
+ * además deben coincidir el cliente de Ecart Pay y el monto. Sin cliente en la orden, no se acepta.
+ */
+export function ordenEsDeDomiciliacion(
+  orden: Obj,
+  dom: { id_externo?: unknown; monto?: unknown },
+  clienteExternoId: string,
+): boolean {
+  const meta = (orden.metadata && typeof orden.metadata === "object" ? orden.metadata : {}) as Obj;
+  const refs = [orden.direct_debit_id, orden.direct_debit, meta.direct_debit_id]
+    .map((v) => (v && typeof v === "object" ? s((v as Obj).id) : s(v)))
+    .filter(Boolean);
+  if (refs.length && !refs.includes(String(dom.id_externo))) return false;
+  const cust = orden.customer && typeof orden.customer === "object" ? (orden.customer as Obj) : {};
+  const cliente = s(orden.customer_id) ?? s(cust.id) ?? s(cust._id);
+  if (!cliente || cliente !== clienteExternoId) return false;
+  const total = Number(orden.total ?? orden.amount);
+  const monto = Number(dom.monto);
+  if (Number.isFinite(monto) && monto > 0 && !(Math.abs(total - monto) < 0.01)) return false;
+  return true;
+}
+
 export async function contextoDeFila(
   sb: SupabaseClient,
   fila: { conexion_id: string; comercio_id: string; cliente_legajo: string; entorno: string },
@@ -799,6 +824,9 @@ export async function procesarAvisoRecurrente(
     r.order_id
   ) {
     const orden = await ctx.ecart.get<Obj>(`/api/orders/${encodeURIComponent(String(r.order_id))}`);
+    if (!ordenEsDeDomiciliacion(orden, act, await clienteExterno(ctx, act))) {
+      return `domiciliación ${act.estado} · la orden ${String(r.order_id)} no es de esta domiciliación`;
+    }
     const st = s(orden.status) ?? "";
     const pagada = ["paid", "completed", "refunded", "partially_refunded"].includes(st);
     if (evento === "direct_debit.payment_success" ? pagada : !pagada) {

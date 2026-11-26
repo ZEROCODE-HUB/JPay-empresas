@@ -14,6 +14,9 @@ import {
   type ModoCobre,
 } from "./cobre.ts";
 
+/** Id para interpolar en un filtro `.or(...)` de PostgREST: solo letras, números, `_`, `.` y `-`. */
+export const filtroId = (v: unknown): string => String(v ?? "").replace(/[^\w.-]/g, "") || "-";
+
 const FINALES: string[] = ["completada", "devuelta", ...SIN_DEBITO];
 /** Filtro de PostgREST para no pisar un estado final escrito por otro proceso a la vez. */
 const NO_FINAL = `(${[...FINALES, "error_envio"].join(",")})`;
@@ -88,7 +91,7 @@ export async function aplicarRebote(
     .from("cobre_transferencias")
     .select("id, id_txn, estado")
     .eq("modo", modo)
-    .or(`mm_id.eq.${mm || "-"},id_txn.eq.${ext || "-"}`);
+    .or(`mm_id.eq.${filtroId(mm)},id_txn.eq.${filtroId(ext)}`);
   if (instanciaId !== undefined) {
     q = instanciaId ? q.eq("instancia_id", instanciaId) : q.is("instancia_id", null);
   }

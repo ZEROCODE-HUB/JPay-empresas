@@ -1,7 +1,7 @@
 // Edge Function: reenvía el email de verificación de correo.
 import type { SupabaseClient, User } from "jsr:@supabase/supabase-js@2";
 import { handler, HttpError, json, readJson, serviceClient } from "../_shared/http.ts";
-import { sendEmail, verificationEmail } from "../_shared/email.ts";
+import { avisarCuentaExistente, sendEmail, verificationEmail } from "../_shared/email.ts";
 
 Deno.serve(
   handler(async (req) => {
@@ -9,13 +9,17 @@ Deno.serve(
     const { email } = await readJson<{ email?: string }>(req);
     if (!email) throw new HttpError(400, "Falta el correo");
 
+    // La respuesta es la misma exista o no la cuenta (y esté o no verificada): así esta función
+    // no sirve para averiguar qué correos están registrados.
     const user = await buscarUsuarioPorEmail(sb, email);
-    if (!user) throw new HttpError(400, "No existe una cuenta con ese correo");
+    if (!user) return json({ ok: true, email });
     const nombre: string =
       `${user.user_metadata?.nombre || ""} ${user.user_metadata?.apellido || ""}`.trim();
 
     if (user.email_confirmed_at) {
-      throw new HttpError(400, "Ese correo ya está verificado: inicia sesión");
+      // Ya verificada: solo se le avisa al dueño del correo.
+      await avisarCuentaExistente(sb, email);
+      return json({ ok: true, email });
     }
     // Tope: 3 reenvíos cada 10 minutos por cuenta (cada uno manda un correo).
     const { count } = await sb

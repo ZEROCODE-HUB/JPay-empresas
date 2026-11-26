@@ -83,8 +83,9 @@ export interface Pago {
 // ===== Helpers =====
 function generateId(prefix: string): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
   let r = "";
-  for (let i = 0; i < 6; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  for (const x of bytes) r += chars[x % chars.length];
   return `${prefix}-${r}`;
 }
 
@@ -219,7 +220,27 @@ export async function crearLoteDB(
   try {
     const s = requireSupabase();
 
-    const { error: loteErr } = await s.rpc("crear_lote", {
+    const batch = registros.map((r) => ({
+      id: r.id,
+      tipo_entidad: r.tipoEntidad,
+      id_entidad: r.idEntidad,
+      sub_entidad: r.subEntidad,
+      identificacion_usuario: r.identificacionUsuario,
+      monto: r.monto,
+      descripcion: r.descripcion,
+      email: r.email,
+      periodo_facturacion: r.periodoFacturacion,
+      id_unico_beneficiario: r.idUnicoBeneficiario,
+      fecha_venc_1: r.fechaVencimiento1 || null,
+      fecha_venc_2: r.fechaVencimiento2 || null,
+      fecha_venc_3: r.fechaVencimiento3 || null,
+      tasa_interes: r.tasaInteres,
+      medios_pago: r.mediosPago ?? null,
+      pagos_parciales: r.pagosParcialesHabilitado,
+    }));
+
+    // Lote y registros en una sola transacción (migración 1069): si algo falla no queda nada.
+    const { error } = await s.rpc("crear_lote_con_registros", {
       p_id: lote.id,
       p_cliente_legajo: legajo,
       p_nombre: lote.nombre,
@@ -230,38 +251,12 @@ export async function crearLoteDB(
       // Los tipos generados no marcan nullables los args de RPC; en SQL p_fecha_venc_2/3 (date) aceptan NULL.
       p_fecha_venc_2: (lote.fechaVencimiento2 || null) as unknown as string,
       p_fecha_venc_3: (lote.fechaVencimiento3 || null) as unknown as string,
-      p_medios_pago: JSON.stringify(lote.mediosPago),
+      p_medios_pago: lote.mediosPago,
       p_pagos_parciales: lote.pagosParcialesHabilitado,
       p_notificaciones: lote.notificacionesHabilitado,
+      p_registros: batch,
     });
-    if (loteErr) return { ok: false, error: loteErr.message };
-
-    if (registros.length > 0) {
-      const batch = registros.map((r) => ({
-        id: r.id,
-        tipo_entidad: r.tipoEntidad,
-        id_entidad: r.idEntidad,
-        sub_entidad: r.subEntidad,
-        identificacion_usuario: r.identificacionUsuario,
-        monto: r.monto,
-        descripcion: r.descripcion,
-        email: r.email,
-        periodo_facturacion: r.periodoFacturacion,
-        id_unico_beneficiario: r.idUnicoBeneficiario,
-        fecha_venc_1: r.fechaVencimiento1 || null,
-        fecha_venc_2: r.fechaVencimiento2 || null,
-        fecha_venc_3: r.fechaVencimiento3 || null,
-        tasa_interes: r.tasaInteres,
-        medios_pago: r.mediosPago ?? null,
-        pagos_parciales: r.pagosParcialesHabilitado,
-      }));
-
-      const { error: regErr } = await s.rpc("agregar_registros_lote", {
-        p_lote_id: lote.id,
-        p_registros: batch,
-      });
-      if (regErr) return { ok: false, error: regErr.message };
-    }
+    if (error) return { ok: false, error: error.message };
 
     return { ok: true };
   } catch (e) {
@@ -298,16 +293,12 @@ export async function getLotesGestionDB(): Promise<LoteGestionRow[]> {
 export async function getLoteByIdDB(id: string): Promise<Lote | null> {
   try {
     const s = requireSupabase();
-    console.log("[getLoteByIdDB] querying id:", id);
     const { data, error } = await s.from("lotes").select("*").eq("id", id).maybeSingle();
     if (error) {
-      console.error("[getLoteByIdDB] Supabase error:", error.message, error);
       return null;
     }
-    console.log("[getLoteByIdDB] result:", data);
     return data ? rowToLote(data) : null;
-  } catch (e) {
-    console.error("[getLoteByIdDB] Exception:", e);
+  } catch {
     return null;
   }
 }
@@ -315,179 +306,39 @@ export async function getLoteByIdDB(id: string): Promise<Lote | null> {
 export async function getRegistrosByLoteIdDB(loteId: string): Promise<RegistroDeLote[]> {
   try {
     const s = requireSupabase();
-    console.log("[getRegistrosByLoteIdDB] querying loteId:", loteId);
     const { data, error } = await s
       .from("lote_registros")
       .select("*")
       .eq("lote_id", loteId)
       .order("created_at", { ascending: true });
     if (error) {
-      console.error("[getRegistrosByLoteIdDB] Supabase error:", error.message, error);
       return [];
     }
-    console.log("[getRegistrosByLoteIdDB] result count:", (data ?? []).length, "first:", data?.[0]);
     return (data ?? []).map(rowToRegistro);
-  } catch (e) {
-    console.error("[getRegistrosByLoteIdDB] Exception:", e);
+  } catch {
     return [];
   }
 }
 
+/**
+ * Pone el lote en proceso y genera los links que falten (función `iniciar_lote`, migración 1069):
+ * todo en una transacción, con códigos generados por el servidor. `force` regenera todos.
+ */
 export async function iniciarLoteDB(
   loteId: string,
-  legajo: string,
+  _legajo: string,
   force = false,
 ): Promise<{ ok: boolean; error?: string; linksCount: number }> {
   try {
     const s = requireSupabase();
-
-    console.log("[iniciarLoteDB] loteId:", loteId, "legajo:", legajo, "force:", force);
-
-    const { data: lote, error: loteErr } = await s
-      .from("lotes")
-      .select("medios_pago, pagos_parciales, estado")
-      .eq("id", loteId)
-      .single();
-    if (loteErr || !lote) {
-      console.error("[iniciarLoteDB] lote query error:", loteErr);
-      return { ok: false, error: loteErr?.message ?? "Lote not found", linksCount: 0 };
-    }
-
-    const mediosPago = parseJsonbArray(lote.medios_pago) as string[];
-    const pagosParciales = lote.pagos_parciales ?? false;
-
-    if (lote.estado !== "en_proceso") {
-      const { error: e1 } = await s.rpc("actualizar_estado_lote", {
-        p_lote_id: loteId,
-        p_estado: "en_proceso",
-      });
-      if (e1) {
-        console.error("[iniciarLoteDB] estado error:", e1);
-        return { ok: false, error: e1.message, linksCount: 0 };
-      }
-    }
-
-    const { data: regs, error: regQueryErr } = await s
-      .from("lote_registros")
-      .select("id, monto, descripcion, identificacion_usuario, link_de_pago")
-      .eq("lote_id", loteId);
-    if (regQueryErr) {
-      console.error("[iniciarLoteDB] regs query error:", regQueryErr);
-      return { ok: false, error: regQueryErr.message, linksCount: 0 };
-    }
-    if (!regs || regs.length === 0) return { ok: true, linksCount: 0 };
-
-    console.log(
-      "[iniciarLoteDB] total registros:",
-      regs.length,
-      "estados:",
-      regs.map((r) => (r.link_de_pago ? "con_link" : "sin_link")).join(","),
-    );
-
-    if (force) {
-      const regIds = regs.map((r) => r.id);
-      if (regIds.length > 0) {
-        const { error: clrErr, count } = await s
-          .from("lote_registros")
-          .update({ link_de_pago: null }, { count: "exact" })
-          .in("id", regIds);
-        if (clrErr) console.error("[iniciarLoteDB] force clear error:", clrErr);
-        else console.log("[iniciarLoteDB] force cleared:", count, "rows");
-        regs.forEach((r) => {
-          r.link_de_pago = null;
-        });
-      }
-    }
-
-    const regsSinLink = regs.filter((r) => !r.link_de_pago);
-    console.log("[iniciarLoteDB] sin link:", regsSinLink.length);
-
-    if (regsSinLink.length === 0) return { ok: true, linksCount: 0 };
-
-    // URL resoluble: VITE_APP_URL > VITE_PAY_URL > window.location.origin (ver @/lib/pay-url).
-    const linkRows = regsSinLink.map((r) => {
-      const code = "LP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-      return {
-        cliente_legajo: legajo,
-        comercio_nombre: r.descripcion || r.identificacion_usuario,
-        url: buildResolvableUrl(code),
-        monto: Number(r.monto),
-        estado: "Activo",
-        metodos_pago: mediosPago.length > 0 ? mediosPago : ["TRANSFERENCIA"],
-        pagos_parciales: pagosParciales,
-      };
+    const { data, error } = await s.rpc("iniciar_lote", {
+      p_lote_id: loteId,
+      p_url_base: buildResolvableUrl("nuevo"),
+      p_forzar: force,
     });
-
-    console.log(
-      "[iniciarLoteDB] inserting",
-      linkRows.length,
-      "links into cliente_links_pago, legajo:",
-      legajo,
-    );
-    const { data: inserted, error: e2 } = await s
-      .from("cliente_links_pago")
-      .insert(linkRows)
-      .select("id, url");
-    if (e2) {
-      console.error("[iniciarLoteDB] links insert error:", JSON.stringify(e2));
-      return { ok: false, error: e2.message, linksCount: 0 };
-    }
-
-    console.log(
-      "[iniciarLoteDB] links creados:",
-      inserted.length,
-      "urls:",
-      inserted.map((i) => i.url),
-    );
-
-    let linkUpdatesOk = 0;
-    for (let i = 0; i < inserted.length; i++) {
-      const { error: linkErr } = await s.rpc("actualizar_link_registro", {
-        p_registro_id: regsSinLink[i].id,
-        p_link: inserted[i].url ?? linkRows[i].url,
-      });
-      if (linkErr) console.error("[iniciarLoteDB] actualizar_link error:", linkErr);
-      else linkUpdatesOk++;
-    }
-
-    // Crear detalle snapshot (equivalente a Productos) para que el checkout /p/{CODE} muestre monto/producto
-    // No afecta a links individuales; solo complementa los de lote
-    let detalleOk = true;
-    try {
-      const detalleRows = inserted.map((link, idx) => ({
-        link_id: link.id,
-        producto_id: null,
-        producto_nombre:
-          regsSinLink[idx].descripcion || regsSinLink[idx].identificacion_usuario || "Cobro lote",
-        cantidad: 1,
-        precio_unitario: Number(regsSinLink[idx].monto),
-      }));
-      const { error: detErr } = await s.from("cliente_links_pago_detalle").insert(detalleRows);
-      if (detErr) {
-        detalleOk = false;
-        console.error("[iniciarLoteDB] detalle insert error:", detErr.message);
-      }
-    } catch (e) {
-      detalleOk = false;
-      console.error("[iniciarLoteDB] detalle exception:", e);
-    }
-
-    // Antes se informaba éxito aunque fallaran: el usuario veía el lote listo con registros sin
-    // link o links sin monto. Ahora se avisa qué faltó (reintentar completa solo lo pendiente).
-    const faltan = inserted.length - linkUpdatesOk;
-    if (faltan > 0 || !detalleOk) {
-      return {
-        ok: false,
-        error:
-          faltan > 0
-            ? `No se pudieron asignar ${faltan} de ${inserted.length} links. Vuelve a intentarlo.`
-            : "Los links se crearon pero no se pudo guardar su detalle. Vuelve a intentarlo.",
-        linksCount: linkUpdatesOk,
-      };
-    }
-    return { ok: true, linksCount: inserted.length };
+    if (error) return { ok: false, error: error.message, linksCount: 0 };
+    return { ok: true, linksCount: Number(data ?? 0) };
   } catch (e) {
-    console.error("[iniciarLoteDB] Exception:", e);
     return { ok: false, error: String(e), linksCount: 0 };
   }
 }

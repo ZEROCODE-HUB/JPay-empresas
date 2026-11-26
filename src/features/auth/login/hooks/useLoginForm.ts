@@ -38,7 +38,7 @@ export function useLoginForm(onSuccess: (estado: EstadoLogin, email: string) => 
         setResendMsg(null);
       } else {
         setResendMsg(
-          `Te enviamos el mail de verificación a ${destino}. Revisa tu bandeja y la carpeta de spam.`,
+          `Si ${destino} tiene una cuenta sin verificar, te enviamos el correo de verificación. Revisa tu bandeja y la carpeta de spam.`,
         );
       }
     } catch (e) {

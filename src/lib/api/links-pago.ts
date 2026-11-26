@@ -153,25 +153,35 @@ export async function listLinksPago(legajo: string): Promise<LinkPagoConDetalle[
   return lk.map((x) => ({ ...x, detalle: byLink.get(x.id) ?? [] }));
 }
 
+export type NuevoLinkPago = {
+  comercio_id: string;
+  /** URL de ejemplo con el origen del portal; el servidor pone el código. */
+  url_base: string;
+  estado: string;
+  referencia: string | null;
+  notas: string | null;
+  expira_en: string | null;
+  pagos_parciales: boolean;
+  metodos_pago: string[];
+  moneda: string;
+};
+
 /**
- * Crea el link y su detalle. Lanza si falla el alta del link; si falla solo el
- * detalle, el link queda creado y se informa con `detalleOk: false`.
+ * Crea el link con sus productos en el servidor (función `crear_link_pago`, migración 1069): el
+ * código es aleatorio y único, el precio sale del catálogo y todo se guarda junto o nada.
  */
 export async function crearLinkPago(
-  link: TablesInsert<"cliente_links_pago">,
-  detalle: Omit<TablesInsert<"cliente_links_pago_detalle">, "link_id">[],
-): Promise<{ id: string; detalleOk: boolean }> {
+  link: NuevoLinkPago,
+  productos: { producto_id: string; cantidad: number }[],
+): Promise<{ id: string; url: string; codigo: string; monto: number }> {
   const s = requireSupabase();
-  const { data: inserted, error } = await s
-    .from("cliente_links_pago")
-    .insert(link)
-    .select()
-    .single();
-  if (error || !inserted) throw new DataAccessError(error ?? new Error("Sin datos"));
-  const { error: e2 } = await s
-    .from("cliente_links_pago_detalle")
-    .insert(detalle.map((d) => ({ ...d, link_id: inserted.id })));
-  return { id: inserted.id, detalleOk: !e2 };
+  const { data, error } = await s.rpc("crear_link_pago", {
+    p_link: link,
+    p_productos: productos,
+  });
+  if (error || !data) throw new DataAccessError(error ?? new Error("Sin datos"));
+  const r = data as { id: string; url: string; codigo: string; monto: number };
+  return { ...r, monto: Number(r.monto) };
 }
 
 export async function actualizarLinkPago(

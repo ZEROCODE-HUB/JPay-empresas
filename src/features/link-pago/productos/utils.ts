@@ -132,11 +132,6 @@ export function codigoLink(l: Pick<PaymentLink, "url" | "id">): string {
   return l.url.split("/").pop() ?? l.id;
 }
 
-/** Codigo aleatorio de un link nuevo ("LP-XXXXXX"). */
-export function nuevoCodigoLink(): string {
-  return "LP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
 /** Precio tipeado en el formato del país ("29,900.50" en México); 0 si no es un número. */
 export function parsePrecio(price: string): number {
   return parseMonto(price.replace(/[^0-9.,]/g, "")) || 0;

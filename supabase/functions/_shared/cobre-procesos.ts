@@ -1,3 +1,4 @@
+import { filtroId } from "./cobre-transferencias.ts";
 // Procesa un aviso de Cobre ya verificado (lo usan `cobre-webhook`, la conciliación y la revisión
 // de pendientes). Ruteo por familia de `event_key` (Solution Design §5):
 //   accounts.balance.credit        spei_credit → depósito; r2p_spei_credit → cobro R2P;
@@ -110,7 +111,7 @@ async function movimiento(sb: SupabaseClient, conexion: ConexionCobre, c: Obj): 
     .from("cobre_transferencias")
     .select("id, id_txn, estado, mm_id")
     .eq("modo", modo)
-    .or(`mm_id.eq.${mmId || "-"},id_txn.eq.${ext || "-"}`);
+    .or(`mm_id.eq.${filtroId(mmId)},id_txn.eq.${filtroId(ext)}`);
   // Solo envíos de la instancia que mandó el aviso (null = matriz).
   q = conexion.instanciaId
     ? q.eq("instancia_id", conexion.instanciaId)

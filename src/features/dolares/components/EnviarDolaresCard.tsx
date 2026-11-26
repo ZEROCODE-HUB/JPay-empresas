@@ -15,6 +15,7 @@ import { formatMoney, parseMonto } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import { VERIFICACION } from "@/features/spei/estados";
 import { brand } from "@/brand/brand";
+import { ConfirmarEnvio } from "@/features/spei/components/ConfirmarEnvio";
 
 const select = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
@@ -60,6 +61,7 @@ export function EnviarDolaresCard({
   const [concepto, setConcepto] = useState("");
   const [txid, setTxid] = useState(nuevoTxid);
   const [codigo, setCodigo] = useState<string | null>(null);
+  const [confirmar, setConfirmar] = useState(false);
   const d = destinatarios.find((x) => x.id === (destino || destinatarios[0]?.id));
 
   const guardar = () => {
@@ -77,12 +79,13 @@ export function EnviarDolaresCard({
     });
   };
 
-  const enviar = () => {
+  const enviar = (confirmado = false) => {
     const importe = parseMonto(monto);
     if (!usd) return toast.error("Primero convierte pesos a dólares");
     if (!d) return toast.error("Elige un beneficiario");
     if (!(importe >= 1)) return toast.error("El mínimo es 1.00 USD");
     if (importe > usd.saldoDisponible) return toast.error("El monto supera tu saldo en dólares");
+    if (!confirmado && codigo === null) return setConfirmar(true);
     m.enviar.mutate(
       {
         subcuentaId: usd.id,
@@ -346,7 +349,7 @@ export function EnviarDolaresCard({
                 intermediarios.
               </p>
               <BtnPrimary
-                onClick={enviar}
+                onClick={() => enviar()}
                 disabled={m.enviar.isPending || !d || d.verificacion !== "verified"}
               >
                 {m.enviar.isPending ? "Enviando…" : "Enviar dólares"}
@@ -355,6 +358,21 @@ export function EnviarDolaresCard({
           </div>
         </>
       )}
+      <ConfirmarEnvio
+        open={confirmar && !!usd && !!d}
+        onClose={() => setConfirmar(false)}
+        onConfirm={() => {
+          setConfirmar(false);
+          enviar(true);
+        }}
+        titulo="Confirma el envío en dólares"
+        filas={[
+          ["Desde", usd?.nombre ?? ""],
+          ["Beneficiario", d ? `${d.titular} · cuenta ···${d.numero.slice(-4)}` : ""],
+          ["Monto", formatMoney(parseMonto(monto), { moneda: "USD" })],
+          ["Concepto", concepto.trim() || "Pago"],
+        ]}
+      />
     </Card>
   );
 }

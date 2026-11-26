@@ -1163,6 +1163,7 @@ export type Database = {
       cliente_links_pago: {
         Row: {
           cliente_legajo: string
+          codigo: string | null
           comercio_id: string | null
           comercio_nombre: string
           created_at: string
@@ -1181,6 +1182,7 @@ export type Database = {
         }
         Insert: {
           cliente_legajo: string
+          codigo?: string | null
           comercio_id?: string | null
           comercio_nombre: string
           created_at?: string
@@ -1199,6 +1201,7 @@ export type Database = {
         }
         Update: {
           cliente_legajo?: string
+          codigo?: string | null
           comercio_id?: string | null
           comercio_nombre?: string
           created_at?: string
@@ -8756,6 +8759,10 @@ export type Database = {
         Args: { p_legajo: string; p_reason: string; p_subaccount_id: string }
         Returns: string
       }
+      crear_link_pago: {
+        Args: { p_link: Json; p_productos: Json }
+        Returns: Json
+      }
       crear_lote: {
         Args: {
           p_cliente_legajo: string
@@ -8772,6 +8779,24 @@ export type Database = {
           p_tasa_interes: number
         }
         Returns: undefined
+      }
+      crear_lote_con_registros: {
+        Args: {
+          p_cliente_legajo: string
+          p_dia_pago: number
+          p_fecha_venc_1: string
+          p_fecha_venc_2: string
+          p_fecha_venc_3: string
+          p_id: string
+          p_medios_pago: Json
+          p_nombre: string
+          p_notificaciones: boolean
+          p_pagos_parciales: boolean
+          p_periodo: string
+          p_registros: Json
+          p_tasa_interes: number
+        }
+        Returns: number
       }
       current_admin_id: { Args: never; Returns: string }
       current_cliente_id: { Args: never; Returns: string }
@@ -8910,6 +8935,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      iniciar_lote: {
+        Args: { p_forzar?: boolean; p_lote_id: string; p_url_base: string }
+        Returns: number
+      }
       is_admin: { Args: never; Returns: boolean }
       ledger_conciliar_saldos: {
         Args: never
@@ -8941,6 +8970,7 @@ export type Database = {
         Args: { p_id: string; p_notes: string }
         Returns: Json
       }
+      nuevo_codigo_link: { Args: never; Returns: string }
       obtener_link_pago: { Args: { p_codigo: string }; Returns: Json }
       otp_consumir: {
         Args: { p_codigo: string; p_correo: string }

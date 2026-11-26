@@ -24,38 +24,46 @@ armado todo (conexiones, correo, funciones, seguridad): `docs/OPERACION.md`. Ver
 
 ## 2. Funcionalidad
 
-- [ ] **Varios comercios por cliente**: Conexiones los maneja por separado, pero Cobros con
-      tarjeta, Suscripciones, Puntos físicos y Retiros operan solo el primer comercio
-      (`RequiereEcartPay`). Agregar el selector de comercio si se van a usar varios.
+- [ ] **Varios comercios por cliente** (por ahora cada cliente tiene uno): Conexiones los maneja
+      por separado, pero Cobros con tarjeta, Suscripciones, Puntos físicos y Retiros operan solo
+      el primer comercio (`RequiereEcartPay`). Agregar el selector si algún cliente usa varios.
 - [ ] **Cobro en terminal**: Ecart Pay no publica la API para mandar un cobro a una terminal ni
       para asignar terminales desde la plataforma; hay que pedírsela.
-- [ ] **Dólares con cuenta Cobre propia**: los envíos y conversiones en USD solo funcionan con la
-      cuenta de la plataforma (Balances Global y USA).
+- [ ] **Dólares**: el código está, pero no opera. Faltan los Balances Global y USA en la cuenta
+      Cobre de la plataforma (`cobre_configuracion.cuenta_global_id` y `cuenta_usa_id` están
+      vacíos): pedírselos a Cobre (sección 9) y cargarlos en el admin. Con una instancia Cobre
+      propia del cliente los dólares no funcionan.
 - [ ] **Barrido de comisiones**: las comisiones de la plataforma quedan en el Balance del cliente
-      en Cobre; falta definir cómo se cobran.
-- [ ] **Pago de servicios**: la pantalla existe pero no tiene backend (módulo apagado).
+      en Cobre. Propuesta: con Subcliente, mover comisión + IVA al Balance de la plataforma
+      (`cuenta_plataforma_id`, hoy vacío) con un movimiento interno al confirmarse cada envío, más
+      una tarea diaria que reintente los que falten; con instancia propia, un SPEI diario
+      agrupado o factura mensual.
 
 ## 3. Seguridad y limpieza
 
+- [ ] **Código por correo apagado**: `cobre_configuracion.exigir_otp` está en `false` y
+      `monto_aprobacion` vacío: hoy ningún envío pide código ni aprobación. Prenderlos en el admin
+      después de cargar Resend.
 - [ ] **Código OTP en modo demo**: sin clave de Resend, `enviar-otp-transferencia` devuelve el
       código en la respuesta (el segundo factor no protege). Se resuelve al cargar Resend.
-- [ ] **Links de pago**: el código del link se genera en el navegador con `Math.random` (6
-      caracteres, adivinable) y el monto lo escribe el navegador; pasarlo a una RPC del servidor.
-- [ ] **Transferencias sin pantalla de confirmación** (SPEI y dólares salen con un clic).
-- [ ] **Avisos de Ecart sin verificar** en domiciliaciones (`_shared/recurrentes.ts`): validar que
-      la orden sea de esa domiciliación.
-- [ ] **Cobros masivos**: crear lote y agregar registros no es transaccional (un fallo deja un lote
-      a medias); hay `console.log` con datos de links.
-
-- [ ] **`reenviar-verificacion` y el registro revelan si un correo tiene cuenta** (mensaje distinto
-      cuando no existe). Riesgo bajo; decidir si se unifica el mensaje.
-- [ ] **Tablas y columnas heredadas** sin uso en México (`caja_molipay`, `liquidaciones_*`,
-      `lotes_*`, `comision_molipay*`, parámetros como `iva_sobre_comision_pct`): están cerradas por
-      RLS, pero conviene retirarlas o renombrarlas con una migración aparte.
+- [ ] **Personas del KYB** (`cliente_personas_kyb`): el cliente las puede seguir editando después
+      de aprobado. Riesgo bajo; congelarlas al activar la cuenta.
+- [ ] **Tablas heredadas**: sin acceso para clientes desde 1070, pero siguen en la base (las
+      migraciones son aditivas). Columnas heredadas como `comision_molipay*` siguen en uso por
+      funciones viejas.
 - [ ] **Auditoría periódica**: repetir las consultas de `docs/OPERACION.md` (sección 7) cada vez
       que se agreguen tablas, vistas o funciones `SECURITY DEFINER`.
 
 ## Resuelto (para referencia)
+
+- 26/11/2026 (2.ª ronda) — Links de pago con código del servidor y búsqueda exacta (antes un
+  cliente podía quedarse con los pagos de otro link) y alta en una transacción (1069); cobros
+  masivos todo o nada (1069); confirmación antes de cada envío SPEI, lote y dólares; avisos de
+  domiciliación verificados contra la orden; registro y reenvío sin revelar qué correos tienen
+  cuenta; el cliente ya no puede aprobarse solo, subirse límites ni cambiar la moneda de una
+  subcuenta (1071); KYC solo lectura para el cliente y `doc-url` limitado a su carpeta (1072);
+  exportaciones CSV sin fórmulas; tablas heredadas sin acceso (1070); se quitaron Pago de
+  servicios (portal) y Total de fondos / Bloqueo de funciones (admin, mostraban datos falsos).
 
 - 26/11/2026 — OTP atómico (1068); TXID repetido en paralelo; envíos sin configuración; avisos
   de una instancia Cobre propia aislados; OAuth no reasigna cuentas; `/app` exige sesión; Salir

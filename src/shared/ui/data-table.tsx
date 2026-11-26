@@ -209,7 +209,10 @@ export function DataTable<T>({
 
   const exportCSV = () => {
     const escape = (v: unknown) => {
-      const s = v == null ? "" : String(v);
+      let s = v == null ? "" : String(v);
+      // Un texto que empieza con = + - @ lo ejecuta Excel como fórmula (nombres de pagadores,
+      // conceptos de depósitos… vienen de afuera): se antepone un apóstrofo.
+      if (typeof v !== "number" && /^[=+\-@\t\r]/.test(s)) s = `'${s}`;
       return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
     };
     const exportCols = columns.filter((c) => c.key !== "acciones");

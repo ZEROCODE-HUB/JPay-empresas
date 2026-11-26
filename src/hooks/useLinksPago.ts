@@ -9,6 +9,7 @@ import {
   eliminarProducto,
   upsertIntegracionEcommerce,
   type LinkPagoConDetalle,
+  type NuevoLinkPago,
   type ProductoRow,
   getClienteActual,
   getDashboardLinksPago,
@@ -126,9 +127,9 @@ export function useEliminarProducto(legajo: string | undefined) {
 export function useCrearLinkPago() {
   return useMutation({
     mutationFn: (vars: {
-      link: TablesInsert<"cliente_links_pago">;
-      detalle: Omit<TablesInsert<"cliente_links_pago_detalle">, "link_id">[];
-    }) => crearLinkPago(vars.link, vars.detalle),
+      link: NuevoLinkPago;
+      productos: { producto_id: string; cantidad: number }[];
+    }) => crearLinkPago(vars.link, vars.productos),
   });
 }
 

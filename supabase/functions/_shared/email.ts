@@ -358,6 +358,51 @@ export function pruebaEmail(to: string): Email {
 }
 
 /** Correo con el enlace para elegir una contraseña nueva. */
+/**
+ * Alguien intentó registrarse (o pidió reenviar la verificación) con un correo que ya tiene cuenta
+ * verificada. La pantalla responde igual que siempre para no revelar qué correos están
+ * registrados; el aviso le llega solo al dueño del correo.
+ */
+export function cuentaExistenteEmail(to: string): Email {
+  const url = appUrl();
+  const html = layout(`
+              <tr>
+                <td style="padding:32px 32px 4px;">
+                  <h1 style="margin:0;font-size:20px;color:#111827;font-weight:700;">Ya tienes una cuenta</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:12px 32px 28px;">
+                  <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#374151;">
+                    Alguien (probablemente tú) intentó crear una cuenta de ${brand.name} con este correo, pero ya está registrado. Inicia sesión; si no recuerdas tu contraseña, usa «¿Olvidaste tu contraseña?».
+                  </p>${boton(`${url}/login`, "Iniciar sesión")}
+                  <p style="margin:24px 0 0;font-size:13px;line-height:1.6;color:#6b7280;">
+                    Si no fuiste tú, ignora este correo: tu cuenta sigue igual.
+                  </p>
+                </td>
+              </tr>`);
+  return {
+    to,
+    subject: `Ya tienes una cuenta en ${brand.name}`,
+    html,
+    text: `Este correo ya tiene una cuenta en ${brand.name}. Inicia sesión en ${url}/login. Si no fuiste tú, ignora este correo.`,
+  };
+}
+
+/** Manda `cuentaExistenteEmail` como mucho una vez cada 10 minutos por correo (best-effort). */
+// deno-lint-ignore no-explicit-any
+export async function avisarCuentaExistente(sb: any, to: string): Promise<void> {
+  try {
+    const { data: libre } = await sb.rpc("correo_reservar_envio", {
+      p_clave: `cuenta-existente:${to.trim().toLowerCase()}`,
+      p_intervalo: "10 minutes",
+    });
+    if (libre) await sendEmail(cuentaExistenteEmail(to));
+  } catch {
+    // No cambia la respuesta: es solo un aviso.
+  }
+}
+
 export function recuperacionEmail(to: string, link: string): Email {
   const html = layout(`
               <tr>

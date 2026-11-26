@@ -1,3 +1,4 @@
+import { filtroId } from "./cobre-transferencias.ts";
 // Dólares (Solution Design §4.4–§4.7), siempre en la instancia matriz de JPay:
 // - Conversión: cotización `static_quote` `mxn/usd` (vale 25 s; el Balance MX del comercio debe
 //   tener el monto) → reserva de los pesos → `POST /cross_border_money_movements` del Balance del
@@ -245,7 +246,7 @@ export async function aplicarEstadoCruce(
     .from("cobre_cruces")
     .select("id, estado")
     .eq("modo", conexion.modo)
-    .or(`mm_id.eq.${mmId || "-"},external_id.eq.${ext || "-"}`)
+    .or(`mm_id.eq.${filtroId(mmId)},external_id.eq.${filtroId(ext)}`)
     .limit(1)
     .maybeSingle();
   if (!c) return "desconocido";
@@ -416,7 +417,7 @@ export async function aplicarEstadoEnvioUsd(
       .from("cobre_transferencias")
       .select("*")
       .eq("modo", conexion.modo)
-      .or(`traslado_mm_id.eq.${mmId || "-"},id_txn.eq.${idTxn || "-"}`)
+      .or(`traslado_mm_id.eq.${filtroId(mmId)},id_txn.eq.${filtroId(idTxn)}`)
       .limit(1)
       .maybeSingle();
     if (!t) return "traslado desconocido";
@@ -448,7 +449,7 @@ export async function aplicarEstadoEnvioUsd(
     .from("cobre_transferencias")
     .select("id, id_txn, estado, mm_id")
     .eq("modo", conexion.modo)
-    .or(`mm_id.eq.${mmId || "-"},id_txn.eq.${idTxn || "-"}`)
+    .or(`mm_id.eq.${filtroId(mmId)},id_txn.eq.${filtroId(idTxn)}`)
     .limit(1)
     .maybeSingle();
   if (!t) return "pago USD desconocido";

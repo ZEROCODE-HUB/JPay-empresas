@@ -13,7 +13,6 @@ import {
   linkDisplayStatus,
   methodIdFromBandera,
   montoProductos,
-  nuevoCodigoLink,
   paginarLinks,
   parsePrecio,
 } from "./utils";
@@ -84,7 +83,6 @@ describe("helpers", () => {
     expect(dmyAIso("31/12/2026")).toBe("2026-12-31");
     expect(expiraEnIso("")).toBeNull();
     expect(expiraEnIso("2026-12-31")).toBe(new Date("2026-12-31T23:59:59").toISOString());
-    expect(nuevoCodigoLink()).toMatch(/^LP-[0-9A-Z]{1,6}$/);
   });
 
   it("parsea el precio en es-MX", () => {

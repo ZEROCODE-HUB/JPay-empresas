@@ -10,6 +10,7 @@ import { formatDateTime, formatMoney } from "@/shared/format";
 import { VERIFICACION } from "../estados";
 import { archivoATexto, descargarPlantillaLoteSpei, leerLoteSpei, LARGO_CONCEPTO } from "../lote";
 import { brand } from "@/brand/brand";
+import { ConfirmarEnvio } from "./ConfirmarEnvio";
 
 const ESTADO_LOTE: Record<
   string,
@@ -46,6 +47,7 @@ export function LoteSpeiCard({
   const [origen, setOrigen] = useState("");
   const [registrando, setRegistrando] = useState(false);
   const [codigo, setCodigo] = useState<string | null>(null);
+  const [confirmar, setConfirmar] = useState(false);
   const [idLote, setIdLote] = useState(() => `LT${Date.now().toString(36).toUpperCase()}`);
 
   const filas = useMemo(() => leerLoteSpei(texto, destinatarios), [texto, destinatarios]);
@@ -83,9 +85,10 @@ export function LoteSpeiCard({
       toast.success(`${ok} destinatarios registrados; verificamos los titulares en unos minutos`);
   };
 
-  const enviar = () => {
+  const enviar = (confirmado = false) => {
     if (!sub) return toast.error("Elige la subcuenta de origen");
     if (total > sub.saldoDisponible) return toast.error("El total supera el saldo disponible");
+    if (!confirmado && codigo === null) return setConfirmar(true);
     m.lote.mutate(
       {
         subcuentaId: sub.id,
@@ -256,7 +259,7 @@ export function LoteSpeiCard({
                       {registrando ? "Registrando…" : `Registrar ${nuevas.length} destinatarios`}
                     </BtnOutline>
                   )}
-                  <BtnPrimary onClick={enviar} disabled={!listas || m.lote.isPending}>
+                  <BtnPrimary onClick={() => enviar()} disabled={!listas || m.lote.isPending}>
                     {m.lote.isPending ? "Enviando…" : "Enviar lote"}
                   </BtnPrimary>
                 </div>
@@ -281,6 +284,21 @@ export function LoteSpeiCard({
           ))}
         </ul>
       )}
+      <ConfirmarEnvio
+        open={confirmar && !!sub}
+        onClose={() => setConfirmar(false)}
+        onConfirm={() => {
+          setConfirmar(false);
+          enviar(true);
+        }}
+        titulo="Confirma el lote"
+        filas={[
+          ["Desde", sub?.nombre ?? ""],
+          ["Transferencias", String(filas.length)],
+          ["Total", formatMoney(total)],
+        ]}
+        aviso="Se envían todas las transferencias del archivo, con su comisión si corresponde. Una transferencia enviada no se puede cancelar."
+      />
     </Card>
   );
 }

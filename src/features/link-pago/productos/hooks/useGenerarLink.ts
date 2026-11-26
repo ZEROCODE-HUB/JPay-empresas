@@ -14,8 +14,6 @@ import {
   banderasUnicas as calcularBanderasUnicas,
   expiraEnDmy,
   expiraEnIso,
-  montoProductos,
-  nuevoCodigoLink,
   type ComercioBandera,
 } from "../utils";
 
@@ -102,13 +100,10 @@ export function useGenerarLink({
     }
     const selectedComercio = userComercios.find((c) => c.id === comercioId);
     // URL resoluble real: VITE_APP_URL > VITE_PAY_URL > window.location.origin (ver @/lib/pay-url).
-    const url = buildResolvableUrl(nuevoCodigoLink());
     const insertLink = {
-      cliente_legajo: legajo,
       comercio_id: comercioId,
-      comercio_nombre: selectedComercio?.nombre_comercio || "",
-      url,
-      monto: montoProductos(selProducts),
+      // Solo el origen cuenta: el código lo genera el servidor.
+      url_base: buildResolvableUrl("nuevo"),
       estado: status,
       referencia: reference || null,
       notas: notes || null,
@@ -117,25 +112,19 @@ export function useGenerarLink({
       metodos_pago: methods,
       moneda,
     };
-    let inserted: { id: string; detalleOk: boolean };
+    let inserted: { id: string; url: string; monto: number };
     try {
       inserted = await crearLink.mutateAsync({
         link: insertLink,
-        detalle: selProducts.map((p) => ({
-          producto_id: p.id,
-          producto_nombre: p.name,
-          cantidad: p.qty,
-          precio_unitario: p.price,
-        })),
+        productos: selProducts.map((p) => ({ producto_id: p.id, cantidad: p.qty })),
       });
-    } catch {
-      toast.error("No se pudo generar el link");
+    } catch (e) {
+      toast.error(e instanceof Error && e.message ? e.message : "No se pudo generar el link");
       return;
     }
-    if (!inserted.detalleOk) toast.error("Link creado, pero falló el detalle");
     onCreado({
       id: inserted.id,
-      url,
+      url: inserted.url,
       products: selProducts,
       status: status as PaymentLink["status"],
       partialPayments: partial,

@@ -9,6 +9,7 @@ import { formatMoney, parseMonto } from "@/shared/format";
 import { validarClabe, validarCurp, validarRfc } from "@/shared/validadores";
 import { VERIFICACION } from "../estados";
 import { brand } from "@/brand/brand";
+import { ConfirmarEnvio } from "./ConfirmarEnvio";
 
 const select = "mt-1 w-full h-10 px-3 rounded-md border border-input bg-card text-sm";
 
@@ -37,6 +38,7 @@ export function TransferirSpeiCard({
   const [txid, setTxid] = useState(nuevoTxid);
   const [codigo, setCodigo] = useState<string | null>(null);
   const [nuevo, setNuevo] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
   const [dest, setDest] = useState({ clabe: "", titular: "", idNumero: "", alias: "" });
 
   const sub = conClabe.find((s) => s.id === (origen || conClabe[0]?.id));
@@ -74,7 +76,7 @@ export function TransferirSpeiCard({
     );
   };
 
-  const enviar = () => {
+  const enviar = (confirmado = false) => {
     if (!sub) return toast.error("Elige una subcuenta");
     if (!d) return toast.error("Elige un destinatario");
     if (!(importe > 0)) return toast.error("Ingresa un monto");
@@ -83,6 +85,8 @@ export function TransferirSpeiCard({
       return toast.error(
         `Tu saldo no alcanza: con comisión e IVA se descuentan ${formatMoney(cot.data!.total)}`,
       );
+    // Primero el resumen; con el código por correo pedido, ya se confirmó este mismo envío.
+    if (!confirmado && codigo === null) return setConfirmar(true);
     m.enviar.mutate(
       {
         subcuentaId: sub.id,
@@ -262,7 +266,7 @@ export function TransferirSpeiCard({
               <p>Las transferencias grandes pueden quedar pendientes de aprobación.</p>
             </div>
             <BtnPrimary
-              onClick={enviar}
+              onClick={() => enviar()}
               disabled={
                 m.enviar.isPending ||
                 noAlcanza ||
@@ -274,6 +278,27 @@ export function TransferirSpeiCard({
           </div>
         </div>
       )}
+      <ConfirmarEnvio
+        open={confirmar && !!sub && !!d}
+        onClose={() => setConfirmar(false)}
+        onConfirm={() => {
+          setConfirmar(false);
+          enviar(true);
+        }}
+        titulo="Confirma la transferencia"
+        filas={[
+          ["Desde", sub?.nombre ?? ""],
+          ["Para", d ? `${d.titular} · CLABE ···${d.numero.slice(-4)}` : ""],
+          ["Monto", formatMoney(importe)],
+          ...(cot.data
+            ? ([
+                ["Comisión + IVA", formatMoney(cot.data.comision + cot.data.iva)],
+                ["Total a descontar", formatMoney(cot.data.total)],
+              ] as Array<[string, string]>)
+            : []),
+          ["Concepto", concepto.trim() || "Transferencia"],
+        ]}
+      />
     </Card>
   );
 }

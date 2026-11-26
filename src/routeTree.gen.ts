@@ -30,7 +30,6 @@ import { Route as AppPuntosFisicosRouteImport } from './routes/app.puntos-fisico
 import { Route as AppReportesRouteImport } from './routes/app.reportes'
 import { Route as AppRetirosRouteImport } from './routes/app.retiros'
 import { Route as AppSeguridadRouteImport } from './routes/app.seguridad'
-import { Route as AppServiciosRouteImport } from './routes/app.servicios'
 import { Route as AppSubcuentasRouteImport } from './routes/app.subcuentas'
 import { Route as AppSuscripcionesRouteImport } from './routes/app.suscripciones'
 import { Route as LegalesArrepentimientoRouteImport } from './routes/legales.arrepentimiento'
@@ -166,11 +165,6 @@ const AppRetirosRoute = AppRetirosRouteImport.update({
 const AppSeguridadRoute = AppSeguridadRouteImport.update({
   id: '/seguridad',
   path: '/seguridad',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppServiciosRoute = AppServiciosRouteImport.update({
-  id: '/servicios',
-  path: '/servicios',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSubcuentasRoute = AppSubcuentasRouteImport.update({
@@ -352,7 +346,6 @@ export interface FileRoutesByFullPath {
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
-  '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -405,7 +398,6 @@ export interface FileRoutesByTo {
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
-  '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -461,7 +453,6 @@ export interface FileRoutesById {
   '/app/reportes': typeof AppReportesRoute
   '/app/retiros': typeof AppRetirosRoute
   '/app/seguridad': typeof AppSeguridadRoute
-  '/app/servicios': typeof AppServiciosRoute
   '/app/subcuentas': typeof AppSubcuentasRoute
   '/app/suscripciones': typeof AppSuscripcionesRoute
   '/legales/arrepentimiento': typeof LegalesArrepentimientoRoute
@@ -518,7 +509,6 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
-    | '/app/servicios'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -571,7 +561,6 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
-    | '/app/servicios'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -626,7 +615,6 @@ export interface FileRouteTypes {
     | '/app/reportes'
     | '/app/retiros'
     | '/app/seguridad'
-    | '/app/servicios'
     | '/app/subcuentas'
     | '/app/suscripciones'
     | '/legales/arrepentimiento'
@@ -828,13 +816,6 @@ declare module '@tanstack/react-router' {
       path: '/seguridad'
       fullPath: '/app/seguridad'
       preLoaderRoute: typeof AppSeguridadRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/servicios': {
-      id: '/app/servicios'
-      path: '/servicios'
-      fullPath: '/app/servicios'
-      preLoaderRoute: typeof AppServiciosRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/subcuentas': {
@@ -1115,7 +1096,6 @@ interface AppRouteChildren {
   AppReportesRoute: typeof AppReportesRoute
   AppRetirosRoute: typeof AppRetirosRoute
   AppSeguridadRoute: typeof AppSeguridadRoute
-  AppServiciosRoute: typeof AppServiciosRoute
   AppSubcuentasRoute: typeof AppSubcuentasRoute
   AppSuscripcionesRoute: typeof AppSuscripcionesRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -1144,7 +1124,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppReportesRoute: AppReportesRoute,
   AppRetirosRoute: AppRetirosRoute,
   AppSeguridadRoute: AppSeguridadRoute,
-  AppServiciosRoute: AppServiciosRoute,
   AppSubcuentasRoute: AppSubcuentasRoute,
   AppSuscripcionesRoute: AppSuscripcionesRoute,
   AppIndexRoute: AppIndexRoute,
