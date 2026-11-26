@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CheckCircle2, Headset } from "lucide-react";
 import { toast } from "sonner";
 import { BtnOutline, Input, Label } from "@/components/portal-shell";
@@ -48,23 +48,24 @@ export function SolicitudActivacion({
   const s = ultima.data;
   const pendiente = s?.estado === "nueva";
 
-  // Prellenado al abrir: la solicitud abierta (si hay) o los datos de la cuenta.
-  useEffect(() => {
-    if (!abierto) return;
+  // Se prellena una sola vez, al abrir (con la solicitud abierta, si hay, o los datos de la
+  // cuenta): si los datos se refrescan con el formulario abierto no se pisa lo que escribió.
+  const abrir = () => {
     setErr({});
     if (s && s.estado === "nueva") {
       setF({ nombre: s.nombre, telefono: s.telefono, correo: s.correo, mensaje: s.mensaje ?? "" });
-      return;
+    } else {
+      const c = (cliente ?? {}) as Record<string, unknown>;
+      const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+      setF({
+        nombre: txt(c.nombre) || txt(c.nombre_fantasia) || txt(c.nombre_legal),
+        telefono: txt(c.telefono),
+        correo: txt(c.correo),
+        mensaje: "",
+      });
     }
-    const c = (cliente ?? {}) as Record<string, unknown>;
-    const txt = (v: unknown) => (typeof v === "string" ? v.trim() : "");
-    setF({
-      nombre: txt(c.nombre) || txt(c.nombre_fantasia) || txt(c.nombre_legal),
-      telefono: txt(c.telefono),
-      correo: txt(c.correo),
-      mensaje: "",
-    });
-  }, [abierto, s, cliente]);
+    setAbierto(true);
+  };
 
   const validar = () => {
     const e: Record<string, string> = {};
@@ -112,13 +113,13 @@ export function SolicitudActivacion({
           <button
             type="button"
             className="font-semibold text-secondary hover:underline"
-            onClick={() => setAbierto(true)}
+            onClick={abrir}
           >
             Corregir mis datos
           </button>
         </div>
       ) : (
-        <BtnOutline type="button" onClick={() => setAbierto(true)}>
+        <BtnOutline type="button" onClick={abrir}>
           <Headset size={16} /> {etiqueta}
         </BtnOutline>
       )}
