@@ -73,6 +73,8 @@ export type TransferenciaSpei = {
   requiereAprobacion: boolean;
   loteId: string | null;
   destinatario: string | null;
+  /** Datos del destinatario para el comprobante. */
+  contraparte: { titular: string; numero: string; rfc: string; banco: string | null } | null;
   creadaAt: string;
 };
 
@@ -408,7 +410,7 @@ export async function listTransferenciasSpei(
   let q = sb
     .from("cobre_transferencias")
     .select(
-      "id, id_txn, tipo, moneda, monto, concepto, estado, motivo, clave_rastreo, cep, swift_uetr, requiere_aprobacion, lote_id, created_at, cobre_contrapartes(titular, numero)",
+      "id, id_txn, tipo, moneda, monto, concepto, estado, motivo, clave_rastreo, cep, swift_uetr, requiere_aprobacion, lote_id, created_at, cobre_contrapartes(titular, numero, id_numero, banco)",
     )
     .order("created_at", { ascending: false })
     .limit(limite);
@@ -416,7 +418,12 @@ export async function listTransferenciasSpei(
   const { data: rows, error } = await q;
   if (error) throw new DataAccessError(error);
   return (rows ?? []).map((r) => {
-    const cp = r.cobre_contrapartes as unknown as { titular: string; numero: string } | null;
+    const cp = r.cobre_contrapartes as unknown as {
+      titular: string;
+      numero: string;
+      id_numero: string;
+      banco: string | null;
+    } | null;
     return {
       id: r.id,
       idTxn: r.id_txn,
@@ -432,6 +439,9 @@ export async function listTransferenciasSpei(
       requiereAprobacion: r.requiere_aprobacion,
       loteId: r.lote_id,
       destinatario: cp ? `${cp.titular} · ${cp.numero.slice(-4)}` : null,
+      contraparte: cp
+        ? { titular: cp.titular, numero: cp.numero, rfc: cp.id_numero, banco: cp.banco }
+        : null,
       creadaAt: r.created_at,
     };
   });

@@ -64,6 +64,20 @@ export function generarComprobantePdf(d: DatosComprobante): jsPDF {
   linea();
   fila("Estado:", d.estado || "—");
   fila("ID de transacción:", d.txid, true);
+  if (d.claveRastreo) fila("Clave de rastreo:", d.claveRastreo, true);
+  if (d.concepto) fila("Concepto:", d.concepto);
+  if (d.cep?.startsWith("https://")) {
+    doc.setTextColor(34, 34, 34);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("Comprobante oficial (CEP):", izquierda, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 119, 255);
+    doc.textWithLink("Ver en Banxico", derecha - doc.getTextWidth("Ver en Banxico"), y, {
+      url: d.cep,
+    });
+    y += 8;
+  }
   y += 9;
   linea();
   doc.setTextColor(107, 114, 128);

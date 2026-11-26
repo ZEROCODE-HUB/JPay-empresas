@@ -15,6 +15,9 @@ export type DatosComprobante = {
   impuesto?: number;
   estado?: string;
   txid: string;
+  /** Clave de rastreo SPEI y enlace al CEP de Banxico, si los hay. */
+  claveRastreo?: string;
+  cep?: string;
   desde: { nombre: string; rfc: string; clabe: string };
   hacia: {
     nombre: string;

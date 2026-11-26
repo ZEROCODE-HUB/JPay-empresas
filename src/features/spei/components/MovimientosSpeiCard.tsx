@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { Badge, Card } from "@/components/portal-shell";
 import type { DepositoSpei, TransferenciaSpei } from "@/lib/api/cobre";
 import { formatDateTime, formatMoney } from "@/shared/format";
 import { InfoTip } from "@/shared/ui/info-tip";
 import { ESTADO_ENVIO } from "../estados";
+import { DetalleTransferenciaDialog } from "./DetalleTransferenciaDialog";
 
 /** Transferencias SPEI enviadas (sueltas o en lote) y depósitos recibidos (a la CLABE o por cobro). */
 export function MovimientosSpeiCard({
@@ -26,13 +28,15 @@ export function TransferenciasSpeiCard({
 }: {
   transferencias: TransferenciaSpei[];
 }) {
+  const [abierta, setAbierta] = useState<TransferenciaSpei | null>(null);
   return (
     <Card>
       <h2 className="font-semibold">
         Transferencias enviadas
         <InfoTip className="ml-1">
           Tus transferencias SPEI en pesos más recientes (hasta 50), sueltas o en lote, con el
-          estado actual. El monto no incluye la comisión.
+          estado actual. El monto no incluye la comisión. Ábrela para ver el detalle, descargar el
+          comprobante o ver el CEP de Banxico.
         </InfoTip>
       </h2>
       {transferencias.length === 0 ? (
@@ -42,46 +46,35 @@ export function TransferenciasSpeiCard({
           {transferencias.map((t) => {
             const e = ESTADO_ENVIO[t.estado];
             return (
-              <li key={t.id} className="py-2.5">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <div className="font-medium">{t.destinatario ?? "—"}</div>
-                    <div className="text-xs text-black-400">
-                      {formatDateTime(t.creadaAt)} · {t.concepto ?? ""} · {t.idTxn}
-                      {t.loteId && " · en lote"}
+              <li key={t.id}>
+                <button
+                  type="button"
+                  onClick={() => setAbierta(t)}
+                  className="w-full py-2.5 text-left hover:bg-black-50 rounded-sm -mx-1 px-1"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium">{t.destinatario ?? "—"}</div>
+                      <div className="text-xs text-black-400">
+                        {formatDateTime(t.creadaAt)} · {t.concepto ?? ""} · {t.idTxn}
+                        {t.loteId && " · en lote"}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="tabular-nums">{formatMoney(t.monto)}</div>
+                      <Badge tone={e.tone}>{e.label}</Badge>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="tabular-nums">{formatMoney(t.monto)}</div>
-                    <Badge tone={e.tone}>{e.label}</Badge>
-                  </div>
-                </div>
-                {t.motivo && t.estado !== "completada" && (
-                  <p className="mt-1 text-xs text-danger-600">{t.motivo}</p>
-                )}
-                {(t.claveRastreo || t.cep) && (
-                  <p className="mt-1 text-xs text-black-400">
-                    {t.claveRastreo && `Clave de rastreo ${t.claveRastreo}`}
-                    {t.cep && (
-                      <>
-                        {" · "}
-                        <a
-                          href={t.cep}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-secondary hover:underline"
-                        >
-                          Comprobante (CEP)
-                        </a>
-                      </>
-                    )}
-                  </p>
-                )}
+                  {t.motivo && t.estado !== "completada" && (
+                    <p className="mt-1 text-xs text-danger-600">{t.motivo}</p>
+                  )}
+                </button>
               </li>
             );
           })}
         </ul>
       )}
+      <DetalleTransferenciaDialog t={abierta} onClose={() => setAbierta(null)} />
     </Card>
   );
 }
