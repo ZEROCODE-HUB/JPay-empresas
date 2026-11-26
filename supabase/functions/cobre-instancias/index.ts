@@ -166,7 +166,7 @@ async function vincularBalance(sb: SupabaseClient, id: string, cuentaExterna: st
     provider_id?: string;
   };
   const cuenta = cuentaExterna
-    ? await conexion.cliente.get<Cuenta>(`/accounts/${cuentaExterna}`)
+    ? await conexion.cliente.get<Cuenta>(`/accounts/${cuentaExterna}`, { sensitive_data: true })
     : await conexion.cliente.post<Cuenta>("/accounts", {
         provider_id: "pr_mex_cobre3",
         action: "create",
@@ -339,9 +339,12 @@ async function balanceExistente(sb: SupabaseClient, id: string): Promise<string 
   const inst = await instanciaCobre(sb, id);
   if (!inst) return null;
   const r = await conexionCobre(sb, inst)
-    .cliente.get<{ contents?: Obj[] }>("/accounts", { page_size: 100 })
+    .cliente.get<{ contents?: Obj[] }>("/accounts", { page_size: 100, sensitive_data: true })
     .catch(() => null);
-  const mx = (r?.contents ?? []).filter((a) => a.provider_id === "pr_mex_cobre3");
+  // Cobre enmascara la CLABE si no se pide sensitive_data. Entre varias, la de mayor saldo.
+  const mx = (r?.contents ?? [])
+    .filter((a) => a.provider_id === "pr_mex_cobre3")
+    .sort((x, y) => Number(y.obtained_balance ?? 0) - Number(x.obtained_balance ?? 0));
   const c = mx.find((a) => /^\d{18}$/.test(String(a.account_number ?? ""))) ?? mx[0];
   return c ? String(c.id) : null;
 }
