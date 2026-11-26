@@ -164,22 +164,30 @@ async function registrarContraparte(ctx: Ctx, legajo: string, b: Body) {
   }
 
   // La titularidad se verifica siempre antes de pagar (solo `matched` permite enviar).
+  if (tipo === "clabe") fila = await iniciarVerificacion(ctx, fila);
+  return fila;
+}
+
+/** Pide la verificación de titular de una CLABE si falta o toca repetirla. */
+async function iniciarVerificacion(ctx: Ctx, fila: Obj): Promise<Obj> {
   // Si la cuenta de Cobre no tiene la verificación (G005) queda `no_disponible`: se puede pagar
   // y se reintenta cada 24 h por si la habilitan.
-  const edad = fila.verificado_at ? Date.now() - new Date(fila.verificado_at).getTime() : Infinity;
+  const edad = fila.verificado_at
+    ? Date.now() - new Date(String(fila.verificado_at)).getTime()
+    : Infinity;
   const repetir =
     (fila.verificacion === "unresolved" && edad >= 12 * 3_600_000) ||
     (fila.verificacion === "no_disponible" && edad >= 24 * 3_600_000);
-  if (tipo === "clabe" && (fila.verificacion === "sin_verificar" || repetir)) {
+  if (fila.verificacion === "sin_verificar" || repetir) {
     let av: { id: string };
     try {
       av = await ctx.conexion.cliente.post<{ id: string }>("/account_verifications", {
         model: "mex_acc_ownership_1",
         verification_request: {
-          account_number: numero,
+          account_number: String(fila.numero),
           account_type: "clabe",
-          account_holder_id_type: idTipo,
-          account_holder_id_number: idNumero,
+          account_holder_id_type: String(fila.id_tipo),
+          account_holder_id_number: String(fila.id_numero),
         },
         external_id: `AV-${fila.id}-${Date.now().toString(36)}`.slice(0, 60),
       });
@@ -259,6 +267,9 @@ async function consultarVerificacion(ctx: Ctx, legajo: string, b: Body) {
     .eq("cliente_legajo", legajo)
     .maybeSingle();
   if (!cp) throw new HttpError(404, "Destinatario inexistente");
+  if (cp.tipo === "clabe" && cp.verificacion !== "procesando") {
+    return await iniciarVerificacion(ctx, cp);
+  }
   if (cp.verificacion !== "procesando") return cp;
   let nuevo: string | null = null;
   let motivo: string | null = null;

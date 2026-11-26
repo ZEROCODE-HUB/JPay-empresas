@@ -1,5 +1,5 @@
 import { esRechazo } from "@/lib/api/errors";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge, BtnOutline, BtnPrimary, Card, Input, Label } from "@/components/portal-shell";
 import { useCotizacionEnvio, useCuentaSpeiMutaciones } from "@/hooks/useCobre";
@@ -43,6 +43,16 @@ export function TransferirSpeiCard({
 
   const sub = conClabe.find((s) => s.id === (origen || conClabe[0]?.id));
   const d = destinatarios.find((x) => x.id === (destino || destinatarios[0]?.id));
+  // Un destinatario sin verificación (o verificándose) la pide/consulta al elegirlo, una vez.
+  const pedidas = useRef(new Set<string>());
+  const verificar = m.verificar.mutate;
+  useEffect(() => {
+    if (!d || d.tipo !== "clabe") return;
+    if (d.verificacion !== "sin_verificar" && d.verificacion !== "procesando") return;
+    if (pedidas.current.has(d.id)) return;
+    pedidas.current.add(d.id);
+    verificar(d.id);
+  }, [d, verificar]);
   const importe = parseMonto(monto);
   const cot = useCotizacionEnvio(sub?.id, importe > 0 ? importe : 0, d?.numero);
   const noAlcanza = !!cot.data && !cot.data.alcanza;
