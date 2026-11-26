@@ -125,8 +125,9 @@ async function guardar(sb: SupabaseClient, b: Obj) {
   if (secret || clave) {
     const { error } = await sb.rpc("cobre_instancia_guardar_secretos", {
       p_instancia_id: id,
-      p_secret: secret ?? undefined,
-      p_clave_webhook: clave ?? undefined,
+      // Siempre los 3 argumentos (null = no cambiar): si se omite uno, PostgREST no encuentra la función.
+      p_secret: (secret ?? null) as string,
+      p_clave_webhook: (clave ?? null) as string,
     });
     if (error) throw new HttpError(500, error.message);
   }
