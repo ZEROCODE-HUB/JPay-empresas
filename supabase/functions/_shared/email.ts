@@ -165,7 +165,7 @@ const primary = brand.colors.primary["500"];
 const linkColor = brand.colors.primary["700"];
 
 /** Estructura común: encabezado con la marca, contenido y pie. */
-function layout(contenido: string): string {
+export function layout(contenido: string): string {
   return `
   <!doctype html>
   <html lang="es">
@@ -194,7 +194,7 @@ ${contenido}
 }
 
 /** Botón principal de un correo. */
-function boton(url: string, texto: string): string {
+export function boton(url: string, texto: string): string {
   return `
                   <table role="presentation" cellpadding="0" cellspacing="0">
                     <tr>

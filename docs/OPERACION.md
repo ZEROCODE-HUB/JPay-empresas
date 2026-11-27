@@ -67,7 +67,8 @@ van a usar varios, hay que agregar el selector de comercio en esas pantallas (ve
 ## 4. Correo (Resend)
 
 Correos que manda la plataforma: verificación del correo al registrarse, código de confirmación de
-transferencias, recuperación de contraseña y aviso al equipo por cada solicitud de un cliente.
+transferencias, recuperación de contraseña, aviso al equipo por cada solicitud de un cliente y
+avisos al cliente por sus movimientos (ver «Avisos al cliente»).
 
 **Cómo activarlo** (una sola vez):
 
@@ -91,12 +92,27 @@ Código: `supabase/functions/_shared/email.ts` (`configCorreo`, `sendEmail`, pla
 `correo-config` (panel), tabla `correo_config` y funciones `correo_*` (migración 1065),
 `correo_envios` (tope de reenvíos, 1067).
 
+### Avisos al cliente (1078)
+
+Correo al cliente (a `clientes.correo`) cuando: recibe un depósito SPEI, recibe un pago (link,
+tarjeta, OXXO, SPEI con referencia o CLABE única), una transferencia SPEI o en dólares se completa
+o falla/rebota, termina o falla un lote (un solo correo por lote, no por transferencia), le llega
+un contracargo, o se aprueba el alta de su cuenta. Nunca nombra al proveedor.
+
+- Triggers en `cobre_depositos`, `pagos`, `cobre_cobros_r2p`, `cobre_transferencias`,
+  `cobre_lotes`, `contracargos_proveedor` y `cobre_subclientes` encolan en `avisos_correo` (único
+  por evento y referencia: no se repite aunque el aviso del proveedor llegue dos veces).
+- `avisos-correo` (pública, pg_cron cada minuto) los manda. Plantillas en `_shared/avisos.ts`.
+- Sin clave de Resend, o con un correo de ejemplo, quedan `sin_correo` y no se mandan después.
+  Lo que no se pudo mandar en 2 días queda `vencido`. Errores de Resend: hasta 5 intentos.
+- Revisar: `select evento, estado, error, created_at from avisos_correo order by created_at desc;`
+
 ## 5. Edge Functions
 
 ### Públicas y con sesión
 
 Supabase exige un JWT para llamar a una función, salvo que se declare `verify_jwt = false`. Estas
-ocho son **públicas a propósito** (están en `supabase/config.toml`):
+nueve son **públicas a propósito** (están en `supabase/config.toml`):
 
 | Función                                       | Quién la llama                      | Cómo se protege                                            |
 | --------------------------------------------- | ----------------------------------- | ---------------------------------------------------------- |
@@ -106,6 +122,7 @@ ocho son **públicas a propósito** (están en `supabase/config.toml`):
 | `cobre-pendientes`, `ecartpay-pendientes`     | pg_cron cada 5 min                  | `reservar_tarea`; sin parámetros                           |
 | `cobre-conciliacion`, `ecartpay-conciliacion` | pg_cron diario                      | `reservar_tarea`; lo manual, solo admin                    |
 | `cobre-simulador`                             | pg_cron cada minuto                 | Solo actúa con `COBRE_MODO=simulado`; acciones, solo admin |
+| `avisos-correo`                               | pg_cron cada minuto                 | `reservar_tarea`; sin parámetros                           |
 
 El resto exige sesión y valida por dentro quién llama (`esAdmin`, `exigirPermiso`, o el cliente de
 la sesión y que el recurso sea suyo). **Toda función que use el service role debe validar a quien

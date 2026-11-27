@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.ecartpay-conciliacion]
 verify_jwt = false
+
+[functions.avisos-correo]
+verify_jwt = false

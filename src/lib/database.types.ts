@@ -684,6 +684,80 @@ export type Database = {
         }
         Relationships: []
       }
+      avisos_correo: {
+        Row: {
+          cliente_legajo: string
+          created_at: string
+          datos: Json
+          destinatario: string | null
+          enviado_at: string | null
+          error: string | null
+          estado: string
+          evento: string
+          id: string
+          intentos: number
+          referencia: string
+          tomado_at: string | null
+        }
+        Insert: {
+          cliente_legajo: string
+          created_at?: string
+          datos?: Json
+          destinatario?: string | null
+          enviado_at?: string | null
+          error?: string | null
+          estado?: string
+          evento: string
+          id?: string
+          intentos?: number
+          referencia: string
+          tomado_at?: string | null
+        }
+        Update: {
+          cliente_legajo?: string
+          created_at?: string
+          datos?: Json
+          destinatario?: string | null
+          enviado_at?: string | null
+          error?: string | null
+          estado?: string
+          evento?: string
+          id?: string
+          intentos?: number
+          referencia?: string
+          tomado_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avisos_correo_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "avisos_correo_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_account_blocks"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "avisos_correo_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_alerts"
+            referencedColumns: ["legajo"]
+          },
+          {
+            foreignKeyName: "avisos_correo_cliente_legajo_fkey"
+            columns: ["cliente_legajo"]
+            isOneToOne: false
+            referencedRelation: "v_client_block_parameters"
+            referencedColumns: ["legajo"]
+          },
+        ]
+      }
       banderas: {
         Row: {
           created_at: string | null
@@ -8501,6 +8575,24 @@ export type Database = {
     }
     Functions: {
       _alerta_desde_plaft: { Args: { p_match_id: number }; Returns: string }
+      _aviso_correo: {
+        Args: {
+          p_datos: Json
+          p_evento: string
+          p_legajo: string
+          p_referencia: string
+        }
+        Returns: undefined
+      }
+      _aviso_entro: {
+        Args: {
+          p_estados: string[]
+          p_nuevo: string
+          p_tg_op: string
+          p_viejo: string
+        }
+        Returns: boolean
+      }
       _bloqueo_activo: {
         Args: { p_client_id: string; p_subaccount_id?: string }
         Returns: string
@@ -8761,6 +8853,29 @@ export type Database = {
       atender_solicitud_contacto: {
         Args: { p_estado: string; p_id: string; p_nota?: string }
         Returns: undefined
+      }
+      avisos_correo_tomar: {
+        Args: { p_limite?: number }
+        Returns: {
+          cliente_legajo: string
+          created_at: string
+          datos: Json
+          destinatario: string | null
+          enviado_at: string | null
+          error: string | null
+          estado: string
+          evento: string
+          id: string
+          intentos: number
+          referencia: string
+          tomado_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "avisos_correo"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       buscar_asignacion_impuesto: {
         Args: { p_codigo_impuesto: string; p_legajo: string }
